@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
     li = lichess.Lichess(args.token)
 
-    is_bot = is_user_bot(li)
+    is_bot = is_bot_account(li)
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)
 

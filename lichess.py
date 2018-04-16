@@ -15,7 +15,6 @@ class Lichess():
     def __init__(self, token, url):
         self.header = self._get_header(token)
         self.baseUrl = url
-        print url
         self._test()
 
 

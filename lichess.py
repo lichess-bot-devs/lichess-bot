@@ -2,7 +2,7 @@ import json
 import requests
 
 
-BASEURL = "https://lichess.org{}"
+BASEURL = "https://listage.ovh{}"
 
 ENDPOINTS = {
     "profile": "/account/me",

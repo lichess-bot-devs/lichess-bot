@@ -20,7 +20,7 @@ class PerfType(Enum):
     threeCheck = 13
 
 
-BASEURL = "https://listage.ovh{}"
+BASEURL = "https://lichess.org{}"
 
 ENDPOINTS = {
     "profile": "/account/me",

@@ -14,13 +14,16 @@ A bridge between Lichess API and UCI bots. Makes use of python-chess.
 - A {token} e.g. `stEstTokenLicHeSs` will be displayed. Store this.
 - NOTE: You won't see this token again.
 
+## Lichess Upgrade to Bot Account
+- run `python main.py {token} -u` 
+
 ## Setup Engine
 - create a `engines` directory in the lichess-uci-bot directory
 - place your engine(s) in this directory
 
 ## Time to Play!
 - Start a game in Lichess. Get the {game_id} from the Url e.g. "https://lichess.org/5ekNlPWn" -> `5ekNlPWn` is the game_id
-- run `python main.py {token} {game_id} {path_to_engine}` e.g. `python main.py stEstTokenLicHeSs 5ekNlPWn ./engines/stockfish`
+- run `python main.py {token} -g {game_id} -e {path_to_engine}` e.g. `python main.py stEstTokenLicHeSs -g 5ekNlPWn -e ./engines/stockfish`
 - Have fun!
 
 ## For LeelaChessZero
@@ -28,5 +31,5 @@ A bridge between Lichess API and UCI bots. Makes use of python-chess.
 - Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
 - Extract the weights file and rename it to latest.txt
 - Copy both the files into `engines` directory
-- run `python main.py {token} {game_id} {path_to_engine} --weights {path_to_weights}`
-- e.g. `python main.py stEstTokenLicHeSs 5ekNlPWn ./engines/lczero --weights ./engines/latest.txt`
+- run `python main.py {token} -g {game_id} -e {path_to_engine} --weights {path_to_weights}`
+- e.g. `python main.py stEstTokenLicHeSs -g 5ekNlPWn -e ./engines/lczero --weights ./engines/latest.txt`

@@ -47,3 +47,11 @@ This is irreversible. [Read more about upgrading to bot account](https://lichess
 - Change the `engine` and `weights` keys in config.yml to `lczero` and `latest.txt`
 - To start: `python main.py -g {game_id}`
 - e.g. `python main.py -g 5ekNlPWn`
+
+
+# Acknowledgements
+Thanks to the Lichess team, especially T. Alexander Lystad and Thibault Duplessis for working with the LeelaChessZero
+team to get this API up. Thanks to the Niklas Fiekas and his python-chess code which allows UCI engine communication seamlessly.
+
+# License
+lichess-uci-bot is licensed under the GPL 3 (or any later version at your option). Check out LICENSE.txt for the full text.

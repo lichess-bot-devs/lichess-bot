@@ -6,8 +6,7 @@ import json
 import logging
 
 
-def is_bot_account(token):
-    li = lichess.Lichess(token)
+def is_bot_account(li):
     user_profile = li.get_profile()
     return user_profile.get("bot") is not None
 
@@ -16,7 +15,7 @@ def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
         return False
 
-    print("Succesfully upgraded {} to Bot Account!".format(username))
+    print("Succesfully upgraded to Bot Account!")
     return True
 
 

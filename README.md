@@ -15,7 +15,7 @@ A bridge between Lichess API and UCI bots. Makes use of python-chess.
 - NOTE: You won't see this token again.
 
 ## Lichess Upgrade to Bot Account
-This is irreversible. [Read more about upgrading to boat account](https://lichess.org/api#operation/botAccountUpgrade).
+This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
 - run `python main.py {token} -u` 
 
 ## Setup Engine

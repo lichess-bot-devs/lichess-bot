@@ -140,7 +140,11 @@ if __name__ == "__main__":
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)
 
+
     if is_bot:
-        start(li, args.gameid, args.engine, args.weights)
+        if args.gameid and args.engine:
+            start(li, args.gameid, args.engine, args.weights)
+        else:
+            print("Engine and game id not specified!")
     else:
         print("This is not a bot account. Please upgrade your Lichess account to a bot account!")

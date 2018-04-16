@@ -33,7 +33,7 @@ def start(li, game_id, engine, weights=None):
     #Initial response of stream will be the full game info. Store it
     game_info = json.loads(next(updates).decode('utf-8'))
     board = setup_board(game_info)
-    engine = setup_engine(engine, board, weights)
+    engine, info_handler = setup_engine(engine, board, weights)
 
     # need to do this to check if its playing against SF.
     # If Lichess Stockfish is playing response will contain:
@@ -60,6 +60,7 @@ def start(li, game_id, engine, weights=None):
                 engine.position(board)
                 best_move, ponder = engine.go(wtime=wtime, btime=btime, winc=winc, binc=binc)
                 print("Engines best move: {}".format(best_move))
+                get_engine_stats(info_handler)
                 li.make_move(game_id, best_move)
 
     print("Game over!")
@@ -96,7 +97,11 @@ def setup_engine(engine, board, weights=None):
 
     engine.uci()
     engine.position(board)
-    return engine
+
+    info_handler = chess.uci.InfoHandler()
+    engine.info_handlers.append(info_handler)
+
+    return engine, info_handler
 
 
 def is_white_to_move(moves):
@@ -114,6 +119,12 @@ def is_engine_move(is_white, moves):
     is_b = (is_white is False and is_white_to_move(moves) is False)
 
     return (is_w or is_b)
+
+
+def get_engine_stats(handler):
+    print("{}".format(handler.info["string"]))
+    print("Depth: {}".format(handler.info["depth"]))
+    print("nps: {}".format(handler.info["nps"]))
 
 
 def get_time_controls(data):

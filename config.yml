@@ -1,0 +1,5 @@
+token: "SGOsQpBWgK9dMcYb"
+url: "https://listage.ovh/"
+engines_dir: "./engines/"
+engine: "lczero"
+weights: "latest.txt"

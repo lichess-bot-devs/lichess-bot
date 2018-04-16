@@ -2,8 +2,10 @@ import argparse
 import chess
 import chess.uci
 import lichess
+import os
 import json
 import logging
+import yaml
 
 
 def is_bot_account(li):
@@ -41,14 +43,15 @@ def start(li, game_id, engine, weights=None):
     if game_info.get("white").get("name"):
         is_white = (game_info.get("white")["name"] == username)
 
-    print(game_info)
+    print("Game Info: {}".format(game_info))
+
     board = play_first_move(game_info, game_id, is_white, engine, board, li)
 
     for update in updates:
         if update:
             #board = process_update(board, engine, update, movetime, is_white)
             upd = json.loads(update.decode('utf-8'))
-            print(upd)
+            print("Updated moves: {}".format(upd))
             wtime, btime, winc, binc = get_time_controls(upd)
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])
@@ -56,7 +59,7 @@ def start(li, game_id, engine, weights=None):
             if is_engine_move(is_white, moves):
                 engine.position(board)
                 best_move, ponder = engine.go(wtime=wtime, btime=btime, winc=winc, binc=binc)
-                print(best_move)
+                print("Engines best move: {}".format(best_move))
                 li.make_move(game_id, best_move)
 
     print("Game over!")
@@ -70,7 +73,6 @@ def play_first_move(game_info, game_id, is_white, engine, board, li):
         engine.position(board)
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move, ponder = engine.go(movetime=2000)
-        print(best_move)
         li.make_move(game_id, best_move)
 
     return board
@@ -102,7 +104,6 @@ def is_white_to_move(moves):
 
 
 def update_board(board, move):
-    print(move)
     uci_move = chess.Move.from_uci(move)
     board.push(uci_move)
     return board
@@ -127,14 +128,12 @@ def get_time_controls(data):
 if __name__ == "__main__":
     logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
-    parser.add_argument('token', type=str, help='OAuth token')
     parser.add_argument('-g', '--gameid', type=str, help='Lichess Game Id')
-    parser.add_argument('-e', '--engine', type=str, help='path to engine binary')
-    parser.add_argument('-w', '--weights', type=str, help='path to training data (weights) file')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
 
-    li = lichess.Lichess(args.token)
+    config = yaml.load(open("./config.yml"))
+    li = lichess.Lichess(config["token"], config["url"])
 
     is_bot = is_bot_account(li)
     if args.u is True and is_bot is False:
@@ -142,9 +141,11 @@ if __name__ == "__main__":
 
 
     if is_bot:
-        if args.gameid and args.engine:
-            start(li, args.gameid, args.engine, args.weights)
+        if args.gameid:
+            engine_path = os.path.join(config["engines_dir"], config["engine"])
+            weights_path = os.path.join(config["engines_dir"], config["weights"]) if config["weights"] is not None else None
+            start(li, args.gameid, engine_path, weights_path)
         else:
-            print("Engine and game id not specified!")
+            print("Game id is not specified!")
     else:
         print("This is not a bot account. Please upgrade your Lichess account to a bot account!")

@@ -45,6 +45,7 @@ This is irreversible. [Read more about upgrading to bot account](https://lichess
 - Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
 - Copy both the files into the `engines` directory
 - Change the `engine` and `weights` keys in config.yml to `lczero` and `latest.txt`
+- You can specify the number of threads in the config.yml file as well
 - To start: `python main.py -g {game_id}`
 - e.g. `python main.py -g 5ekNlPWn`
 

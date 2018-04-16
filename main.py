@@ -21,7 +21,7 @@ def upgrade_account(li):
     return True
 
 
-def start(li, game_id, engine, weights=None):
+def start(li, game_id, engine, weights=None, threads=None):
     # init
     user_profile = li.get_profile()
     username = user_profile.get("username")
@@ -33,7 +33,7 @@ def start(li, game_id, engine, weights=None):
     #Initial response of stream will be the full game info. Store it
     game_info = json.loads(next(updates).decode('utf-8'))
     board = setup_board(game_info)
-    engine, info_handler = setup_engine(engine, board, weights)
+    engine, info_handler = setup_engine(engine, board, weights, threads)
 
     # need to do this to check if its playing against SF.
     # If Lichess Stockfish is playing response will contain:
@@ -88,12 +88,20 @@ def setup_board(game_info):
     return board
 
 
-def setup_engine(engine, board, weights=None):
+def setup_engine(engine_path, board, weights=None, threads=None):
     print("Loading Engine!")
+    commands = [engine_path]
     if weights:
-        engine = chess.uci.popen_engine([engine, "-w", weights])
+        commands.append("-w")
+        commands.append(weights)
+    if threads:
+        commands.append("-t")
+        commands.append(threads)
+
+    if len(commands) > 1:
+        engine = chess.uci.popen_engine(commands)
     else:
-        engine = chess.uci.popen_engine(engine)
+        engine = chess.uci.popen_engine(engine_path)
 
     engine.uci()
     engine.position(board)
@@ -125,6 +133,7 @@ def get_engine_stats(handler):
     print("{}".format(handler.info["string"]))
     print("Depth: {}".format(handler.info["depth"]))
     print("nps: {}".format(handler.info["nps"]))
+    print("Node: {}".format(handler.info["nodes"]))
 
 
 def get_time_controls(data):
@@ -155,7 +164,7 @@ if __name__ == "__main__":
         if args.gameid:
             engine_path = os.path.join(config["engines_dir"], config["engine"])
             weights_path = os.path.join(config["engines_dir"], config["weights"]) if config["weights"] is not None else None
-            start(li, args.gameid, engine_path, weights_path)
+            start(li, args.gameid, engine_path, weights_path, config["threads"])
         else:
             print("Game id is not specified!")
     else:

@@ -1,5 +1,6 @@
 token: "someTestKey"
 url: "https://lichess.org/"
 engines_dir: "./engines/"
-engine: "lczero"
+engine: "lczero_2"
 weights: "latest.txt"
+threads:

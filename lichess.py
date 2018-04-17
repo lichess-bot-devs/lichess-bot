@@ -18,18 +18,6 @@ class Lichess():
     def __init__(self, token, url):
         self.header = self._get_header(token)
         self.baseUrl = url
-        self._test()
-
-
-    def _test(self):
-        url = self.baseUrl + ENDPOINTS["profile"]
-        r = requests.get(url, headers=self.header)
-
-        if r.status_code != 200:
-            print("Invalid token!")
-            print(r.text)
-        else:
-            print("Valid token!")
 
 
     def get_game(self, game_id):

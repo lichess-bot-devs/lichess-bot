@@ -9,10 +9,6 @@ import yaml
 
 ONGOING_GAMES = []
 
-def is_bot_account(li):
-    user_profile = li.get_profile()
-    return user_profile.get("bot") is not None
-
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -22,9 +18,8 @@ def upgrade_account(li):
     return True
 
 
-def start(li, engine_path, max_games, weights=None, threads=None):
+def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
     # init
-    user_profile = li.get_profile()
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
 
@@ -181,7 +176,10 @@ if __name__ == "__main__":
     config = yaml.load(open("./config.yml"))
     li = lichess.Lichess(config["token"], config["url"])
 
-    is_bot = is_bot_account(li)
+    user_profile = li.get_profile()
+
+    is_bot = user_profile.get("bot") is not None
+
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)
 
@@ -190,7 +188,7 @@ if __name__ == "__main__":
         engine_path = os.path.join(config["engines_dir"], config["engine"])
         weights_path = os.path.join(config["engines_dir"], config["weights"]) if config["weights"] is not None else None
         max_games = config["max_concurrent_games"]
-        start(li, engine_path, max_games, weights_path, config["threads"])
+        start(li, user_profile, engine_path, max_games, weights_path, config["threads"])
 
     else:
         print("This is not a bot account. Please upgrade your Lichess account to a bot account!")

@@ -33,12 +33,6 @@ This is irreversible. [Read more about upgrading to bot account](https://lichess
 - run `python main.py -u`
 
 
-## Time to Play!
-- Start a game in Lichess. Get the {game_id} from the Url e.g. "https://lichess.org/5ekNlPWn" -> `5ekNlPWn` is the game_id
-- To start: `python main.py -g {game_id}` e.g. `python main.py -g 5ekNlPWn`
-- Have fun!
-
-
 ## LeelaChessZero
 - Download the weights for the id you want to play from here: http://lczero.org/networks
 - Extract the weights from the zip archive and rename it to `latest.txt`
@@ -46,8 +40,7 @@ This is irreversible. [Read more about upgrading to bot account](https://lichess
 - Copy both the files into the `engines` directory
 - Change the `engine` and `weights` keys in config.yml to `lczero` and `latest.txt`
 - You can specify the number of threads in the config.yml file as well
-- To start: `python main.py -g {game_id}`
-- e.g. `python main.py -g 5ekNlPWn`
+- To start: `python main.py`
 
 
 # Acknowledgements

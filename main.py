@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     user_profile = li.get_profile()
 
-    is_bot = user_profile.get("bot") is not None
+    is_bot = user_profile.get("title") == "BOT"
 
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)
@@ -192,4 +192,4 @@ if __name__ == "__main__":
         start(li, user_profile, engine_path, max_games, weights_path, config["threads"])
 
     else:
-        print("This is not a bot account. Please upgrade your Lichess account to a bot account!")
+        print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

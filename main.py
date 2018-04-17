@@ -33,10 +33,10 @@ def start(li, engine_path, max_games, weights=None, threads=None):
 
     for evnt in events:
         event = json.loads(evnt.decode('utf-8'))
-        print event
+        print(event)
         if event["type"] == "challenge":
             challenge_id = event["challenge"]["id"]
-            print challenge_id
+            print(challenge_id)
 
             variant = event["challenge"]["variant"]["key"]
             if variant == "standard":
@@ -94,7 +94,7 @@ def play_game(li, game_id, weights, threads):
                 )
                 li.make_move(game_id, best_move)
 
-                print
+                print()
                 print("Engines best move: {}".format(best_move))
                 get_engine_stats(info_handler)
 
@@ -165,7 +165,8 @@ def update_board(board, move):
 
 
 def get_engine_stats(handler):
-    print("{}".format(handler.info["string"]))
+    if "string" in handler.info:
+        print("{}".format(handler.info["string"]))
     print("Depth: {}".format(handler.info["depth"]))
     print("nps: {}".format(handler.info["nps"]))
     print("Node: {}".format(handler.info["nodes"]))

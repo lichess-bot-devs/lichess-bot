@@ -1,30 +1,24 @@
 # lichess-uci-bot
-A bridge between Lichess API and UCI bots. Makes use of python-chess: https://github.com/niklasf/python-chess
+A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bots.
 
 
 ## How to Install
 - Download the repo into lichess-uci-bot directory
-- run `pip install -r requirements.txt`
+- Run `pip install -r requirements.txt`
+- Create your config file wih `cp config.yml.default config.yml`
 
 
 ## Lichess OAuth
-- Create an account for your bot on Lichess.org
+- Create an account for your bot on [Lichess.org](https://lichess.org/signup)
 - NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account
-- Once your account has been created and you are logged in, go to: https://lichess.org/account/oauth/token
-- Create an access token with the "Play bot moves" selected and add a description
-- Click submit!
-- A {token} e.g. `stEstTokenLicHeSs` will be displayed. Store this.
-- NOTE: You won't see this token again.
+- Once your account has been created and you are logged in, [create a personal OAuth2 token](https://lichess.org/account/oauth/token) with the "Play bot moves" selected and add a description
+- A `token` e.g. `Xb0ddNrLabc0lGK2` will be displayed. Store this in `config.yml` as the `token` field
+- NOTE: You won't see this token again on Lichess.
 
 
 ## Setup Engine
 - Place your engine(s) in the `engines` directory
-
-
-## Config
-- `cp config.yml.default config.yml`
-- Edit `config.yml` and update the token field with your token
-- In the `engine` field, enter the binary name
+- In `config.yml`, enter the binary name as the `engine` field
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
 
 
@@ -45,7 +39,7 @@ This is irreversible. [Read more about upgrading to bot account](https://lichess
 
 # Acknowledgements
 Thanks to the Lichess team, especially T. Alexander Lystad and Thibault Duplessis for working with the LeelaChessZero
-team to get this API up. Thanks to the Niklas Fiekas and his python-chess code which allows UCI engine communication seamlessly.
+team to get this API up. Thanks to the Niklas Fiekas and his [python-chess](https://github.com/niklasf/python-chess) code which allows UCI engine communication seamlessly.
 
 # License
 lichess-uci-bot is licensed under the GPL 3 (or any later version at your option). Check out LICENSE.txt for the full text.

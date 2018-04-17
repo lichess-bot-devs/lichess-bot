@@ -27,26 +27,25 @@ def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
     events = event_stream.iter_lines()
 
     for evnt in events:
-        event = json.loads(evnt.decode('utf-8'))
-        print(event)
-        if event["type"] == "challenge":
-            challenge_id = event["challenge"]["id"]
-            print(challenge_id)
+        if evnt:
+            event = json.loads(evnt.decode('utf-8'))
+            print(event)
+            if event["type"] == "challenge":
+                challenge_id = event["challenge"]["id"]
+                print(challenge_id)
 
-            variant = event["challenge"]["variant"]["key"]
-            if variant == "standard":
-                if len(ONGOING_GAMES) < max_games:
-                    li.accept_challenge(challenge_id)
-            else:
-                li.decline_challenge(challenge_id)
-
-
-        if event["type"] == "gameStart":
-            game_id = event["game"]["id"]
-            ONGOING_GAMES.append(game_id)
-            play_game(li, game_id, weights, threads)
+                variant = event["challenge"]["variant"]["key"]
+                if variant == "standard":
+                    if len(ONGOING_GAMES) < max_games:
+                        li.accept_challenge(challenge_id)
+                else:
+                    li.decline_challenge(challenge_id)
 
 
+            if event["type"] == "gameStart":
+                game_id = event["game"]["id"]
+                ONGOING_GAMES.append(game_id)
+                play_game(li, game_id, weights, threads)
 
 
 def play_game(li, game_id, weights, threads):

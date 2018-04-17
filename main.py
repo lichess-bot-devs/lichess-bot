@@ -32,7 +32,7 @@ def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
             print(event)
             if event["type"] == "challenge":
                 challenge_id = event["challenge"]["id"]
-                print(challenge_id)
+                print("Received challenge {}".format(challenge_id))
 
                 variant = event["challenge"]["variant"]["key"]
                 if variant == "standard" and len(ONGOING_GAMES) < max_games:

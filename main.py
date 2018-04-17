@@ -7,6 +7,7 @@ import json
 import logging
 import yaml
 
+ONGOING_GAMES = []
 
 def is_bot_account(li):
     user_profile = li.get_profile()
@@ -21,19 +22,47 @@ def upgrade_account(li):
     return True
 
 
-def start(li, game_id, engine, weights=None, threads=None):
+def start(li, engine_path, max_games, weights=None, threads=None):
     # init
     user_profile = li.get_profile()
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
 
+    event_stream = li.get_event_stream()
+    events = event_stream.iter_lines()
+
+    for evnt in events:
+        event = json.loads(evnt.decode('utf-8'))
+        print event
+        if event["type"] == "challenge":
+            challenge_id = event["challenge"]["id"]
+            print challenge_id
+
+            variant = event["challenge"]["variant"]["key"]
+            if variant == "standard":
+                if len(ONGOING_GAMES) < max_games:
+                    li.accept_challenge(challenge_id)
+            else:
+                li.decline_challenge(challenge_id)
+
+
+        if event["type"] == "gameStart":
+            game_id = event["game"]["id"]
+            ONGOING_GAMES.append(game_id)
+            play_game(li, game_id, weights, threads)
+
+
+
+
+def play_game(li, game_id, weights, threads):
+    username = li.get_profile()["username"]
     stream = li.get_stream(game_id)
     updates = stream.iter_lines()
 
     #Initial response of stream will be the full game info. Store it
     game_info = json.loads(next(updates).decode('utf-8'))
     board = setup_board(game_info)
-    engine, info_handler = setup_engine(engine, board, weights, threads)
+    engine, info_handler = setup_engine(engine_path, board, weights, threads)
 
     # need to do this to check if its playing against SF.
     # If Lichess Stockfish is playing response will contain:
@@ -52,22 +81,28 @@ def start(li, game_id, engine, weights=None, threads=None):
             #board = process_update(board, engine, update, movetime, is_white)
             upd = json.loads(update.decode('utf-8'))
             print("Updated moves: {}".format(upd))
-            wtime, btime, winc, binc = get_time_controls(upd)
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])
 
             if is_engine_move(is_white, moves):
                 engine.position(board)
-                best_move, ponder = engine.go(wtime=wtime, btime=btime, winc=winc, binc=binc)
-                print("Engines best move: {}".format(best_move))
-                get_engine_stats(info_handler)
+                best_move, ponder = engine.go(
+                    wtime=upd.get("wtime"),
+                    btime=upd.get("btime"),
+                    winc=upd.get("winc"),
+                    binc=upd.get("binc")
+                )
                 li.make_move(game_id, best_move)
 
+                print
+                print("Engines best move: {}".format(best_move))
+                get_engine_stats(info_handler)
+
+    ONGOING_GAMES.remove(game_id)
     print("Game over!")
 
 
 def play_first_move(game_info, game_id, is_white, engine, board, li):
-    wtime, btime, winc, binc = get_time_controls(game_info["state"])
     moves = game_info["state"]["moves"].split()
     print("First move! It begins...")
     if is_engine_move(is_white, moves):
@@ -116,17 +151,17 @@ def is_white_to_move(moves):
     return (len(moves) % 2) == 0
 
 
-def update_board(board, move):
-    uci_move = chess.Move.from_uci(move)
-    board.push(uci_move)
-    return board
-
-
 def is_engine_move(is_white, moves):
     is_w = (is_white and is_white_to_move(moves))
     is_b = (is_white is False and is_white_to_move(moves) is False)
 
     return (is_w or is_b)
+
+
+def update_board(board, move):
+    uci_move = chess.Move.from_uci(move)
+    board.push(uci_move)
+    return board
 
 
 def get_engine_stats(handler):
@@ -136,19 +171,9 @@ def get_engine_stats(handler):
     print("Node: {}".format(handler.info["nodes"]))
 
 
-def get_time_controls(data):
-    wtime = data.get("wtime")
-    btime = data.get("btime")
-    winc = data.get("winc")
-    binc = data.get("binc")
-
-    return wtime, btime, winc, binc
-
-
 if __name__ == "__main__":
     logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
-    parser.add_argument('-g', '--gameid', type=str, help='Lichess Game Id')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
 
@@ -161,11 +186,10 @@ if __name__ == "__main__":
 
 
     if is_bot:
-        if args.gameid:
-            engine_path = os.path.join(config["engines_dir"], config["engine"])
-            weights_path = os.path.join(config["engines_dir"], config["weights"]) if config["weights"] is not None else None
-            start(li, args.gameid, engine_path, weights_path, config["threads"])
-        else:
-            print("Game id is not specified!")
+        engine_path = os.path.join(config["engines_dir"], config["engine"])
+        weights_path = os.path.join(config["engines_dir"], config["weights"]) if config["weights"] is not None else None
+        max_games = config["max_concurrent_games"]
+        start(li, engine_path, max_games, weights_path, config["threads"])
+
     else:
         print("This is not a bot account. Please upgrade your Lichess account to a bot account!")

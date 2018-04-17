@@ -4,8 +4,11 @@ import requests
 ENDPOINTS = {
     "profile": "account/me",
     "stream": "bot/game/stream/{}",
+    "stream_event": "api/stream/event",
     "game": "bot/game/{}",
     "move": "bot/game/{}/move/{}",
+    "accept": "challenge/{}/accept",
+    "decline": "challenge/{}/decline",
     "upgrade": "bot/account/upgrade"
 }
 
@@ -65,6 +68,32 @@ class Lichess():
         url = self.baseUrl + ENDPOINTS["stream"].format(game_id)
         return requests.get(url, headers=self.header, stream=True)
 
+
+    def get_event_stream(self):
+        url = self.baseUrl + ENDPOINTS["stream_event"]
+        return requests.get(url, headers=self.header, stream=True)
+
+
+    def accept_challenge(self, challenge_id):
+        url = self.baseUrl + ENDPOINTS["accept"].format(challenge_id)
+        r = requests.post(url, headers=self.header)
+
+        if r.status_code != 200:
+            print("Something went wrong! status_code: {}, response: {}".format(r.status_code, r.text))
+            return None
+
+        return r.json()
+
+
+    def decline_challenge(self, challenge_id):
+        url = self.baseUrl + ENDPOINTS["decline"].format(challenge_id)
+        r = requests.post(url, headers=self.header)
+
+        if r.status_code != 200:
+            print("Something went wrong! status_code: {}, response: {}".format(r.status_code, r.text))
+            return None
+
+        return r.json()
 
 
     def get_profile(self):

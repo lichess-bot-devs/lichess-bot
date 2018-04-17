@@ -1,6 +1,7 @@
 token: "someTestKey"
 url: "https://lichess.org/"
 engines_dir: "./engines/"
-engine: "lczero_2"
+engine: "lczero"
 weights: "latest.txt"
+max_concurrent_games: 1
 threads:

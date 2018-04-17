@@ -35,9 +35,8 @@ def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
                 print(challenge_id)
 
                 variant = event["challenge"]["variant"]["key"]
-                if variant == "standard":
-                    if len(ONGOING_GAMES) < max_games:
-                        li.accept_challenge(challenge_id)
+                if variant == "standard" and len(ONGOING_GAMES) < max_games:
+                    li.accept_challenge(challenge_id)
                 else:
                     li.decline_challenge(challenge_id)
 

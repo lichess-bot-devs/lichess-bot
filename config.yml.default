@@ -1,4 +1,4 @@
-token: "someTestKey"
+token: "xxxxxxxxxxxxxxxx"
 url: "https://lichess.org/"
 engines_dir: "./engines/"
 engine: "lczero"

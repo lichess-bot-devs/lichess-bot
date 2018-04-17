@@ -22,7 +22,8 @@ A bridge between Lichess API and UCI bots. Makes use of python-chess: https://gi
 
 
 ## Config
-- Edit the config.yml file and update the token field with your token
+- `cp config.yml.default config.yml`
+- Edit `config.yml` and update the token field with your token
 - In the `engine` field, enter the binary name
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
 

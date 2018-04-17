@@ -18,8 +18,7 @@ A bridge between Lichess API and UCI bots. Makes use of python-chess: https://gi
 
 
 ## Setup Engine
-- create a `engines` directory in the lichess-uci-bot directory
-- place your engine(s) in this directory
+- Place your engine(s) in the `engines` directory
 
 
 ## Config

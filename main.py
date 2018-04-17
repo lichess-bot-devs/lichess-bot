@@ -31,13 +31,16 @@ def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
             event = json.loads(evnt.decode('utf-8'))
             print(event)
             if event["type"] == "challenge":
-                challenge_id = event["challenge"]["id"]
-                print("Received challenge {}".format(challenge_id))
-
-                variant = event["challenge"]["variant"]["key"]
+                challenge = event["challenge"]
+                challenge_id = challenge["id"]
+                variant = challenge["variant"]["key"]
+                challenger = challenge["challenger"]["name"] if "challenger" in challenge else "Anonymous"
+                description = "challenge #{} by {}".format(challenge_id, challenger)
                 if variant == "standard" and len(ONGOING_GAMES) < max_games:
+                    print("Accepting {}".format(description))
                     li.accept_challenge(challenge_id)
                 else:
+                    print("Declining {}".format(description))
                     li.decline_challenge(challenge_id)
 
 

@@ -98,7 +98,7 @@ def play_game(li, game_id, weights, threads):
 
 def play_first_move(game_info, game_id, is_white, engine, board, li):
     moves = game_info["state"]["moves"].split()
-    print("First move! It begins...")
+    print("Now playing {}{}".format(li.baseUrl, game_info["id"]))
     if is_engine_move(is_white, moves):
         engine.position(board)
         # need to hardcode first movetime since Lichess has 30 sec limit.

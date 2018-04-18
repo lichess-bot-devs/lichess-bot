@@ -50,9 +50,13 @@ class Lichess():
 
 
     def get_event_stream(self):
-        url = self.baseUrl + ENDPOINTS["stream_event"]
+        url = urljoin(self.baseUrl, ENDPOINTS["stream_event"])
         return requests.get(url, headers=self.header, stream=True)
 
+
+    def get_game_stream(self, game_id):
+        url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
+        return requests.get(url, headers=self.header, stream=True)
 
     def accept_challenge(self, challenge_id):
         url = urljoin(self.baseUrl, ENDPOINTS["accept"].format(challenge_id))

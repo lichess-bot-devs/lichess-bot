@@ -6,7 +6,7 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bo
 - Download the repo into lichess-uci-bot directory
 - Run `pip install -r requirements.txt`
 - Create your config file wih `cp config.yml.default config.yml`
-- Remove the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
+- Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
 
 ## Lichess OAuth
@@ -18,8 +18,8 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bo
 
 
 ## Setup Engine
-- Place your engine(s) in the `engines` directory
-- In `config.yml`, enter the binary name as the `engine` field
+- Place your engine(s) in the `engine.dir` directory
+- In `config.yml`, enter the binary name as the `engine.name` field
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
 
 
@@ -32,9 +32,9 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bo
 - Download the weights for the id you want to play from here: http://lczero.org/networks
 - Extract the weights from the zip archive and rename it to `latest.txt`
 - Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
-- Copy both the files into the `engines` directory
-- Change the `engine` and `weights` keys in config.yml to `lczero` and `latest.txt`
-- You can specify the number of threads in the config.yml file as well
+- Copy both the files into the `engine.dir` directory
+- Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` and `latest.txt`
+- You can specify the number of `engine.threads` in the config.yml file as well
 - To start: `python main.py`
 
 

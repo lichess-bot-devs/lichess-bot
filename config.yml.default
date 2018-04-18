@@ -1,13 +1,16 @@
-token: "xxxxxxxxxxxxxxxx"
-url: "https://lichess.org/"
-engine {
-  dir: "./engines/"
-  name: "lczero"
-#  weights: "latest.txt"  # only if the engine is lczero
-#  threads: 1             # only if the engine is lczero
+token: "xxxxxxxxxxxxxxxx"    # lichess OAuth2 Token
+url: "https://lichess.org/"  # lichess base URL
+
+engine {                     # engine settings
+  dir: "./engines/"          # dir containing engines, relative to this project
+  name: "engine_name"        # binary name of the engine to use
+#  weights: "latest.txt"     # only if the engine is lczero
+#  threads: 1                # only if the engine is lczero
 }
-max_concurrent_games: 1
-supported_variants:
+
+max_concurrent_games: 1      # number of games to play simultaneously
+
+supported_variants:          # chess variants to accept (http://lichess.org/variant)
   - standard
 #  - fromPosition
 #  - antichess
@@ -18,13 +21,15 @@ supported_variants:
 #  - kingOfTheHill
 #  - racingKings
 #  - threeCheck
-supported_tc:
+
+supported_tc:                # time controls to accept
   - ultraBullet
   - bullet
   - blitz
   - rapid
 #  - classical
 #  - correspondence
-supported_modes:
-  - casual
-  - rated # disable this if your bot doesn't try to win
+
+supported_modes:             # game modes to accept
+  - casual                   # unrated games
+  - rated                    # rated games - must comment if the engine doesn't try to win

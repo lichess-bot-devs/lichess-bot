@@ -11,6 +11,7 @@ ENDPOINTS = {
     "stream_event": "/api/stream/event",
     "game": "/bot/game/{}",
     "move": "/bot/game/{}/move/{}",
+    "chat": "/bot/game/{}/chat",
     "accept": "/challenge/{}/accept",
     "decline": "/challenge/{}/decline",
     "upgrade": "/bot/account/upgrade"
@@ -42,6 +43,12 @@ class Lichess():
     def make_move(self, game_id, move):
         url = urljoin(self.baseUrl, ENDPOINTS["move"].format(game_id, move))
         return self.get_json(requests.post(url, headers=self.header))
+
+
+    def chat(self, game_id, room, text):
+        url = urljoin(self.baseUrl, ENDPOINTS["chat"].format(game_id))
+        payload = payload = {'room': room, 'text': text}
+        return self.get_json(requests.post(url, headers=self.header, data=payload))
 
 
     def get_stream(self, game_id):

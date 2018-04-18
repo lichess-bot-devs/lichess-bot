@@ -20,6 +20,22 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
+class Success:
+    def __init__(self, games, game_id):
+        self.games = games
+        self.game_id = game_id
+    def __call__(self, result):
+        if self.game_id in self.games:
+            self.games.remove(self.game_id)
+
+class Error:
+    def __init__(self, games, game_id):
+        self.games = games
+        self.game_id = game_id
+    def __call__(self, exc):
+        if self.game_id in self.games:
+            self.games.remove(self.game_id)
+        raise exc
 
 def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
@@ -28,6 +44,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     with multiprocessing.Pool(CONFIG['threads']) as p:
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
+        challenges = []
 
         for evnt in events:
             if evnt:
@@ -47,11 +64,8 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     game_id = event["game"]["id"]
                     ONGOING_GAMES.append(game_id)
 
-                    def success(result):
-                        ONGOING_GAMES.remove(game_id)
-                    def error(exc):
-                        ONGOING_GAMES.remove(game_id)
-                        raise exc
+                    success = Success(ONGOING_GAMES, game_id)
+                    error = Error(ONGOING_GAMES, game_id)
 
                     p.apply_async(
                         play_game,
@@ -60,7 +74,6 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                         success,
                         error
                     )
-    ONGOING_GAMES.remove(game_id)
 
 
 def play_game(li, game_id, weights, threads):

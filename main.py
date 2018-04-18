@@ -1,5 +1,6 @@
 import argparse
 import chess
+from chess.variant import find_variant
 import engine_wrapper
 import model
 import json
@@ -90,7 +91,7 @@ def play_game(li, game_id, engine_path, engine_type, weights, threads, control_q
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
-    board = setup_board(game.state)
+    board = setup_board(game)
     engine = setup_engine(engine_path, engine_type, board, weights, threads, uci_options)
     conversation = Conversation(game, engine, li)
 
@@ -135,9 +136,13 @@ def play_first_move(game, engine, board, li):
     return board
 
 
-def setup_board(state):
-    board = chess.Board()
-    moves = state["moves"].split()
+def setup_board(game):
+    if game.variant_name.lower() == "chess960":
+        board = chess.Board(game.initial_fen, chess960=True)
+    else:
+        VariantBoard = find_variant(game.variant_name);
+        board = VariantBoard()
+    moves = game.state["moves"].split()
     for move in moves:
         board = update_board(board, move)
 

@@ -10,7 +10,6 @@ import os
 import traceback
 import yaml
 
-ONGOING_GAMES = []
 CONFIG = {}
 
 def upgrade_account(li):
@@ -20,22 +19,8 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
-class Success:
-    def __init__(self, games, game_id):
-        self.games = games
-        self.game_id = game_id
-    def __call__(self, result):
-        if self.game_id in self.games:
-            self.games.remove(self.game_id)
-
-class Error:
-    def __init__(self, games, game_id):
-        self.games = games
-        self.game_id = game_id
-    def __call__(self, exc):
-        if self.game_id in self.games:
-            self.games.remove(self.game_id)
-        raise exc
+def clear_finished_games(results):
+    return [r for r in results if not r.ready()]
 
 def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
@@ -45,6 +30,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
         challenges = []
+        results = []
 
         for evnt in events:
             if evnt:
@@ -53,7 +39,9 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     chlng = challenge.Challenge(event["challenge"])
                     description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
 
-                    if can_accept_challenge(chlng):
+                    results = clear_finished_games(results)
+                    available_queues = len(results) < CONFIG["max_concurrent_games"]
+                    if available_queues and can_accept_challenge(chlng):
                         print("Accepting {}".format(description))
                         li.accept_challenge(chlng.id)
                     else:
@@ -62,18 +50,9 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
 
                 if event["type"] == "gameStart":
                     game_id = event["game"]["id"]
-                    ONGOING_GAMES.append(game_id)
 
-                    success = Success(ONGOING_GAMES, game_id)
-                    error = Error(ONGOING_GAMES, game_id)
-
-                    pool.apply_async(
-                        play_game,
-                        [li, game_id, weights, threads],
-                        {},
-                        success,
-                        error
-                    )
+                    r = pool.apply_async(play_game, [li, game_id, weights, threads])
+                    results.append(r)
 
 
 def play_game(li, game_id, weights, threads):
@@ -124,7 +103,7 @@ def play_game(li, game_id, weights, threads):
 
 
 def can_accept_challenge(chlng):
-    return len(ONGOING_GAMES) < CONFIG["max_concurrent_games"] and chlng.is_supported(CONFIG)
+    return chlng.is_supported(CONFIG)
 
 
 def play_first_move(game_info, game_id, is_white, engine, board, li):

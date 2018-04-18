@@ -1,5 +1,6 @@
 import argparse
 import chess
+import challenge
 import chess.uci
 import lichess
 import os
@@ -8,7 +9,7 @@ import logging
 import yaml
 
 ONGOING_GAMES = []
-
+CONFIG = {}
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -18,7 +19,7 @@ def upgrade_account(li):
     return True
 
 
-def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
+def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
@@ -29,20 +30,16 @@ def start(li, user_profile, engine_path, max_games, weights=None, threads=None):
     for evnt in events:
         if evnt:
             event = json.loads(evnt.decode('utf-8'))
-            print(event)
             if event["type"] == "challenge":
-                challenge = event["challenge"]
-                challenge_id = challenge["id"]
-                variant = challenge["variant"]["key"]
-                challenger = challenge["challenger"]["name"] if "challenger" in challenge else "Anonymous"
-                description = "challenge #{} by {}".format(challenge_id, challenger)
-                if variant == "standard" and len(ONGOING_GAMES) < max_games:
+                chlng = challenge.Challenge(event["challenge"])
+                description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
+
+                if can_accept_challenge(chlng):
                     print("Accepting {}".format(description))
-                    li.accept_challenge(challenge_id)
+                    li.accept_challenge(chlng.id)
                 else:
                     print("Declining {}".format(description))
-                    li.decline_challenge(challenge_id)
-
+                    li.decline_challenge(chlng.id)
 
             if event["type"] == "gameStart":
                 game_id = event["game"]["id"]
@@ -96,6 +93,13 @@ def play_game(li, game_id, weights, threads):
 
     ONGOING_GAMES.remove(game_id)
     print("Game over!")
+
+
+def can_accept_challenge(chlng):
+    max_g = CONFIG["max_concurrent_games"]
+    variants = CONFIG["supported_variants"]
+    tc = CONFIG["supported_tc"]
+    return len(ONGOING_GAMES) < max_g and chlng.is_supported_speed(tc) and chlng.is_supported_variant(variants)
 
 
 def play_first_move(game_info, game_id, is_white, engine, board, li):
@@ -168,28 +172,30 @@ def get_engine_stats(handler):
     print("Node: {}".format(handler.info["nodes"]))
 
 
+def load_config():
+    global CONFIG
+    with open("./config.yml", 'r') as stream:
+        CONFIG = yaml.load(stream)
+
+
 if __name__ == "__main__":
     logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
 
-    config = yaml.load(open("./config.yml"))
-    li = lichess.Lichess(config["token"], config["url"])
+    load_config()
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"])
 
     user_profile = li.get_profile()
-
     is_bot = user_profile.get("title") == "BOT"
 
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)
 
-
     if is_bot:
-        engine_path = os.path.join(config["engines_dir"], config["engine"])
-        weights_path = os.path.join(config["engines_dir"], config["weights"]) if config["weights"] is not None else None
-        max_games = config["max_concurrent_games"]
-        start(li, user_profile, engine_path, max_games, weights_path, config["threads"])
-
+        engine_path = os.path.join(CONFIG["engines_dir"], CONFIG["engine"])
+        weights_path = os.path.join(CONFIG["engines_dir"], CONFIG["weights"]) if CONFIG["weights"] is not None else None
+        start(li, user_profile, engine_path, weights_path, CONFIG["threads"])
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

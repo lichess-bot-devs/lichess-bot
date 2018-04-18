@@ -5,3 +5,19 @@ engine: "lczero"
 weights: "latest.txt"
 max_concurrent_games: 1
 threads:
+supported_variants:
+  - antichess
+  - atomic
+  - chess960
+  - crazyhouse
+  - fromPosition
+  - horde
+  - kingOfTheHill
+  - racingKings
+  - standard
+  - threeCheck
+supported_tc:
+  - ultraBullet
+  - bullet
+  - blitz
+  - rapid

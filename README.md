@@ -6,6 +6,7 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bo
 - Download the repo into lichess-uci-bot directory
 - Run `pip install -r requirements.txt`
 - Create your config file wih `cp config.yml.default config.yml`
+- Remove the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
 
 ## Lichess OAuth
@@ -23,7 +24,7 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bo
 
 
 ## Lichess Upgrade to Bot Account
-This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
+**WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
 - run `python main.py -u`
 
 

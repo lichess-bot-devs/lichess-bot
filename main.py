@@ -59,20 +59,22 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     results.append(r)
             results = clear_finished_games(results)
             if len(results) < CONFIG["max_concurrent_games"]:
-                try:
-                    chlng = challenge_queue.get_nowait()
-                    print("    Accept {}".format(chlng.show()))
-                    li.accept_challenge(chlng.id)
-                except queue.Empty:
-                    pass
+                accept_next_challenge(challenge_queue)
 
 
+def accept_next_challenge(challenge_queue):
+    try:
+        chlng = challenge_queue.get_nowait()
+        print("    Accept {}".format(chlng.show()))
+        li.accept_challenge(chlng.id)
+    except queue.Empty:
+        print("    No challenge in the queue.")
+        pass
 
 
 def play_game(li, game_id, weights, threads, challenge_queue):
     username = li.get_profile()["username"]
-    stream = li.get_game_stream(game_id)
-    updates = stream.iter_lines()
+    updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
@@ -103,13 +105,7 @@ def play_game(li, game_id, weights, threads, challenge_queue):
                 # get_engine_stats(info_handler)
 
     print("--- {} Game over".format(game.url()))
-    try:
-        chlng = challenge_queue.get_nowait()
-        print("    Accept {}".format(chlng.show()))
-        li.accept_challenge(chlng.id)
-    except queue.Empty:
-        print("    No challenge in the queue.")
-        pass
+    accept_next_challenge(challenge_queue)
 
 
 def can_accept_challenge(chlng):

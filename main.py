@@ -2,10 +2,12 @@ import argparse
 import chess
 import challenge
 import chess.uci
-import lichess
-import os
 import json
+import lichess
 import logging
+import multiprocessing
+import os
+import traceback
 import yaml
 
 ONGOING_GAMES = []
@@ -23,28 +25,42 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
+    with multiprocessing.Pool(CONFIG['threads']) as p:
+        event_stream = li.get_event_stream()
+        events = event_stream.iter_lines()
 
-    event_stream = li.get_event_stream()
-    events = event_stream.iter_lines()
+        for evnt in events:
+            if evnt:
+                event = json.loads(evnt.decode('utf-8'))
+                if event["type"] == "challenge":
+                    chlng = challenge.Challenge(event["challenge"])
+                    description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
 
-    for evnt in events:
-        if evnt:
-            event = json.loads(evnt.decode('utf-8'))
-            if event["type"] == "challenge":
-                chlng = challenge.Challenge(event["challenge"])
-                description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
+                    if can_accept_challenge(chlng):
+                        print("Accepting {}".format(description))
+                        li.accept_challenge(chlng.id)
+                    else:
+                        print("Declining {}".format(description))
+                        li.decline_challenge(chlng.id)
 
-                if can_accept_challenge(chlng):
-                    print("Accepting {}".format(description))
-                    li.accept_challenge(chlng.id)
-                else:
-                    print("Declining {}".format(description))
-                    li.decline_challenge(chlng.id)
+                if event["type"] == "gameStart":
+                    game_id = event["game"]["id"]
+                    ONGOING_GAMES.append(game_id)
 
-            if event["type"] == "gameStart":
-                game_id = event["game"]["id"]
-                ONGOING_GAMES.append(game_id)
-                play_game(li, game_id, weights, threads)
+                    def success(result):
+                        ONGOING_GAMES.remove(game_id)
+                    def error(exc):
+                        ONGOING_GAMES.remove(game_id)
+                        raise exc
+
+                    p.apply_async(
+                        play_game,
+                        [li, game_id, weights, threads],
+                        {},
+                        success,
+                        error
+                    )
+    ONGOING_GAMES.remove(game_id)
 
 
 def play_game(li, game_id, weights, threads):
@@ -91,7 +107,6 @@ def play_game(li, game_id, weights, threads):
                 print("Engines best move: {}".format(best_move))
                 get_engine_stats(info_handler)
 
-    ONGOING_GAMES.remove(game_id)
     print("Game over!")
 
 

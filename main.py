@@ -219,8 +219,9 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        engine_path = os.path.join(CONFIG["engines_dir"], CONFIG["engine"])
-        weights_path = os.path.join(CONFIG["engines_dir"], CONFIG["weights"]) if CONFIG["weights"] is not None else None
-        start(li, user_profile, engine_path, weights_path, CONFIG["threads"])
+        cfg = CONFIG["engine"]
+        engine_path = os.path.join(cfg["dir"], cfg["name"])
+        weights_path = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
+        start(li, user_profile, engine_path, weights_path, cfg["threads"])
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

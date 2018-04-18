@@ -1,10 +1,12 @@
 token: "xxxxxxxxxxxxxxxx"
 url: "https://lichess.org/"
-engines_dir: "./engines/"
-engine: "lczero"
-weights: "latest.txt"
+engine {
+  dir: "./engines/"
+  name: "lczero"
+  threads:
+# weights: "latest.txt" # uncomment if the engine is leela
+}
 max_concurrent_games: 1
-threads:
 supported_variants:
   - standard
 # - fromPosition

@@ -39,7 +39,7 @@ class Lichess():
         return self.get_json(requests.post(url, headers=self.header))
 
 
-    def get_stream(self, game_id):
+    def get_game_stream(self, game_id):
         url = self.baseUrl + ENDPOINTS["stream"].format(game_id)
         return requests.get(url, headers=self.header, stream=True)
 

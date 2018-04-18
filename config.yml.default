@@ -25,4 +25,4 @@ supported_tc:
 # - correspondence
 supported_modes:
   - casual
-  - rated
+  - rated # disable this if your bot doesn't try to win

@@ -6,6 +6,7 @@ import json
 import lichess
 import logging
 import multiprocessing
+import queue
 import os
 import traceback
 import yaml
@@ -26,7 +27,9 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
-    with multiprocessing.Pool(CONFIG['max_concurrent_games']) as pool:
+    manager = multiprocessing.Manager()
+    challenge_queue = manager.Queue(CONFIG["max_queued_challenges"])
+    with multiprocessing.Pool(CONFIG['max_concurrent_games']+1) as pool:
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
         challenges = []
@@ -40,22 +43,29 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
 
                     results = clear_finished_games(results)
-                    available_queues = len(results) < CONFIG["max_concurrent_games"]
-                    if available_queues and can_accept_challenge(chlng):
-                        print("Accepting {}".format(description))
-                        li.accept_challenge(chlng.id)
+                    if can_accept_challenge(chlng):
+                        available_workers = len(results) < CONFIG["max_concurrent_games"]
+                        if available_workers:
+                            print("Accepting {}".format(description))
+                            li.accept_challenge(chlng.id)
+                        else:
+                            try:
+                                challenge_queue.put_nowait(chlng.id)
+                            except queue.Full:
+                                print("Declining {}".format(description))
+                                li.decline_challenge(chlng.id)
+
                     else:
                         print("Declining {}".format(description))
                         li.decline_challenge(chlng.id)
 
                 if event["type"] == "gameStart":
                     game_id = event["game"]["id"]
-
-                    r = pool.apply_async(play_game, [li, game_id, weights, threads])
+                    r = pool.apply_async(play_game, [li, game_id, weights, threads, challenge_queue])
                     results.append(r)
 
 
-def play_game(li, game_id, weights, threads):
+def play_game(li, game_id, weights, threads, challenge_queue):
     username = li.get_profile()["username"]
     stream = li.get_game_stream(game_id)
     updates = stream.iter_lines()
@@ -100,6 +110,11 @@ def play_game(li, game_id, weights, threads):
                 get_engine_stats(info_handler)
 
     print("Game over!")
+    try:
+        challenge_id = challenge_queue.get_nowait()
+        li.accept_challenge(challenge_id)
+    except queue.Empty:
+        pass
 
 
 def can_accept_challenge(chlng):

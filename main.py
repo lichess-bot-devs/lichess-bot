@@ -42,18 +42,12 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     chlng = challenge.Challenge(event["challenge"])
                     description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
 
-                    results = clear_finished_games(results)
                     if can_accept_challenge(chlng):
-                        available_workers = len(results) < CONFIG["max_concurrent_games"]
-                        if available_workers:
-                            print("Accepting {}".format(description))
-                            li.accept_challenge(chlng.id)
-                        else:
-                            try:
-                                challenge_queue.put_nowait(chlng.id)
-                            except queue.Full:
-                                print("Declining {}".format(description))
-                                li.decline_challenge(chlng.id)
+                        try:
+                            challenge_queue.put_nowait(chlng.id)
+                        except queue.Full:
+                            print("Declining {}".format(description))
+                            li.decline_challenge(chlng.id)
 
                     else:
                         print("Declining {}".format(description))
@@ -63,6 +57,15 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     game_id = event["game"]["id"]
                     r = pool.apply_async(play_game, [li, game_id, weights, threads, challenge_queue])
                     results.append(r)
+            results = clear_finished_games(results)
+            if len(results) < CONFIG["max_concurrent_games"]:
+                try:
+                    challenge_id = challenge_queue.get_nowait()
+                    li.accept_challenge(challenge_id)
+                except queue.Empty:
+                    pass
+
+
 
 
 def play_game(li, game_id, weights, threads, challenge_queue):

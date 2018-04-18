@@ -74,9 +74,6 @@ def play_game(li, game_id, weights, threads):
         u_type = upd["type"] if upd else "ping"
         if u_type == "chatLine":
             print("[{} chat] {}: {}".format(upd["room"], upd["username"], upd["text"]))
-            # uncomment following lines to demonstrate sending chat message (as a parrot)
-            # if (upd["username"] != username):
-            #     li.chat(game_id, upd["room"], "{} said \"{}\"".format(upd["username"], upd["text"]))
         if u_type == "gameState":
             print("Updated moves: {}".format(upd))
             moves = upd.get("moves").split()

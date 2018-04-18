@@ -34,32 +34,26 @@ class Lichess():
         url = urljoin(self.baseUrl, ENDPOINTS["game"].format(game_id))
         return self.get_json(requests.get(url, headers=self.header))
 
-
     def upgrade_to_bot_account(self):
         url = urljoin(self.baseUrl, ENDPOINTS["upgrade"])
         return self.get_json(requests.post(url, headers=self.header))
-
 
     def make_move(self, game_id, move):
         url = urljoin(self.baseUrl, ENDPOINTS["move"].format(game_id, move))
         return self.get_json(requests.post(url, headers=self.header))
 
-
     def chat(self, game_id, room, text):
         url = urljoin(self.baseUrl, ENDPOINTS["chat"].format(game_id))
-        payload = payload = {'room': room, 'text': text}
+        payload = {'room': room, 'text': text}
         return self.get_json(requests.post(url, headers=self.header, data=payload))
-
 
     def get_stream(self, game_id):
         url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
         return requests.get(url, headers=self.header, stream=True)
 
-
     def get_event_stream(self):
         url = urljoin(self.baseUrl, ENDPOINTS["stream_event"])
         return requests.get(url, headers=self.header, stream=True)
-
 
     def get_game_stream(self, game_id):
         url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))

@@ -41,7 +41,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
-    with multiprocessing.Pool(CONFIG['threads']) as pool:
+    with multiprocessing.Pool(CONFIG['max_concurrent_games']) as pool:
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
         challenges = []

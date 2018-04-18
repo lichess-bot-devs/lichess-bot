@@ -15,3 +15,9 @@ class Challenge():
 
     def is_supported_mode(self, supported):
         return "rated" in supported if self.rated else "casual" in supported
+
+    def is_supported(self, config):
+        variants = config["supported_variants"]
+        tc = config["supported_tc"]
+        modes = config["supported_modes"]
+        return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)

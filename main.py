@@ -96,11 +96,7 @@ def play_game(li, game_id, weights, threads):
 
 
 def can_accept_challenge(chlng):
-    max_g = CONFIG["max_concurrent_games"]
-    variants = CONFIG["supported_variants"]
-    tc = CONFIG["supported_tc"]
-    modes = CONFIG["supported_modes"]
-    return len(ONGOING_GAMES) < max_g and chlng.is_supported_speed(tc) and chlng.is_supported_variant(variants) and chlng.is_supported_mode(modes)
+    return len(ONGOING_GAMES) < CONFIG["max_concurrent_games"] and chlng.is_supported(CONFIG)
 
 
 def play_first_move(game_info, game_id, is_white, engine, board, li):

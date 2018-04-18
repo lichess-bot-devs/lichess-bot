@@ -201,7 +201,6 @@ if __name__ == "__main__":
         cfg = CONFIG["engine"]
         engine_path = os.path.join(cfg["dir"], cfg["name"])
         weights_path = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
-        threads = cfg["threads"] if "threads" in cfg else None
-        start(li, user_profile, engine_path, weights_path, threads)
+        start(li, user_profile, engine_path, weights_path, cfg.get("threads"))
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

@@ -99,7 +99,6 @@ def can_accept_challenge(chlng):
     max_g = CONFIG["max_concurrent_games"]
     variants = CONFIG["supported_variants"]
     tc = CONFIG["supported_tc"]
-
     return len(ONGOING_GAMES) < max_g and chlng.is_supported_speed(tc) and chlng.is_supported_variant(variants)
 
 
@@ -177,7 +176,6 @@ def load_config():
     global CONFIG
     with open("./config.yml", 'r') as stream:
         CONFIG = yaml.load(stream)
-
 
 
 if __name__ == "__main__":

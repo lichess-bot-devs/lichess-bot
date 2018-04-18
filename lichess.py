@@ -12,6 +12,7 @@ ENDPOINTS = {
     "game": "/bot/game/{}",
     "move": "/bot/game/{}/move/{}",
     "chat": "/bot/game/{}/chat",
+    "abort": "/bot/game/{}/abort",
     "accept": "/challenge/{}/accept",
     "decline": "/challenge/{}/decline",
     "upgrade": "/bot/account/upgrade"
@@ -46,6 +47,10 @@ class Lichess():
         url = urljoin(self.baseUrl, ENDPOINTS["chat"].format(game_id))
         payload = {'room': room, 'text': text}
         return self.get_json(requests.post(url, headers=self.header, data=payload))
+
+    def abort(self, game_id):
+        url = urljoin(self.baseUrl, ENDPOINTS["abort"].format(game_id))
+        return self.get_json(requests.post(url, headers=self.header))
 
     def get_stream(self, game_id):
         url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))

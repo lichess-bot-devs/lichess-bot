@@ -11,6 +11,7 @@ import os
 import traceback
 import yaml
 import logging_pool
+from conversation import Conversation, ChatLine
 
 CONFIG = {}
 
@@ -78,6 +79,7 @@ def play_game(li, game_id, weights, threads, challenge_queue):
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
+    conversation = Conversation(game, li)
     board = setup_board(game.state)
     engine, info_handler = setup_engine(engine_path, board, weights, threads)
 
@@ -88,11 +90,8 @@ def play_game(li, game_id, weights, threads, challenge_queue):
     for binary_chunk in updates:
         upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
         u_type = upd["type"] if upd else "ping"
-        if u_type == "chatLine" and upd["username"] != username:
-            print("*** {} [{}] {}: {}".format(game.url(), upd["room"], upd["username"], upd["text"]))
-            # uncomment the following lines to demonstrate sending chat message (as a parrot)
-            # if (upd["username"] != username):
-            #     li.chat(game_id, upd["room"], "{} said \"{}\"".format(upd["username"], upd["text"]))
+        if u_type == "chatLine":
+            conversation.react(ChatLine(upd))
         elif u_type == "gameState":
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])

@@ -27,6 +27,7 @@ class Challenge():
 
 class Game():
     def __init__(self, json, username, base_url):
+        self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
         self.perf_name = json.get("perf").get("name")

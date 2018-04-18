@@ -3,28 +3,28 @@ url: "https://lichess.org/"
 engine {
   dir: "./engines/"
   name: "lczero"
-  threads:
-# weights: "latest.txt" # uncomment if the engine is leela
+#  weights: "latest.txt"  # only if the engine is lczero
+#  threads: 1             # only if the engine is lczero
 }
 max_concurrent_games: 1
 supported_variants:
   - standard
-# - fromPosition
-# - antichess
-# - atomic
-# - chess960
-# - crazyhouse
-# - horde
-# - kingOfTheHill
-# - racingKings
-# - threeCheck
+#  - fromPosition
+#  - antichess
+#  - atomic
+#  - chess960
+#  - crazyhouse
+#  - horde
+#  - kingOfTheHill
+#  - racingKings
+#  - threeCheck
 supported_tc:
   - ultraBullet
   - bullet
   - blitz
   - rapid
-# - classical
-# - correspondence
+#  - classical
+#  - correspondence
 supported_modes:
   - casual
   - rated # disable this if your bot doesn't try to win

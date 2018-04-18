@@ -49,7 +49,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
 
 def play_game(li, game_id, weights, threads):
     username = li.get_profile()["username"]
-    stream = li.get_stream(game_id)
+    stream = li.get_game_stream(game_id)
     updates = stream.iter_lines()
 
     #Initial response of stream will be the full game info. Store it

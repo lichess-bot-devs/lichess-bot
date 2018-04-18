@@ -1,15 +1,16 @@
 import json
 import requests
+import urlparse
 
 ENDPOINTS = {
-    "profile": "account/me",
-    "stream": "bot/game/stream/{}",
-    "stream_event": "api/stream/event",
-    "game": "bot/game/{}",
-    "move": "bot/game/{}/move/{}",
-    "accept": "challenge/{}/accept",
-    "decline": "challenge/{}/decline",
-    "upgrade": "bot/account/upgrade"
+    "profile": "/account/me",
+    "stream": "/bot/game/stream/{}",
+    "stream_event": "/api/stream/event",
+    "game": "/bot/game/{}",
+    "move": "/bot/game/{}/move/{}",
+    "accept": "/challenge/{}/accept",
+    "decline": "/challenge/{}/decline",
+    "upgrade": "/bot/account/upgrade"
 }
 
 # docs: https://lichess.org/api
@@ -21,7 +22,7 @@ class Lichess():
 
 
     def get_game(self, game_id):
-        url = self.baseUrl + ENDPOINTS["game"].format(game_id)
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["game"].format(game_id))
         r = requests.get(url, headers=self.header)
 
         if r.status_code != 200:
@@ -32,7 +33,7 @@ class Lichess():
 
 
     def upgrade_to_bot_account(self):
-        url = self.baseUrl + ENDPOINTS["upgrade"]
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["upgrade"])
         r = requests.post(url, headers=self.header)
 
         if r.status_code != 200:
@@ -42,7 +43,7 @@ class Lichess():
         return r.json()
 
     def make_move(self, game_id, move):
-        url = self.baseUrl + ENDPOINTS["move"].format(game_id, move)
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["move"].format(game_id, move))
         r = requests.post(url, headers=self.header)
 
         if r.status_code != 200:
@@ -53,7 +54,7 @@ class Lichess():
 
 
     def get_stream(self, game_id):
-        url = self.baseUrl + ENDPOINTS["stream"].format(game_id)
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
         return requests.get(url, headers=self.header, stream=True)
 
 
@@ -63,7 +64,7 @@ class Lichess():
 
 
     def accept_challenge(self, challenge_id):
-        url = self.baseUrl + ENDPOINTS["accept"].format(challenge_id)
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["accept"].format(challenge_id))
         r = requests.post(url, headers=self.header)
 
         if r.status_code != 200:
@@ -74,7 +75,7 @@ class Lichess():
 
 
     def decline_challenge(self, challenge_id):
-        url = self.baseUrl + ENDPOINTS["decline"].format(challenge_id)
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["decline"].format(challenge_id))
         r = requests.post(url, headers=self.header)
 
         if r.status_code != 200:
@@ -85,7 +86,7 @@ class Lichess():
 
 
     def get_profile(self):
-        url = self.baseUrl + ENDPOINTS["profile"]
+        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["profile"])
         r = requests.get(url, headers=self.header)
         if r.status_code != 200:
             print("Something went wrong! status_code: {}, response: {}".format(r.status_code, r.text))

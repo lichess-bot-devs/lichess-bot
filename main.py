@@ -33,7 +33,6 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     with logging_pool.LoggingPool(CONFIG['max_concurrent_games']+1) as pool:
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
-        challenges = []
         results = []
 
         for evnt in events:
@@ -41,17 +40,17 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                 event = json.loads(evnt.decode('utf-8'))
                 if event["type"] == "challenge":
                     chlng = model.Challenge(event["challenge"])
-                    description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
 
                     if can_accept_challenge(chlng):
                         try:
-                            challenge_queue.put_nowait(chlng.id)
+                            challenge_queue.put_nowait(chlng)
+                            print("    Queue {}".format(chlng.show()))
                         except queue.Full:
-                            print("Declining {}".format(description))
+                            print("    Decline {}".format(chlng.show()))
                             li.decline_challenge(chlng.id)
 
                     else:
-                        print("Declining {}".format(description))
+                        print("    Decline {}".format(chlng.show()))
                         li.decline_challenge(chlng.id)
 
                 if event["type"] == "gameStart":
@@ -61,8 +60,9 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
             results = clear_finished_games(results)
             if len(results) < CONFIG["max_concurrent_games"]:
                 try:
-                    challenge_id = challenge_queue.get_nowait()
-                    li.accept_challenge(challenge_id)
+                    chlng = challenge_queue.get_nowait()
+                    print("    Accept {}".format(chlng.show()))
+                    li.accept_challenge(chlng.id)
                 except queue.Empty:
                     pass
 
@@ -75,19 +75,17 @@ def play_game(li, game_id, weights, threads, challenge_queue):
     updates = stream.iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(updates).decode('utf-8')), username)
-    print(game)
+    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
     board = setup_board(game.state)
     engine, info_handler = setup_engine(engine_path, board, weights, threads)
 
-    print("> {}".format(game.show(li.baseUrl)))
+    print("+++ {}".format(game.show()))
 
     board = play_first_move(game, engine, board, li)
 
     for update in updates:
         if update:
             upd = json.loads(update.decode('utf-8'))
-            print("Updated moves: {}".format(upd))
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])
 
@@ -101,15 +99,16 @@ def play_game(li, game_id, weights, threads, challenge_queue):
                 )
                 li.make_move(game.id, best_move)
 
-                print()
-                print("Engines best move: {}".format(best_move))
-                get_engine_stats(info_handler)
+                # print(">>> {} {}".format(game.url(), best_move))
+                # get_engine_stats(info_handler)
 
-    print("Game over!")
+    print("--- {} Game over".format(game.url()))
     try:
-        challenge_id = challenge_queue.get_nowait()
-        li.accept_challenge(challenge_id)
+        chlng = challenge_queue.get_nowait()
+        print("    Accept {}".format(chlng.show()))
+        li.accept_challenge(chlng.id)
     except queue.Empty:
+        print("    No challenge in the queue.")
         pass
 
 
@@ -138,7 +137,7 @@ def setup_board(state):
 
 
 def setup_engine(engine_path, board, weights=None, threads=None):
-    print("Loading Engine!")
+    # print("Loading Engine!")
     commands = [engine_path]
     if weights:
         commands.append("-w")

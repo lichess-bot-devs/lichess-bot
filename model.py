@@ -3,7 +3,7 @@ class Challenge():
         self.id = c_info.get("id")
         self.rated = c_info.get("rated")
         self.variant = c_info.get("variant")["key"]
-        self.perf = c_info.get("perf")["name"]
+        self.perf_name = c_info.get("perf")["name"]
         self.speed = c_info.get("speed")
         self.challenger = c_info.get("challenger")["name"] if c_info.get("challenger") else "Anonymous"
 
@@ -22,8 +22,11 @@ class Challenge():
         modes = config["supported_modes"]
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
+    def show(self):
+        return "{} challenge from {}".format(self.perf_name, self.challenger)
+
 class Game():
-    def __init__(self, json, username):
+    def __init__(self, json, username, base_url):
         self.id = json.get("id")
         self.speed = json.get("speed")
         self.perf_name = json.get("perf").get("name")
@@ -35,10 +38,13 @@ class Game():
         self.opponent_color = "black" if self.is_white else "white"
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
+        self.base_url = base_url
 
-    def show(self, base_url):
-        view_url = "{}{}/{}".format(base_url, self.id, self.my_color)
-        return "{} {} vs {}".format(view_url, self.perf_name, self.opponent.show())
+    def url(self):
+        return "{}{}/{}".format(self.base_url, self.id, self.my_color)
+
+    def show(self):
+        return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.show())
 
 
 class Player():

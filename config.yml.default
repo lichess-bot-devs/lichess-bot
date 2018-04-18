@@ -23,3 +23,6 @@ supported_tc:
   - rapid
 # - classical
 # - correspondence
+supported_modes:
+  - casual
+  - rated

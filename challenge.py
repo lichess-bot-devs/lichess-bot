@@ -12,3 +12,6 @@ class Challenge():
 
     def is_supported_speed(self, supported):
         return self.speed in supported
+
+    def is_supported_mode(self, supported):
+        return "rated" in supported if self.rated else "casual" in supported

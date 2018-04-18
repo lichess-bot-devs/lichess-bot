@@ -1,6 +1,6 @@
 import argparse
 import chess
-import challenge
+import model
 import chess.uci
 import json
 import lichess
@@ -10,6 +10,7 @@ import queue
 import os
 import traceback
 import yaml
+import logging_pool
 
 CONFIG = {}
 
@@ -29,7 +30,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     print("Welcome {}!".format(username))
     manager = multiprocessing.Manager()
     challenge_queue = manager.Queue(CONFIG["max_queued_challenges"])
-    with multiprocessing.Pool(CONFIG['max_concurrent_games']+1) as pool:
+    with logging_pool.LoggingPool(CONFIG['max_concurrent_games']+1) as pool:
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
         challenges = []
@@ -39,7 +40,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
             if evnt:
                 event = json.loads(evnt.decode('utf-8'))
                 if event["type"] == "challenge":
-                    chlng = challenge.Challenge(event["challenge"])
+                    chlng = model.Challenge(event["challenge"])
                     description = "challenge #{} from {}!".format(chlng.id, chlng.challenger)
 
                     if can_accept_challenge(chlng):
@@ -74,31 +75,23 @@ def play_game(li, game_id, weights, threads, challenge_queue):
     updates = stream.iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game_info = json.loads(next(updates).decode('utf-8'))
-    board = setup_board(game_info)
+    game = model.Game(json.loads(next(updates).decode('utf-8')), username)
+    print(game)
+    board = setup_board(game.state)
     engine, info_handler = setup_engine(engine_path, board, weights, threads)
 
-    # need to do this to check if its playing against SF.
-    # If Lichess Stockfish is playing response will contain:
-    # 'white':{'aiLevel': 6} or 'black':{'aiLevel': 6}
-    # instead of user info
-    is_white = False
-    if game_info.get("white").get("name"):
-        is_white = (game_info.get("white")["name"] == username)
+    print("> {}".format(game.show(li.baseUrl)))
 
-    print("Game Info: {}".format(game_info))
-
-    board = play_first_move(game_info, game_id, is_white, engine, board, li)
+    board = play_first_move(game, engine, board, li)
 
     for update in updates:
         if update:
-            #board = process_update(board, engine, update, movetime, is_white)
             upd = json.loads(update.decode('utf-8'))
             print("Updated moves: {}".format(upd))
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])
 
-            if is_engine_move(is_white, moves):
+            if is_engine_move(game.is_white, moves):
                 engine.position(board)
                 best_move, ponder = engine.go(
                     wtime=upd.get("wtime"),
@@ -106,7 +99,7 @@ def play_game(li, game_id, weights, threads, challenge_queue):
                     winc=upd.get("winc"),
                     binc=upd.get("binc")
                 )
-                li.make_move(game_id, best_move)
+                li.make_move(game.id, best_move)
 
                 print()
                 print("Engines best move: {}".format(best_move))
@@ -124,21 +117,20 @@ def can_accept_challenge(chlng):
     return chlng.is_supported(CONFIG)
 
 
-def play_first_move(game_info, game_id, is_white, engine, board, li):
-    moves = game_info["state"]["moves"].split()
-    print("Now playing {}{}".format(li.baseUrl, game_info["id"]))
-    if is_engine_move(is_white, moves):
+def play_first_move(game, engine, board, li):
+    moves = game.state["moves"].split()
+    if is_engine_move(game.is_white, moves):
         engine.position(board)
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move, ponder = engine.go(movetime=2000)
-        li.make_move(game_id, best_move)
+        li.make_move(game.id, best_move)
 
     return board
 
 
-def setup_board(game_info):
+def setup_board(state):
     board = chess.Board()
-    moves = game_info["state"]["moves"].split()
+    moves = state["moves"].split()
     for move in moves:
         board = update_board(board, move)
 

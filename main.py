@@ -69,12 +69,10 @@ def play_game(li, game_id, weights, threads):
 
     board = play_first_move(game_info, game_id, is_white, engine, board, li)
 
-    for binary_update in updates:
-        upd = json.loads(binary_update.decode('utf-8')) if binary_update else None
-        u_type = upd["type"] if upd else "ping"
-        if u_type == "chatLine":
-            print("[{} chat] {}: {}".format(upd["room"], upd["username"], upd["text"]))
-        if u_type == "gameState":
+    for update in updates:
+        if update:
+            #board = process_update(board, engine, update, movetime, is_white)
+            upd = json.loads(update.decode('utf-8'))
             print("Updated moves: {}".format(upd))
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])

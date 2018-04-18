@@ -41,7 +41,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
-    with multiprocessing.Pool(CONFIG['threads']) as p:
+    with multiprocessing.Pool(CONFIG['threads']) as pool:
         event_stream = li.get_event_stream()
         events = event_stream.iter_lines()
         challenges = []
@@ -67,7 +67,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     success = Success(ONGOING_GAMES, game_id)
                     error = Error(ONGOING_GAMES, game_id)
 
-                    p.apply_async(
+                    pool.apply_async(
                         play_game,
                         [li, game_id, weights, threads],
                         {},

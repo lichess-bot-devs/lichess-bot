@@ -1,6 +1,9 @@
 import json
 import requests
-import urlparse
+from future.standard_library import install_aliases
+install_aliases()
+from urllib.parse import urlparse, urlencode
+from urllib.parse import urljoin
 
 ENDPOINTS = {
     "profile": "/account/me",
@@ -27,22 +30,22 @@ class Lichess():
         return response.json()
 
     def get_game(self, game_id):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["game"].format(game_id))
+        url = urljoin(self.baseUrl, ENDPOINTS["game"].format(game_id))
         return self.get_json(requests.get(url, headers=self.header))
 
 
     def upgrade_to_bot_account(self):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["upgrade"])
+        url = urljoin(self.baseUrl, ENDPOINTS["upgrade"])
         return self.get_json(requests.post(url, headers=self.header))
 
 
     def make_move(self, game_id, move):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["move"].format(game_id, move))
+        url = urljoin(self.baseUrl, ENDPOINTS["move"].format(game_id, move))
         return self.get_json(requests.post(url, headers=self.header))
 
 
     def get_stream(self, game_id):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
+        url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
         return requests.get(url, headers=self.header, stream=True)
 
 
@@ -52,17 +55,17 @@ class Lichess():
 
 
     def accept_challenge(self, challenge_id):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["accept"].format(challenge_id))
+        url = urljoin(self.baseUrl, ENDPOINTS["accept"].format(challenge_id))
         return self.get_json(requests.post(url, headers=self.header))
 
 
     def decline_challenge(self, challenge_id):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["decline"].format(challenge_id))
+        url = urljoin(self.baseUrl, ENDPOINTS["decline"].format(challenge_id))
         return self.get_json(requests.post(url, headers=self.header))
 
 
     def get_profile(self):
-        url = urlparse.urljoin(self.baseUrl, ENDPOINTS["profile"])
+        url = urljoin(self.baseUrl, ENDPOINTS["profile"])
         return self.get_json(requests.get(url, headers=self.header))
 
 

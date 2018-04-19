@@ -107,7 +107,7 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
                 li.make_move(game.id, best_move)
 
                 # print(">>> {} {}".format(game.url(), best_move))
-                # get_engine_stats(info_handler)
+                get_engine_stats(info_handler)
 
     print("--- {} Game over".format(game.url()))
     accept_next_challenge(challenge_queue, li)
@@ -179,11 +179,10 @@ def update_board(board, move):
 
 
 def get_engine_stats(handler):
-    if "string" in handler.info:
-        print("{}".format(handler.info["string"]))
-    print("Depth: {}".format(handler.info["depth"]))
-    print("nps: {}".format(handler.info["nps"]))
-    print("Node: {}".format(handler.info["nodes"]))
+    stats = ["string", "depth", "nps", "nodes", "score"]
+    for stat in stats:
+        if stat in handler.info:
+            print("    {}: {}".format(stat, handler.info[stat]))
 
 
 def load_config():

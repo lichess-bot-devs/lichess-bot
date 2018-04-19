@@ -24,4 +24,4 @@ class ChatLine():
     def __init__(self, json):
         self.room = json.get("room")
         self.username = json.get("username")
-        self.text = json.get("text")
+        self.text = json.get("text").encode("utf-8")

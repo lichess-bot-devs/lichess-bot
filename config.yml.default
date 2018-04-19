@@ -1,9 +1,10 @@
 token: "xxxxxxxxxxxxxxxx"    # lichess OAuth2 Token
 url: "https://lichess.org/"  # lichess base URL
 
-engine:                       # engine settings
+engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
+  protocol: "uci"            # "uci" or "xboard"
 #  weights: "latest.txt"     # only if the engine is lczero
 #  threads: 1                # only if the engine is lczero
 
@@ -33,3 +34,5 @@ supported_tc:                # time controls to accept
 supported_modes:             # game modes to accept
   - casual                   # unrated games
   - rated                    # rated games - must comment if the engine doesn't try to win
+
+print_engine_stats: false    # print engine stats on each move

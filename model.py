@@ -30,6 +30,8 @@ class Game():
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
+        self.clock_initial = json.get("clock")["initial"]
+        self.clock_increment = json.get("clock")["increment"]
         self.perf_name = json.get("perf").get("name")
         self.white = Player(json.get("white"))
         self.black = Player(json.get("black"))

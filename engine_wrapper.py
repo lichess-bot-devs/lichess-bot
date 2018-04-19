@@ -24,7 +24,7 @@ class XBoardEngine(EngineWrapper):
     def __init__(self, board, commands):
         commands = commands[0] if len(commands) == 1 else commands
         self.engine = chess.xboard.popen_engine(commands)
-        
+
         self.engine.xboard()
         self.engine.setboard(board)
 
@@ -85,7 +85,7 @@ class UCIEngine(EngineWrapper):
             binc=binc
         )
         return best_move
-    
+
     def print_stats(self):
         stats = ["string", "depth", "nps", "nodes", "score"]
         for stat in stats:

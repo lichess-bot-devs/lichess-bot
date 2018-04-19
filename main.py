@@ -86,17 +86,17 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
 
     print("+++ {}".format(game.show()))
 
-    if CONFIG["protocol"] == "xboard":
-        minutes = game_info.get("clock")["initial"] / 1000 / 60
-        seconds = game_info.get("clock")["initial"] / 1000 % 60
-        inc = game_info.get("clock")["increment"] / 1000
+    if CONFIG["engine"]["protocol"] == "xboard":
+        minutes = game.clock_initial / 1000 / 60
+        seconds = game.clock_initial / 1000 % 60
+        inc = game.clock_increment / 1000
         
         engine.level(0, minutes, seconds, inc)
 
-    board = play_first_move(game_info, game_id, is_white, engine, board, li)
+    board = play_first_move(game, engine, board, li)
 
     for binary_chunk in updates:
-        upd = json.loads(update.decode('utf-8'))
+        upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
         u_type = upd["type"] if upd else "ping"
         if u_type == "chatLine":
             conversation.react(ChatLine(upd))
@@ -104,11 +104,11 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
             moves = upd.get("moves").split()
             board = update_board(board, moves[-1])
 
-            if is_engine_move(is_white, moves):
+            if is_engine_move(game.is_white, moves):
                 best_move = None
                 if CONFIG["engine"]["protocol"] == "xboard":
                     engine.setboard(board)
-                    if is_white:
+                    if game.is_white:
                         engine.time(upd.get("wtime") / 10)
                         engine.otim(upd.get("btime") / 10)
                     else:
@@ -123,7 +123,7 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
                         winc=upd.get("winc"),
                         binc=upd.get("binc")
                     )
-                li.make_move(game_id, best_move)
+                li.make_move(game.id, best_move)
 
                 get_engine_stats(info_handler)
 
@@ -135,9 +135,9 @@ def can_accept_challenge(chlng):
     return chlng.is_supported(CONFIG)
 
 
-def play_first_move(game_info, game_id, is_white, engine, board, li):
+def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
-    if is_engine_move(is_white, moves):
+    if is_engine_move(game.is_white, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
         if CONFIG["engine"]["protocol"] == "xboard":
             engine.setboard(board)
@@ -147,7 +147,7 @@ def play_first_move(game_info, game_id, is_white, engine, board, li):
             engine.position(board)
             best_move, ponder = engine.go(movetime=2000)
 
-        li.make_move(game_id, best_move)
+        li.make_move(game.id, best_move)
 
     return board
 
@@ -182,17 +182,18 @@ def setup_engine(engine_path, board, weights=None, threads=None):
 
         post_handler = chess.xboard.PostHandler()
         engine.post_handlers.append(post_handler)
+        return engine, post_handler
+    
+    if len(commands) > 1:
+        engine = chess.uci.popen_engine(commands)
     else:
-        if len(commands) > 1:
-            engine = chess.uci.popen_engine(commands)
-        else:
-            engine = chess.uci.popen_engine(engine_path)
+        engine = chess.uci.popen_engine(engine_path)
 
-        engine.uci()
-        engine.position(board)
+    engine.uci()
+    engine.position(board)
 
-        info_handler = chess.uci.InfoHandler()
-        engine.info_handlers.append(info_handler)
+    info_handler = chess.uci.InfoHandler()
+    engine.info_handlers.append(info_handler)
     
     return engine, info_handler
 
@@ -215,11 +216,11 @@ def update_board(board, move):
 
 
 def get_engine_stats(handler):
-    if CONFIG["protocol"] == "xboard":
+    if CONFIG["engine"]["protocol"] == "xboard":
         stats = ["depth", "nodes", "score"]
         for stat in stats:
             if stat in handler.post:
-                print("    {}: {}".format(stat, handler.info[stat]))
+                print("    {}: {}".format(stat, handler.post[stat]))
     else:
         stats = ["string", "depth", "nps", "nodes", "score"]
         for stat in stats:

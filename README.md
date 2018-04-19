@@ -1,5 +1,5 @@
 # lichess-uci-bot
-A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bots.
+A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 
 ## How to Install

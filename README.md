@@ -1,11 +1,11 @@
 # lichess-bot
-A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bots.
+A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 
 ## How to Install
 - NOTE: Currently, only Python3 is supported
 - Download the repo into lichess-bot directory
-- Navigate to the directory in cmd/Terminal: `cd lichess-uci-bot`
+- Navigate to the directory in cmd/Terminal: `cd lichess-bot`
 - Install virtualenv: `pip install virtualenv`
 - Setup virtualenv:
 ```

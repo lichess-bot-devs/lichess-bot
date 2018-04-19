@@ -22,58 +22,65 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
-def clear_finished_games(results):
-    return [r for r in results if not r.ready()]
+def watch_control_stream(control_queue, li):
+    with logging_pool.LoggingPool(CONFIG['max_concurrent_games']+1) as pool:
+        for evnt in li.get_event_stream().iter_lines():
+            if evnt:
+                event = json.loads(evnt.decode('utf-8'))
+                control_queue.put_nowait(event)
 
 def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
     manager = multiprocessing.Manager()
-    challenge_queue = manager.Queue(CONFIG["max_queued_challenges"])
+    challenge_queue = []
+    control_queue = manager.Queue()
+    control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
+    control_stream.start()
+    busy_processes = 0
+    queued_processes = 0
     with logging_pool.LoggingPool(CONFIG['max_concurrent_games']+1) as pool:
-        event_stream = li.get_event_stream()
-        events = event_stream.iter_lines()
-        results = []
+        events = li.get_event_stream().iter_lines()
 
-        for evnt in events:
-            if evnt:
-                event = json.loads(evnt.decode('utf-8'))
-                if event["type"] == "challenge":
-                    chlng = model.Challenge(event["challenge"])
+        quit = False
+        while not quit:
+            event = control_queue.get()
+            if event["type"] == "local_game_done":
+                busy_processes -= 1
+                print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+            elif event["type"] == "challenge":
+                chlng = model.Challenge(event["challenge"])
+                if len(challenge_queue) < CONFIG["max_queued_challenges"] and can_accept_challenge(chlng):
+                    challenge_queue.append(chlng)
+                    print("    Queue {}".format(chlng.show()))
+                else:
+                    print("    Decline {}".format(chlng.show()))
+                    li.decline_challenge(chlng.id)
+            elif event["type"] == "gameStart":
+                if queued_processes <= 0:
+                    print("Something went wrong. Game is starting and we don't have a queued process")
+                else:
+                    queued_processes -= 1
+                game_id = event["game"]["id"]
+                pool.apply_async(play_game, [li, game_id, engine_path, weights, threads, control_queue])
+                busy_processes += 1
+                print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
-                    if can_accept_challenge(chlng):
-                        try:
-                            challenge_queue.put_nowait(chlng)
-                            print("    Queue {}".format(chlng.show()))
-                        except queue.Full:
-                            print("    Decline {}".format(chlng.show()))
-                            li.decline_challenge(chlng.id)
+            if (queued_processes + busy_processes) < CONFIG["max_concurrent_games"] and challenge_queue :
+                chlng = challenge_queue.pop(0)
+                print("    Accept {}".format(chlng.show()))
+                response = li.accept_challenge(chlng.id)
+                if response is not None:
+                    # TODO: Probably warrants better checking.
+                    queued_processes += 1
+                    print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
-                    else:
-                        print("    Decline {}".format(chlng.show()))
-                        li.decline_challenge(chlng.id)
-
-                if event["type"] == "gameStart":
-                    game_id = event["game"]["id"]
-                    r = pool.apply_async(play_game, [li, game_id, engine_path, weights, threads, challenge_queue])
-                    results.append(r)
-            results = clear_finished_games(results)
-            if len(results) < CONFIG["max_concurrent_games"]:
-                accept_next_challenge(challenge_queue, li)
-
-
-def accept_next_challenge(challenge_queue, li):
-    try:
-        chlng = challenge_queue.get_nowait()
-        print("    Accept {}".format(chlng.show()))
-        li.accept_challenge(chlng.id)
-    except queue.Empty:
-        print("    No challenge in the queue.")
-        pass
+    control_stream.terminate()
+    control_stream.join()
 
 
-def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
+def play_game(li, game_id, engine_path, weights, threads, control_queue):
     username = li.get_profile()["username"]
     updates = li.get_game_stream(game_id).iter_lines()
 
@@ -101,11 +108,14 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
             if is_engine_move(game.is_white, moves):
                 best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
                 li.make_move(game.id, best_move)
-
-                engine.print_stats()
+                if CONFIG.get("print_engine_stats"):
+                    engine.print_stats()
 
     print("--- {} Game over".format(game.url()))
-    accept_next_challenge(challenge_queue, li)
+    engine.quit()
+    # This can raise queue.NoFull, but that should only happen if we're not processing
+    # events fast enough and in this case I believe the exception should be raised
+    control_queue.put_nowait({"type": "local_game_done"})
 
 
 def can_accept_challenge(chlng):

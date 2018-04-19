@@ -110,6 +110,7 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
                 get_engine_stats(info_handler)
 
     print("--- {} Game over".format(game.url()))
+    engine.quit()
     accept_next_challenge(challenge_queue, li)
 
 

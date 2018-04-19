@@ -64,11 +64,15 @@ class XBoardEngine(EngineWrapper):
 
 class UCIEngine(EngineWrapper):
 
-    def __init__(self, board, commands):
+    def __init__(self, board, commands, options):
         commands = commands[0] if len(commands) == 1 else commands
         self.engine = chess.uci.popen_engine(commands)
 
         self.engine.uci()
+
+        if options:
+            self.engine.setoption(options)
+
         self.engine.position(board)
 
         info_handler = chess.uci.InfoHandler()

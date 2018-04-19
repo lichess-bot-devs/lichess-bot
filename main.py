@@ -155,7 +155,7 @@ def setup_engine(engine_path, board, weights=None, threads=None):
     if CONFIG["engine"].get("protocol") == "xboard":
         return engine_wrapper.XBoardEngine(board, commands)
 
-    return engine_wrapper.UCIEngine(board, commands)
+    return engine_wrapper.UCIEngine(board, commands, CONFIG.get("ucioptions"))
 
 
 def is_white_to_move(moves):

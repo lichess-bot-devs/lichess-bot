@@ -1,9 +1,9 @@
-# lichess-uci-bot
+# lichess-bot
 A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bots.
 
 
 ## How to Install
-- Download the repo into lichess-uci-bot directory
+- Download the repo into lichess-bot directory
 - Run `pip install -r requirements.txt`
 - Create your config file wih `cp config.yml.default config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
@@ -43,4 +43,4 @@ Thanks to the Lichess team, especially T. Alexander Lystad and Thibault Duplessi
 team to get this API up. Thanks to the Niklas Fiekas and his [python-chess](https://github.com/niklasf/python-chess) code which allows UCI engine communication seamlessly.
 
 # License
-lichess-uci-bot is licensed under the GPL 3 (or any later version at your option). Check out LICENSE.txt for the full text.
+lichess-bot is licensed under the GPL 3 (or any later version at your option). Check out LICENSE.txt for the full text.

@@ -3,8 +3,16 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and UCI bo
 
 
 ## How to Install
+- NOTE: Currently, only Python3 is supported
 - Download the repo into lichess-uci-bot directory
-- Run `pip install -r requirements.txt`
+- Navigate to the directory in cmd/Terminal: `cd lichess-uci-bot`
+- Install virtualenv: `pip install virtualenv`
+- Setup virtualenv:
+```
+virtualenv .venv -p python3 #if this fails you probably need to add Python3 to your PATH
+source .venv/bin/activate #for Windows: ./.venv/Scripts/activate
+pip install -r requirements.txt
+```
 - Create your config file wih `cp config.yml.default config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 

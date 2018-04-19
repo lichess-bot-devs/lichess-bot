@@ -14,7 +14,7 @@ class Conversation():
 
     def command(self, line, cmd):
         if cmd == "name" or cmd == "engine":
-            self.send_reply(line, self.engine.name)
+            self.send_reply(line, self.engine.name())
 
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)

@@ -19,6 +19,9 @@ class EngineWrapper:
     def print_stats(self):
         pass
 
+    def name(self):
+        return self.engine.name
+
     def quit(self):
         self.engine.quit()
 

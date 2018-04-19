@@ -55,7 +55,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
 
                 if event["type"] == "gameStart":
                     game_id = event["game"]["id"]
-                    r = pool.apply_async(play_game, [li, game_id, weights, threads, challenge_queue])
+                    r = pool.apply_async(play_game, [li, game_id, engine_path, weights, threads, challenge_queue])
                     results.append(r)
             results = clear_finished_games(results)
             if len(results) < CONFIG["max_concurrent_games"]:
@@ -72,7 +72,7 @@ def accept_next_challenge(challenge_queue):
         pass
 
 
-def play_game(li, game_id, weights, threads, challenge_queue):
+def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
     username = li.get_profile()["username"]
     updates = li.get_game_stream(game_id).iter_lines()
 

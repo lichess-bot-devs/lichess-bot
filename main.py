@@ -181,7 +181,7 @@ def load_config():
     with open("./config.yml", 'r') as stream:
         try:
             CONFIG = yaml.load(stream)
-        except e:
+        except Exception as e:
             print("There appears to be a syntax problem with your config.yml")
             raise e
 

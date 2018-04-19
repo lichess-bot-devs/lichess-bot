@@ -152,9 +152,9 @@ def setup_engine(engine_path, board, weights=None, threads=None):
         commands.append(threads)
 
     global CONFIG
-    if CONFIG["engine"]["protocol"] == "xboard":
+    if CONFIG["engine"].get("protocol") == "xboard":
         return engine_wrapper.XBoardEngine(board, commands)
-    
+
     return engine_wrapper.UCIEngine(board, commands)
 
 

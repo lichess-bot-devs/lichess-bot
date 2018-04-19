@@ -195,7 +195,7 @@ def load_config():
             elif "max" in section and not isinstance(CONFIG[section], int):
                 raise Exception("Section `{}` must be an integer number without quotes.".format(section))
             elif not isinstance(CONFIG[section], str):
-                raise Exception("Section `{}` must be a string wrapped in quotes.".format(section)
+                raise Exception("Section `{}` must be a string wrapped in quotes.".format(section))
 
         engine_sections = ["dir", "name"]
         for subsection in engine_sections:

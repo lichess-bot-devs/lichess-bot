@@ -22,16 +22,9 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
-def clear_finished_games(results):
-    return [r for r in results if not r.ready()]
-
 def watch_control_stream(control_queue, li):
     with logging_pool.LoggingPool(CONFIG['max_concurrent_games']+1) as pool:
-        event_stream = li.get_event_stream()
-        events = event_stream.iter_lines()
-        results = []
-
-        for evnt in events:
+        for evnt in li.get_event_stream().iter_lines():
             if evnt:
                 event = json.loads(evnt.decode('utf-8'))
                 control_queue.put_nowait(event)
@@ -48,8 +41,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     busy_processes = 0
     queued_processes = 0
     with logging_pool.LoggingPool(CONFIG['max_concurrent_games']+1) as pool:
-        event_stream = li.get_event_stream()
-        events = event_stream.iter_lines()
+        events = li.get_event_stream().iter_lines()
 
         quit = False
         while not quit:

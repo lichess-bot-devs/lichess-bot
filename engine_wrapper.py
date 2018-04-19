@@ -19,6 +19,9 @@ class EngineWrapper:
     def print_stats(self):
         pass
 
+    def quit(self):
+        self.engine.quit()
+
 class XBoardEngine(EngineWrapper):
 
     def __init__(self, board, commands):

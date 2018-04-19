@@ -1,17 +1,23 @@
 class Conversation():
-    def __init__(self, game, xhr):
+    def __init__(self, game, engine, xhr):
         self.game = game
+        self.engine = engine
         self.xhr = xhr
+
+    command_prefix = "!"
 
     def react(self, line):
         print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text))
-        if (line.username == self.game.username):
-            return
-        # add your chat commands here. Silly example: self.parrot(line)
+        if (line.text[0] == self.command_prefix):
+            self.command(line, line.text[1:])
         pass
 
-    def parrot(self, line):
-        self.xhr.chat(self.game.id, line.room, "{} said \"{}\"".format(line.username, line.text))
+    def command(self, line, cmd):
+        if cmd == "name" or cmd == "engine":
+            self.send_reply(line, self.engine.name)
+
+    def send_reply(self, line, reply):
+        self.xhr.chat(self.game.id, line.room, reply)
 
 
 class ChatLine():

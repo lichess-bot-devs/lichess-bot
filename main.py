@@ -79,9 +79,9 @@ def play_game(li, game_id, weights, threads, challenge_queue):
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
-    conversation = Conversation(game, li)
     board = setup_board(game.state)
     engine, info_handler = setup_engine(engine_path, board, weights, threads)
+    conversation = Conversation(game, engine, li)
 
     print("+++ {}".format(game.show()))
 

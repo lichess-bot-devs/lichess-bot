@@ -114,7 +114,8 @@ def play_game(li, game_id, engine_path, weights, threads, control_queue):
                 li.make_move(game.id, best_move)
 
                 # print(">>> {} {}".format(game.url(), best_move))
-                get_engine_stats(info_handler)
+                if CONFIG.get("print_engine_stats"):
+                    print_engine_stats(info_handler)
 
     print("--- {} Game over".format(game.url()))
     engine.quit()
@@ -188,7 +189,7 @@ def update_board(board, move):
     return board
 
 
-def get_engine_stats(handler):
+def print_engine_stats(handler):
     stats = ["string", "depth", "nps", "nodes", "score"]
     for stat in stats:
         if stat in handler.info:

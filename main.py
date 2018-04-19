@@ -210,7 +210,7 @@ def load_config():
         if not os.path.isdir(CONFIG["engine"]["dir"]):
             raise Exception("Your engine directory `{}` is not a directory.")
 
-        if not os.path.exists(CONFIG["engine"]["dir"] + CONFIG["engine"]["name"])
+        if not os.path.exists(CONFIG["engine"]["dir"] + CONFIG["engine"]["name"]):
             raise Exception("The engine specified does not exist.")
 
 if __name__ == "__main__":

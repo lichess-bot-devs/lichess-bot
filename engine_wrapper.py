@@ -22,6 +22,13 @@ class EngineWrapper:
     def quit(self):
         self.engine.quit()
 
+    def print_stats(self):
+        stats = ["depth", "nodes", "score"]
+        for stat in stats:
+            post_handler = self.engine.post_handlers[0]
+            if stat in post_handler.post:
+                print("    {}: {}".format(stat, post_handler.post[stat]))
+
 class XBoardEngine(EngineWrapper):
 
     def __init__(self, board, commands):
@@ -55,13 +62,6 @@ class XBoardEngine(EngineWrapper):
             self.engine.otim(wtime / 10)
         return self.engine.go()
 
-    def print_stats(self):
-        stats = ["depth", "nodes", "score"]
-        for stat in stats:
-            post_handler = self.engine.post_handlers[0]
-            if stat in post_handler.post:
-                print("    {}: {}".format(stat, post_handler.post[stat]))
-
 class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands):
@@ -88,10 +88,3 @@ class UCIEngine(EngineWrapper):
             binc=binc
         )
         return best_move
-
-    def print_stats(self):
-        stats = ["string", "depth", "nps", "nodes", "score"]
-        for stat in stats:
-            info_handler = self.engine.info_handlers[0]
-            if stat in info_handler.info:
-                print("    {}: {}".format(stat, info_handler.info[stat]))

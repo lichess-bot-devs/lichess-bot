@@ -195,7 +195,7 @@ def load_config():
                     ["supported_modes", list, "Section `supported_modes` must be a list with indented entries starting with dashes.."]]
         for section in sections:
             if section[0] not in CONFIG:
-                raise Exception("Your config.yml does not have required section `{}`.".format(section))
+                raise Exception("Your config.yml does not have required section `{}`.".format(section[0]))
             elif not isinstance(CONFIG[section[0]], section[1]):
                 raise Exception(section[2])
 

@@ -1,8 +1,7 @@
 import argparse
 import chess
+import engine_wrapper
 import model
-import chess.uci
-import chess.xboard
 import json
 import lichess
 import logging
@@ -81,17 +80,12 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
     board = setup_board(game.state)
-    engine, info_handler = setup_engine(engine_path, board, weights, threads)
+    engine = setup_engine(engine_path, board, weights, threads)
     conversation = Conversation(game, engine, li)
 
     print("+++ {}".format(game.show()))
 
-    if CONFIG["engine"]["protocol"] == "xboard":
-        minutes = game.clock_initial / 1000 / 60
-        seconds = game.clock_initial / 1000 % 60
-        inc = game.clock_increment / 1000
-        
-        engine.level(0, minutes, seconds, inc)
+    engine.pre_game(game)
 
     board = play_first_move(game, engine, board, li)
 
@@ -105,27 +99,10 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
             board = update_board(board, moves[-1])
 
             if is_engine_move(game.is_white, moves):
-                best_move = None
-                if CONFIG["engine"]["protocol"] == "xboard":
-                    engine.setboard(board)
-                    if game.is_white:
-                        engine.time(upd.get("wtime") / 10)
-                        engine.otim(upd.get("btime") / 10)
-                    else:
-                        engine.time(upd.get("btime") / 10)
-                        engine.otim(upd.get("wtime") / 10)
-                    best_move = engine.go()
-                else:
-                    engine.position(board)
-                    best_move, ponder = engine.go(
-                        wtime=upd.get("wtime"),
-                        btime=upd.get("btime"),
-                        winc=upd.get("winc"),
-                        binc=upd.get("binc")
-                    )
+                best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
                 li.make_move(game.id, best_move)
 
-                get_engine_stats(info_handler)
+                engine.print_stats()
 
     print("--- {} Game over".format(game.url()))
     accept_next_challenge(challenge_queue, li)
@@ -139,14 +116,7 @@ def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game.is_white, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        if CONFIG["engine"]["protocol"] == "xboard":
-            engine.setboard(board)
-            engine.st(2)
-            best_move = engine.go()
-        else:
-            engine.position(board)
-            best_move, ponder = engine.go(movetime=2000)
-
+        best_move = engine.first_search(board, 2000)
         li.make_move(game.id, best_move)
 
     return board
@@ -171,31 +141,11 @@ def setup_engine(engine_path, board, weights=None, threads=None):
         commands.append("-t")
         commands.append(threads)
 
+    global CONFIG
     if CONFIG["engine"]["protocol"] == "xboard":
-        if len(commands) > 1:
-            engine = chess.xboard.popen_engine(commands)
-        else:
-            engine = chess.xboard.popen_engine(engine_path)
-
-        engine.xboard()
-        engine.setboard(board)
-
-        post_handler = chess.xboard.PostHandler()
-        engine.post_handlers.append(post_handler)
-        return engine, post_handler
+        return engine_wrapper.XBoardEngine(board, commands)
     
-    if len(commands) > 1:
-        engine = chess.uci.popen_engine(commands)
-    else:
-        engine = chess.uci.popen_engine(engine_path)
-
-    engine.uci()
-    engine.position(board)
-
-    info_handler = chess.uci.InfoHandler()
-    engine.info_handlers.append(info_handler)
-    
-    return engine, info_handler
+    return engine_wrapper.UCIEngine(board, commands)
 
 
 def is_white_to_move(moves):
@@ -214,18 +164,6 @@ def update_board(board, move):
     board.push(uci_move)
     return board
 
-
-def get_engine_stats(handler):
-    if CONFIG["engine"]["protocol"] == "xboard":
-        stats = ["depth", "nodes", "score"]
-        for stat in stats:
-            if stat in handler.post:
-                print("    {}: {}".format(stat, handler.post[stat]))
-    else:
-        stats = ["string", "depth", "nps", "nodes", "score"]
-        for stat in stats:
-            if stat in handler.info:
-                print("    {}: {}".format(stat, handler.info[stat]))
 
 def load_config():
     global CONFIG

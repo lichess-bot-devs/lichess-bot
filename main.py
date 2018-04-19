@@ -10,8 +10,8 @@ import queue
 import os
 import os.path
 import traceback
-import yaml
 import logging_pool
+from config import load_config
 from conversation import Conversation, ChatLine
 
 CONFIG = {}
@@ -175,54 +175,13 @@ def update_board(board, move):
     board.push(uci_move)
     return board
 
-
-def load_config():
-    global CONFIG
-    with open("./config.yml", 'r') as stream:
-        try:
-            CONFIG = yaml.load(stream)
-        except Exception as e:
-            print("There appears to be a syntax problem with your config.yml")
-            raise e
-
-        #[section, type, error message]
-        sections = [["token", str, "Section `token` must be a string wrapped in quotes."],
-                    ["url", str, "Section `url` must be a string wrapped in quotes."],
-                    ["engine", dict, "Section `engine` must be a dictionary with indented keys followed by colons.."],
-                    ["max_concurrent_games", int, "Section `max_concurrent_games` must be an integer number without quotes."],
-                    ["max_queued_challenges", int, "Section `max_queued_challenges` must be an integer number without quotes."],
-                    ["supported_tc", list, "Section `supported_tc` must be a list with indented entries starting with dashes.."],
-                    ["supported_modes", list, "Section `supported_modes` must be a list with indented entries starting with dashes.."]]
-        for section in sections:
-            if section[0] not in CONFIG:
-                raise Exception("Your config.yml does not have required section `{}`.".format(section[0]))
-            elif not isinstance(CONFIG[section[0]], section[1]):
-                raise Exception(section[2])
-
-
-        engine_sections = ["dir", "name"]
-        for subsection in engine_sections:
-            if subsection not in CONFIG["engine"]:
-                raise Exception("Your config.yml does not have required `engine` subsection `{}`.".format(subsection))
-            if not isinstance(CONFIG["engine"][subsection], str):
-                raise Exception("Engine subsection `{}` must be a string wrapped in quotes.".format(subsection))
-
-        if CONFIG["token"] == "xxxxxxxxxxxxxxxx":
-            raise Exception("Your config.yml has the default Lichess API token. This is probably wrong.")
-
-        if not os.path.isdir(CONFIG["engine"]["dir"]):
-            raise Exception("Your engine directory `{}` is not a directory.")
-
-        if not os.path.exists(CONFIG["engine"]["dir"] + CONFIG["engine"]["name"]):
-            raise Exception("The engine specified does not exist.")
-
 if __name__ == "__main__":
     logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
 
-    load_config()
+    CONFIG = load_config()
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"])
 
     user_profile = li.get_profile()

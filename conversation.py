@@ -7,7 +7,7 @@ class Conversation():
     command_prefix = "!"
 
     def react(self, line):
-        print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text))
+        print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text.encode("utf-8")))
         if (line.text[0] == self.command_prefix):
             self.command(line, line.text[1:])
         pass
@@ -24,4 +24,4 @@ class ChatLine():
     def __init__(self, json):
         self.room = json.get("room")
         self.username = json.get("username")
-        self.text = json.get("text").encode("utf-8")
+        self.text = json.get("text")

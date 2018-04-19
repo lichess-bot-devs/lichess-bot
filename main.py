@@ -60,10 +60,10 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                     results.append(r)
             results = clear_finished_games(results)
             if len(results) < CONFIG["max_concurrent_games"]:
-                accept_next_challenge(challenge_queue)
+                accept_next_challenge(challenge_queue, li)
 
 
-def accept_next_challenge(challenge_queue):
+def accept_next_challenge(challenge_queue, li):
     try:
         chlng = challenge_queue.get_nowait()
         print("    Accept {}".format(chlng.show()))
@@ -110,7 +110,7 @@ def play_game(li, game_id, engine_path, weights, threads, challenge_queue):
                 # get_engine_stats(info_handler)
 
     print("--- {} Game over".format(game.url()))
-    accept_next_challenge(challenge_queue)
+    accept_next_challenge(challenge_queue, li)
 
 
 def can_accept_challenge(chlng):

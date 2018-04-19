@@ -200,7 +200,7 @@ def load_config():
         engine_sections = ["dir", "name"]
         for subsection in engine_sections:
             if subsection not in CONFIG["engine"]:
-                raise Exception("Your config.yml does not have required `engine` subsection `{}`.".format(subsection)
+                raise Exception("Your config.yml does not have required `engine` subsection `{}`.".format(subsection))
             if not isinstance(CONFIG["engine"][subsection], str):
                 raise Exception("Engine subsection `{}` must be a string wrapped in quotes.".format(subsection))
 

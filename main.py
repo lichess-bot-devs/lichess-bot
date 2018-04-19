@@ -185,17 +185,20 @@ def load_config():
             print("There appears to be a syntax problem with your config.yml")
             raise e
 
-        sections = ["token", "url", "engine", "max_concurrent_games",
-                "max_queued_challenges", "supported_tc", "supported_modes"]
+        #[section, type, error message]
+        sections = [["token", str, "Section `token` must be a string wrapped in quotes."],
+                    ["url", str, "Section `url` must be a string wrapped in quotes."],
+                    ["engine", dict, "Section `engine` must be a dictionary with indented keys followed by colons.."],
+                    ["max_concurrent_games", int, "Section `max_concurrent_games` must be an integer number without quotes."],
+                    ["max_queued_challenges", int, "Section `max_queued_challenges` must be an integer number without quotes."],
+                    ["supported_tc", list, "Section `supported_tc` must be a list with indented entries starting with dashes.."],
+                    ["supported_modes", list, "Section `supported_modes` must be a list with indented entries starting with dashes.."]]
         for section in sections:
-            if section not in CONFIG:
+            if section[0] not in CONFIG:
                 raise Exception("Your config.yml does not have required section `{}`.".format(section))
-            if "supported" in section and not isinstance(CONFIG[section], dict):
-                raise Exception("Section `{}` must be a dictionary with indented entries starting with dashes..".format(section))
-            elif "max" in section and not isinstance(CONFIG[section], int):
-                raise Exception("Section `{}` must be an integer number without quotes.".format(section))
-            elif not isinstance(CONFIG[section], str):
-                raise Exception("Section `{}` must be a string wrapped in quotes.".format(section))
+            elif not isinstance(CONFIG[section[0]], section[1]):
+                raise Exception(section[2])
+
 
         engine_sections = ["dir", "name"]
         for subsection in engine_sections:

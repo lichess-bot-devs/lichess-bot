@@ -1,6 +1,31 @@
+import os
 import chess
 import chess.xboard
 import chess.uci
+
+def create_engine(config, board):
+    # print("Loading Engine!")
+    cfg = config["engine"]
+    engine_path = os.path.join(cfg["dir"], cfg["name"])
+    weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
+    threads = cfg.get("threads")
+
+    # TODO: ucioptions should probably be a part of the engine subconfig
+    ucioptions = config.get("ucioptions")
+    engine_type = cfg.get("protocol")
+    commands = [engine_path]
+    if weights:
+        commands.append("-w")
+        commands.append(weights)
+    if threads:
+        commands.append("-t")
+        commands.append(threads)
+
+    if engine_type == "xboard":
+        return XBoardEngine(board, commands)
+
+    return UCIEngine(board, commands, ucioptions)
+
 
 class EngineWrapper:
 

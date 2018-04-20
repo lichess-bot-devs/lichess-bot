@@ -3,31 +3,28 @@ import chess
 import chess.xboard
 import chess.uci
 
-class EngineFactory:
-    def __init__(self, config):
-        self.config = config
-    def __call__(self, board):
-        # print("Loading Engine!")
-        cfg = self.config["engine"]
-        engine_path = os.path.join(cfg["dir"], cfg["name"])
-        weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
-        threads = cfg.get("threads")
+def create_engine(config, board):
+    # print("Loading Engine!")
+    cfg = config["engine"]
+    engine_path = os.path.join(cfg["dir"], cfg["name"])
+    weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
+    threads = cfg.get("threads")
 
-        # TODO: ucioptions should probably be a part of the engine subconfig
-        ucioptions = self.config.get("ucioptions")
-        engine_type = cfg.get("protocol")
-        commands = [engine_path]
-        if weights:
-            commands.append("-w")
-            commands.append(weights)
-        if threads:
-            commands.append("-t")
-            commands.append(threads)
+    # TODO: ucioptions should probably be a part of the engine subconfig
+    ucioptions = config.get("ucioptions")
+    engine_type = cfg.get("protocol")
+    commands = [engine_path]
+    if weights:
+        commands.append("-w")
+        commands.append(weights)
+    if threads:
+        commands.append("-t")
+        commands.append(threads)
 
-        if engine_type == "xboard":
-            return XBoardEngine(board, commands)
+    if engine_type == "xboard":
+        return XBoardEngine(board, commands)
 
-        return UCIEngine(board, commands, ucioptions)
+    return UCIEngine(board, commands, ucioptions)
 
 
 class EngineWrapper:

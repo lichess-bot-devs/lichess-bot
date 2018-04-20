@@ -13,6 +13,7 @@ import traceback
 import logging_pool
 from config import load_config
 from conversation import Conversation, ChatLine
+from functools import partial
 
 
 def upgrade_account(li):
@@ -173,6 +174,7 @@ if __name__ == "__main__":
     if is_bot:
         max_games = CONFIG["max_concurrent_games"]
         max_queued = CONFIG["max_queued_challenges"]
-        start(li, user_profile, max_games, max_queued, engine_wrapper.EngineFactory(CONFIG), CONFIG)
+        engine_factory = partial(engine_wrapper.create_engine, CONFIG)
+        start(li, user_profile, max_games, max_queued, engine_factory, CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

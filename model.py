@@ -44,7 +44,7 @@ class Game():
         self.base_url = base_url
 
     def url(self):
-        return "{}{}/{}".format(self.base_url, self.id, self.my_color)
+        return "{}/{}/{}".format(self.base_url, self.id, self.my_color)
 
     def show(self):
         return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.show())

@@ -22,12 +22,11 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
-def watch_control_stream(control_queue, li, max_games):
-    with logging_pool.LoggingPool(max_games+1) as pool:
-        for evnt in li.get_event_stream().iter_lines():
-            if evnt:
-                event = json.loads(evnt.decode('utf-8'))
-                control_queue.put_nowait(event)
+def watch_control_stream(control_queue, li):
+    for evnt in li.get_event_stream().iter_lines():
+        if evnt:
+            event = json.loads(evnt.decode('utf-8'))
+            control_queue.put_nowait(event)
 
 def start(li, user_profile, engine_path, weights=None, threads=None):
     # init
@@ -37,7 +36,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     manager = multiprocessing.Manager()
     challenge_queue = []
     control_queue = manager.Queue()
-    control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li, max_games])
+    control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
     busy_processes = 0
     queued_processes = 0
@@ -112,7 +111,7 @@ def play_game(li, game_id, engine_path, engine_type, weights, threads, control_q
             if is_engine_move(game.is_white, moves):
                 best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
                 li.make_move(game.id, best_move)
-                
+
 
     print("--- {} Game over".format(game.url()))
     engine.quit()

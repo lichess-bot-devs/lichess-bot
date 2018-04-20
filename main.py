@@ -65,7 +65,9 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, engine_path, weights, threads, control_queue, uci_options])
+                uci_options = CONFIG.get("ucioptions")
+                engine_type = CONFIG["engine"].get("protocol")
+                pool.apply_async(play_game, [li, game_id, engine_path, engine_type, weights, threads, control_queue, uci_options])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
@@ -89,7 +91,7 @@ def play_game(li, game_id, engine_path, engine_type, weights, threads, control_q
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
     board = setup_board(game.state)
-    engine = setup_engine(engine_path, engine_type, board, weights, threads, ucioptions)
+    engine = setup_engine(engine_path, engine_type, board, weights, threads, uci_options)
     conversation = Conversation(game, engine, li)
 
     print("+++ {}".format(game.show()))
@@ -110,8 +112,7 @@ def play_game(li, game_id, engine_path, engine_type, weights, threads, control_q
             if is_engine_move(game.is_white, moves):
                 best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
                 li.make_move(game.id, best_move)
-                if CONFIG.get("print_engine_stats"):
-                    engine.print_stats()
+                
 
     print("--- {} Game over".format(game.url()))
     engine.quit()

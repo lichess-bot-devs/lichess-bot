@@ -36,7 +36,7 @@ class Game():
         self.white = Player(json.get("white"))
         self.black = Player(json.get("black"))
         self.state = json.get("state")
-        self.is_white = True if (self.white.name and self.white.name == username) else False
+        self.is_white = bool(self.white.name and self.white.name == username)
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
         self.me = self.white if self.is_white else self.black

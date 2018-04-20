@@ -15,6 +15,9 @@ import logging_pool
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
+from http.client import RemoteDisconnected
+from requests.exceptions import ConnectionError, HTTPError
+from urllib3.exceptions import ProtocolError
 
 __version__ = "0.1"
 
@@ -99,25 +102,28 @@ def play_game(li, game_id, control_queue, engine_factory):
 
     board = play_first_move(game, engine, board, li)
 
-    for binary_chunk in updates:
-        upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
-        u_type = upd["type"] if upd else "ping"
-        if u_type == "chatLine":
-            conversation.react(ChatLine(upd))
-        elif u_type == "gameState":
-            moves = upd.get("moves").split()
-            board = update_board(board, moves[-1])
+    try:
+        for binary_chunk in updates:
+            upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
+            u_type = upd["type"] if upd else "ping"
+            if u_type == "chatLine":
+                conversation.react(ChatLine(upd))
+            elif u_type == "gameState":
+                moves = upd.get("moves").split()
+                board = update_board(board, moves[-1])
 
-            if is_engine_move(game.is_white, moves):
-                best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
-                li.make_move(game.id, best_move)
-
-
-    print("--- {} Game over".format(game.url()))
-    engine.quit()
-    # This can raise queue.NoFull, but that should only happen if we're not processing
-    # events fast enough and in this case I believe the exception should be raised
-    control_queue.put_nowait({"type": "local_game_done"})
+                if is_engine_move(game.is_white, moves):
+                    best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
+                    li.make_move(game.id, best_move)
+    except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
+        print("Abandoning game due to connection error")
+        traceback.print_exception(type(exception), exception, exception.__traceback__)
+    finally:
+        print("--- {} Game over".format(game.url()))
+        engine.quit()
+        # This can raise queue.NoFull, but that should only happen if we're not processing
+        # events fast enough and in this case I believe the exception should be raised
+        control_queue.put_nowait({"type": "local_game_done"})
 
 
 def can_accept_challenge(chlng, config):

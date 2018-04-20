@@ -153,7 +153,6 @@ def setup_engine(engine_path, engine_type, board, weights=None, threads=None, uc
         commands.append("-t")
         commands.append(threads)
 
-    global CONFIG
     if engine_type == "xboard":
         return engine_wrapper.XBoardEngine(board, commands)
 

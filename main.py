@@ -28,9 +28,8 @@ def watch_control_stream(control_queue, li):
             event = json.loads(evnt.decode('utf-8'))
             control_queue.put_nowait(event)
 
-def start(li, user_profile, engine_path, weights=None, threads=None):
+def start(li, user_profile, max_games, max_queued, engine_factory, config):
     # init
-    max_games = CONFIG['max_concurrent_games']
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
     manager = multiprocessing.Manager()
@@ -52,7 +51,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if len(challenge_queue) < CONFIG["max_queued_challenges"] and can_accept_challenge(chlng):
+                if len(challenge_queue) < max_queued and can_accept_challenge(chlng, config):
                     challenge_queue.append(chlng)
                     print("    Queue {}".format(chlng.show()))
                 else:
@@ -64,9 +63,7 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                uci_options = CONFIG.get("ucioptions")
-                engine_type = CONFIG["engine"].get("protocol")
-                pool.apply_async(play_game, [li, game_id, engine_path, engine_type, weights, threads, control_queue, uci_options])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
@@ -83,14 +80,14 @@ def start(li, user_profile, engine_path, weights=None, threads=None):
     control_stream.join()
 
 
-def play_game(li, game_id, engine_path, engine_type, weights, threads, control_queue, uci_options):
+def play_game(li, game_id, control_queue, engine_factory):
     username = li.get_profile()["username"]
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
     board = setup_board(game.state)
-    engine = setup_engine(engine_path, engine_type, board, weights, threads, uci_options)
+    engine = engine_factory(board)
     conversation = Conversation(game, engine, li)
 
     print("+++ {}".format(game.show()))
@@ -120,8 +117,8 @@ def play_game(li, game_id, engine_path, engine_type, weights, threads, control_q
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def can_accept_challenge(chlng):
-    return chlng.is_supported(CONFIG)
+def can_accept_challenge(chlng, config):
+    return chlng.is_supported(config)
 
 
 def play_first_move(game, engine, board, li):
@@ -141,22 +138,6 @@ def setup_board(state):
         board = update_board(board, move)
 
     return board
-
-
-def setup_engine(engine_path, engine_type, board, weights=None, threads=None, ucioptions=None):
-    # print("Loading Engine!")
-    commands = [engine_path]
-    if weights:
-        commands.append("-w")
-        commands.append(weights)
-    if threads:
-        commands.append("-t")
-        commands.append(threads)
-
-    if engine_type == "xboard":
-        return engine_wrapper.XBoardEngine(board, commands)
-
-    return engine_wrapper.UCIEngine(board, commands, ucioptions)
 
 
 def is_white_to_move(moves):
@@ -190,9 +171,8 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        cfg = CONFIG["engine"]
-        engine_path = os.path.join(cfg["dir"], cfg["name"])
-        weights_path = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
-        start(li, user_profile, engine_path, weights_path, cfg.get("threads"))
+        max_games = CONFIG["max_concurrent_games"]
+        max_queued = CONFIG["max_queued_challenges"]
+        start(li, user_profile, max_games, max_queued, engine_wrapper.EngineFactory(CONFIG), CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

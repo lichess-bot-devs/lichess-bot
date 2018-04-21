@@ -62,6 +62,12 @@ class XBoardEngine(EngineWrapper):
         self.engine = chess.xboard.popen_engine(commands)
 
         self.engine.xboard()
+
+        if board.chess960:
+            self.engine.send_variant("fischerandom")
+        elif type(board).uci_variant != "chess":
+            self.engine.send_variant(type(board).uci_variant)
+
         self.engine.setboard(board)
 
         post_handler = chess.xboard.PostHandler()

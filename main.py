@@ -1,6 +1,7 @@
 import argparse
 import chess
 from chess.variant import find_variant
+import chess.polyglot
 import engine_wrapper
 import model
 import json
@@ -36,8 +37,10 @@ def watch_control_stream(control_queue, li):
         else:
             control_queue.put_nowait({"type": "ping"})
 
-def start(li, user_profile, max_games, max_queued, engine_factory, config):
+def start(li, user_profile, engine_factory, config):
     # init
+    max_games = config["max_concurrent_games"]
+    max_queued = config["max_queued_challenges"]
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
     manager = multiprocessing.Manager()
@@ -75,7 +78,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, config])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
@@ -96,7 +99,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
     control_stream.join()
 
 
-def play_game(li, game_id, control_queue, engine_factory):
+def play_game(li, game_id, control_queue, engine_factory, config):
     username = li.get_profile()["username"]
     updates = li.get_game_stream(game_id).iter_lines()
 
@@ -110,7 +113,12 @@ def play_game(li, game_id, control_queue, engine_factory):
 
     engine.pre_game(game)
 
-    board = play_first_move(game, engine, board, li)
+    engine_cfg = config["engine"]
+
+    if (engine_cfg["polyglot"] == True):
+        board = play_first_book_move(game, engine, board, li, engine_cfg)
+    else:
+        board = play_first_move(game, engine, board, li)
 
     try:
         for binary_chunk in updates:
@@ -123,7 +131,15 @@ def play_game(li, game_id, control_queue, engine_factory):
                 board = update_board(board, moves[-1])
 
                 if is_engine_move(game.is_white, moves):
-                    best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
+                    if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
+                        book_move = get_book_move(board, engine_cfg)
+                        if (book_move != None):
+                            best_move = book_move
+                        else:
+                            best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
+                    else:
+                        best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
+
                     li.make_move(game.id, best_move)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
         print("Abandoning game due to connection error")
@@ -148,6 +164,33 @@ def play_first_move(game, engine, board, li):
         li.make_move(game.id, best_move)
 
     return board
+
+
+def play_first_book_move(game, engine, board, li, config):
+    moves = game.state["moves"].split()
+    if is_engine_move(game.is_white, moves):
+        book_move = get_book_move(board, config)
+        if (book_move != None):
+            li.make_move(game.id, book_move)
+        else:
+            return play_first_move(game, engine, board, li)
+
+    return board
+
+
+def get_book_move(board, engine_cfg):
+    book_dir = os.path.join(engine_cfg["dir"], engine_cfg["polyglot_book"])
+    try:
+        with chess.polyglot.open_reader(book_dir) as reader:
+            if (engine_cfg["polyglot_random"] == True):
+                book_move = reader.choice(board).move()
+            else:
+                book_move = reader.find(board, engine_cfg["polyglot_min_weight"]).move()
+            return book_move
+    except (FileNotFoundError, IndexError):
+        pass
+
+    return None
 
 
 def setup_board(game):
@@ -204,9 +247,7 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        max_games = CONFIG["max_concurrent_games"]
-        max_queued = CONFIG["max_queued_challenges"]
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
-        start(li, user_profile, max_games, max_queued, engine_factory, CONFIG)
+        start(li, user_profile, engine_factory, CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

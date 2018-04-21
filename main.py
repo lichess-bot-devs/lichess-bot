@@ -33,6 +33,8 @@ def watch_control_stream(control_queue, li):
         if evnt:
             event = json.loads(evnt.decode('utf-8'))
             control_queue.put_nowait(event)
+        else:
+            control_queue.put_nowait({"type": "ping"})
 
 def start(li, user_profile, max_games, max_queued, engine_factory, config):
     # init

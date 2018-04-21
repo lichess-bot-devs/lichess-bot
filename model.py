@@ -33,8 +33,10 @@ class Game():
         self.clock_initial = json.get("clock")["initial"]
         self.clock_increment = json.get("clock")["increment"]
         self.perf_name = json.get("perf").get("name")
+        self.variant_name = json.get("variant")["name"]
         self.white = Player(json.get("white"))
         self.black = Player(json.get("black"))
+        self.initial_fen = json.get("initialFen")
         self.state = json.get("state")
         self.is_white = bool(self.white.name and self.white.name == username)
         self.my_color = "white" if self.is_white else "black"

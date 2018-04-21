@@ -79,18 +79,21 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
-            if (queued_processes + busy_processes) < max_games and challenge_queue :
-                chlng = challenge_queue.pop(0)
-                try:
-                    response = li.accept_challenge(chlng.id)
-                    print("    Accept {}".format(chlng.show()))
-                    queued_processes += 1
-                    print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-                except HTTPError as exception:
-                    if exception.response.status_code == 404: # ignore missing challenge
-                        print("    Skip missing {}".format(chlng.show()))
-                    else:
-                        raise exception
+            while True: # keep processing the queue until empty or max_games is reached
+                if (queued_processes + busy_processes) < max_games and challenge_queue :
+                    chlng = challenge_queue.pop(0)
+                    try:
+                        response = li.accept_challenge(chlng.id)
+                        print("    Accept {}".format(chlng.show()))
+                        queued_processes += 1
+                        print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                    except HTTPError as exception:
+                        if exception.response.status_code == 404: # ignore missing challenge
+                            print("    Skip missing {}".format(chlng.show()))
+                        else:
+                            raise exception
+                else:
+                    break
 
     control_stream.terminate()
     control_stream.join()

@@ -40,9 +40,18 @@ class Lichess():
         response.raise_for_status()
         return response.json()
 
+    # don't want to wait for max_time to accept/decline challenges if they have
+    # been withdrawn, so skip these and handle elsewhere
+    def check_challenge_404(exception):
+        return (isinstance(exception, HTTPError) and
+                exception.response.status_code == 404 and
+                "challenge" in exception.response.url)
+
     @backoff.on_exception(backoff.expo,
         (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError),
-        max_time=20)
+        max_time=20,
+        giveup=check_challenge_404
+        )
     def api_post(self, path, data=None):
         url = urljoin(self.baseUrl, path)
         response = self.session.post(url, data=data)

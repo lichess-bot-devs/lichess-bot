@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 # Acknowledgements
 Thanks to the Lichess team, especially T. Alexander Lystad and Thibault Duplessis for working with the LeelaChessZero
-team to get this API up. Thanks to the Niklas Fiekas and his [python-chess](https://github.com/niklasf/python-chess) code which allows UCI engine communication seamlessly.
+team to get this API up. Thanks to the Niklas Fiekas and his [python-chess](https://github.com/niklasf/python-chess) code which allows engine communication seamlessly.
 
 # License
-lichess-bot is licensed under the GPL 3 (or any later version at your option). Check out LICENSE.txt for the full text.
+lichess-bot is licensed under the AGPLv3 (or any later version at your option). Check out LICENSE.txt for the full text.

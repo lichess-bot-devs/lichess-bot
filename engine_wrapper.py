@@ -50,10 +50,20 @@ class EngineWrapper:
     def quit(self):
         self.engine.quit()
 
-    def print_handler_stats(self, info, stats):
+    def get_handler_stats(self, info, stats, to_print=False):
+        stats_info = []
         for stat in stats:
             if stat in info:
-                print("    {}: {}".format(stat, info[stat]))
+                str = "{}: {}".format(stat, info[stat])
+                if stat == "score":
+                    for k,v in info[stat].items():
+                        str = "score: {}".format(v.cp)
+                stats_info.append(str)
+                if to_print:
+                    print("    {}".format(str))
+
+        return stats_info
+
 
 class XBoardEngine(EngineWrapper):
 
@@ -114,6 +124,18 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
+    def pre_game(self, game):
+        if game.speed == "ultraBullet":
+            self.engine.setoption({"slowmover": "15"})
+        if game.speed == "bullet":
+            self.engine.setoption({"slowmover": "30"})
+        if game.speed == "blitz":
+            self.engine.setoption({"slowmover": "50"})
+        if game.speed == "rapid":
+            self.engine.setoption({"slowmover": "84"})
+        if game.speed == "classical":
+            self.engine.setoption({"slowmover": "125"}) #optimal
+
     def first_search(self, board, movetime):
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
@@ -131,5 +153,5 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
-    def print_stats(self):
-        self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
+    def get_stats(self, to_print):
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], to_print)

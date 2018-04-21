@@ -19,7 +19,7 @@ from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:

@@ -16,6 +16,7 @@ from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
 
+__version__ = "0.1"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -162,7 +163,17 @@ def update_board(board, move):
     board.push(uci_move)
     return board
 
+def intro():
+    return r"""
+.   _/|
+.  // o\
+.  || ._)  lichess-bot %s
+.  //__\
+.  )___(   Play on Lichess with a bot
+""".lstrip() % __version__
+
 if __name__ == "__main__":
+    print(intro())
     logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')

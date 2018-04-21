@@ -122,7 +122,7 @@ def play_game(li, game_id, control_queue, engine_factory):
                 moves = upd.get("moves").split()
                 board = update_board(board, moves[-1])
 
-                if is_engine_move(game.is_white, moves):
+                if is_engine_move(game, moves):
                     best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
                     li.make_move(game.id, best_move)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
@@ -142,7 +142,7 @@ def can_accept_challenge(chlng, config):
 
 def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
-    if is_engine_move(game.is_white, moves):
+    if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move = engine.first_search(board, 2000)
         li.make_move(game.id, best_move)
@@ -153,6 +153,8 @@ def play_first_move(game, engine, board, li):
 def setup_board(game):
     if game.variant_name.lower() == "chess960":
         board = chess.Board(game.initial_fen, chess960=True)
+    elif game.variant_name == "From Position":
+        board = chess.Board(game.initial_fen)
     else:
         VariantBoard = find_variant(game.variant_name);
         board = VariantBoard()
@@ -163,13 +165,13 @@ def setup_board(game):
     return board
 
 
-def is_white_to_move(moves):
-    return (len(moves) % 2) == 0
+def is_white_to_move(game, moves):
+    return len(moves) % 2 == (0 if game.white_starts else 1)
 
 
-def is_engine_move(is_white, moves):
-    is_w = (is_white and is_white_to_move(moves))
-    is_b = (is_white is False and is_white_to_move(moves) is False)
+def is_engine_move(game, moves):
+    is_w = (game.is_white and is_white_to_move(game, moves))
+    is_b = (game.is_white is False and is_white_to_move(game, moves) is False)
 
     return (is_w or is_b)
 

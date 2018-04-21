@@ -63,8 +63,12 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                     challenge_queue.append(chlng)
                     print("    Queue {}".format(chlng.show()))
                 else:
-                    print("    Decline {}".format(chlng.show()))
-                    li.decline_challenge(chlng.id)
+                    try:
+                        li.decline_challenge(chlng.id)
+                        print("    Decline {}".format(chlng.show()))
+                    except HTTPError as exception:
+                        if exception.response.status_code != 404: # ignore missing challenge
+                            raise exception
             elif event["type"] == "gameStart":
                 if queued_processes <= 0:
                     print("Something went wrong. Game is starting and we don't have a queued process")
@@ -77,12 +81,16 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
 
             if (queued_processes + busy_processes) < max_games and challenge_queue :
                 chlng = challenge_queue.pop(0)
-                print("    Accept {}".format(chlng.show()))
-                response = li.accept_challenge(chlng.id)
-                if response is not None:
-                    # TODO: Probably warrants better checking.
+                try:
+                    response = li.accept_challenge(chlng.id)
+                    print("    Accept {}".format(chlng.show()))
                     queued_processes += 1
                     print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                except HTTPError as exception:
+                    if exception.response.status_code == 404: # ignore missing challenge
+                        print("    Skip missing {}".format(chlng.show()))
+                    else:
+                        raise exception
 
     control_stream.terminate()
     control_stream.join()

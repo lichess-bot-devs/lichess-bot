@@ -9,12 +9,14 @@ class Conversation():
     def react(self, line):
         print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text.encode("utf-8")))
         if (line.text[0] == self.command_prefix):
-            self.command(line, line.text[1:])
+            self.command(line, line.text[1:].lower())
         pass
 
     def command(self, line, cmd):
         if cmd == "name" or cmd == "engine":
             self.send_reply(line, self.engine.name())
+        if cmd == "howto" or cmd == "help":
+            self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
 
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)

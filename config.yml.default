@@ -8,7 +8,8 @@ engine:                      # engine settings
 #  weights: "latest.txt"     # only if the engine is lczero
 #  threads: 1                # only if the engine is lczero
 
-#ucioptions:
+ucioptions:                  # arbitrary UCI options passed to the engine
+  Move Overhead: 100         # increase if your bot flags games too often
 #  Threads: 4
 #  Hash: "4096"
 #  Book File: "engines/book.bin"

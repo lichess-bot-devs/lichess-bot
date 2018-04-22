@@ -50,8 +50,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
     queued_processes = 0
 
     with logging_pool.LoggingPool(max_games+1) as pool:
-        quit = False
-        while not quit:
+        while True:
             event = control_queue.get()
             if event["type"] == "local_game_done":
                 busy_processes -= 1

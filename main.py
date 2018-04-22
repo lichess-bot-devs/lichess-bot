@@ -100,11 +100,11 @@ def play_game(li, game_id, control_queue, engine_factory):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
+    abort_at = time.time() + 20
+    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl, abort_at)
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li)
-    abort_at = time.time() + 20
 
     print("+++ {}".format(game))
 
@@ -117,7 +117,7 @@ def play_game(li, game_id, control_queue, engine_factory):
             upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
-                conversation.react(ChatLine(upd))
+                conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":
                 game.state = upd
                 moves = upd["moves"].split()
@@ -128,7 +128,7 @@ def play_game(li, game_id, control_queue, engine_factory):
                     li.make_move(game.id, best_move)
                     abort_at = time.time() + 20 # give opponent some time before aborting
             elif u_type == "ping":
-                if time.time() > abort_at and len(game.state["moves"]) < 6:
+                if time.time() > game.abort_at and len(game.state["moves"]) < 6:
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:

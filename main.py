@@ -20,7 +20,7 @@ from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 import time
 
-__version__ = "0.5"
+__version__ = "0.6"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:

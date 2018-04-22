@@ -4,13 +4,14 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 ## How to Install
 - NOTE: Currently, only Python3 is supported
+- (For convinience of Windows users) If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\. To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell". Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell. 
 - Download the repo into lichess-bot directory
-- Navigate to the directory in cmd/Terminal: `cd lichess-bot`
+- Navigate to the directory in cmd/Terminal: `cd lichess-bot` (for Windows users: you may need to type full adress, like "cd C:\chess\lichess-bot")
 - Install virtualenv: `pip install virtualenv`
 - Setup virtualenv:
 ```
-virtualenv .venv -p python3 #if this fails you probably need to add Python3 to your PATH
-source .venv/bin/activate #for Windows: ./.venv/Scripts/activate
+virtualenv .venv -p python3 (if you only have the last version of Python, you don't need to add "3" to "python") #if this fails you probably need to add Python3 to your PATH
+source .venv/bin/activate #for Windows: ./.venv/Scripts/activate (This may not work on Windows, and you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there)
 pip install -r requirements.txt
 ```
 - Create your config file wih `cp config.yml.default config.yml`
@@ -27,7 +28,7 @@ pip install -r requirements.txt
 
 ## Setup Engine
 - Place your engine(s) in the `engine.dir` directory
-- In `config.yml`, enter the binary name as the `engine.name` field
+- In `config.yml`, enter the binary name as the `engine.name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
 
 

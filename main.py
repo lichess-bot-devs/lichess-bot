@@ -18,6 +18,7 @@ from functools import partial
 from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
+import time
 
 __version__ = "0.3"
 
@@ -105,6 +106,7 @@ def play_game(li, game_id, control_queue, engine_factory):
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li)
+    abort_at = time.time() + 20
 
     print("+++ {}".format(game.show()))
 
@@ -119,12 +121,17 @@ def play_game(li, game_id, control_queue, engine_factory):
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd))
             elif u_type == "gameState":
+                game.state = upd
                 moves = upd.get("moves").split()
                 board = update_board(board, moves[-1])
 
                 if is_engine_move(game.is_white, moves):
                     best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
                     li.make_move(game.id, best_move)
+            elif u_type == "ping":
+                if time.time() > abort_at and len(game.state.get("moves")) < 6:
+                    print("    Aborting {} by lack of activity".format(game.url()))
+                    li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
         print("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)

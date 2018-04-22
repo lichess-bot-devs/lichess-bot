@@ -122,14 +122,14 @@ def play_game(li, game_id, control_queue, engine_factory):
                 conversation.react(ChatLine(upd))
             elif u_type == "gameState":
                 game.state = upd
-                moves = upd.get("moves").split()
+                moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
 
                 if is_engine_move(game, moves):
-                    best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
+                    best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
             elif u_type == "ping":
-                if time.time() > abort_at and len(game.state.get("moves")) < 6:
+                if time.time() > abort_at and len(game.state["moves"]) < 6:
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:

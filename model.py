@@ -32,7 +32,7 @@ class Game():
         self.speed = json.get("speed")
         self.clock_initial = json.get("clock")["initial"]
         self.clock_increment = json.get("clock")["increment"]
-        self.perf_name = json.get("perf").get("name")
+        self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
         self.variant_name = json.get("variant")["name"]
         self.white = Player(json.get("white"))
         self.black = Player(json.get("black"))
@@ -44,6 +44,7 @@ class Game():
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
+        self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
 
     def url(self):
         return "{}/{}/{}".format(self.base_url, self.id, self.my_color)

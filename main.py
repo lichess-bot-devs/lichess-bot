@@ -18,8 +18,9 @@ from functools import partial
 from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
+import time
 
-__version__ = "0.3"
+__version__ = "0.5"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -105,6 +106,7 @@ def play_game(li, game_id, control_queue, engine_factory):
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li)
+    abort_at = time.time() + 20
 
     print("+++ {}".format(game.show()))
 
@@ -119,12 +121,18 @@ def play_game(li, game_id, control_queue, engine_factory):
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd))
             elif u_type == "gameState":
-                moves = upd.get("moves").split()
+                game.state = upd
+                moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
 
-                if is_engine_move(game.is_white, moves):
-                    best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
+                if is_engine_move(game, moves):
+                    best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
+                    abort_at = time.time() + 20 # give opponent some time before aborting
+            elif u_type == "ping":
+                if time.time() > abort_at and len(game.state["moves"]) < 6:
+                    print("    Aborting {} by lack of activity".format(game.url()))
+                    li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
         print("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
@@ -142,7 +150,7 @@ def can_accept_challenge(chlng, config):
 
 def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
-    if is_engine_move(game.is_white, moves):
+    if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move = engine.first_search(board, 2000)
         li.make_move(game.id, best_move)
@@ -153,6 +161,8 @@ def play_first_move(game, engine, board, li):
 def setup_board(game):
     if game.variant_name.lower() == "chess960":
         board = chess.Board(game.initial_fen, chess960=True)
+    elif game.variant_name == "From Position":
+        board = chess.Board(game.initial_fen)
     else:
         VariantBoard = find_variant(game.variant_name);
         board = VariantBoard()
@@ -163,13 +173,13 @@ def setup_board(game):
     return board
 
 
-def is_white_to_move(moves):
-    return (len(moves) % 2) == 0
+def is_white_to_move(game, moves):
+    return len(moves) % 2 == (0 if game.white_starts else 1)
 
 
-def is_engine_move(is_white, moves):
-    is_w = (is_white and is_white_to_move(moves))
-    is_b = (is_white is False and is_white_to_move(moves) is False)
+def is_engine_move(game, moves):
+    is_w = (game.is_white and is_white_to_move(game, moves))
+    is_b = (game.is_white is False and is_white_to_move(game, moves) is False)
 
     return (is_w or is_b)
 

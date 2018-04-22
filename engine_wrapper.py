@@ -19,7 +19,7 @@ def create_engine(config, board):
         commands.append(weights)
     if threads:
         commands.append("-t")
-        commands.append(threads)
+        commands.append(str(threads))
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands)

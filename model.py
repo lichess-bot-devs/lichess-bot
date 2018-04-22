@@ -22,8 +22,11 @@ class Challenge():
         modes = config["supported_modes"]
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
-    def show(self):
-        return "{} challenge from {}".format(self.perf_name, self.challenger)
+    def __str__(self):
+        return "{} challenge from {}({})".format(self.perf_name, self.challengerName, self.challengerRating)
+
+    def __repr__(self):
+        return self.__str__()
 
 class Game():
     def __init__(self, json, username, base_url):
@@ -49,8 +52,11 @@ class Game():
     def url(self):
         return "{}/{}/{}".format(self.base_url, self.id, self.my_color)
 
-    def show(self):
-        return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.show())
+    def __str__(self):
+        return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.__str__())
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Player():
@@ -62,9 +68,12 @@ class Player():
         self.provisional = json.get("provisional")
         self.aiLevel = json.get("aiLevel")
 
-    def show(self):
+    def __str__(self):
         if self.aiLevel:
             return "AI level {}".format(self.aiLevel)
         else:
             rating = "{}{}".format(self.rating, "?" if self.provisional else "")
             return "{}{}({})".format(self.title + " " if self.title else "", self.name, rating)
+
+    def __repr__(self):
+        return self.__str__()

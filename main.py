@@ -66,7 +66,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 else:
                     try:
                         li.decline_challenge(chlng.id)
-                        print("    Decline {}".format(chlng.show()))
+                        print("    Decline {}".format(chlng))
                     except HTTPError as exception:
                         if exception.response.status_code != 404: # ignore missing challenge
                             raise exception
@@ -84,12 +84,12 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 chlng = challenge_queue.pop(0)
                 try:
                     response = li.accept_challenge(chlng.id)
-                    print("    Accept {}".format(chlng.show()))
+                    print("    Accept {}".format(chlng))
                     queued_processes += 1
                     print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 except HTTPError as exception:
                     if exception.response.status_code == 404: # ignore missing challenge
-                        print("    Skip missing {}".format(chlng.show()))
+                        print("    Skip missing {}".format(chlng))
                     else:
                         raise exception
 
@@ -108,7 +108,7 @@ def play_game(li, game_id, control_queue, engine_factory):
     conversation = Conversation(game, engine, li)
     abort_at = time.time() + 20
 
-    print("+++ {}".format(game.show()))
+    print("+++ {}".format(game))
 
     engine.pre_game(game)
 

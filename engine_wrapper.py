@@ -118,19 +118,11 @@ class UCIEngine(EngineWrapper):
         self.engine.info_handlers.append(info_handler)
 
     def first_search(self, board, movetime):
-        self.engine.setoption({
-            "UCI_Variant": type(board).uci_variant,
-            "UCI_Chess960": board.chess960
-        })
         self.engine.position(board)
         best_move, _ = self.engine.go(movetime=movetime)
         return best_move
 
     def search(self, board, wtime, btime, winc, binc):
-        self.engine.setoption({
-            "UCI_Variant": type(board).uci_variant,
-            "UCI_Chess960": board.chess960
-        })
         self.engine.position(board)
         best_move, _ = self.engine.go(
             wtime=wtime,

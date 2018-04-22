@@ -206,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
     CONFIG = load_config()
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"])
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()
     is_bot = user_profile.get("title") == "BOT"

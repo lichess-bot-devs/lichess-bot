@@ -126,7 +126,7 @@ class UCIEngine(EngineWrapper):
 
     def pre_game(self, game):
         if game.speed == "ultraBullet":
-            self.engine.setoption({"slowmover": "20"})
+            self.engine.setoption({"slowmover": "30"})
         if game.speed == "bullet":
             self.engine.setoption({"slowmover": "30"})
         if game.speed == "blitz":

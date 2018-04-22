@@ -1,9 +1,9 @@
 import random
 
 LINKS = {
-    "lczero": "http://lczero.org/",
+    "LCzero": "http://lczero.org/",
     "github": "https://github.com/careless25/lichess-bot",
-    "api": "https://lichess.org/api#tag/Chess-Bot"
+    "API": "https://lichess.org/api#tag/Chess-Bot"
 }
 
 class Conversation():
@@ -25,14 +25,14 @@ class Conversation():
             msg = "Supported commands: !name, !eval, !id, !leela, !hardware and !info."
             self.send_reply(line, msg)
         if cmd == "name" or cmd == "engine":
-            self.send_reply(line, self.engine.name() + " ID 125")
+            self.send_reply(line, self.engine.name() + " ID 160")
         if cmd == "eval" or cmd == "stats":
             stats = self.engine.get_stats(True)
             self.send_reply(line, ", ".join(stats))
         if cmd == "id" or cmd == "network":
-            self.send_reply(line, "ID 125")
+            self.send_reply(line, "ID 160")
         if cmd.lower() == "elsie" or cmd.lower() == "leela" or cmd.lower() == "leelachess":
-            responses = ["Stop it. Let me focus!", "Yes?", "{} :Kappa:".format(self.game.opponent.name)]
+            responses = ["Stop it. Let me focus!", "Yes?", "Like what you see? Help me improve at: {}".format(LINKS["LCzero"])]
             self.send_reply(line, random.choice(responses))
         if cmd.lower() == "info" or cmd.lower() == "links":
             for name, url in LINKS.items():

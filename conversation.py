@@ -32,7 +32,7 @@ class Conversation():
         if cmd == "id" or cmd == "network":
             self.send_reply(line, "ID 125")
         if cmd.lower() == "elsie" or cmd.lower() == "leela" or cmd.lower() == "leelachess":
-            responses = ["Stop it. Let me focus!", "Yes?", "{} gives me nightmares.".format(self.game.opponent.name)]
+            responses = ["Stop it. Let me focus!", "Yes?", "{} :Kappa:".format(self.game.opponent.name)]
             self.send_reply(line, random.choice(responses))
         if cmd.lower() == "info" or cmd.lower() == "links":
             for name, url in LINKS.items():

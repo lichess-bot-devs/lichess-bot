@@ -1,3 +1,5 @@
+from time import time
+
 class Conversation():
     def __init__(self, game, engine, xhr):
         self.game = game
@@ -14,7 +16,7 @@ class Conversation():
 
     def command(self, line, game, cmd):
         if cmd == "wait":
-            game.abort_at = game.abort_at + 60
+            game.abort_at = time() + 60
             self.send_reply(line, "Waiting 60 seconds...")
         if cmd == "name" or cmd == "engine":
             self.send_reply(line, self.engine.name())

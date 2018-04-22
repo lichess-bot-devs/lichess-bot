@@ -1,11 +1,14 @@
 class Challenge():
     def __init__(self, c_info):
-        self.id = c_info.get("id")
-        self.rated = c_info.get("rated")
-        self.variant = c_info.get("variant")["key"]
-        self.perf_name = c_info.get("perf")["name"]
-        self.speed = c_info.get("speed")
-        self.challenger = c_info.get("challenger")["name"] if c_info.get("challenger") else "Anonymous"
+        self.id = c_info["id"]
+        self.rated = c_info["rated"]
+        self.variant = c_info["variant"]["key"]
+        self.perf_name = c_info["perf"]["name"]
+        self.speed = c_info["speed"]
+        self.challenger = c_info.get("challenger")
+        self.challengerName = self.challenger["name"] if self.challenger else "Anonymous"
+        self.challengerRatingInt = self.challenger["rating"] if self.challenger else 0
+        self.challengerRating = self.challengerRatingInt or "?"
 
     def is_supported_variant(self, supported):
         return self.variant in supported

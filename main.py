@@ -62,7 +62,8 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 chlng = model.Challenge(event["challenge"])
                 if len(challenge_queue) < max_queued and can_accept_challenge(chlng, config):
                     challenge_queue.append(chlng)
-                    print("    Queue {}".format(chlng.show()))
+                    if (config.get("sort_challenges_by") == "rating"):
+                        challenge_queue.sort(key=lambda c: -c.challengerRatingInt)
                 else:
                     try:
                         li.decline_challenge(chlng.id)

@@ -4,7 +4,7 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 ## How to Install
 - NOTE: Currently, only Python3 is supported
-- (For convinience of Windows users) If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\. To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell". Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell. 
+- (For convinience of Windows users) Here is a video on how to install the bot: (https://youtu.be/AuncFctntYs). Or you can proceed to these steps. If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\. To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell". Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell. 
 - Download the repo into lichess-bot directory
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot` (for Windows users: you may need to type full adress, like "cd C:\chess\lichess-bot")
 - Install virtualenv: `pip install virtualenv`

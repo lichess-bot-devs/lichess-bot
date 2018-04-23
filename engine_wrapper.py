@@ -9,6 +9,7 @@ def create_engine(config, board):
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
     threads = cfg.get("threads")
+    tempdecay = cfg.get("tempdecay")
 
     # TODO: ucioptions should probably be a part of the engine subconfig
     ucioptions = config.get("ucioptions")
@@ -20,6 +21,9 @@ def create_engine(config, board):
     if threads:
         commands.append("-t")
         commands.append(str(threads))
+    if tempdecay:
+        commands.append("-d")
+        commands.append(str(tempdecay))
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands)
@@ -126,13 +130,13 @@ class UCIEngine(EngineWrapper):
 
     def pre_game(self, game):
         if game.speed == "ultraBullet":
-            self.engine.setoption({"slowmover": "30"})
+            self.engine.setoption({"slowmover": "50"})
         if game.speed == "bullet":
-            self.engine.setoption({"slowmover": "30"})
+            self.engine.setoption({"slowmover": "80"})
         if game.speed == "blitz":
-            self.engine.setoption({"slowmover": "70"})
-        if game.speed == "rapid":
             self.engine.setoption({"slowmover": "100"})
+        if game.speed == "rapid":
+            self.engine.setoption({"slowmover": "125"})
         if game.speed == "classical":
             self.engine.setoption({"slowmover": "125"}) #optimal
 

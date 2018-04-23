@@ -24,13 +24,13 @@ class Conversation():
         if cmd == "commands" or cmd == "help":
             msg = "Supported commands: !name, !eval, !id, !leela, !hardware and !info."
             self.send_reply(line, msg)
-        if cmd == "name" or cmd == "engine":
-            self.send_reply(line, self.engine.name() + " ID 160")
+        if cmd == "name" or cmd == "engine" or cmd == "version":
+            self.send_reply(line, self.engine.name() + " ID 170")
         if cmd == "eval" or cmd == "stats":
             stats = self.engine.get_stats(True)
             self.send_reply(line, ", ".join(stats))
         if cmd == "id" or cmd == "network":
-            self.send_reply(line, "ID 160")
+            self.send_reply(line, "ID 170")
         if cmd.lower() == "elsie" or cmd.lower() == "leela" or cmd.lower() == "leelachess":
             responses = ["Stop it. Let me focus!", "Yes?", "Like what you see? Help me improve at: {}".format(LINKS["LCzero"])]
             self.send_reply(line, random.choice(responses))

@@ -130,7 +130,7 @@ def play_game(li, game_id, control_queue, engine_factory, config):
                 game.state = upd
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
-                if is_engine_move(game.is_white, moves):
+                if is_engine_move(game, moves):
                     best_move = None
                     if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
                         best_move = get_book_move(board, engine_cfg)
@@ -169,7 +169,7 @@ def play_first_move(game, engine, board, li):
 
 def play_first_book_move(game, engine, board, li, config):
     moves = game.state["moves"].split()
-    if is_engine_move(game.is_white, moves):
+    if is_engine_move(game, moves):
         book_move = get_book_move(board, config)
         if (book_move != None):
             li.make_move(game.id, book_move)

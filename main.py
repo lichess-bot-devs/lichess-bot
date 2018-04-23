@@ -15,10 +15,15 @@ import logging_pool
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
-from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 import time
+
+try:
+    from http.client import RemoteDisconnected
+    # New in version 3.5: Previously, BadStatusLine('') was raised.
+except ImportError:
+    from http.client import BadStatusLine as RemoteDisconnected
 
 __version__ = "0.6"
 

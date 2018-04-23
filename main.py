@@ -74,7 +74,7 @@ def start(li, user_profile, max_games, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
@@ -95,12 +95,11 @@ def start(li, user_profile, max_games, engine_factory, config):
     control_stream.join()
 
 
-def play_game(li, game_id, control_queue, engine_factory):
-    username = li.get_profile()["username"]
+def play_game(li, game_id, control_queue, engine_factory, user_profile):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
+    game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl)
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li)

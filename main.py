@@ -37,7 +37,7 @@ def watch_control_stream(control_queue, li):
         else:
             control_queue.put_nowait({"type": "ping"})
 
-def start(li, user_profile, max_games, max_queued, engine_factory, config):
+def start(li, user_profile, max_games, engine_factory, config):
     # init
     username = user_profile.get("username")
     print("Welcome {}!".format(username))
@@ -57,7 +57,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if len(challenge_queue) < max_queued and can_accept_challenge(chlng, config):
+                if can_accept_challenge(chlng, config):
                     challenge_queue.append(chlng)
                     if (config.get("sort_challenges_by") == "rating"):
                         challenge_queue.sort(key=lambda c: -c.challengerRatingInt)
@@ -213,8 +213,7 @@ if __name__ == "__main__":
 
     if is_bot:
         max_games = CONFIG["max_concurrent_games"]
-        max_queued = CONFIG["max_queued_challenges"]
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
-        start(li, user_profile, max_games, max_queued, engine_factory, CONFIG)
+        start(li, user_profile, max_games, engine_factory, CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

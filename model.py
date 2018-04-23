@@ -71,7 +71,7 @@ class Game():
         self.abort_at = time.time() + 20
 
     def url(self):
-        return "{}/{}/{}".format(self.base_url, self.id, self.my_color)
+        return "{}{}/{}".format(self.base_url, self.id, self.my_color)
 
     def is_abortable(self):
         return len(self.state["moves"]) < 6

@@ -103,7 +103,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile):
     game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl)
     board = setup_board(game)
     engine = engine_factory(board)
-    conversation = Conversation(game, engine, li)
+    conversation = Conversation(game, engine, li, __version__)
 
     print("+++ {}".format(game))
 

@@ -20,7 +20,7 @@ from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 import time
 
-__version__ = "0.5"
+__version__ = "0.6"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -50,10 +50,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
     queued_processes = 0
 
     with logging_pool.LoggingPool(max_games+1) as pool:
-        events = li.get_event_stream().iter_lines()
-
-        quit = False
-        while not quit:
+        while True:
             event = control_queue.get()
             if event["type"] == "local_game_done":
                 busy_processes -= 1
@@ -206,7 +203,7 @@ if __name__ == "__main__":
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
     CONFIG = load_config()
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"])
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()
     is_bot = user_profile.get("title") == "BOT"

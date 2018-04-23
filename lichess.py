@@ -25,11 +25,15 @@ ENDPOINTS = {
 # docs: https://lichess.org/api
 class Lichess():
 
-    def __init__(self, token, url):
-        self.header = self._get_header(token)
+    def __init__(self, token, url, version):
+        self.version = version
+        self.header = {
+            "Authorization": "Bearer {}".format(token)
+        }
         self.baseUrl = url
         self.session = requests.Session()
         self.session.headers.update(self.header)
+        self.set_user_agent("?")
 
     def is_final(exception):
         return isinstance(exception, HTTPError) and exception.response.status_code < 500
@@ -85,9 +89,10 @@ class Lichess():
         return self.api_post(ENDPOINTS["decline"].format(challenge_id))
 
     def get_profile(self):
-        return self.api_get(ENDPOINTS["profile"])
+        profile = self.api_get(ENDPOINTS["profile"])
+        self.set_user_agent(profile["username"])
+        return profile
 
-    def _get_header(self, token):
-        return {
-            "Authorization": "Bearer {}".format(token)
-        }
+    def set_user_agent(self, username):
+        self.header.update({"User-Agent": "lichess-bot/{} user:{}".format(self.version, username)})
+        self.session.headers.update(self.header)

@@ -7,20 +7,21 @@ import json
 import lichess
 import logging
 import multiprocessing
-import queue
-import os
-import os.path
 import traceback
 import logging_pool
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
-from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
-import time
 
-__version__ = "0.6"
+try:
+    from http.client import RemoteDisconnected
+    # New in version 3.5: Previously, BadStatusLine('') was raised.
+except ImportError:
+    from http.client import BadStatusLine as RemoteDisconnected
+
+__version__ = "0.7"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -39,8 +40,7 @@ def watch_control_stream(control_queue, li):
 
 def start(li, user_profile, max_games, engine_factory, config):
     # init
-    username = user_profile.get("username")
-    print("Welcome {}!".format(username))
+    print("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
     challenge_queue = []
     control_queue = manager.Queue()
@@ -61,6 +61,7 @@ def start(li, user_profile, max_games, engine_factory, config):
                     challenge_queue.append(chlng)
                     if (config.get("sort_challenges_by") == "rating"):
                         challenge_queue.sort(key=lambda c: -c.challengerRatingInt)
+                    challenge_queue.sort(key=lambda c: not c.rated)
                 else:
                     try:
                         li.decline_challenge(chlng.id)
@@ -74,7 +75,7 @@ def start(li, user_profile, max_games, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
@@ -95,16 +96,14 @@ def start(li, user_profile, max_games, engine_factory, config):
     control_stream.join()
 
 
-def play_game(li, game_id, control_queue, engine_factory):
-    username = li.get_profile()["username"]
+def play_game(li, game_id, control_queue, engine_factory, user_profile):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
+    game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl)
     board = setup_board(game)
     engine = engine_factory(board)
-    conversation = Conversation(game, engine, li)
-    abort_at = time.time() + 20
+    conversation = Conversation(game, engine, li, __version__)
 
     print("+++ {}".format(game))
 
@@ -117,7 +116,7 @@ def play_game(li, game_id, control_queue, engine_factory):
             upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
-                conversation.react(ChatLine(upd))
+                conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":
                 game.state = upd
                 moves = upd["moves"].split()
@@ -126,9 +125,9 @@ def play_game(li, game_id, control_queue, engine_factory):
                 if is_engine_move(game, moves):
                     best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
-                    abort_at = time.time() + 20 # give opponent some time before aborting
+                    game.abort_in(20)
             elif u_type == "ping":
-                if time.time() > abort_at and len(game.state["moves"]) < 6:
+                if game.should_abort_now() and len(game.state["moves"]) < 6:
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
@@ -162,7 +161,7 @@ def setup_board(game):
     elif game.variant_name == "From Position":
         board = chess.Board(game.initial_fen)
     else:
-        VariantBoard = find_variant(game.variant_name);
+        VariantBoard = find_variant(game.variant_name)
         board = VariantBoard()
     moves = game.state["moves"].split()
     for move in moves:
@@ -206,7 +205,9 @@ if __name__ == "__main__":
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()
+    username = user_profile["username"]
     is_bot = user_profile.get("title") == "BOT"
+    print("Welcome {}!".format(username))
 
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)

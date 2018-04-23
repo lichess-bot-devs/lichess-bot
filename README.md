@@ -3,19 +3,37 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 
 ## How to Install
+Mac/Linux:
 - NOTE: Currently, only Python3 is supported
-- (For convinience of Windows users) Here is a video on how to install the bot: (https://youtu.be/AuncFctntYs). Or you can proceed to these steps. If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\. To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell". Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell. 
 - Download the repo into lichess-bot directory
-- Navigate to the directory in cmd/Terminal: `cd lichess-bot` (for Windows users: you may need to type full adress, like "cd C:\chess\lichess-bot")
+- Navigate to the directory in cmd/Terminal: `cd lichess-bot`
 - Install virtualenv: `pip install virtualenv`
 - Setup virtualenv:
 ```
-virtualenv .venv -p python3 (if you only have the last version of Python, you don't need to add "3" to "python") #if this fails you probably need to add Python3 to your PATH
-source .venv/bin/activate #for Windows: ./.venv/Scripts/activate (This may not work on Windows, and you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there)
+virtualenv .venv -p python3 #if this fails you probably need to add Python3 to your PATH
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 - Create your config file wih `cp config.yml.default config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
+  
+Windows:
+- Here is a video on how to install the bot: (https://youtu.be/AuncFctntYs). Or you may proceed to the next steps.
+- NOTE: Currently, only Python 3 is supported.
+- If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\. 
+- To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell". 
+- Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell. 
+- Download the repo into lichess-bot directory.
+- Navigate to the directory in PowerShell: `cd [folder's adress]` (like "cd C:\chess\lichess-bot").
+- Install virtualenv: `pip install virtualenv`.
+- Setup virtualenv:
+```
+virtualenv .venv -p python (if this fails you probably need to add Python to your PATH)
+./.venv/Scripts/activate (This may not work on Windows, and you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there)
+pip install -r requirements.txt
+```
+- Create your config file wih `cp config.yml.default config.yml`
+- Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary (use # to disable certain ones)
 
 
 ## Lichess OAuth
@@ -42,7 +60,7 @@ pip install -r requirements.txt
 - Extract the weights from the zip archive and rename it to `latest.txt`
 - Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
 - Copy both the files into the `engine.dir` directory
-- Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` and `latest.txt`
+- Change the `engine.name` and `engine.weights` keys in config.yml to `lczero.exe` and `latest.txt`
 - You can specify the number of `engine.threads` in the config.yml file as well
 - To start: `python main.py`
 

@@ -53,6 +53,9 @@ class Game():
         self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
         self.abort_at = abort_at
 
+    def is_abortable(self):
+        return len(self.state["moves"]) < 6
+
     def url(self):
         return "{}/{}/{}".format(self.base_url, self.id, self.my_color)
 

@@ -19,8 +19,9 @@ from functools import partial
 from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
+import time
 
-__version__ = "0.3"
+__version__ = "0.6"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -52,23 +53,21 @@ def start(li, user_profile, engine_factory, config):
     queued_processes = 0
 
     with logging_pool.LoggingPool(max_games+1) as pool:
-        events = li.get_event_stream().iter_lines()
-
-        quit = False
-        while not quit:
+        while True:
             event = control_queue.get()
             if event["type"] == "local_game_done":
                 busy_processes -= 1
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if len(challenge_queue) < max_queued and can_accept_challenge(chlng, config):
+                if can_accept_challenge(chlng, config):
                     challenge_queue.append(chlng)
-                    print("    Queue {}".format(chlng.show()))
+                    if (config.get("sort_challenges_by") == "rating"):
+                        challenge_queue.sort(key=lambda c: -c.challengerRatingInt)
                 else:
                     try:
                         li.decline_challenge(chlng.id)
-                        print("    Decline {}".format(chlng.show()))
+                        print("    Decline {}".format(chlng))
                     except HTTPError as exception:
                         if exception.response.status_code != 404: # ignore missing challenge
                             raise exception
@@ -86,12 +85,12 @@ def start(li, user_profile, engine_factory, config):
                 chlng = challenge_queue.pop(0)
                 try:
                     response = li.accept_challenge(chlng.id)
-                    print("    Accept {}".format(chlng.show()))
+                    print("    Accept {}".format(chlng))
                     queued_processes += 1
                     print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 except HTTPError as exception:
                     if exception.response.status_code == 404: # ignore missing challenge
-                        print("    Skip missing {}".format(chlng.show()))
+                        print("    Skip missing {}".format(chlng))
                     else:
                         raise exception
 
@@ -108,8 +107,9 @@ def play_game(li, game_id, control_queue, engine_factory, config):
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li)
+    abort_at = time.time() + 20
 
-    print("+++ {}".format(game.show()))
+    print("+++ {}".format(game))
 
     engine.pre_game(game)
 
@@ -127,20 +127,21 @@ def play_game(li, game_id, control_queue, engine_factory, config):
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd))
             elif u_type == "gameState":
-                moves = upd.get("moves").split()
+                game.state = upd
+                moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
-
                 if is_engine_move(game.is_white, moves):
+                    best_move = None
                     if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
-                        book_move = get_book_move(board, engine_cfg)
-                        if (book_move != None):
-                            best_move = book_move
-                        else:
-                            best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
-                    else:
-                        best_move = engine.search(board, upd.get("wtime"), upd.get("btime"), upd.get("winc"), upd.get("binc"))
-
+                        best_move = get_book_move(board, engine_cfg)
+                    if best_move == None:
+                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
+                    abort_at = time.time() + 20 # give opponent some time before aborting
+            elif u_type == "ping":
+                if time.time() > abort_at and len(game.state["moves"]) < 6:
+                    print("    Aborting {} by lack of activity".format(game.url()))
+                    li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
         print("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
@@ -158,7 +159,7 @@ def can_accept_challenge(chlng, config):
 
 def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
-    if is_engine_move(game.is_white, moves):
+    if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move = engine.first_search(board, 2000)
         li.make_move(game.id, best_move)
@@ -196,6 +197,8 @@ def get_book_move(board, engine_cfg):
 def setup_board(game):
     if game.variant_name.lower() == "chess960":
         board = chess.Board(game.initial_fen, chess960=True)
+    elif game.variant_name == "From Position":
+        board = chess.Board(game.initial_fen)
     else:
         VariantBoard = find_variant(game.variant_name);
         board = VariantBoard()
@@ -206,13 +209,13 @@ def setup_board(game):
     return board
 
 
-def is_white_to_move(moves):
-    return (len(moves) % 2) == 0
+def is_white_to_move(game, moves):
+    return len(moves) % 2 == (0 if game.white_starts else 1)
 
 
-def is_engine_move(is_white, moves):
-    is_w = (is_white and is_white_to_move(moves))
-    is_b = (is_white is False and is_white_to_move(moves) is False)
+def is_engine_move(game, moves):
+    is_w = (game.is_white and is_white_to_move(game, moves))
+    is_b = (game.is_white is False and is_white_to_move(game, moves) is False)
 
     return (is_w or is_b)
 
@@ -238,7 +241,7 @@ if __name__ == "__main__":
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
     CONFIG = load_config()
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"])
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()
     is_bot = user_profile.get("title") == "BOT"

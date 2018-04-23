@@ -40,8 +40,7 @@ def watch_control_stream(control_queue, li):
 
 def start(li, user_profile, max_games, engine_factory, config):
     # init
-    username = user_profile.get("username")
-    print("Welcome {}!".format(username))
+    print("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
     challenge_queue = []
     control_queue = manager.Queue()
@@ -206,7 +205,9 @@ if __name__ == "__main__":
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()
+    username = user_profile["username"]
     is_bot = user_profile.get("title") == "BOT"
+    print("Welcome {}!".format(username))
 
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)

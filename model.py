@@ -38,8 +38,9 @@ class Game():
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
-        self.clock_initial = json.get("clock")["initial"] if json.get("clock") else sys.maxint
-        self.clock_increment = json.get("clock")["increment"] if json.get("clock") else sys.maxint
+        clock = json.get("clock", {})
+        self.clock_initial = clock.get("initial", sys.maxint)
+        self.clock_increment = clock.get("increment", sysmaxint)
         self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
         self.variant_name = json.get("variant")["name"]
         self.white = Player(json.get("white"))

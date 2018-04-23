@@ -1,3 +1,6 @@
+import sys
+import time
+
 class Challenge():
     def __init__(self, c_info):
         self.id = c_info["id"]
@@ -36,8 +39,9 @@ class Game():
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
-        self.clock_initial = json.get("clock")["initial"]
-        self.clock_increment = json.get("clock")["increment"]
+        clock = json.get("clock", {})
+        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10) # unlimited = 10 years
+        self.clock_increment = clock.get("increment", 0)
         self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
         self.variant_name = json.get("variant")["name"]
         self.white = Player(json.get("white"))
@@ -51,9 +55,20 @@ class Game():
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
         self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
+        self.abort_at = time.time() + 20
 
     def url(self):
         return "{}/{}/{}".format(self.base_url, self.id, self.my_color)
+
+    def is_abortable(self):
+        return len(self.state["moves"]) < 6
+
+    def abort_in(self, seconds):
+        if (self.is_abortable()):
+            self.abort_at = time.time() + seconds
+
+    def should_abort_now(self):
+        return self.is_abortable() and time.time() > self.abort_at
 
     def __str__(self):
         return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.__str__())

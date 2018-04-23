@@ -15,7 +15,6 @@ def load_config():
                     ["url", str, "Section `url` must be a string wrapped in quotes."],
                     ["engine", dict, "Section `engine` must be a dictionary with indented keys followed by colons.."],
                     ["max_concurrent_games", int, "Section `max_concurrent_games` must be an integer number without quotes."],
-                    ["max_queued_challenges", int, "Section `max_queued_challenges` must be an integer number without quotes."],
                     ["supported_tc", list, "Section `supported_tc` must be a list with indented entries starting with dashes.."],
                     ["supported_modes", list, "Section `supported_modes` must be a list with indented entries starting with dashes.."]]
         for section in sections:

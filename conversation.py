@@ -2,8 +2,7 @@ import random
 
 LINKS = {
     "LCzero": "http://lczero.org/",
-    "github": "https://github.com/careless25/lichess-bot",
-    "API": "https://lichess.org/api#tag/Chess-Bot"
+    "Lichess Bots": "https://lichess.org/api#tag/Chess-Bot"
 }
 
 class Conversation():

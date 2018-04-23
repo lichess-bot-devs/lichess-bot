@@ -16,7 +16,7 @@ class Conversation():
 
     def command(self, line, game, cmd):
         if cmd == "wait" and game.is_abortable():
-            game.abort_at = time() + 60
+            game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")
         if cmd == "name" or cmd == "engine":
             self.send_reply(line, self.engine.name())

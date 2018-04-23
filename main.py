@@ -14,7 +14,6 @@ from conversation import Conversation, ChatLine
 from functools import partial
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
-import time
 
 try:
     from http.client import RemoteDisconnected
@@ -102,8 +101,7 @@ def play_game(li, game_id, control_queue, engine_factory):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    abort_at = time.time() + 20
-    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl, abort_at)
+    game = model.Game(json.loads(next(updates).decode('utf-8')), username, li.baseUrl)
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li)
@@ -128,9 +126,9 @@ def play_game(li, game_id, control_queue, engine_factory):
                 if is_engine_move(game, moves):
                     best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
-                    abort_at = time.time() + 20 # give opponent some time before aborting
+                    game.abort_in(20)
             elif u_type == "ping":
-                if time.time() > game.abort_at and len(game.state["moves"]) < 6:
+                if game.should_abort_now() and len(game.state["moves"]) < 6:
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:

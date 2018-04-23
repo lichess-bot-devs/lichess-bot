@@ -35,8 +35,14 @@ class Challenge():
         titledBonus = 200 if self.challengerMasterTitle else 0
         return self.challengerRatingInt + ratedBonus + titledBonus
 
+    def mode(self):
+        return "rated" if self.rated else "casual"
+
+    def challengerFullName(self):
+        return "{}{}".format(self.challengerTitle + " " if self.challengerTitle else "", self.challengerName)
+
     def __str__(self):
-        return "{} challenge from {}({})".format(self.perf_name, self.challengerName, self.challengerRating)
+        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challengerFullName(), self.challengerRating)
 
     def __repr__(self):
         return self.__str__()

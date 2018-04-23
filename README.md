@@ -60,7 +60,7 @@ pip install -r requirements.txt
 - Extract the weights from the zip archive and rename it to `latest.txt`
 - Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
 - Copy both the files into the `engine.dir` directory
-- Change the `engine.name` and `engine.weights` keys in config.yml to `lczero.exe` and `latest.txt`
+- Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `latest.txt`
 - You can specify the number of `engine.threads` in the config.yml file as well
 - To start: `python main.py`
 

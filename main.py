@@ -7,18 +7,20 @@ import json
 import lichess
 import logging
 import multiprocessing
-import queue
-import os
-import os.path
 import traceback
 import logging_pool
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
-from http.client import RemoteDisconnected
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 import time
+
+try:
+    from http.client import RemoteDisconnected
+    # New in version 3.5: Previously, BadStatusLine('') was raised.
+except ImportError:
+    from http.client import BadStatusLine as RemoteDisconnected
 
 __version__ = "0.6"
 
@@ -162,7 +164,7 @@ def setup_board(game):
     elif game.variant_name == "From Position":
         board = chess.Board(game.initial_fen)
     else:
-        VariantBoard = find_variant(game.variant_name);
+        VariantBoard = find_variant(game.variant_name)
         board = VariantBoard()
     moves = game.state["moves"].split()
     for move in moves:

@@ -20,7 +20,7 @@ from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 import time
 
-__version__ = "0.5"
+__version__ = "0.6"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -50,10 +50,7 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
     queued_processes = 0
 
     with logging_pool.LoggingPool(max_games+1) as pool:
-        events = li.get_event_stream().iter_lines()
-
-        quit = False
-        while not quit:
+        while True:
             event = control_queue.get()
             if event["type"] == "local_game_done":
                 busy_processes -= 1
@@ -62,11 +59,12 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 chlng = model.Challenge(event["challenge"])
                 if len(challenge_queue) < max_queued and can_accept_challenge(chlng, config):
                     challenge_queue.append(chlng)
-                    print("    Queue {}".format(chlng.show()))
+                    if (config.get("sort_challenges_by") == "rating"):
+                        challenge_queue.sort(key=lambda c: -c.challengerRatingInt)
                 else:
                     try:
                         li.decline_challenge(chlng.id)
-                        print("    Decline {}".format(chlng.show()))
+                        print("    Decline {}".format(chlng))
                     except HTTPError as exception:
                         if exception.response.status_code != 404: # ignore missing challenge
                             raise exception
@@ -84,12 +82,12 @@ def start(li, user_profile, max_games, max_queued, engine_factory, config):
                 chlng = challenge_queue.pop(0)
                 try:
                     response = li.accept_challenge(chlng.id)
-                    print("    Accept {}".format(chlng.show()))
+                    print("    Accept {}".format(chlng))
                     queued_processes += 1
                     print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 except HTTPError as exception:
                     if exception.response.status_code == 404: # ignore missing challenge
-                        print("    Skip missing {}".format(chlng.show()))
+                        print("    Skip missing {}".format(chlng))
                     else:
                         raise exception
 
@@ -108,7 +106,7 @@ def play_game(li, game_id, control_queue, engine_factory):
     conversation = Conversation(game, engine, li)
     abort_at = time.time() + 20
 
-    print("+++ {}".format(game.show()))
+    print("+++ {}".format(game))
 
     engine.pre_game(game)
 
@@ -205,7 +203,7 @@ if __name__ == "__main__":
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     args = parser.parse_args()
     CONFIG = load_config()
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"])
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()
     is_bot = user_profile.get("title") == "BOT"

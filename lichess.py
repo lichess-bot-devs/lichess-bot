@@ -1,8 +1,6 @@
-import json
 import requests
 from future.standard_library import install_aliases
 install_aliases()
-from urllib.parse import urlparse, urlencode
 from urllib.parse import urljoin
 from requests.exceptions import ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError

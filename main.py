@@ -7,9 +7,6 @@ import json
 import lichess
 import logging
 import multiprocessing
-import queue
-import os
-import os.path
 import traceback
 import logging_pool
 from config import load_config

@@ -16,7 +16,7 @@ ucioptions:                  # arbitrary UCI options passed to the engine
 
 
 max_concurrent_games: 1      # number of games to play simultaneously
-sort_challenges_by: "rating" # possible values: "rating", "date"
+sort_challenges_by: "best"   # possible values: "best", "first"
 
 supported_variants:          # chess variants to accept (http://lichess.org/variant)
   - standard

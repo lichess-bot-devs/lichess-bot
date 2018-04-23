@@ -56,5 +56,6 @@ def load_config():
             book_dir = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["polyglot_book"])
             if not os.path.isfile(book_dir):
                 raise Exception("The polyglot book %s file does not exist." % book_dir)
+            CONFIG["engine"]["polyglot_book"] = book_dir
 
     return CONFIG

@@ -176,15 +176,14 @@ def play_first_book_move(game, engine, board, li, config):
 
 
 def get_book_move(board, engine_cfg):
-    book_dir = os.path.join(engine_cfg["dir"], engine_cfg["polyglot_book"])
     try:
-        with chess.polyglot.open_reader(book_dir) as reader:
+        with chess.polyglot.open_reader(engine_cfg["polyglot_book"]) as reader:
             if (engine_cfg["polyglot_random"] == True):
                 book_move = reader.choice(board).move()
             else:
                 book_move = reader.find(board, engine_cfg["polyglot_min_weight"]).move()
             return book_move
-    except (FileNotFoundError, IndexError):
+    except:
         pass
 
     return None

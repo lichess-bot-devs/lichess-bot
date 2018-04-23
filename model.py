@@ -9,6 +9,8 @@ class Challenge():
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
         self.challenger = c_info.get("challenger")
+        self.challengerTitle = self.challenger.get("title") if self.challenger else None
+        self.challengerMasterTitle = self.challengerTitle if self.challengerTitle != "BOT" else None
         self.challengerName = self.challenger["name"] if self.challenger else "Anonymous"
         self.challengerRatingInt = self.challenger["rating"] if self.challenger else 0
         self.challengerRating = self.challengerRatingInt or "?"
@@ -27,6 +29,11 @@ class Challenge():
         tc = config["supported_tc"]
         modes = config["supported_modes"]
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
+
+    def score(self):
+        ratedBonus = 200 if self.rated else 0
+        titledBonus = 200 if self.challengerMasterTitle else 0
+        return self.challengerRatingInt + ratedBonus + titledBonus
 
     def __str__(self):
         return "{} challenge from {}({})".format(self.perf_name, self.challengerName, self.challengerRating)

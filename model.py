@@ -1,5 +1,6 @@
 import sys
 import time
+from urllib.parse import urljoin
 
 class Challenge():
     def __init__(self, c_info):
@@ -9,6 +10,8 @@ class Challenge():
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
         self.challenger = c_info.get("challenger")
+        self.challengerTitle = self.challenger.get("title") if self.challenger else None
+        self.challengerMasterTitle = self.challengerTitle if self.challengerTitle != "BOT" else None
         self.challengerName = self.challenger["name"] if self.challenger else "Anonymous"
         self.challengerRatingInt = self.challenger["rating"] if self.challenger else 0
         self.challengerRating = self.challengerRatingInt or "?"
@@ -28,8 +31,19 @@ class Challenge():
         modes = config["supported_modes"]
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
+    def score(self):
+        ratedBonus = 200 if self.rated else 0
+        titledBonus = 200 if self.challengerMasterTitle else 0
+        return self.challengerRatingInt + ratedBonus + titledBonus
+
+    def mode(self):
+        return "rated" if self.rated else "casual"
+
+    def challengerFullName(self):
+        return "{}{}".format(self.challengerTitle + " " if self.challengerTitle else "", self.challengerName)
+
     def __str__(self):
-        return "{} challenge from {}({})".format(self.perf_name, self.challengerName, self.challengerRating)
+        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challengerFullName(), self.challengerRating)
 
     def __repr__(self):
         return self.__str__()
@@ -58,7 +72,7 @@ class Game():
         self.abort_at = time.time() + 20
 
     def url(self):
-        return "{}/{}/{}".format(self.base_url, self.id, self.my_color)
+        return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))
 
     def is_abortable(self):
         return len(self.state["moves"]) < 6

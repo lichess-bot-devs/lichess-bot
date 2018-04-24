@@ -21,7 +21,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "0.7"
+__version__ = "0.8"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -59,9 +59,8 @@ def start(li, user_profile, max_games, engine_factory, config):
                 chlng = model.Challenge(event["challenge"])
                 if can_accept_challenge(chlng, config):
                     challenge_queue.append(chlng)
-                    if (config.get("sort_challenges_by") == "rating"):
-                        challenge_queue.sort(key=lambda c: -c.challengerRatingInt)
-                    challenge_queue.sort(key=lambda c: not c.rated)
+                    if (config.get("sort_challenges_by") != "first"):
+                        challenge_queue.sort(key=lambda c: -c.score())
                 else:
                     try:
                         li.decline_challenge(chlng.id)

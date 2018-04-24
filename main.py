@@ -57,7 +57,7 @@ def start(li, user_profile, max_games, engine_factory, config):
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if can_accept_challenge(chlng, config):
+                if chlng.is_supported(config):
                     challenge_queue.append(chlng)
                     if (config.get("sort_challenges_by") != "first"):
                         challenge_queue.sort(key=lambda c: -c.score())
@@ -138,10 +138,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile):
         # This can raise queue.NoFull, but that should only happen if we're not processing
         # events fast enough and in this case I believe the exception should be raised
         control_queue.put_nowait({"type": "local_game_done"})
-
-
-def can_accept_challenge(chlng, config):
-    return chlng.is_supported(config)
 
 
 def play_first_move(game, engine, board, li):

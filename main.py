@@ -1,6 +1,7 @@
 import argparse
 import chess
 from chess.variant import find_variant
+import chess.polyglot
 import engine_wrapper
 import model
 import json
@@ -38,8 +39,9 @@ def watch_control_stream(control_queue, li):
         else:
             control_queue.put_nowait({"type": "ping"})
 
-def start(li, user_profile, max_games, engine_factory, config):
+def start(li, user_profile, engine_factory, config):
     # init
+    max_games = config["max_concurrent_games"]
     print("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
     challenge_queue = []
@@ -74,7 +76,7 @@ def start(li, user_profile, max_games, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
 
@@ -94,8 +96,7 @@ def start(li, user_profile, max_games, engine_factory, config):
     control_stream.terminate()
     control_stream.join()
 
-
-def play_game(li, game_id, control_queue, engine_factory, user_profile):
+def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
@@ -108,7 +109,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile):
 
     engine.pre_game(game)
 
-    board = play_first_move(game, engine, board, li)
+    engine_cfg = config["engine"]
+
+    if (engine_cfg["polyglot"] == True):
+        board = play_first_book_move(game, engine, board, li, engine_cfg)
+    else:
+        board = play_first_move(game, engine, board, li)
 
     try:
         for binary_chunk in updates:
@@ -120,9 +126,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile):
                 game.state = upd
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
-
                 if is_engine_move(game, moves):
-                    best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                    best_move = None
+                    if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
+                        best_move = get_book_move(board, engine_cfg)
+                    if best_move == None:
+                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
                     game.abort_in(20)
             elif u_type == "ping":
@@ -148,6 +157,32 @@ def play_first_move(game, engine, board, li):
         li.make_move(game.id, best_move)
 
     return board
+
+
+def play_first_book_move(game, engine, board, li, config):
+    moves = game.state["moves"].split()
+    if is_engine_move(game, moves):
+        book_move = get_book_move(board, config)
+        if (book_move != None):
+            li.make_move(game.id, book_move)
+        else:
+            return play_first_move(game, engine, board, li)
+
+    return board
+
+
+def get_book_move(board, engine_cfg):
+    try:
+        with chess.polyglot.open_reader(engine_cfg["polyglot_book"]) as reader:
+            if (engine_cfg["polyglot_random"] == True):
+                book_move = reader.choice(board).move()
+            else:
+                book_move = reader.find(board, engine_cfg["polyglot_min_weight"]).move()
+            return book_move
+    except:
+        pass
+
+    return None
 
 
 def setup_board(game):
@@ -208,8 +243,7 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        max_games = CONFIG["max_concurrent_games"]
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
-        start(li, user_profile, max_games, engine_factory, CONFIG)
+        start(li, user_profile, engine_factory, CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

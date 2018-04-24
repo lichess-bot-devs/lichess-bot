@@ -82,6 +82,8 @@ class XBoardEngine(EngineWrapper):
     def first_search(self, board, movetime):
         self.engine.setboard(board)
         self.engine.st(movetime / 1000)
+        self.engine.time(movetime / 10)
+        self.engine.otim(movetime / 10)
         return self.engine.go()
 
     def search(self, board, wtime, btime, winc, binc):
@@ -119,7 +121,7 @@ class UCIEngine(EngineWrapper):
 
     def first_search(self, board, movetime):
         self.engine.position(board)
-        best_move, _ = self.engine.go(movetime=movetime)
+        best_move, _ = self.engine.go(wtime=movetime,btime=movetime)
         return best_move
 
     def search(self, board, wtime, btime, winc, binc):

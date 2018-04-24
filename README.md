@@ -29,7 +29,7 @@ Windows:
 - Setup virtualenv:
 ```
 virtualenv .venv -p python (if this fails you probably need to add Python to your PATH)
-./.venv/Scripts/activate (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there)
+./.venv/Scripts/activate (This may not work on Windows, and in this case you need to execute [run Powershell as administrator] "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
 pip install -r requirements.txt
 ```
 - Create your config file wih `cp config.yml.default config.yml`

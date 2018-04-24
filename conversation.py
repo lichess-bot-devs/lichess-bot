@@ -25,7 +25,7 @@ class Conversation():
             game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")
         if cmd == "name" or cmd == "engine" or cmd == "version":
-            self.send_reply(line, "{} ID 170".format(self.engine.name()))
+            self.send_reply(line, "{} ID 179".format(self.engine.name()))
         if cmd == "howto":
             self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
         if cmd == "commands" or cmd == "help":
@@ -35,7 +35,7 @@ class Conversation():
             stats = self.engine.get_stats(True)
             self.send_reply(line, ", ".join(stats))
         if cmd == "id" or cmd == "network":
-            self.send_reply(line, "ID 170")
+            self.send_reply(line, "ID 179")
         if cmd.lower() == "elsie" or cmd.lower() == "leela" or cmd.lower() == "leelachess":
             responses = ["Stop it. Let me focus!", "Yes?", "Like what you see? Help me improve at: {}".format(LINKS["LCzero"])]
             self.send_reply(line, random.choice(responses))

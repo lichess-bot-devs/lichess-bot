@@ -10,6 +10,7 @@ def create_engine(config, board):
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
     threads = cfg.get("threads")
     tempdecay = cfg.get("tempdecay")
+    noise = cfg.get("noise")
 
     # TODO: ucioptions should probably be a part of the engine subconfig
     ucioptions = config.get("ucioptions")
@@ -24,6 +25,8 @@ def create_engine(config, board):
     if tempdecay:
         commands.append("-d")
         commands.append(str(tempdecay))
+    if noise:
+        commands.append("--noise")
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands)

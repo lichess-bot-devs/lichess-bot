@@ -24,15 +24,13 @@ class Conversation():
         if cmd == "wait" and game.is_abortable():
             game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")
-        if cmd == "name":
-            self.send_reply(line, "{} ID 160 (lichess-bot v{})".format(self.engine.name(), self.version))
+        if cmd == "name" or cmd == "engine" or cmd == "version":
+            self.send_reply(line, "{} ID 170".format(self.engine.name()))
         if cmd == "howto":
             self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
         if cmd == "commands" or cmd == "help":
-            msg = "Supported commands: !name, !eval, !id, !leela, !hardware and !info."
+            msg = "Supported commands: !name, !eval, !id, !leela, !hardware, !info, and !howto"
             self.send_reply(line, msg)
-        if cmd == "name" or cmd == "engine" or cmd == "version":
-            self.send_reply(line, self.engine.name() + " ID 170")
         if cmd == "eval" or cmd == "stats":
             stats = self.engine.get_stats(True)
             self.send_reply(line, ", ".join(stats))
@@ -46,6 +44,8 @@ class Conversation():
                 self.send_reply(line, "{}: {}".format(name, url))
         if cmd == "hardware" or cmd == "gpu":
             self.send_reply(line, "Running on GTX 1060 6GB, i5-6600K @ 3.50 GHz, 16 GB RAM, Windows 10 Pro")
+        if cmd == "queue" or cmd == "challengers":
+            self.send_reply(line, "")
 
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)

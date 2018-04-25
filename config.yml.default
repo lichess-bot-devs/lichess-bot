@@ -19,6 +19,14 @@ ucioptions:                  # arbitrary UCI options passed to the engine
 #  Hash: "4096"
 #  Book File: "engines/book.bin"
 
+xboardoptions:
+#  cores: "4"
+#  memory: "4096"
+#  egtpath:                   # dir containing egtb, relative to this project
+#    gaviota: "Gaviota path"
+#    nalimov: "Nalimov Path"
+#    scorpio: "Scorpio Path"
+#    syzygy: "Syzygy Path"
 
 max_concurrent_games: 1      # number of games to play simultaneously
 sort_challenges_by: "best"   # possible values: "best", "first"

@@ -9,6 +9,7 @@ def create_engine(config, board):
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
     threads = cfg.get("threads")
+    gpu = cfg.get("gpu")
 
     # TODO: ucioptions should probably be a part of the engine subconfig
     ucioptions = config.get("ucioptions")
@@ -20,6 +21,9 @@ def create_engine(config, board):
     if threads:
         commands.append("-t")
         commands.append(str(threads))
+    if gpu:
+        commands.append("--gpu")
+        commands.append(str(gpu))
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, config.get("xboardoptions"))

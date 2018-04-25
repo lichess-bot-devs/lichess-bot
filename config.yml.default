@@ -7,6 +7,7 @@ engine:                      # engine settings
   protocol: "uci"            # "uci" or "xboard"
 #  weights: "latest.txt"     # only if the engine is lczero
 #  threads: 1                # only if the engine is lczero
+#  gpu: 0                    # only if the engine is lczero
   polyglot: false            # activate polyglot book
   polyglot_book: "book.bin"  # book file name, must be in engine.dir
   polyglot_max_depth: 8      # half move max depth

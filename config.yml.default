@@ -22,6 +22,7 @@ ucioptions:                  # arbitrary UCI options passed to the engine
 
 max_concurrent_games: 1      # number of games to play simultaneously
 sort_challenges_by: "best"   # possible values: "best", "first"
+abort_time: 20               # time to abort a game in seconds when there is no activity
 
 supported_variants:          # chess variants to accept (http://lichess.org/variant)
   - standard

@@ -11,8 +11,8 @@ engine:                      # engine settings
   polyglot: false            # activate polyglot book
   polyglot_book: "book.bin"  # book file name, must be in engine.dir
   polyglot_max_depth: 8      # half move max depth
-  polyglot_min_weight: 1     # best move weight
-  polyglot_random: true      # select move randomly otherwise select by min weight
+  polyglot_min_weight: 1     # best move by weight, no effect if polyglot_move_selection is random_weight
+  polyglot_move_selection: "random_weight" # selects best move by: random_move, random_weight and best_move
 
 ucioptions:                  # arbitrary UCI options passed to the engine
   Move Overhead: 100         # increase if your bot flags games too often

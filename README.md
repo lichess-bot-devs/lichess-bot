@@ -52,7 +52,7 @@ pip install -r requirements.txt
 
 ## Lichess Upgrade to Bot Account
 **WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
-- run `python main.py -u`
+- run `python lichess-bot.py -u`
 
 
 ## LeelaChessZero
@@ -62,7 +62,7 @@ pip install -r requirements.txt
 - Copy both the files into the `engine.dir` directory
 - Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `latest.txt`
 - You can specify the number of `engine.threads` in the config.yml file as well
-- To start: `python main.py`
+- To start: `python lichess-bot.py`
 
 
 # Acknowledgements

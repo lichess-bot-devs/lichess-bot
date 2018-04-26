@@ -7,6 +7,7 @@ engine:                      # engine settings
   protocol: "uci"            # "uci" or "xboard"
 #  weights: "latest.txt"     # only if the engine is lczero
 #  threads: 1                # only if the engine is lczero
+#  gpu: 0                    # only if the engine is lczero
   polyglot: false            # activate polyglot book
   polyglot_book: "book.bin"  # book file name, must be in engine.dir
   polyglot_max_depth: 8      # half move max depth
@@ -19,9 +20,19 @@ ucioptions:                  # arbitrary UCI options passed to the engine
 #  Hash: "4096"
 #  Book File: "engines/book.bin"
 
+xboardoptions:
+#  cores: "4"
+#  memory: "4096"
+#  egtpath:                   # dir containing egtb, relative to this project
+#    gaviota: "Gaviota path"
+#    nalimov: "Nalimov Path"
+#    scorpio: "Scorpio Path"
+#    syzygy: "Syzygy Path"
 
 max_concurrent_games: 1      # number of games to play simultaneously
 sort_challenges_by: "best"   # possible values: "best", "first"
+abort_time: 20               # time to abort a game in seconds when there is no activity
+accept_bot_challenges: true  # accepts challenges coming from other bots
 
 supported_variants:          # chess variants to accept (http://lichess.org/variant)
   - standard

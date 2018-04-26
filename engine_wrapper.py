@@ -9,6 +9,7 @@ def create_engine(config, board):
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
     threads = cfg.get("threads")
+    gpu = cfg.get("gpu")
     tempdecay = cfg.get("tempdecay")
     noise = cfg.get("noise")
 
@@ -22,21 +23,23 @@ def create_engine(config, board):
     if threads:
         commands.append("-t")
         commands.append(str(threads))
+    if gpu:
+        commands.append("--gpu")
+        commands.append(str(gpu))
     if tempdecay:
-        commands.append("-d")
-        commands.append(str(tempdecay))
+        commands.append("--tempdecay={}".format(tempdecay))
     if noise:
         commands.append("--noise")
 
     if engine_type == "xboard":
-        return XBoardEngine(board, commands)
+        return XBoardEngine(board, commands, config.get("xboardoptions"))
 
-    return UCIEngine(board, commands, ucioptions)
+    return UCIEngine(board, commands, config.get("ucioptions"))
 
 
 class EngineWrapper:
 
-    def __init__(self, board, commands):
+    def __init__(self, board, commands, options=None):
         pass
 
     def pre_game(self, game):
@@ -114,7 +117,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
 
-    def __init__(self, board, commands):
+    def __init__(self, board, commands, options=None):
         commands = commands[0] if len(commands) == 1 else commands
         self.engine = chess.xboard.popen_engine(commands)
 
@@ -125,10 +128,32 @@ class XBoardEngine(EngineWrapper):
         elif type(board).uci_variant != "chess":
             self.engine.send_variant(type(board).uci_variant)
 
+        if options:
+            self._handle_options(options)
+
         self.engine.setboard(board)
 
         post_handler = chess.xboard.PostHandler()
         self.engine.post_handlers.append(post_handler)
+
+    def _handle_options(self, options):
+        for option, value in options.items():
+            if option == "memory":
+                self.engine.memory(value)
+            elif option == "cores":
+                self.engine.cores(value)
+            elif option == "egtpath":
+                for egttype, egtpath in value.items():
+                    try:
+                        self.engine.egtpath(egttype, egtpath)
+                    except EngineStateException:
+                        # If the user specifies more TBs than the engine supports, ignore the error.
+                        pass
+            else:
+                try:
+                    self.engine.features.set_option(option, value)
+                except EngineStateException:
+                    pass
 
     def pre_game(self, game):
         minutes = game.clock_initial / 1000 / 60
@@ -156,6 +181,11 @@ class XBoardEngine(EngineWrapper):
     def print_stats(self):
         self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 
+    def name(self):
+        try:
+            return self.engine.features.get("myname")
+        except:
+            return None
 class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands, options):

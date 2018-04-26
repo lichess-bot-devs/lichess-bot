@@ -22,7 +22,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "0.9"
+__version__ = "0.10"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -100,7 +100,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl)
+    game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li, __version__)
@@ -133,9 +133,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                     if best_move == None:
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
-                    game.abort_in(20)
+                    game.abort_in(config.get("abort_time", 20))
             elif u_type == "ping":
-                if game.should_abort_now() and len(game.state["moves"]) < 6:
+                if game.should_abort_now():
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:

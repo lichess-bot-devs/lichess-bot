@@ -23,7 +23,6 @@ def load_config():
             elif not isinstance(CONFIG[section[0]], section[1]):
                 raise Exception(section[2])
 
-
         engine_sections = [["dir", str, "´dir´ must be a string wrapped in quotes."],
                            ["name", str, "´name´ must be a string wrapped in quotes."],
                            ["polyglot", bool, "´polyglot´ must be a boolean type: true or false."],
@@ -31,7 +30,6 @@ def load_config():
                            ["polyglot_max_depth", int, "`polyglot_max_depth` must be an integer number without quotes."],
                            ["polyglot_min_weight", int, "`polyglot_min_weight` must be an integer number without quotes."],
                            ["polyglot_random", bool, "`polyglot_random` must be a boolean type: true or false."]]
-
         for subsection in engine_sections:
             if subsection[0] not in CONFIG["engine"]:
                 raise Exception("Your config.yml does not have required `engine` subsection `{}`.".format(subsection))

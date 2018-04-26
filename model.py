@@ -10,11 +10,12 @@ class Challenge():
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
         self.challenger = c_info.get("challenger")
-        self.challengerTitle = self.challenger.get("title") if self.challenger else None
-        self.challengerMasterTitle = self.challengerTitle if self.challengerTitle != "BOT" else None
-        self.challengerName = self.challenger["name"] if self.challenger else "Anonymous"
-        self.challengerRatingInt = self.challenger["rating"] if self.challenger else 0
-        self.challengerRating = self.challengerRatingInt or "?"
+        self.challenger_title = self.challenger.get("title") if self.challenger else None
+        self.challenger_is_bot = self.challenger_title == "BOT"
+        self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None
+        self.challenger_name = self.challenger["name"] if self.challenger else "Anonymous"
+        self.challenger_rating_int = self.challenger["rating"] if self.challenger else 0
+        self.challenger_rating = self.challenger_rating_int or "?"
 
     def is_supported_variant(self, supported):
         return self.variant in supported
@@ -26,6 +27,8 @@ class Challenge():
         return "rated" in supported if self.rated else "casual" in supported
 
     def is_supported(self, config):
+        if not config.get("accept_bot_challenges", True) and self.challenger_is_bot:
+            return false
         variants = config["supported_variants"]
         tc = config["supported_tc"]
         modes = config["supported_modes"]
@@ -33,23 +36,23 @@ class Challenge():
 
     def score(self):
         ratedBonus = 200 if self.rated else 0
-        titledBonus = 200 if self.challengerMasterTitle else 0
-        return self.challengerRatingInt + ratedBonus + titledBonus
+        titledBonus = 200 if self.challenger_master_title else 0
+        return self.challenger_rating_int + ratedBonus + titledBonus
 
     def mode(self):
         return "rated" if self.rated else "casual"
 
-    def challengerFullName(self):
-        return "{}{}".format(self.challengerTitle + " " if self.challengerTitle else "", self.challengerName)
+    def challenger_full_name(self):
+        return "{}{}".format(self.challenger_title + " " if self.challenger_title else "", self.challenger_name)
 
     def __str__(self):
-        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challengerFullName(), self.challengerRating)
+        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challenger_full_name(), self.challenger_rating)
 
     def __repr__(self):
         return self.__str__()
 
 class Game():
-    def __init__(self, json, username, base_url):
+    def __init__(self, json, username, base_url, abort_time):
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
@@ -69,7 +72,7 @@ class Game():
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
         self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
-        self.abort_at = time.time() + 20
+        self.abort_at = time.time() + abort_time
 
     def url(self):
         return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))

@@ -11,7 +11,8 @@ class Challenge():
         self.speed = c_info["speed"]
         self.challenger = c_info.get("challenger")
         self.challenger_title = self.challenger.get("title") if self.challenger else None
-        self.challenger_master_title = self.challenger_title if self.challenger_title != "BOT" else None
+        self.challenger_is_bot = self.challenger_title == "BOT"
+        self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None
         self.challenger_name = self.challenger["name"] if self.challenger else "Anonymous"
         self.challenger_rating_int = self.challenger["rating"] if self.challenger else 0
         self.challenger_rating = self.challenger_rating_int or "?"
@@ -26,6 +27,8 @@ class Challenge():
         return "rated" in supported if self.rated else "casual" in supported
 
     def is_supported(self, config):
+        if not config.get("accept_bot_challenges", true) and self.challenger_is_bot:
+            return false
         variants = config["supported_variants"]
         tc = config["supported_tc"]
         modes = config["supported_modes"]

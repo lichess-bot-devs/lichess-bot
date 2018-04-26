@@ -32,6 +32,7 @@ xboardoptions:
 max_concurrent_games: 1      # number of games to play simultaneously
 sort_challenges_by: "best"   # possible values: "best", "first"
 abort_time: 20               # time to abort a game in seconds when there is no activity
+accept_bot_challenges: true  # accepts challenges coming from other bots
 
 supported_variants:          # chess variants to accept (http://lichess.org/variant)
   - standard

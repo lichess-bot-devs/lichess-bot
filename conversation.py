@@ -45,7 +45,7 @@ class Conversation():
             for name, url in LINKS.items():
                 self.send_reply(line, "{}: {}".format(name, url))
         if cmd == "hardware" or cmd == "gpu":
-            self.send_reply(line, "Running on GTX 1060 6GB, i5-6600K @ 3.50 GHz, 16 GB RAM, Windows 10 Pro")
+            self.send_reply(line, "GTX 1050 2GB, i7-3770 @ 3.40 GHz, Ubuntu 16.04, Linux 4.4.0")
 
 
     def send_reply(self, line, reply):

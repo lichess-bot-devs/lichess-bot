@@ -39,11 +39,11 @@ class Challenge():
     def mode(self):
         return "rated" if self.rated else "casual"
 
-    def challengerFullName(self):
+    def challenger_full_name(self):
         return "{}{}".format(self.challenger_title + " " if self.challenger_title else "", self.challenger_name)
 
     def __str__(self):
-        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challengerFullName(), self.challenger_rating)
+        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challenger_full_name(), self.challenger_rating)
 
     def __repr__(self):
         return self.__str__()

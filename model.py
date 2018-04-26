@@ -28,7 +28,7 @@ class Challenge():
 
     def is_supported(self, config):
         if not config.get("accept_bot_challenges", True) and self.challenger_is_bot:
-            return false
+            return False
         variants = config["supported_variants"]
         tc = config["supported_tc"]
         modes = config["supported_modes"]

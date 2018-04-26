@@ -16,13 +16,13 @@ pip install -r requirements.txt
 ```
 - Create your config file wih `cp config.yml.default config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
-  
+
 Windows:
 - Here is a video on how to install the bot: (https://youtu.be/AuncFctntYs). Or you may proceed to the next steps.
 - NOTE: Currently, only Python 3 is supported.
-- If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last . It's better to install Python in a path without spaces, like "C:\Python\". 
-- To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell" (you may use cmd too, but sometimes it may not work). 
-- Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell. 
+- If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last . It's better to install Python in a path without spaces, like "C:\Python\".
+- To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell" (you may use cmd too, but sometimes it may not work).
+- Then you may need to upgrade pip. Execute "python -m pip install --upgrade pip" in PowerShell.
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in PowerShell: `cd [folder's adress]` (like "cd C:\chess\lichess-bot").
 - Install virtualenv: `pip install virtualenv`.
@@ -52,7 +52,7 @@ pip install -r requirements.txt
 
 ## Lichess Upgrade to Bot Account
 **WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
-- run `python main.py -u`
+- run `python lichess-bot.py -u`
 
 
 ## LeelaChessZero
@@ -62,7 +62,7 @@ pip install -r requirements.txt
 - Copy both the files into the `engine.dir` directory
 - Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `latest.txt`
 - You can specify the number of `engine.threads` in the config.yml file as well
-- To start: `python main.py`
+- To start: `python lichess-bot.py`
 
 
 # Acknowledgements

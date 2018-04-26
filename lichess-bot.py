@@ -13,7 +13,7 @@ import logging_pool
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 
 try:
@@ -138,7 +138,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 if game.should_abort_now():
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
-    except (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError) as exception:
+    except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError, HTTPError) as exception:
         print("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
     finally:
@@ -227,10 +227,13 @@ def intro():
 
 if __name__ == "__main__":
     print(intro())
-    logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
+    parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')
     args = parser.parse_args()
+
+    logger = logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO)
+
     CONFIG = load_config()
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 

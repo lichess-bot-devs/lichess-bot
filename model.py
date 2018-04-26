@@ -10,11 +10,11 @@ class Challenge():
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
         self.challenger = c_info.get("challenger")
-        self.challengerTitle = self.challenger.get("title") if self.challenger else None
-        self.challengerMasterTitle = self.challengerTitle if self.challengerTitle != "BOT" else None
-        self.challengerName = self.challenger["name"] if self.challenger else "Anonymous"
-        self.challengerRatingInt = self.challenger["rating"] if self.challenger else 0
-        self.challengerRating = self.challengerRatingInt or "?"
+        self.challenger_title = self.challenger.get("title") if self.challenger else None
+        self.challenger_master_title = self.challenger_title if self.challenger_title != "BOT" else None
+        self.challenger_name = self.challenger["name"] if self.challenger else "Anonymous"
+        self.challenger_rating_int = self.challenger["rating"] if self.challenger else 0
+        self.challenger_rating = self.challenger_rating_int or "?"
 
     def is_supported_variant(self, supported):
         return self.variant in supported
@@ -33,17 +33,17 @@ class Challenge():
 
     def score(self):
         ratedBonus = 200 if self.rated else 0
-        titledBonus = 200 if self.challengerMasterTitle else 0
-        return self.challengerRatingInt + ratedBonus + titledBonus
+        titledBonus = 200 if self.challenger_master_title else 0
+        return self.challenger_rating_int + ratedBonus + titledBonus
 
     def mode(self):
         return "rated" if self.rated else "casual"
 
     def challengerFullName(self):
-        return "{}{}".format(self.challengerTitle + " " if self.challengerTitle else "", self.challengerName)
+        return "{}{}".format(self.challenger_title + " " if self.challenger_title else "", self.challenger_name)
 
     def __str__(self):
-        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challengerFullName(), self.challengerRating)
+        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challengerFullName(), self.challenger_rating)
 
     def __repr__(self):
         return self.__str__()

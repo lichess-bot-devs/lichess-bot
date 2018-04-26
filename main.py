@@ -227,10 +227,13 @@ def intro():
 
 if __name__ == "__main__":
     print(intro())
-    logger = logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
+    parser.add_argument('-d', action='store_true', help='Changes logging level from INFO to DEBUG.')
     args = parser.parse_args()
+
+    logger = logging.basicConfig(level=logging.DEBUG if args.d else logging.INFO)
+
     CONFIG = load_config()
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 

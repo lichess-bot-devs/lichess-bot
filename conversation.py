@@ -5,7 +5,8 @@ LINKS = {
     "Lichess Bots": "https://lichess.org/api#tag/Chess-Bot"
 }
 
-ID = 190
+ID = 100
+NODES = 1
 
 class Conversation():
     def __init__(self, game, engine, xhr, version):
@@ -27,7 +28,7 @@ class Conversation():
             game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")
         if cmd == "name":
-            self.send_reply(line, "{} ID {} (lichess-bot v{})".format(self.engine.name(), ID, self.version))
+            self.send_reply(line, "{} ID {}, nodes={} (lichess-bot v{})".format(self.engine.name(), ID, NODES, self.version))
         if cmd == "howto":
             self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
         if cmd == "commands" or cmd == "help":

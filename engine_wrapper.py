@@ -163,7 +163,6 @@ class XBoardEngine(EngineWrapper):
 
     def first_search(self, board, movetime):
         self.engine.setboard(board)
-        self.engine.st(movetime / 1000)
         self.engine.time(movetime / 10)
         self.engine.otim(movetime / 10)
         return self.engine.go()

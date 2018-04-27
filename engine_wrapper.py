@@ -35,7 +35,6 @@ def create_engine(config, board):
     if go_commands:
         for key, value in go_commands.items():
             commands.append("go {} {}".format(key, value))
-    
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, config.get("xboardoptions"))
@@ -81,7 +80,6 @@ class EngineWrapper:
         return stats_info
 
 
-
 class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands, options):
@@ -93,21 +91,32 @@ class UCIEngine(EngineWrapper):
         if options:
             self.engine.setoption(options)
 
-        self.engine.setoption({
-            "UCI_Variant": type(board).uci_variant,
-            "UCI_Chess960": board.chess960
-        })
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
 
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
+    def pre_game(self, game):
+        if game.speed == "ultraBullet":
+            self.engine.setoption({"slowmover": "50"})
+        if game.speed == "bullet":
+            self.engine.setoption({"slowmover": "80"})
+        if game.speed == "blitz":
+            self.engine.setoption({"slowmover": "100"})
+        if game.speed == "rapid":
+            self.engine.setoption({"slowmover": "125"})
+        if game.speed == "classical":
+            self.engine.setoption({"slowmover": "125"}) #optimal
+
     def first_search(self, board, movetime):
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
-        best_move, _ = self.engine.go(wtime=movetime,btime=movetime)
+        best_move, _ = self.engine.go(movetime=movetime)
         return best_move
 
     def search(self, board, wtime, btime, winc, binc):
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         best_move, _ = self.engine.go(
             wtime=wtime,
@@ -117,8 +126,8 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
-    def print_stats(self):
-        self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
+    def get_stats(self, to_print):
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], to_print)
 
 
 class XBoardEngine(EngineWrapper):
@@ -191,51 +200,3 @@ class XBoardEngine(EngineWrapper):
             return self.engine.features.get("myname")
         except:
             return None
-class UCIEngine(EngineWrapper):
-
-    def __init__(self, board, commands, options):
-        commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.uci.popen_engine(commands)
-
-        self.engine.uci()
-
-        if options:
-            self.engine.setoption(options)
-
-        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
-        self.engine.position(board)
-
-        info_handler = chess.uci.InfoHandler()
-        self.engine.info_handlers.append(info_handler)
-
-    def pre_game(self, game):
-        if game.speed == "ultraBullet":
-            self.engine.setoption({"slowmover": "50"})
-        if game.speed == "bullet":
-            self.engine.setoption({"slowmover": "80"})
-        if game.speed == "blitz":
-            self.engine.setoption({"slowmover": "100"})
-        if game.speed == "rapid":
-            self.engine.setoption({"slowmover": "125"})
-        if game.speed == "classical":
-            self.engine.setoption({"slowmover": "125"}) #optimal
-
-    def first_search(self, board, movetime):
-        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
-        self.engine.position(board)
-        best_move, _ = self.engine.go(movetime=movetime)
-        return best_move
-
-    def search(self, board, wtime, btime, winc, binc):
-        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
-        self.engine.position(board)
-        best_move, _ = self.engine.go(
-            wtime=wtime,
-            btime=btime,
-            winc=winc,
-            binc=binc
-        )
-        return best_move
-
-    def get_stats(self, to_print):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], to_print)

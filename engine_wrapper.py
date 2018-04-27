@@ -118,12 +118,7 @@ class UCIEngine(EngineWrapper):
     def search(self, board, wtime, btime, winc, binc):
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
-        best_move, _ = self.engine.go(
-            wtime=wtime,
-            btime=btime,
-            winc=winc,
-            binc=binc
-        )
+        best_move, _ = self.engine.go()
         return best_move
 
     def get_stats(self, to_print):

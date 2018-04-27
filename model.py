@@ -35,9 +35,9 @@ class Challenge():
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
     def score(self):
-        ratedBonus = 200 if self.rated else 0
-        titledBonus = 200 if self.challenger_master_title else 0
-        return self.challenger_rating_int + ratedBonus + titledBonus
+        rated_bonus = 200 if self.rated else 0
+        titled_bonus = 200 if self.challenger_master_title else 0
+        return self.challenger_rating_int + rated_bonus + titled_bonus
 
     def mode(self):
         return "rated" if self.rated else "casual"

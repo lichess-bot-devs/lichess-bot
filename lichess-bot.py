@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
+import time
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -127,6 +128,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
                 if is_engine_move(game, moves):
+                    if len(moves) > 9:
+                        time.sleep(min(5, game.my_remaining_seconds() * 0.015))
                     best_move = None
                     if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
                         best_move = get_book_move(board, engine_cfg)

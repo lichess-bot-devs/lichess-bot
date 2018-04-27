@@ -91,6 +91,9 @@ class Game():
     def should_abort_now(self):
         return self.is_abortable() and time.time() > self.abort_at
 
+    def my_remaining_seconds(self):
+        return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000
+
     def __str__(self):
         return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.__str__())
 

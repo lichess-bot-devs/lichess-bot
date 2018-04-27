@@ -97,17 +97,17 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
-    def pre_game(self, game):
-        if game.speed == "ultraBullet":
-            self.engine.setoption({"slowmover": "50"})
-        if game.speed == "bullet":
-            self.engine.setoption({"slowmover": "80"})
-        if game.speed == "blitz":
-            self.engine.setoption({"slowmover": "100"})
-        if game.speed == "rapid":
-            self.engine.setoption({"slowmover": "125"})
-        if game.speed == "classical":
-            self.engine.setoption({"slowmover": "125"}) #optimal
+    # def pre_game(self, game):
+    #     if game.speed == "ultraBullet":
+    #         self.engine.setoption({"slowmover": "50"})
+    #     if game.speed == "bullet":
+    #         self.engine.setoption({"slowmover": "80"})
+    #     if game.speed == "blitz":
+    #         self.engine.setoption({"slowmover": "100"})
+    #     if game.speed == "rapid":
+    #         self.engine.setoption({"slowmover": "125"})
+    #     if game.speed == "classical":
+    #         self.engine.setoption({"slowmover": "125"}) #optimal
 
     def first_search(self, board, movetime):
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})

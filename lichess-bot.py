@@ -205,10 +205,7 @@ def is_white_to_move(game, moves):
 
 
 def is_engine_move(game, moves):
-    is_w = (game.is_white and is_white_to_move(game, moves))
-    is_b = (game.is_white is False and is_white_to_move(game, moves) is False)
-
-    return (is_w or is_b)
+    return game.is_white == is_white_to_move(game, moves)
 
 
 def update_board(board, move):

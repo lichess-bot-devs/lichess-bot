@@ -1,5 +1,6 @@
 import sys
 import time
+import math
 from urllib.parse import urljoin
 
 class Challenge():
@@ -8,6 +9,7 @@ class Challenge():
         self.rated = c_info["rated"]
         self.variant = c_info["variant"]["key"]
         self.perf_name = c_info["perf"]["name"]
+        self.clock = c_info["timeControl"]
         self.speed = c_info["speed"]
         self.challenger = c_info.get("challenger")
         self.challenger_title = self.challenger.get("title") if self.challenger else None
@@ -35,9 +37,11 @@ class Challenge():
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
     def score(self):
-        ratedBonus = 200 if self.rated else 0
-        titledBonus = 200 if self.challenger_master_title else 0
-        return self.challenger_rating_int + ratedBonus + titledBonus
+        rated_bonus = 200 if self.rated else 0
+        titled_bonus = 200 if self.challenger_master_title else 0
+        duration = self.clock["limit"] + 40 * self.clock["increment"]
+        slow_malus = min(250,round(7*math.sqrt(max(0, duration - 180))))
+        return self.challenger_rating_int + rated_bonus + titled_bonus - slow_malus
 
     def mode(self):
         return "rated" if self.rated else "casual"

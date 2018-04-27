@@ -75,46 +75,6 @@ class EngineWrapper:
         return stats_info
 
 
-
-class UCIEngine(EngineWrapper):
-
-    def __init__(self, board, commands, options):
-        commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.uci.popen_engine(commands)
-
-        self.engine.uci()
-
-        if options:
-            self.engine.setoption(options)
-
-        self.engine.setoption({
-            "UCI_Variant": type(board).uci_variant,
-            "UCI_Chess960": board.chess960
-        })
-        self.engine.position(board)
-
-        info_handler = chess.uci.InfoHandler()
-        self.engine.info_handlers.append(info_handler)
-
-    def first_search(self, board, movetime):
-        self.engine.position(board)
-        best_move, _ = self.engine.go(wtime=movetime,btime=movetime)
-        return best_move
-
-    def search(self, board, wtime, btime, winc, binc):
-        self.engine.position(board)
-        best_move, _ = self.engine.go(
-            wtime=wtime,
-            btime=btime,
-            winc=winc,
-            binc=binc
-        )
-        return best_move
-
-    def print_stats(self):
-        self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
-
-
 class XBoardEngine(EngineWrapper):
 
     def __init__(self, board, commands, options=None):
@@ -185,6 +145,7 @@ class XBoardEngine(EngineWrapper):
             return self.engine.features.get("myname")
         except:
             return None
+
 class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands, options):
@@ -196,7 +157,10 @@ class UCIEngine(EngineWrapper):
         if options:
             self.engine.setoption(options)
 
-        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
+        self.engine.setoption({
+            "UCI_Variant": type(board).uci_variant,
+            "UCI_Chess960": board.chess960
+        })
         self.engine.position(board)
 
         info_handler = chess.uci.InfoHandler()

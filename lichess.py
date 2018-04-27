@@ -14,16 +14,16 @@ except ImportError:
 import backoff
 
 ENDPOINTS = {
-    "profile": "/account/me",
-    "stream": "/bot/game/stream/{}",
+    "profile": "/api/account",
+    "stream": "/api/bot/game/stream/{}",
     "stream_event": "/api/stream/event",
-    "game": "/bot/game/{}",
-    "move": "/bot/game/{}/move/{}",
-    "chat": "/bot/game/{}/chat",
-    "abort": "/bot/game/{}/abort",
-    "accept": "/challenge/{}/accept",
-    "decline": "/challenge/{}/decline",
-    "upgrade": "/bot/account/upgrade"
+    "game": "/api/bot/game/{}",
+    "move": "/api/bot/game/{}/move/{}",
+    "chat": "/api/bot/game/{}/chat",
+    "abort": "/api/bot/game/{}/abort",
+    "accept": "/api/challenge/{}/accept",
+    "decline": "/api/challenge/{}/decline",
+    "upgrade": "/api/bot/account/upgrade"
 }
 
 # docs: https://lichess.org/api

@@ -12,10 +12,12 @@ def create_engine(config, board):
     gpu = cfg.get("gpu")
     tempdecay = cfg.get("tempdecay")
     noise = cfg.get("noise")
+    go_commands = cfg.get("go_commands")
 
     # TODO: ucioptions should probably be a part of the engine subconfig
     ucioptions = config.get("ucioptions")
     engine_type = cfg.get("protocol")
+
     commands = [engine_path]
     if weights:
         commands.append("-w")
@@ -30,6 +32,10 @@ def create_engine(config, board):
         commands.append("--tempdecay={}".format(tempdecay))
     if noise:
         commands.append("--noise")
+    if go_commands:
+        for key, value in go_commands.items():
+            commands.append("go {} {}".format(key, value))
+    
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, config.get("xboardoptions"))

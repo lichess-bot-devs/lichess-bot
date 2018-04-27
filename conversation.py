@@ -5,7 +5,7 @@ LINKS = {
     "Lichess Bots": "https://lichess.org/api#tag/Chess-Bot"
 }
 
-ID = 45
+ID = 33
 NODES = 1
 
 class Conversation():

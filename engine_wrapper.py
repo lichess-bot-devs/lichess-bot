@@ -2,9 +2,10 @@ import os
 import chess
 import chess.xboard
 import chess.uci
+import backoff
 
+@backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
-    # print("Loading Engine!")
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None

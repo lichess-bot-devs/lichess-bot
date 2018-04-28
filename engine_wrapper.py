@@ -37,10 +37,7 @@ class EngineWrapper:
     def __init__(self, board, commands, options=None):
         pass
 
-    def pre_game(self, game):
-        pass
-
-    def first_search(self, movetime):
+    def first_search(self, game, board, movetime):
         pass
 
     def search(self, board, wtime, btime, winc, binc):
@@ -81,9 +78,9 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
-    def first_search(self, board, movetime):
+    def first_search(self, game, board, movetime):
         self.engine.position(board)
-        best_move, _ = self.engine.go(wtime=movetime,btime=movetime)
+        best_move, _ = self.engine.go(movetime=movetime)
         return best_move
 
     def search(self, board, wtime, btime, winc, binc):
@@ -140,17 +137,17 @@ class XBoardEngine(EngineWrapper):
                 except EngineStateException:
                     pass
 
-    def pre_game(self, game):
+    def first_search(self, game, board, movetime):
         minutes = game.clock_initial / 1000 / 60
         seconds = game.clock_initial / 1000 % 60
         inc = game.clock_increment / 1000
-        self.engine.level(0, minutes, seconds, inc)
 
-    def first_search(self, board, movetime):
         self.engine.setboard(board)
-        self.engine.time(movetime / 10)
-        self.engine.otim(movetime / 10)
-        return self.engine.go()
+        self.engine.level(0, 0, movetime / 1000, 0)
+        bestmove = self.engine.go()
+
+        self.engine.level(0, minutes, seconds, inc)
+        return bestmove
 
     def search(self, board, wtime, btime, winc, binc):
         self.engine.setboard(board)

@@ -107,8 +107,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
 
     print("+++ {}".format(game))
 
-    engine.pre_game(game)
-
     engine_cfg = config["engine"]
 
     if (engine_cfg["polyglot"] == True):
@@ -153,7 +151,7 @@ def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(board, 2000)
+        best_move = engine.first_search(game, board, 10000)
         li.make_move(game.id, best_move)
 
     return board

@@ -37,6 +37,9 @@ class EngineWrapper:
     def __init__(self, board, commands, options=None):
         pass
 
+    def set_time_control(self, game):
+        pass
+
     def first_search(self, game, board, movetime):
         pass
 
@@ -137,16 +140,17 @@ class XBoardEngine(EngineWrapper):
                 except EngineStateException:
                     pass
 
-    def first_search(self, game, board, movetime):
+    def set_time_control(self, game):
         minutes = game.clock_initial / 1000 / 60
         seconds = game.clock_initial / 1000 % 60
         inc = game.clock_increment / 1000
+        self.engine.level(0, minutes, seconds, inc)
 
+    def first_search(self, game, board, movetime):
         self.engine.setboard(board)
         self.engine.level(0, 0, movetime / 1000, 0)
         bestmove = self.engine.go()
 
-        self.engine.level(0, minutes, seconds, inc)
         return bestmove
 
     def search(self, board, wtime, btime, winc, binc):

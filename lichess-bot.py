@@ -130,8 +130,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 if is_engine_move(game, moves):
                     if len(moves) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.012
-                        accel = 1 - max(0, min(100, len(moves) - 20)) / 200
-                        time.sleep(min(5, delay / accel))
+                        accel = 1 - max(0, min(100, len(moves) - 20)) / 150
+                        time.sleep(min(5, delay * accel))
                     best_move = None
                     if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
                         best_move = get_book_move(board, engine_cfg)

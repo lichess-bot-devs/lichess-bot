@@ -23,7 +23,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "0.12"
+__version__ = "0.13"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -81,7 +81,6 @@ def start(li, user_profile, engine_factory, config):
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-
             while ((queued_processes + busy_processes) < max_games and challenge_queue): # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
                 try:

@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
+import backoff
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -31,6 +32,7 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
+@backoff.on_exception(backoff.expo, BaseException, max_time=600)
 def watch_control_stream(control_queue, li):
     for evnt in li.get_event_stream().iter_lines():
         if evnt:
@@ -96,6 +98,7 @@ def start(li, user_profile, engine_factory, config):
     control_stream.terminate()
     control_stream.join()
 
+@backoff.on_exception(backoff.expo, BaseException, max_time=600)
 def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     updates = li.get_game_stream(game_id).iter_lines()
 

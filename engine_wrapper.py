@@ -36,7 +36,7 @@ def create_engine(config, board, verbose=False):
     if noise:
         commands.append("--noise")
 
-    silence_stderr = config.get("silence_stderr", False)
+    silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, config.get("xboardoptions"), silence_stderr)
@@ -77,7 +77,7 @@ class EngineWrapper:
                 if to_print:
                     print("    {}".format(str))
             if stat == "winrate":
-                str = "winrate: {:0.1%}".format(feval)
+                str = "win %: {}".format(feval)
                 stats_info.append(str)
                 if to_print:
                     print("    {}".format(str))
@@ -114,7 +114,7 @@ class UCIEngine(EngineWrapper):
         return best_move
 
     def get_stats(self, to_print):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score", "winrate"], to_print)
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["nps", "nodes", "score", "winrate"], to_print)
 
 
 class XBoardEngine(EngineWrapper):

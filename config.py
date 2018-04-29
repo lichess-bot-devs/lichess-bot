@@ -2,8 +2,8 @@ import yaml
 import os
 import os.path
 
-def load_config():
-    with open("./config.yml", 'r') as stream:
+def load_config(config_file):
+    with open(config_file) as stream:
         try:
             CONFIG = yaml.load(stream)
         except Exception as e:

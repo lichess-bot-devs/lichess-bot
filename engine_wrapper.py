@@ -72,8 +72,8 @@ class EngineWrapper:
                 stats_info.append(str)
                 if to_print:
                     print("    {}".format(str))
-            if stat == "exp":
-                str = "exp: {:0.1%}".format(feval)
+            if stat == "winrate":
+                str = "winrate: {:0.1%}".format(feval)
                 stats_info.append(str)
                 if to_print:
                     print("    {}".format(str))
@@ -130,7 +130,7 @@ class UCIEngine(EngineWrapper):
         return best_move
 
     def get_stats(self, to_print):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score", "exp"], to_print)
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score", "winrate"], to_print)
 
 
 class XBoardEngine(EngineWrapper):

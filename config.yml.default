@@ -13,6 +13,7 @@ engine:                      # engine settings
   polyglot_max_depth: 8      # half move max depth
   polyglot_min_weight: 1     # best move weight
   polyglot_random: true      # select move randomly otherwise select by min weight
+  silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 ucioptions:                  # arbitrary UCI options passed to the engine
   Move Overhead: 100         # increase if your bot flags games too often

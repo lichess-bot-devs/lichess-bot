@@ -15,7 +15,6 @@ def create_engine(config, board, verbose=False):
     gpu = cfg.get("gpu")
     tempdecay = cfg.get("tempdecay")
     noise = cfg.get("noise")
-    go_commands = cfg.get("go_commands")
 
     # TODO: ucioptions should probably be a part of the engine subconfig
     ucioptions = config.get("ucioptions")
@@ -36,9 +35,6 @@ def create_engine(config, board, verbose=False):
         commands.append(str(tempdecay))
     if noise:
         commands.append("--noise")
-    if go_commands:
-        for key, value in go_commands.items():
-            commands.append("go {} {}".format(key, value))
 
     silence_stderr = config.get("silence_stderr", False)
 

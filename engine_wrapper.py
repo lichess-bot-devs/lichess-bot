@@ -6,7 +6,7 @@ import backoff
 import subprocess
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
-def create_engine(config, board, verbose=False):
+def create_engine(config, board):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
@@ -27,15 +27,17 @@ def create_engine(config, board, verbose=False):
         commands.append("--gpu")
         commands.append(str(gpu))
 
-    if engine_type == "xboard":
-        return XBoardEngine(board, commands, config.get("xboardoptions"))
+    silence_stderr = config.get("silence_stderr", False)
 
-    return UCIEngine(board, commands, config.get("ucioptions"))
+    if engine_type == "xboard":
+        return XBoardEngine(board, commands, config.get("xboardoptions"), silence_stderr)
+
+    return UCIEngine(board, commands, config.get("ucioptions"), silence_stderr)
 
 
 class EngineWrapper:
 
-    def __init__(self, board, commands, options=None, verbose=False):
+    def __init__(self, board, commands, options=None, silence_stderr=False):
         pass
 
     def first_search(self, game, board, movetime):
@@ -61,9 +63,9 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
 
-    def __init__(self, board, commands, options, verbose=False):
+    def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.uci.popen_engine(commands, stderr = None if verbose else subprocess.DEVNULL)
+        self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
 
         self.engine.uci()
 
@@ -100,9 +102,9 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
 
-    def __init__(self, board, commands, options=None, verbose=False):
+    def __init__(self, board, commands, options=None, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.xboard.popen_engine(commands, stderr = None if verbose else subprocess.DEVNULL)
+        self.engine = chess.xboard.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
 
         self.engine.xboard()
 

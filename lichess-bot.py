@@ -174,11 +174,12 @@ def play_first_book_move(game, engine, board, li, config):
 def get_book_move(board, engine_cfg):
     try:
         with chess.polyglot.open_reader(engine_cfg["polyglot_book"]) as reader:
-            if (engine_cfg["polyglot_random"] == True):
-                book_move = reader.choice(board).move()
+            if engine_cfg["polyglot_move_selection"] == "random_weight":
+                return reader.weighted_choice(board).move()
+            elif engine_cfg["polyglot_move_selection"] == "random_move":
+                return reader.choice(board, engine_cfg["polyglot_min_weight"]).move()
             else:
-                book_move = reader.find(board, engine_cfg["polyglot_min_weight"]).move()
-            return book_move
+                return reader.find(board, engine_cfg["polyglot_min_weight"]).move()
     except:
         pass
 

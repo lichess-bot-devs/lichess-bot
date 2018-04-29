@@ -130,7 +130,7 @@ class UCIEngine(EngineWrapper):
         return best_move
 
     def get_stats(self, to_print):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], to_print)
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score", "exp"], to_print)
 
 
 class XBoardEngine(EngineWrapper):

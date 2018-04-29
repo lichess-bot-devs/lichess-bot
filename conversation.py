@@ -33,7 +33,7 @@ class Conversation():
         if cmd == "commands" or cmd == "help":
             msg = "Supported commands: !name, !eval, !id, !leela, !hardware, !info, and !howto"
             self.send_reply(line, msg)
-        if cmd == "eval":
+        if cmd == "eval" and line.room == "spectator":
             stats = self.engine.get_stats(True)
             self.send_reply(line, ", ".join(stats))
         if cmd == "id":

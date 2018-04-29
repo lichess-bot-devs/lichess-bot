@@ -27,7 +27,7 @@ def create_engine(config, board):
         commands.append("--gpu")
         commands.append(str(gpu))
 
-    silence_stderr = config.get("silence_stderr", False)
+    silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, config.get("xboardoptions"), silence_stderr)

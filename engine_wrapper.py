@@ -28,7 +28,8 @@ def create_engine(config, board):
         commands.append("--gpu")
         commands.append(str(gpu))
     if tempdecay:
-        commands.append("--tempdecay={}".format(tempdecay))
+        commands.append("--tempdecay")
+        commands.append(str(tempdecay))
     if noise:
         commands.append("--noise")
 
@@ -69,6 +70,12 @@ class EngineWrapper:
                 if stat == "score":
                     for k,v in info[stat].items():
                         str = "score: {}".format(v.cp)
+                        feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
+                stats_info.append(str)
+                if to_print:
+                    print("    {}".format(str))
+            if stat == "exp":
+                str = "exp: {:0.1%}".format(feval)
                 stats_info.append(str)
                 if to_print:
                     print("    {}".format(str))

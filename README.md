@@ -3,7 +3,8 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 
 ## How to Install
-Mac/Linux:
+
+### Mac/Linux:
 - NOTE: Currently, only Python3 is supported
 - Download the repo into lichess-bot directory
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`
@@ -17,7 +18,7 @@ pip install -r requirements.txt
 - Copy `config.yml.default` to `config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
-Windows:
+### Windows:
 - Here is a video on how to install the bot: (https://youtu.be/AuncFctntYs). Or you may proceed to the next steps.
 - NOTE: Currently, only Python 3 is supported.
 - If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last . It's better to install Python in a path without spaces, like "C:\Python\".

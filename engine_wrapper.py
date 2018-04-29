@@ -4,9 +4,10 @@ import chess.xboard
 import chess.uci
 import backoff
 import math
+import subprocess
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
-def create_engine(config, board):
+def create_engine(config, board, verbose=False):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
@@ -47,7 +48,7 @@ def create_engine(config, board):
 
 class EngineWrapper:
 
-    def __init__(self, board, commands, options=None):
+    def __init__(self, board, commands, options=None, verbose=False):
         pass
 
     def first_search(self, game, board, movetime):
@@ -88,9 +89,9 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
 
-    def __init__(self, board, commands, options):
+    def __init__(self, board, commands, options, verbose=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.uci.popen_engine(commands)
+        self.engine = chess.uci.popen_engine(commands, stderr = None if verbose else subprocess.DEVNULL)
 
         self.engine.uci()
 
@@ -120,9 +121,9 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
 
-    def __init__(self, board, commands, options=None):
+    def __init__(self, board, commands, options=None, verbose=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.xboard.popen_engine(commands)
+        self.engine = chess.xboard.popen_engine(commands, stderr = None if verbose else subprocess.DEVNULL)
 
         self.engine.xboard()
 

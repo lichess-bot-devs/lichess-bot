@@ -14,7 +14,7 @@ virtualenv .venv -p python3 #if this fails you probably need to add Python3 to y
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
-- Create your config file wih `cp config.yml.default config.yml`
+- Copy `config.yml.default` to `config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
 Windows:
@@ -32,7 +32,7 @@ virtualenv .venv -p python (if this fails you probably need to add Python to you
 ./.venv/Scripts/activate (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
 pip install -r requirements.txt
 ```
-- Create your config file wih `cp config.yml.default config.yml`
+- Copy `config.yml.default` to `config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary (use # to disable certain ones)
 
 

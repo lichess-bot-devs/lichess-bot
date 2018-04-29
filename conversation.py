@@ -1,4 +1,5 @@
 import random
+import math
 
 LINKS = {
     "LCzero": "http://lczero.org/",

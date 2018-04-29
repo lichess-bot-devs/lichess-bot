@@ -3,6 +3,7 @@ import chess
 import chess.xboard
 import chess.uci
 import backoff
+import math
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
@@ -30,7 +31,8 @@ def create_engine(config, board):
         commands.append("--gpu")
         commands.append(str(gpu))
     if tempdecay:
-        commands.append("--tempdecay={}".format(tempdecay))
+        commands.append("--tempdecay")
+        commands.append(str(tempdecay))
     if noise:
         commands.append("--noise")
     if go_commands:
@@ -71,6 +73,12 @@ class EngineWrapper:
                 if stat == "score":
                     for k,v in info[stat].items():
                         str = "score: {}".format(v.cp)
+                        feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
+                stats_info.append(str)
+                if to_print:
+                    print("    {}".format(str))
+            if stat == "exp":
+                str = "exp: {:0.1%}".format(feval)
                 stats_info.append(str)
                 if to_print:
                     print("    {}".format(str))
@@ -107,7 +115,7 @@ class UCIEngine(EngineWrapper):
         return best_move
 
     def get_stats(self, to_print):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], to_print)
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score", "exp"], to_print)
 
 
 class XBoardEngine(EngineWrapper):

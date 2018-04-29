@@ -76,7 +76,7 @@ class EngineWrapper:
                 if to_print:
                     print("    {}".format(str))
             if stat == "winrate":
-                str = "win %: {}".format(feval)
+                str = "win %: {:.2f}".format(feval*100)
                 stats_info.append(str)
                 if to_print:
                     print("    {}".format(str))

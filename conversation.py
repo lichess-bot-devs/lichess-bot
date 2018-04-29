@@ -19,9 +19,9 @@ class Conversation():
         if cmd == "wait" and game.is_abortable():
             game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")
-        if cmd == "name":
+        elif cmd == "name":
             self.send_reply(line, "{} (lichess-bot v{})".format(self.engine.name(), self.version))
-        if cmd == "howto":
+        elif cmd == "howto":
             self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
 
     def send_reply(self, line, reply):

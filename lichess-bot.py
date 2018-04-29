@@ -226,7 +226,7 @@ if __name__ == "__main__":
     print(intro())
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
-    parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')
+    parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG, and prints the engine stderr.')
     parser.add_argument('--config', help='Specify a configuration file (defaults to ./config.yml)')
     args = parser.parse_args()
 
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        engine_factory = partial(engine_wrapper.create_engine, CONFIG)
+        engine_factory = partial(engine_wrapper.create_engine, CONFIG, args.v)
         start(li, user_profile, engine_factory, CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

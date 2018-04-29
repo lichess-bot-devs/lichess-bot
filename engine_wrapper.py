@@ -3,6 +3,7 @@ import chess
 import chess.xboard
 import chess.uci
 import backoff
+import math
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):

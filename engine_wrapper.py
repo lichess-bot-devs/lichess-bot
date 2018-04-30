@@ -3,6 +3,7 @@ import chess
 import chess.xboard
 import chess.uci
 import backoff
+import subprocess
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
@@ -26,15 +27,17 @@ def create_engine(config, board):
         commands.append("--gpu")
         commands.append(str(gpu))
 
-    if engine_type == "xboard":
-        return XBoardEngine(board, commands, config.get("xboardoptions"))
+    silence_stderr = cfg.get("silence_stderr", False)
 
-    return UCIEngine(board, commands, config.get("ucioptions"))
+    if engine_type == "xboard":
+        return XBoardEngine(board, commands, config.get("xboardoptions"), silence_stderr)
+
+    return UCIEngine(board, commands, config.get("ucioptions"), silence_stderr)
 
 
 class EngineWrapper:
 
-    def __init__(self, board, commands, options=None):
+    def __init__(self, board, commands, options=None, silence_stderr=False):
         pass
 
     def set_time_control(self, game):
@@ -63,9 +66,9 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
 
-    def __init__(self, board, commands, options):
+    def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.uci.popen_engine(commands)
+        self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
 
         self.engine.uci()
 
@@ -102,9 +105,9 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
 
-    def __init__(self, board, commands, options=None):
+    def __init__(self, board, commands, options=None, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.xboard.popen_engine(commands)
+        self.engine = chess.xboard.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
 
         self.engine.xboard()
 

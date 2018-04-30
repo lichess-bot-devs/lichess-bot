@@ -3,7 +3,8 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 
 
 ## How to Install
-Mac/Linux:
+
+### Mac/Linux:
 - NOTE: Currently, only Python3 is supported
 - Download the repo into lichess-bot directory
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`
@@ -14,10 +15,10 @@ virtualenv .venv -p python3 #if this fails you probably need to add Python3 to y
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
-- Create your config file wih `cp config.yml.default config.yml`
+- Copy `config.yml.default` to `config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
-Windows:
+### Windows:
 - Here is a video on how to install the bot: (https://youtu.be/AuncFctntYs). Or you may proceed to the next steps.
 - NOTE: Currently, only Python 3 is supported.
 - If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last . It's better to install Python in a path without spaces, like "C:\Python\".
@@ -32,7 +33,7 @@ virtualenv .venv -p python (if this fails you probably need to add Python to you
 ./.venv/Scripts/activate (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
 pip install -r requirements.txt
 ```
-- Create your config file wih `cp config.yml.default config.yml`
+- Copy `config.yml.default` to `config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary (use # to disable certain ones)
 
 
@@ -64,6 +65,27 @@ pip install -r requirements.txt
 - You can specify the number of `engine.threads` in the config.yml file as well
 - To start: `python lichess-bot.py`
 
+
+## Tips & Tricks
+- You can specify a different config file with the `--config` argument.
+- Here's an example systemd service definition:
+```
+[Unit]
+Description=lichess-bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 /home/thibault/lichess-bot/lichess-bot.py
+WorkingDirectory=/home/thibault/lichess-bot/
+User=thibault
+Group=thibault
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
 
 # Acknowledgements
 Thanks to the Lichess team, especially T. Alexander Lystad and Thibault Duplessis for working with the LeelaChessZero

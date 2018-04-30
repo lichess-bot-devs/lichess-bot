@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
+import backoff
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -22,7 +23,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "0.11"
+__version__ = "0.13"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -31,6 +32,7 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
+@backoff.on_exception(backoff.expo, BaseException, max_time=600)
 def watch_control_stream(control_queue, li):
     for evnt in li.get_event_stream().iter_lines():
         if evnt:
@@ -79,7 +81,6 @@ def start(li, user_profile, engine_factory, config):
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-
             while ((queued_processes + busy_processes) < max_games and challenge_queue): # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
                 try:
@@ -96,6 +97,7 @@ def start(li, user_profile, engine_factory, config):
     control_stream.terminate()
     control_stream.join()
 
+@backoff.on_exception(backoff.expo, BaseException, max_time=600)
 def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     updates = li.get_game_stream(game_id).iter_lines()
 
@@ -225,11 +227,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')
+    parser.add_argument('--config', help='Specify a configuration file (defaults to ./config.yml)')
     args = parser.parse_args()
 
     logger = logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO)
 
-    CONFIG = load_config()
+    CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 
     user_profile = li.get_profile()

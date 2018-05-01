@@ -23,6 +23,9 @@ class Conversation():
             self.send_reply(line, "{} (lichess-bot v{})".format(self.engine.name(), self.version))
         elif cmd == "howto":
             self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
+        elif cmd == "eval":
+            stats = self.engine.get_stats()
+            self.send_reply(line, ", ".join(stats))
 
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)

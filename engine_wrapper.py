@@ -60,6 +60,14 @@ class EngineWrapper:
             if stat in info:
                 print("    {}: {}".format(stat, info[stat]))
 
+    def get_handler_stats(self, info, stats):
+        stats_str = []
+        for stat in stats:
+            if stat in info:
+                stats_str.append("{}: {}".format(stat, info[stat]))
+
+        return stats_str
+
 
 class UCIEngine(EngineWrapper):
 
@@ -99,6 +107,8 @@ class UCIEngine(EngineWrapper):
     def print_stats(self):
         self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
 
+    def get_stats(self):
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
 class XBoardEngine(EngineWrapper):
 
@@ -164,6 +174,10 @@ class XBoardEngine(EngineWrapper):
 
     def print_stats(self):
         self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+
+    def get_stats(self):
+        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+
 
     def name(self):
         try:

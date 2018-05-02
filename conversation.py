@@ -36,7 +36,7 @@ class Conversation():
             self.send_reply(line, msg)
         elif cmd == "eval" and line.room == "spectator":
             stats = self.engine.get_stats(True)
-            num_moves = int(len(game.state["moves"].split())/2.0)
+            num_moves = int(len(game.state["moves"].split())/2.0) + 1
             stats.append("move: {}".format(num_moves))
             self.send_reply(line, ", ".join(stats))
         elif cmd == "eval":

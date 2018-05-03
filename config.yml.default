@@ -10,17 +10,16 @@ engine:                      # engine settings
 #  gpu: 0                    # only if the engine is lczero
   polyglot:
     enabled: false           # activate polyglot book
-    book: "book.bin"         # book file path
+    book: "engines/book.bin" # book file path
     max_depth: 8             # half move max depth
     min_weight: 1            # best move weight
     random: true             # select move randomly otherwise select by min weight
+  ucioptions:                # arbitrary UCI options passed to the engine
+    Move Overhead: 100       # increase if your bot flags games too often
+    Threads: 2               # max CPU threads the engine can use
+    Hash: 256                # max memory (in megabytes) the engine can allocate
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
-ucioptions:                  # arbitrary UCI options passed to the engine
-  Move Overhead: 100         # increase if your bot flags games too often
-#  Threads: 4
-#  Hash: "4096"
-#  Book File: "engines/book.bin"
 
 xboardoptions:
 #  cores: "4"

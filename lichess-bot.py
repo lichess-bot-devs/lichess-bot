@@ -23,7 +23,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "0.14"
+__version__ = "1.0.0-rc.1"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:

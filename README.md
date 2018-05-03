@@ -66,6 +66,27 @@ pip install -r requirements.txt
 - To start: `python lichess-bot.py`
 
 
+## Tips & Tricks
+- You can specify a different config file with the `--config` argument.
+- Here's an example systemd service definition:
+```
+[Unit]
+Description=lichess-bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 /home/thibault/lichess-bot/lichess-bot.py
+WorkingDirectory=/home/thibault/lichess-bot/
+User=thibault
+Group=thibault
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
 # Acknowledgements
 Thanks to the Lichess team, especially T. Alexander Lystad and Thibault Duplessis for working with the LeelaChessZero
 team to get this API up. Thanks to the Niklas Fiekas and his [python-chess](https://github.com/niklasf/python-chess) code which allows engine communication seamlessly.

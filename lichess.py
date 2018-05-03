@@ -23,7 +23,8 @@ ENDPOINTS = {
     "abort": "/api/bot/game/{}/abort",
     "accept": "/api/challenge/{}/accept",
     "decline": "/api/challenge/{}/decline",
-    "upgrade": "/api/bot/account/upgrade"
+    "upgrade": "/api/bot/account/upgrade",
+    "resign": "/api/bot/game/{}/resign"
 }
 
 # docs: https://lichess.org/api
@@ -96,6 +97,9 @@ class Lichess():
         profile = self.api_get(ENDPOINTS["profile"])
         self.set_user_agent(profile["username"])
         return profile
+
+    def resign(self, game_id):
+        self.api_post(ENDPOINTS["resign"].format(game_id))
 
     def set_user_agent(self, username):
         self.header.update({"User-Agent": "lichess-bot/{} user:{}".format(self.version, username)})

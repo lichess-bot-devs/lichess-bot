@@ -8,11 +8,12 @@ engine:                      # engine settings
 #  weights: "latest.txt"     # only if the engine is lczero
 #  threads: 1                # only if the engine is lczero
 #  gpu: 0                    # only if the engine is lczero
-  polyglot: false            # activate polyglot book
-  polyglot_book: "book.bin"  # book file name, must be in engine.dir
-  polyglot_max_depth: 8      # half move max depth
-  polyglot_min_weight: 1     # best move weight
-  polyglot_random: true      # select move randomly otherwise select by min weight
+  polyglot:
+    enabled: false           # activate polyglot book
+    book: "book.bin"         # book file path
+    max_depth: 8             # half move max depth
+    min_weight: 1            # best move weight
+    random: true             # select move randomly otherwise select by min weight
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 ucioptions:                  # arbitrary UCI options passed to the engine

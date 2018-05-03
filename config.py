@@ -24,12 +24,7 @@ def load_config(config_file):
                 raise Exception(section[2])
 
         engine_sections = [["dir", str, "´dir´ must be a string wrapped in quotes."],
-                           ["name", str, "´name´ must be a string wrapped in quotes."],
-                           ["polyglot", bool, "´polyglot´ must be a boolean type: true or false."],
-                           ["polyglot_book", str, "´polyglot_book´ must be a string wrapped in quotes."],
-                           ["polyglot_max_depth", int, "`polyglot_max_depth` must be an integer number without quotes."],
-                           ["polyglot_min_weight", int, "`polyglot_min_weight` must be an integer number without quotes."],
-                           ["polyglot_random", bool, "`polyglot_random` must be a boolean type: true or false."]]
+                           ["name", str, "´name´ must be a string wrapped in quotes."]]
         for subsection in engine_sections:
             if subsection[0] not in CONFIG["engine"]:
                 raise Exception("Your config.yml does not have required `engine` subsection `{}`.".format(subsection))
@@ -49,11 +44,5 @@ def load_config(config_file):
 
         if not os.access(engine, os.X_OK):
             raise Exception("The engine %s doesn't have execute (x) permission. Try: chmod +x %s" % (engine, engine))
-
-        if (CONFIG["engine"]["polyglot"] == True):
-            book_dir = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["polyglot_book"])
-            if not os.path.isfile(book_dir):
-                raise Exception("The polyglot book %s file does not exist." % book_dir)
-            CONFIG["engine"]["polyglot_book"] = book_dir
 
     return CONFIG

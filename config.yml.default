@@ -18,17 +18,17 @@ engine:                      # engine settings
     Move Overhead: 100       # increase if your bot flags games too often
     Threads: 2               # max CPU threads the engine can use
     Hash: 256                # max memory (in megabytes) the engine can allocate
+  xboardoptions:
+#   cores: "4"
+#   memory: "4096"
+#   egtpath:                   # dir containing egtb, relative to this project
+#     gaviota: "Gaviota path"
+#     nalimov: "Nalimov Path"
+#     scorpio: "Scorpio Path"
+#     syzygy: "Syzygy Path"
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 
-xboardoptions:
-#  cores: "4"
-#  memory: "4096"
-#  egtpath:                   # dir containing egtb, relative to this project
-#    gaviota: "Gaviota path"
-#    nalimov: "Nalimov Path"
-#    scorpio: "Scorpio Path"
-#    syzygy: "Syzygy Path"
 
 max_concurrent_games: 1      # number of games to play simultaneously
 sort_challenges_by: "best"   # possible values: "best", "first"

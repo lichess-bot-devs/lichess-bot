@@ -22,6 +22,11 @@ def create_engine(config, board):
         if "gpu" in lczero_options:
             commands.append("--gpu")
             commands.append(str(lczero_options["gpu"]))
+        if "tempdecay" in lczero_options:
+            commands.append("--tempdecay")
+            commands.append(str(lczero_options["tempdecay"]))
+        if lczero_options.get("noise"):
+            commands.append("--noise")
 
     silence_stderr = cfg.get("silence_stderr", False)
 

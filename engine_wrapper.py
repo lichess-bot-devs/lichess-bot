@@ -13,7 +13,6 @@ def create_engine(config, board):
     threads = cfg.get("threads")
     gpu = cfg.get("gpu")
 
-    # TODO: ucioptions should probably be a part of the engine subconfig
     engine_type = cfg.get("protocol")
     commands = [engine_path]
     if weights:
@@ -29,9 +28,9 @@ def create_engine(config, board):
     silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
-        return XBoardEngine(board, commands, cfg.get("xboardoptions"), silence_stderr)
+        return XBoardEngine(board, commands, cfg.get("xboard_options"), silence_stderr)
 
-    return UCIEngine(board, commands, cfg.get("ucioptions"), silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
 
 
 class EngineWrapper:

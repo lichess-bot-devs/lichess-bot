@@ -29,12 +29,12 @@ def create_engine(config, board, verbose=False):
         if lczero_options.get("noise"):
             commands.append("--noise")
 
-        silence_stderr = cfg.get("silence_stderr", False)
+    silence_stderr = cfg.get("silence_stderr", False)
 
-        if engine_type == "xboard":
-            return XBoardEngine(board, commands, cfg.get("xboard_options"), silence_stderr)
+    if engine_type == "xboard":
+        return XBoardEngine(board, commands, cfg.get("xboard_options"), silence_stderr)
 
-        return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
 
 
 class EngineWrapper:

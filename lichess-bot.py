@@ -115,6 +115,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
         board = play_first_book_move(game, engine, board, li, engine_cfg)
     else:
         board = play_first_move(game, engine, board, li)
+    engine.set_time_control(game)
 
     try:
         for binary_chunk in updates:
@@ -153,9 +154,8 @@ def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(game, board, 10000)
+        best_move = engine.first_search(board, 10000)
         li.make_move(game.id, best_move)
-
     return board
 
 

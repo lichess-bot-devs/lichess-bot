@@ -21,42 +21,37 @@ engine:                      # engine settings
   xboardoptions:
 #   cores: "4"
 #   memory: "4096"
-#   egtpath:                   # dir containing egtb, relative to this project
+#   egtpath:                 # dir containing egtb, relative to this project
 #     gaviota: "Gaviota path"
 #     nalimov: "Nalimov Path"
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
-
-
 max_concurrent_games: 1      # number of games to play simultaneously
-sort_challenges_by: "best"   # possible values: "best", "first"
 abort_time: 20               # time to abort a game in seconds when there is no activity
-accept_bot_challenges: true  # accepts challenges coming from other bots
 
-supported_variants:          # chess variants to accept (http://lichess.org/variant)
-  - standard
-#  - fromPosition
-#  - antichess
-#  - atomic
-#  - chess960
-#  - crazyhouse
-#  - horde
-#  - kingOfTheHill
-#  - racingKings
-#  - threeCheck
-
-supported_tc:                # time controls to accept
-  - ultraBullet
-  - bullet
-  - blitz
-  - rapid
-#  - classical
-#  - correspondence
-
-supported_modes:             # game modes to accept
-  - casual                   # unrated games
-  - rated                    # rated games - must comment if the engine doesn't try to win
-
-print_engine_stats: false    # print engine stats on each move
+challenge:                   # incoming challenges
+  sort_by: "best"            # possible values: "best", "first"
+  accept_bot: false          # accepts challenges coming from other bots
+  variants:                  # chess variants to accept (http://lichess.org/variant)
+    - standard
+#   - fromPosition
+#   - antichess
+#   - atomic
+#   - chess960
+#   - crazyhouse
+#   - horde
+#   - kingOfTheHill
+#   - racingKings
+#   - threeCheck
+  time_controls:             # time controls to accept
+    - ultraBullet
+    - bullet
+    - blitz
+    - rapid
+#   - classical
+#   - correspondence
+  modes:                     # game modes to accept
+    - casual                 # unrated games
+    - rated                  # rated games - must comment if the engine doesn't try to win

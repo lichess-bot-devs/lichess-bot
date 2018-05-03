@@ -52,6 +52,7 @@ def start(li, user_profile, engine_factory, config):
     control_stream.start()
     busy_processes = 0
     queued_processes = 0
+    challenge_config = config["challenge"]
 
     with logging_pool.LoggingPool(max_games+1) as pool:
         while True:
@@ -61,9 +62,9 @@ def start(li, user_profile, engine_factory, config):
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if chlng.is_supported(config):
+                if chlng.is_supported(challenge_config):
                     challenge_queue.append(chlng)
-                    if (config.get("sort_challenges_by") != "first"):
+                    if (challenge_config.get("sort_by", "best") == "best"):
                         challenge_queue.sort(key=lambda c: -c.score())
                 else:
                     try:

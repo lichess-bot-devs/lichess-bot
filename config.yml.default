@@ -27,6 +27,8 @@ engine:                      # engine settings
     weights: "engines/latest.txt" # weights file path
     threads: 1               # max CPU threads the engine can use
     gpu: 0                   # which GPU to use
+    tempdecay: 15            # ?
+    noise: true              # ?
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 max_concurrent_games: 1      # number of games to play simultaneously

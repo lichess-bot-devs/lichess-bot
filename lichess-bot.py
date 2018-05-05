@@ -16,6 +16,8 @@ from conversation import Conversation, ChatLine
 from functools import partial
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
+import threading
+import time
 
 try:
     from http.client import RemoteDisconnected
@@ -98,6 +100,8 @@ def start(li, user_profile, engine_factory, config):
     control_stream.terminate()
     control_stream.join()
 
+ponder_results = {}
+
 @backoff.on_exception(backoff.expo, BaseException, max_time=600)
 def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     updates = li.get_game_stream(game_id).iter_lines()
@@ -111,6 +115,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     print("+++ {}".format(game))
 
     engine_cfg = config["engine"]
+    is_uci = engine_cfg["protocol"] == "uci"
+    is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
@@ -118,22 +124,62 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
 
     engine.set_time_control(game)
 
+    ponder_thread = None
+    ponder_uci = None
+
+    def ponder_thread_func(game, engine, board, wtime, btime, winc, binc):
+        global ponder_results        
+        best_move , ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc)
+        ponder_results[game.id] = ( best_move , ponder_move )
+
     try:
-        for binary_chunk in updates:
-            upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
+        for binary_chunk in updates:            
+            upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None            
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":
                 game.state = upd
                 moves = upd["moves"].split()
-                board = update_board(board, moves[-1])
+                board = update_board(board, moves[-1])                
                 if is_engine_move(game, moves):
-                    best_move = None
-                    if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
+                    best_move = None                                        
+                    ponder_move = None
+                    thinking_started_at = time.time()
+                    if not ( ponder_thread is None ):
+                        move_uci = moves[-1]
+                        if ponder_uci == move_uci:                            
+                            ponder_thread.join()
+                            ponder_thread = None
+                            best_move , ponder_move = ponder_results[game.id]
+                        else:                            
+                            engine.engine.stop()
+                            ponder_thread.join()
+                            ponder_thread = None
+                        ponder_uci = None
+                    if ( best_move is None ) and polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
-                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        wtime = int(upd["wtime"])
+                        btime = int(upd["btime"])
+                        winc = int(upd["winc"])
+                        binc = int(upd["binc"])
+                        best_move , ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc)                                        
+                    if is_uci_ponder and not ( ponder_move is None ):
+                        mwtime = wtime
+                        mbtime = btime
+                        elapsed_thinking_time_ms = int ( ( time.time() - thinking_started_at ) * 1000 )
+                        if game.is_white:
+                            mwtime = wtime - elapsed_thinking_time_ms
+                        else:
+                            mbtime = btime - elapsed_thinking_time_ms
+                        if ( mwtime > 0 ) and ( mbtime > 0 ):
+                            ponder_board = board.copy()
+                            ponder_board.push(best_move)
+                            ponder_board.push(ponder_move)
+                            ponder_uci = ponder_move.uci()                            
+                            ponder_thread = threading.Thread(target = ponder_thread_func, args = (game, engine, ponder_board, mwtime, mbtime, winc, binc))
+                            ponder_thread.start()
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
             elif u_type == "ping":
@@ -146,6 +192,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     finally:
         print("--- {} Game over".format(game.url()))
         engine.quit()
+        if not ( ponder_thread is None ):
+            ponder_thread.join()
+            ponder_thread = None
         # This can raise queue.NoFull, but that should only happen if we're not processing
         # events fast enough and in this case I believe the exception should be raised
         control_queue.put_nowait({"type": "local_game_done"})

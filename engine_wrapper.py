@@ -108,6 +108,16 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
+    def search_with_ponder(self, board, wtime, btime, winc, binc):
+        self.engine.position(board)
+        best_move, ponder_move = self.engine.go(
+            wtime=wtime,
+            btime=btime,
+            winc=winc,
+            binc=binc
+        )
+        return ( best_move , ponder_move )
+
     def print_stats(self):
         self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
 

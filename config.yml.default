@@ -4,13 +4,14 @@ url: "https://lichess.org/"  # lichess base URL
 engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
-  protocol: "uci"            # "uci" or "xboard"
+  protocol: "uci"            # "uci" or "xboard"  
   polyglot:
     enabled: false           # activate polyglot book
     book: "engines/book.bin" # book file path
     max_depth: 8             # half move max depth
     min_weight: 1            # selects move with highest weight but not below this value
     random: true             # selects move randomly; otherwise select the best but not below the min_weight
+  uci_ponder: false          # think on opponent time; only works if "protocol" is "uci"
   uci_options:               # arbitrary UCI options passed to the engine
     Move Overhead: 100       # increase if your bot flags games too often
     Threads: 2               # max CPU threads the engine can use

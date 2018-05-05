@@ -124,7 +124,7 @@ class UCIEngine(EngineWrapper):
             btime=btime,
             winc=winc,
             binc=binc,
-            movestogo=go_commands.get("movestogo")
+            movestogo=go_commands.get("movestogo"),
             ponder=go_commands.get("ponder"),
             nodes=go_commands.get("nodes"),
             depth=go_commands.get("depth"),
@@ -135,7 +135,7 @@ class UCIEngine(EngineWrapper):
 
     def stop_search(self):
         self.engine.stop()
-    
+
     def get_stats(self, to_print):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["nps", "nodes", "score", "winrate"], to_print)
 

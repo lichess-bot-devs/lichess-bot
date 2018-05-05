@@ -37,77 +37,77 @@ def create_engine(config, board):
         return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
 
 
-    class EngineWrapper:
+class EngineWrapper:
 
-        def __init__(self, board, commands, options=None, silence_stderr=False):
-            pass
+    def __init__(self, board, commands, options=None, silence_stderr=False):
+        pass
 
-        def set_time_control(self, game):
-            pass
+    def set_time_control(self, game):
+        pass
 
-        def first_search(self, board, movetime):
-            pass
+    def first_search(self, board, movetime):
+        pass
 
-        def search(self, board, wtime, btime, winc, binc):
-            pass
+    def search(self, board, wtime, btime, winc, binc):
+        pass
 
-        def print_stats(self):
-            pass
+    def print_stats(self):
+        pass
 
-        def name(self):
-            return self.engine.name
+    def name(self):
+        return self.engine.name
 
-        def quit(self):
-            self.engine.quit()
+    def quit(self):
+        self.engine.quit()
 
-        def get_handler_stats(self, info, stats, to_print=False):
-            stats_info = []
-            for stat in stats:
-                if stat in info:
-                    str = "{}: {}".format(stat, info[stat])
-                    if stat == "score":
-                        for k,v in info[stat].items():
-                            str = "score: {}".format(v.cp)
-                            feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
-                    stats_info.append(str)
-                    if to_print:
-                        print("    {}".format(str))
-                if stat == "winrate":
-                    str = "win %: {:.2f}".format(feval*100)
-                    stats_info.append(str)
-                    if to_print:
-                        print("    {}".format(str))
+    def get_handler_stats(self, info, stats, to_print=False):
+        stats_info = []
+        for stat in stats:
+            if stat in info:
+                str = "{}: {}".format(stat, info[stat])
+                if stat == "score":
+                    for k,v in info[stat].items():
+                        str = "score: {}".format(v.cp)
+                        feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
+                stats_info.append(str)
+                if to_print:
+                    print("    {}".format(str))
+            if stat == "winrate":
+                str = "win %: {:.2f}".format(feval*100)
+                stats_info.append(str)
+                if to_print:
+                    print("    {}".format(str))
 
-            return stats_info
+        return stats_info
 
-        def get_handler_stats(self, info, stats):
-            stats_str = []
-            for stat in stats:
-                if stat in info:
-                    stats_str.append("{}: {}".format(stat, info[stat]))
+    def get_handler_stats(self, info, stats):
+        stats_str = []
+        for stat in stats:
+            if stat in info:
+                stats_str.append("{}: {}".format(stat, info[stat]))
 
-            return stats_str
+        return stats_str
 
 
-    class UCIEngine(EngineWrapper):
+class UCIEngine(EngineWrapper):
 
-        def __init__(self, board, commands, options, silence_stderr=False):
-            commands = commands[0] if len(commands) == 1 else commands
-            self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
+    def __init__(self, board, commands, options, silence_stderr=False):
+        commands = commands[0] if len(commands) == 1 else commands
+        self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
 
-            self.engine.uci()
+        self.engine.uci()
 
-            if options:
-                self.engine.setoption(options)
+        if options:
+            self.engine.setoption(options)
 
-            self.engine.setoption({
-                "UCI_Variant": type(board).uci_variant,
-                "UCI_Chess960": board.chess960
-            })
-            self.engine.position(board)
+        self.engine.setoption({
+            "UCI_Variant": type(board).uci_variant,
+            "UCI_Chess960": board.chess960
+        })
+        self.engine.position(board)
 
-        info_handler = chess.uci.InfoHandler()
-        self.engine.info_handlers.append(info_handler)
+    info_handler = chess.uci.InfoHandler()
+    self.engine.info_handlers.append(info_handler)
 
     def pre_game(self, game):
         if game.speed == "ultraBullet":

@@ -67,12 +67,9 @@ class EngineWrapper:
                 str = "{}: {}".format(stat, info[stat])
                 if stat == "score":
                     for k,v in info[stat].items():
-                        str = "score: {}".format(v.cp)
                         feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
+                        str = "winrate: {}".format(feval)
                 stats_info.append(str)
-        if "winrate" in stats:
-            str = "win %: {:.2f}".format(feval*100)
-            stats_info.append(str)
 
         return stats_info
 
@@ -126,10 +123,10 @@ class UCIEngine(EngineWrapper):
         return best_move
 
     def print_stats(self):
-        self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nps", "nodes", "winrate"])
+        self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nps", "nodes", "score"])
 
     def get_stats(self):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "winrate"])
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
 class XBoardEngine(EngineWrapper):
 

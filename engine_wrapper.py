@@ -10,37 +10,31 @@ import subprocess
 def create_engine(config, board):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
-    weights = os.path.join(cfg["dir"], cfg["weights"]) if "weights" in cfg else None
-    threads = cfg.get("threads")
-    gpu = cfg.get("gpu")
-    tempdecay = cfg.get("tempdecay")
-    noise = cfg.get("noise")
-
-    # TODO: ucioptions should probably be a part of the engine subconfig
-    ucioptions = config.get("ucioptions")
     engine_type = cfg.get("protocol")
+    lczero_options = cfg.get("lczero")
     commands = [engine_path]
-    if weights:
-        commands.append("-w")
-        commands.append(weights)
-    if threads:
-        commands.append("-t")
-        commands.append(str(threads))
-    if gpu:
-        commands.append("--gpu")
-        commands.append(str(gpu))
-    if tempdecay:
-        commands.append("--tempdecay")
-        commands.append(str(tempdecay))
-    if noise:
-        commands.append("--noise")
+    if lczero_options:
+        if "weights" in lczero_options:
+            commands.append("-w")
+            commands.append(lczero_options["weights"])
+        if "threads" in lczero_options:
+            commands.append("-t")
+            commands.append(str(lczero_options["threads"]))
+        if "gpu" in lczero_options:
+            commands.append("--gpu")
+            commands.append(str(lczero_options["gpu"]))
+        if "tempdecay" in lczero_options:
+            commands.append("--tempdecay")
+            commands.append(str(lczero_options["tempdecay"]))
+        if lczero_options.get("noise"):
+            commands.append("--noise")
 
     silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
-        return XBoardEngine(board, commands, config.get("xboardoptions"), silence_stderr)
+        return XBoardEngine(board, commands, cfg.get("xboard_options"), silence_stderr)
 
-    return UCIEngine(board, commands, config.get("ucioptions"), silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
 
 
 class EngineWrapper:
@@ -48,7 +42,10 @@ class EngineWrapper:
     def __init__(self, board, commands, options=None, silence_stderr=False):
         pass
 
-    def first_search(self, game, board, movetime):
+    def set_time_control(self, game):
+        pass
+
+    def first_search(self, board, movetime):
         pass
 
     def search(self, board, wtime, btime, winc, binc):
@@ -82,6 +79,14 @@ class EngineWrapper:
                     print("    {}".format(str))
 
         return stats_info
+
+    def get_handler_stats(self, info, stats):
+        stats_str = []
+        for stat in stats:
+            if stat in info:
+                stats_str.append("{}: {}".format(stat, info[stat]))
+
+        return stats_str
 
 
 class UCIEngine(EngineWrapper):
@@ -135,6 +140,8 @@ class UCIEngine(EngineWrapper):
     def get_stats(self, to_print):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["nps", "nodes", "score", "winrate"], to_print)
 
+    def get_stats(self):
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
 class XBoardEngine(EngineWrapper):
 
@@ -176,16 +183,17 @@ class XBoardEngine(EngineWrapper):
                 except EngineStateException:
                     pass
 
-    def first_search(self, game, board, movetime):
+    def set_time_control(self, game):
         minutes = game.clock_initial / 1000 / 60
         seconds = game.clock_initial / 1000 % 60
         inc = game.clock_increment / 1000
+        self.engine.level(0, minutes, seconds, inc)
 
+    def first_search(self, board, movetime):
         self.engine.setboard(board)
         self.engine.level(0, 0, movetime / 1000, 0)
         bestmove = self.engine.go()
 
-        self.engine.level(0, minutes, seconds, inc)
         return bestmove
 
     def search(self, board, wtime, btime, winc, binc):
@@ -200,6 +208,10 @@ class XBoardEngine(EngineWrapper):
 
     def print_stats(self):
         self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+
+    def get_stats(self):
+        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+
 
     def name(self):
         try:

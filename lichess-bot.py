@@ -23,7 +23,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "0.13"
+__version__ = "1.0.0-rc.1"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -52,6 +52,7 @@ def start(li, user_profile, engine_factory, config):
     control_stream.start()
     busy_processes = 0
     queued_processes = 0
+    challenge_config = config["challenge"]
 
     with logging_pool.LoggingPool(max_games+1) as pool:
         while True:
@@ -61,9 +62,9 @@ def start(li, user_profile, engine_factory, config):
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if chlng.is_supported(config):
+                if chlng.is_supported(challenge_config):
                     challenge_queue.append(chlng)
-                    if (config.get("sort_challenges_by") != "first"):
+                    if (challenge_config.get("sort_by", "best") == "best"):
                         challenge_queue.sort(key=lambda c: -c.score())
                 else:
                     try:
@@ -110,11 +111,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     print("+++ {}".format(game))
 
     engine_cfg = config["engine"]
+    polyglot_cfg = engine_cfg.get("polyglot", {})
 
-    if (engine_cfg["polyglot"] == True):
-        board = play_first_book_move(game, engine, board, li, engine_cfg)
-    else:
-        board = play_first_move(game, engine, board, li)
+    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
+        play_first_move(game, engine, board, li)
+
+    engine.set_time_control(game)
 
     try:
         for binary_chunk in updates:
@@ -128,8 +130,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 board = update_board(board, moves[-1])
                 if is_engine_move(game, moves):
                     best_move = None
-                    if (engine_cfg["polyglot"] == True and len(moves) <= (engine_cfg["polyglot_max_depth"] * 2) - 1):
-                        best_move = get_book_move(board, engine_cfg)
+                    if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
+                        best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
@@ -153,36 +155,33 @@ def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(game, board, 10000)
+        best_move = engine.first_search(board, 10000)
         li.make_move(game.id, best_move)
-
-    return board
+        return True
+    return False
 
 
 def play_first_book_move(game, engine, board, li, config):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         book_move = get_book_move(board, config)
-        if (book_move != None):
+        if book_move:
             li.make_move(game.id, book_move)
+            return True
         else:
             return play_first_move(game, engine, board, li)
+    return False
 
-    return board
 
-
-def get_book_move(board, engine_cfg):
-    try:
-        with chess.polyglot.open_reader(engine_cfg["polyglot_book"]) as reader:
-            if (engine_cfg["polyglot_random"] == True):
-                book_move = reader.choice(board).move()
+def get_book_move(board, config):
+    with chess.polyglot.open_reader(config["book"]) as reader:
+        try: # python-chess can raise "IndexError"
+            if config.get("random"):
+                return reader.choice(board).move()
             else:
-                book_move = reader.find(board, engine_cfg["polyglot_min_weight"]).move()
-            return book_move
-    except:
-        pass
-
-    return None
+                return reader.find(board, config.get("min_weight", 1)).move()
+        except:
+            pass
 
 
 def setup_board(game):

@@ -60,7 +60,7 @@ class EngineWrapper:
     def quit(self):
         self.engine.quit()
 
-    def get_handler_stats(self, info, stats, to_print=False):
+    def get_handler_stats(self, info, stats):
         stats_info = []
         for stat in stats:
             if stat in info:
@@ -79,14 +79,6 @@ class EngineWrapper:
                     print("    {}".format(str))
 
         return stats_info
-
-    def get_handler_stats(self, info, stats):
-        stats_str = []
-        for stat in stats:
-            if stat in info:
-                stats_str.append("{}: {}".format(stat, info[stat]))
-
-        return stats_str
 
 
 class UCIEngine(EngineWrapper):

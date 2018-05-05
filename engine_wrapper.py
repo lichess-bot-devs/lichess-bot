@@ -68,7 +68,7 @@ class EngineWrapper:
                 if stat == "score":
                     for k,v in info[stat].items():
                         feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
-                        str = "winrate: {}".format(feval)
+                        str = "win %: {:.2f}".format(feval*100)
                 stats_info.append(str)
 
         return stats_info

@@ -12,6 +12,7 @@ def create_engine(config, board, verbose=False):
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
     lczero_options = cfg.get("lczero")
+    go_commands = cfg.get("go_commands")
     commands = [engine_path]
     if lczero_options:
         if "weights" in lczero_options:
@@ -28,6 +29,10 @@ def create_engine(config, board, verbose=False):
             commands.append(str(lczero_options["tempdecay"]))
         if lczero_options.get("noise"):
             commands.append("--noise")
+        if go_commands:
+            commands.append("go")
+            for key, value in go_commands.items():
+                commands.append("{} {}".format(key, value))
 
     silence_stderr = cfg.get("silence_stderr", False)
 

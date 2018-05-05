@@ -24,7 +24,7 @@ def create_engine(config, board):
             commands.append("--gpu")
             commands.append(str(lczero_options["gpu"]))
         if "tempdecay" in lczero_options:
-            commands.append("--tempdecay={}".format(int(lczero_options["tempdecay"])/100.0)))
+            commands.append("--tempdecay={}".format(int(lczero_options["tempdecay"])/100.0))
             commands.append("-m")
             commands.append("1.0")
         if lczero_options.get("noise"):

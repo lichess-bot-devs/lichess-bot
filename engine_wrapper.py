@@ -106,8 +106,8 @@ class UCIEngine(EngineWrapper):
         })
         self.engine.position(board)
 
-    info_handler = chess.uci.InfoHandler()
-    self.engine.info_handlers.append(info_handler)
+        info_handler = chess.uci.InfoHandler()
+        self.engine.info_handlers.append(info_handler)
 
     def pre_game(self, game):
         if game.speed == "ultraBullet":

@@ -11,28 +11,23 @@ def create_engine(config, board, verbose=False):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
-    lczero_options = cfg.get("lczero")
-    go_commands = cfg.get("go_commands")
+    lczero = cfg.get("lczero")
     commands = [engine_path]
-    if lczero_options:
-        if "weights" in lczero_options:
+    if lczero:
+        if "weights" in lczero:
             commands.append("-w")
-            commands.append(lczero_options["weights"])
-        if "threads" in lczero_options:
+            commands.append(lczero["weights"])
+        if "threads" in lczero:
             commands.append("-t")
-            commands.append(str(lczero_options["threads"]))
-        if "gpu" in lczero_options:
+            commands.append(str(lczero["threads"]))
+        if "gpu" in lczero:
             commands.append("--gpu")
-            commands.append(str(lczero_options["gpu"]))
-        if "tempdecay" in lczero_options:
+            commands.append(str(lczero["gpu"]))
+        if "tempdecay" in lczero:
             commands.append("--tempdecay")
-            commands.append(str(lczero_options["tempdecay"]))
-        if lczero_options.get("noise"):
+            commands.append(str(lczero["tempdecay"]))
+        if lczero.get("noise"):
             commands.append("--noise")
-        if go_commands:
-            commands.append("go")
-            for key, value in go_commands.items():
-                commands.append("{} {}".format(key, value))
 
     silence_stderr = cfg.get("silence_stderr", False)
 
@@ -98,6 +93,7 @@ class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
+        self.options = options
         self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
 
         self.engine.uci()
@@ -122,9 +118,24 @@ class UCIEngine(EngineWrapper):
     def search(self, board, wtime, btime, winc, binc):
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
-        best_move, _ = self.engine.go()
+        go_commands = self.options.get("go_commands")
+        best_move, _ = self.engine.go(
+            wtime=wtime,
+            btime=btime,
+            winc=winc,
+            binc=binc,
+            movestogo=go_commands.get("movestogo")
+            ponder=go_commands.get("ponder"),
+            nodes=go_commands.get("nodes"),
+            depth=go_commands.get("depth"),
+            mate=go_commands.get("mate"),
+            movetime=go_commands.get("movetime")
+        )
         return best_move
 
+    def stop_search(self):
+        self.engine.stop()
+    
     def get_stats(self, to_print):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["nps", "nodes", "score", "winrate"], to_print)
 

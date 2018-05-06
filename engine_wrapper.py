@@ -77,7 +77,7 @@ class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.go_commands = options.get("go_commands") if options.get("go_commands") else {}
+        self.go_commands = options.get("go_commands", {})
 
         self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
         self.engine.uci()
@@ -104,20 +104,16 @@ class UCIEngine(EngineWrapper):
     def search(self, board, wtime, btime, winc, binc):
         self.engine.position(board)
         cmds = self.go_commands
-        best_move, ponder = self.engine.go(
+        best_move, _ = self.engine.go(
             wtime=wtime,
             btime=btime,
             winc=winc,
             binc=binc,
-            searchmoves=cmds.get("searchmoves"),
-            ponder=cmds.get("ponder"),
-            movestogo=cmds.get("movestogo"),
             depth=cmds.get("depth"),
             nodes=cmds.get("nodes"),
-            mate=cmds.get("mate"),
             movetime=cmds.get("movetime")
         )
-        return best_move, ponder
+        return best_move
 
 
     def stop(self):

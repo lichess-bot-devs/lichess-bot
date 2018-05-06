@@ -42,8 +42,8 @@ def watch_control_stream(control_queue, li):
             control_queue.put_nowait({"type": "ping"})
 
 def start(li, user_profile, engine_factory, config):
-    # init
-    max_games = config["max_concurrent_games"]
+    challenge_config = config["challenge"]
+    max_games = challenge_config.get("concurrency", 1)
     print("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
     challenge_queue = []
@@ -52,7 +52,6 @@ def start(li, user_profile, engine_factory, config):
     control_stream.start()
     busy_processes = 0
     queued_processes = 0
-    challenge_config = config["challenge"]
 
     with logging_pool.LoggingPool(max_games+1) as pool:
         while True:

@@ -35,10 +35,10 @@ engine:                      # engine settings
 #   noise: true              # ?
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
-max_concurrent_games: 1      # number of games to play simultaneously
 abort_time: 20               # time to abort a game in seconds when there is no activity
 
 challenge:                   # incoming challenges
+  concurrency: 1             # number of games to play simultaneously
   sort_by: "best"            # possible values: "best", "first"
   accept_bot: false          # accepts challenges coming from other bots
   variants:                  # chess variants to accept (http://lichess.org/variant)

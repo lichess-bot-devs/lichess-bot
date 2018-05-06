@@ -108,7 +108,7 @@ class UCIEngine(EngineWrapper):
         if game.speed == "classical":
             self.engine.setoption({"slowmover": "125"}) #optimal
 
-    def first_search(self, game, board, movetime):
+    def first_search(self, board, movetime):
         self.engine.position(board)
         best_move, _ = self.engine.go(movetime=movetime)
         return best_move

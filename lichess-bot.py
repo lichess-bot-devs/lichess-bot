@@ -154,7 +154,7 @@ def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(game, board, 2000)
+        best_move = engine.first_search(board, 2000)
         li.make_move(game.id, best_move)
         return True
     return False

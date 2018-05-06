@@ -15,6 +15,13 @@ engine:                      # engine settings
     Move Overhead: 100       # increase if your bot flags games too often
     Threads: 2               # max CPU threads the engine can use
     Hash: 256                # max memory (in megabytes) the engine can allocate
+#   go_commands:
+#     searchmoves: "c2c4"    # (Optional) Restrict search to moves in this list.
+#     nodes: 1               # (Optional) Search so many nodes only.
+#     depth: 5               # (Optional) Search depth ply only.
+#     mate: 5                # (Optional) Search for a mate in mate moves.
+#     movetime: 1000         # (Optional) Integer. Search exactly movetime milliseconds.
+
   xboard_options:            # arbitrary xboard options passed to the engine
 #   cores: "4"
 #   memory: "4096"

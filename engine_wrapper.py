@@ -31,9 +31,9 @@ def create_engine(config, board):
     silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
-        return XBoardEngine(board, commands, cfg.get("xboard_options"), silence_stderr)
+        return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
 
-    return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
 
 
 class EngineWrapper:

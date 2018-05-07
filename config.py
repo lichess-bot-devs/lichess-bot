@@ -13,7 +13,7 @@ def load_config(config_file):
         #[section, type, error message]
         sections = [["token", str, "Section `token` must be a string wrapped in quotes."],
                     ["url", str, "Section `url` must be a string wrapped in quotes."],
-                    ["engine", dict, "Section `engine` must be a dictionary with indented keys followed by colons.."],
+                    ["engine_1", dict, "Section `engine` must be a dictionary with indented keys followed by colons.."],
                     ["challenge", dict, "Section `challenge` must be a dictionary with indented keys followed by colons.."]]
         for section in sections:
             if section[0] not in CONFIG:
@@ -24,18 +24,18 @@ def load_config(config_file):
         engine_sections = [["dir", str, "´dir´ must be a string wrapped in quotes."],
                            ["name", str, "´name´ must be a string wrapped in quotes."]]
         for subsection in engine_sections:
-            if subsection[0] not in CONFIG["engine"]:
+            if subsection[0] not in CONFIG["engine_1"]:
                 raise Exception("Your config.yml does not have required `engine` subsection `{}`.".format(subsection))
-            if not isinstance(CONFIG["engine"][subsection[0]], subsection[1]):
+            if not isinstance(CONFIG["engine_1"][subsection[0]], subsection[1]):
                 raise Exception("´engine´ subsection {}".format(subsection[2]))
 
         if CONFIG["token"] == "xxxxxxxxxxxxxxxx":
             raise Exception("Your config.yml has the default Lichess API token. This is probably wrong.")
 
-        if not os.path.isdir(CONFIG["engine"]["dir"]):
+        if not os.path.isdir(CONFIG["engine_1"]["dir"]):
             raise Exception("Your engine directory `{}` is not a directory.")
 
-        engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
+        engine = os.path.join(CONFIG["engine_1"]["dir"], CONFIG["engine_1"]["name"])
 
         if not os.path.isfile(engine):
             raise Exception("The engine %s file does not exist." % engine)

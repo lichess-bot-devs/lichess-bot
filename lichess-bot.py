@@ -104,18 +104,19 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
-    engine = engine_factory(board)
-    conversation = Conversation(game, engine, li, __version__)
+    leela = engine_factory[0](board)
+    stockfish = engine_factory[1](board)
+    conversation = Conversation(game, leela, li, __version__)
 
     print("+++ {}".format(game))
 
-    engine_cfg = config["engine"]
+    engine_cfg = config["engine_1"]
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
-    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
-        play_first_move(game, engine, board, li)
+    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, leela, board, li, polyglot_cfg):
+        play_first_move(game, leela, board, li)
 
-    engine.set_time_control(game)
+    leela.set_time_control(game)
 
     try:
         for binary_chunk in updates:
@@ -132,7 +133,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
-                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        best_move = leela.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        best_move = get_best_move(best_move, stockfish, board)
+
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
             elif u_type == "ping":
@@ -144,17 +147,21 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
         traceback.print_exception(type(exception), exception, exception.__traceback__)
     finally:
         print("--- {} Game over".format(game.url()))
-        engine.quit()
+        leela.quit()
+        stockfish.quit()
         # This can raise queue.NoFull, but that should only happen if we're not processing
         # events fast enough and in this case I believe the exception should be raised
         control_queue.put_nowait({"type": "local_game_done"})
+
+def get_best_move(test_move, stockfish, board):
+    return stockfish.get_best_move(board, test_move, 1000)
 
 
 def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(board, 10000)
+        best_move = engine.first_search(board, 1000)
         li.make_move(game.id, best_move)
         return True
     return False
@@ -242,7 +249,9 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        engine_factory = partial(engine_wrapper.create_engine, CONFIG)
+        engine_factory = []
+        engine_factory.append(partial(engine_wrapper.create_engine, [CONFIG, 1]))
+        engine_factory.append(partial(engine_wrapper.create_engine, [CONFIG, 2]))
         start(li, user_profile, engine_factory, CONFIG)
     else:
         print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))

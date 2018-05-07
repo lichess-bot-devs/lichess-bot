@@ -6,8 +6,8 @@ import backoff
 import subprocess
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
-def create_engine(config, board):
-    cfg = config["engine"]
+def create_engine(arr, board):
+    cfg = arr[0]["engine_{}".format(arr[1])]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
     lczero_options = cfg.get("lczero")
@@ -115,6 +115,32 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
+    def get_best_move(self, board, test_move, movetime):
+        print("In get best move")
+        print(test_move)
+        self.engine.position(board)
+        print("board")
+        leela_move, _ = self.engine.go(
+            searchmoves=[test_move],
+            movetime=movetime
+        )
+        leela_score = self.get_stat("score")
+        for k,v in leela_score.items():
+            leela_cp = v.cp
+        print("Leela's move score: {}".format(leela_cp))
+
+        best_move, _ = self.engine.go(
+            movetime=movetime/2
+        )
+        sf_score = self.get_stat("score")
+        for k,v in sf_score.items():
+            sf_cp = v.cp
+        print("SF's move score: {}".format(sf_cp))
+        print("SF: {}, Leela: {}".format(best_move, leela_move))
+        if (float(sf_cp) - float(leela_cp)) > 150.0:
+            return best_move
+        else:
+            return test_move
 
     def stop(self):
         self.engine.stop()
@@ -126,6 +152,12 @@ class UCIEngine(EngineWrapper):
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
+
+    def get_stat(self, stat):
+        if stat in self.engine.info_handlers[0].info:
+            return self.engine.info_handlers[0].info[stat]
+        else:
+            return ""
 
 
 class XBoardEngine(EngineWrapper):

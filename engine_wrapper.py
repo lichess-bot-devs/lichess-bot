@@ -52,9 +52,6 @@ class EngineWrapper:
     def search(self, board, wtime, btime, winc, binc):
         pass
 
-    def print_stats(self):
-        pass
-
     def name(self):
         return self.engine.name
 
@@ -134,10 +131,6 @@ class UCIEngine(EngineWrapper):
         self.engine.stop()
 
 
-    def print_stats(self):
-        self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nps", "nodes", "score"])
-
-
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
@@ -204,9 +197,6 @@ class XBoardEngine(EngineWrapper):
             self.engine.time(btime / 10)
             self.engine.otim(wtime / 10)
         return self.engine.go()
-
-    def print_stats(self):
-        self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])

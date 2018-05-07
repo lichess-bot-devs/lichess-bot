@@ -27,11 +27,11 @@ class Challenge():
         return "rated" in supported if self.rated else "casual" in supported
 
     def is_supported(self, config):
-        if not config.get("accept_bot_challenges", True) and self.challenger_is_bot:
+        if not config.get("accept_bot", False) and self.challenger_is_bot:
             return False
-        variants = config["supported_variants"]
-        tc = config["supported_tc"]
-        modes = config["supported_modes"]
+        variants = config["variants"]
+        tc = config["time_controls"]
+        modes = config["modes"]
         return self.is_supported_speed(tc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
     def score(self):

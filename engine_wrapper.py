@@ -57,33 +57,18 @@ class EngineWrapper:
     def quit(self):
         self.engine.quit()
 
-    def get_handler_stats(self, info, stats, to_print=False):
+    def get_handler_stats(self, info, stats):
         stats_info = []
         for stat in stats:
             if stat in info:
                 str = "{}: {}".format(stat, info[stat])
                 if stat == "score":
                     for k,v in info[stat].items():
-                        str = "score: {}".format(v.cp)
                         feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
+                        str = "win %: {:.2f}".format(feval*100)
                 stats_info.append(str)
-                if to_print:
-                    print("    {}".format(str))
-            if stat == "winrate":
-                str = "win %: {:.2f}".format(feval*100)
-                stats_info.append(str)
-                if to_print:
-                    print("    {}".format(str))
 
         return stats_info
-
-    def get_handler_stats(self, info, stats):
-        stats_str = []
-        for stat in stats:
-            if stat in info:
-                stats_str.append("{}: {}".format(stat, info[stat]))
-
-        return stats_str
 
 
 class UCIEngine(EngineWrapper):

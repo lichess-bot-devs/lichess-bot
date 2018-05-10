@@ -27,6 +27,9 @@ def create_engine(config, board):
             commands.append(str(lczero_options["tempdecay"]))
         if lczero_options.get("noise"):
             commands.append("--noise")
+        if "log" in lczero_options:
+            commands.append("--logfile")
+            commands.append(lczero_options["log"])
 
     silence_stderr = cfg.get("silence_stderr", False)
 

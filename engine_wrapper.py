@@ -27,13 +27,16 @@ def create_engine(config, board):
             commands.append(str(lczero_options["tempdecay"]))
         if lczero_options.get("noise"):
             commands.append("--noise")
+        if "log" in lczero_options:
+            commands.append("--logfile")
+            commands.append(lczero_options["log"])
 
     silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
-        return XBoardEngine(board, commands, cfg.get("xboard_options"), silence_stderr)
+        return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
 
-    return UCIEngine(board, commands, cfg.get("uci_options"), silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
 
 
 class EngineWrapper:
@@ -77,8 +80,9 @@ class UCIEngine(EngineWrapper):
 
     def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
+        self.go_commands = options.get("go_commands", {})
 
+        self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
         self.engine.uci()
 
         if options:
@@ -93,20 +97,27 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
+
     def first_search(self, board, movetime):
         self.engine.position(board)
         best_move, _ = self.engine.go(movetime=movetime)
         return best_move
 
+
     def search(self, board, wtime, btime, winc, binc):
         self.engine.position(board)
+        cmds = self.go_commands
         best_move, _ = self.engine.go(
             wtime=wtime,
             btime=btime,
             winc=winc,
-            binc=binc
+            binc=binc,
+            depth=cmds.get("depth"),
+            nodes=cmds.get("nodes"),
+            movetime=cmds.get("movetime")
         )
         return best_move
+
 
     def search_with_ponder(self, board, wtime, btime, winc, binc):
         self.engine.position(board)
@@ -118,11 +129,18 @@ class UCIEngine(EngineWrapper):
         )
         return ( best_move , ponder_move )
 
+
+    def stop(self):
+        self.engine.stop()
+        
+
     def print_stats(self):
         self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
 
+
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
+
 
 class XBoardEngine(EngineWrapper):
 

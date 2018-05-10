@@ -128,7 +128,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
 
     def ponder_thread_func(game, engine, board, wtime, btime, winc, binc):
         global ponder_results        
-        best_move , ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc)
+        best_move , ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
         ponder_results[game.id] = ( best_move , ponder_move )
 
     try:
@@ -147,7 +147,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                     thinking_started_at = time.time()
                     if not ( ponder_thread is None ):
                         move_uci = moves[-1]
-                        if ponder_uci == move_uci:                            
+                        if ponder_uci == move_uci:                                                        
+                            engine.engine.ponderhit()
                             ponder_thread.join()
                             ponder_thread = None
                             best_move , ponder_move = ponder_results[game.id]

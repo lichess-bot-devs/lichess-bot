@@ -13,6 +13,7 @@ engine:                      # engine settings
     random: true             # selects move randomly; otherwise select the best but not below the min_weight
   uci_ponder: false          # think on opponent time; only works if "protocol" is "uci"
   uci_options:               # arbitrary UCI options passed to the engine
+#   Ponder: true             # if uci_ponder is true, check if your engine needs ponder UCI option to be set
     Move Overhead: 100       # increase if your bot flags games too often
     Threads: 2               # max CPU threads the engine can use
     Hash: 256                # max memory (in megabytes) the engine can allocate

@@ -56,7 +56,7 @@ class Game():
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
-        clock = json.get("clock", {})
+        clock = json.get("clock", {}) or {}
         self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10) # unlimited = 10 years
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"

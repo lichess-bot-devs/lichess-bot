@@ -104,13 +104,7 @@ class UCIEngine(EngineWrapper):
         self.engine.position(board)
         cmds = self.go_commands
         best_move, _ = self.engine.go(
-            wtime=wtime,
-            btime=btime,
-            winc=winc,
-            binc=binc,
-            depth=cmds.get("depth"),
-            nodes=cmds.get("nodes"),
-            movetime=cmds.get("movetime")
+            nodes=cmds.get("nodes")
         )
         return best_move
 

@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
+import time
 import backoff
 from config import load_config
 from conversation import Conversation, ChatLine
@@ -128,6 +129,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
                 if is_engine_move(game, moves):
+                    if config.get("fake_think_time") and len(moves) > 9:
+                        delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
+                        accel = 1 - max(0, min(100, len(moves) - 20)) / 150
+                        sleep = min(5, delay * accel)
+                        time.sleep(sleep)
                     best_move = None
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, polyglot_cfg)

@@ -10,7 +10,6 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
-import time
 import backoff
 from config import load_config
 from conversation import Conversation, ChatLine

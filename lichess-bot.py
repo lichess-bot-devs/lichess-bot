@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
+import time
 import backoff
 from config import load_config
 from conversation import Conversation, ChatLine
@@ -25,7 +26,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -156,7 +157,14 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                             engine.engine.stop()
                             ponder_thread.join()
                             ponder_thread = None
-                        ponder_uci = None
+                    ponder_uci = None
+
+                    if config.get("fake_think_time") and len(moves) > 9:
+                        delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
+                        accel = 1 - max(0, min(100, len(moves) - 20)) / 150
+                        sleep = min(5, delay * accel)
+                        time.sleep(sleep)
+
                     if ( best_move is None ) and polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:

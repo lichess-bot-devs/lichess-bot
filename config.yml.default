@@ -33,9 +33,11 @@ engine:                      # engine settings
 #   gpu: 0                   # which GPU to use
 #   tempdecay: 15            # ?
 #   noise: true              # ?
+#   log: "./engines/log.txt" # save log of lczero debug output
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 abort_time: 20               # time to abort a game in seconds when there is no activity
+fake_think_time: false       # artificially slow down the bot to pretend like it's thinking
 
 challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously

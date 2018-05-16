@@ -25,8 +25,7 @@ def create_engine(config, board):
             commands.append(str(lczero_options["gpu"]))
         if "tempdecay" in lczero_options:
             commands.append("--tempdecay={}".format(int(lczero_options["tempdecay"])/100.0))
-            commands.append("-m")
-            commands.append("1.0")
+            commands.append("--temperature=1.0")
         if lczero_options.get("noise"):
             commands.append("--noise")
         if "log" in lczero_options:
@@ -95,18 +94,6 @@ class UCIEngine(EngineWrapper):
 
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
-
-    def pre_game(self, game):
-        if game.speed == "ultraBullet":
-            self.engine.setoption({"slowmover": "50"})
-        if game.speed == "bullet":
-            self.engine.setoption({"slowmover": "80"})
-        if game.speed == "blitz":
-            self.engine.setoption({"slowmover": "100"})
-        if game.speed == "rapid":
-            self.engine.setoption({"slowmover": "125"})
-        if game.speed == "classical":
-            self.engine.setoption({"slowmover": "125"}) #optimal
 
     def first_search(self, board, movetime):
         self.engine.position(board)

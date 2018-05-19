@@ -95,6 +95,10 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
+    def pre_game(self, game):
+        if game.speed == "ultraBullet" or game.speed == "bullet":
+            self.engine.setoption({"slowmover": "60"})
+
     def first_search(self, board, movetime):
         self.engine.position(board)
         best_move, _ = self.engine.go(movetime=movetime)

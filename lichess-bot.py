@@ -65,7 +65,9 @@ def start(li, user_profile, engine_factory, config):
                 if chlng.is_supported(challenge_config):
                     challenge_queue.append(chlng)
                     if (challenge_config.get("sort_by", "best") == "best"):
-                        challenge_queue.sort(key=lambda c: -c.score())
+                        list_c = list(challenge_queue)
+                        list_c.sort(key=lambda c: -c.score())
+                        challenge_queue = list_c
                 else:
                     try:
                         li.decline_challenge(chlng.id)

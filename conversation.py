@@ -6,14 +6,15 @@ LINKS = {
     "Lichess Bots": "https://lichess.org/api#tag/Chess-Bot"
 }
 
-ID = 298
+ID = 310
 
 class Conversation():
-    def __init__(self, game, engine, xhr, version):
+    def __init__(self, game, engine, xhr, version, challenge_queue):
         self.game = game
         self.engine = engine
         self.xhr = xhr
         self.version = version
+        self.challengers = challenge_queue
 
     command_prefix = "!"
 
@@ -32,7 +33,7 @@ class Conversation():
         elif cmd == "howto":
             self.send_reply(line, "How to run your own bot: lichess.org/api#tag/Chess-Bot")
         elif cmd == "commands" or cmd == "help":
-            msg = "Supported commands: !name, !eval, !id, !leela, !hardware, !info, and !howto"
+            msg = "Supported commands: !name, !eval, !id, !leela, !hardware, !info, !queue, and !howto"
             self.send_reply(line, msg)
         elif cmd == "eval" and line.room == "spectator":
             stats = self.engine.get_stats()
@@ -51,10 +52,20 @@ class Conversation():
                 self.send_reply(line, "{}: {}".format(name, url))
         elif cmd == "hardware" or cmd == "gpu":
             self.send_reply(line, "GTX 1050 Ti 4GB, i7-3770 @ 3.40 GHz, Ubuntu 16.04, Linux 4.4.0")
+        elif cmd == "queue" or cmd == "challengers":
+            if not self.challengers:
+                self.send_reply(line, "No players in the queue!")
+            else:
+                challengers = ", ".join(["@" + challenger.challenger_name for challenger in reversed(self.challengers)])
+                self.send_reply(line, "Current queue: {}".format(challengers))
 
 
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)
+
+    def send_greeting(self):
+        self.xhr.chat(self.game.id, "player", "Good luck, you're playing Leela ID {}.".format(self.ID))
+        self.xhr.chat(self.game.id, "spectator", "Leela ID {}. Challenge me to play against me. !commands for commands.".format(self.ID))
 
 
 class ChatLine():

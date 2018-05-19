@@ -47,7 +47,7 @@ def start(li, user_profile, engine_factory, config):
     max_games = challenge_config.get("concurrency", 1)
     print("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
-    challenge_queue = []
+    challenge_queue = manager.list()
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
@@ -79,7 +79,7 @@ def start(li, user_profile, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             while ((queued_processes + busy_processes) < max_games and challenge_queue): # keep processing the queue until empty or max_games is reached
@@ -99,14 +99,14 @@ def start(li, user_profile, engine_factory, config):
     control_stream.join()
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
+def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
     engine = engine_factory(board)
-    conversation = Conversation(game, engine, li, __version__)
+    conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     print("+++ {}".format(game))
 

@@ -109,8 +109,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
+    conversation.send_greeting()
     print("+++ {}".format(game))
-    
+
     engine.pre_game(game)
     engine_cfg = config["engine"]
     polyglot_cfg = engine_cfg.get("polyglot", {})

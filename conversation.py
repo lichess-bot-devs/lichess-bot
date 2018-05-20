@@ -64,8 +64,8 @@ class Conversation():
         self.xhr.chat(self.game.id, line.room, reply)
 
     def send_greeting(self):
-        self.xhr.chat(self.game.id, "player", "Good luck, you're playing Leela ID {}.".format(self.ID))
-        self.xhr.chat(self.game.id, "spectator", "Leela ID {}. Challenge me to play against me. !commands for commands.".format(self.ID))
+        self.xhr.chat(self.game.id, "player", "Good luck, you're playing Leela ID {}.".format(ID))
+        self.xhr.chat(self.game.id, "spectator", "Leela ID {}. Challenge me to play against me. !commands for commands.".format(ID))
 
 
 class ChatLine():

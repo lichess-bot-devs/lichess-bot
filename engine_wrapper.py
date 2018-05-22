@@ -106,6 +106,11 @@ class UCIEngine(EngineWrapper):
 
 
     def search(self, board, wtime, btime, winc, binc):
+        # HACK: until python-chess is updated. using this hack to send full move list to leela
+        board = board.copy()
+        board.is_reversible = lambda move: False
+        # -------------------------------
+
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         cmds = self.go_commands

@@ -31,6 +31,8 @@ def create_engine(config, board):
         if "log" in lczero_options:
             commands.append("-l")
             commands.append(lczero_options["log"])
+        if "nncache" in lczero_options:
+            commands.append("--nncache={}".format(lczero_options["nncache"]))
 
         silence_stderr = cfg.get("silence_stderr", False)
 

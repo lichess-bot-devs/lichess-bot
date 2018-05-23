@@ -133,7 +133,7 @@ class UCIEngine(EngineWrapper):
 
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
-        best_move, ponder = self.engine.go(infinite=True, async_callback=True)
+        ponder = self.engine.go(infinite=True, async_callback=True)
 
     def stop(self):
         self.engine.stop()

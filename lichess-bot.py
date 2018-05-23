@@ -132,6 +132,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
                 if is_engine_move(game, moves):
+                    engine.stop()
                     if config.get("fake_think_time") and len(moves) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
                         accel = 1 - max(0, min(100, len(moves) - 20)) / 150
@@ -141,7 +142,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
-                        engine.stop()
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))

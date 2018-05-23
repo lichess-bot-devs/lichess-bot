@@ -125,6 +125,15 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
+    def ponder(self, board):
+        # HACK: until python-chess is updated. using this hack to send full move list to leela
+        board = board.copy()
+        board.is_reversible = lambda move: False
+        # -------------------------------
+
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
+        self.engine.position(board)
+        best_move, ponder = self.engine.go(infinite=True)
 
     def stop(self):
         self.engine.stop()

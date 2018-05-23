@@ -141,9 +141,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
+                        engine.stop()
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
+                else:
+                    engine.ponder(board)
             elif u_type == "ping":
                 if game.should_abort_now():
                     print("    Aborting {} by lack of activity".format(game.url()))

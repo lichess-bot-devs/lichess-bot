@@ -33,6 +33,10 @@ def create_engine(config, board):
             commands.append(lczero_options["log"])
         if "nncache" in lczero_options:
             commands.append("--nncache={}".format(lczero_options["nncache"]))
+        if "fpu-reduction" in lczero_options:
+            commands.append("--fpu-reduction={}".format(lczero_options["fpu-reduction"]))
+        if "cpuct" in lczero_options:
+            commands.append("--cpuct={}".format(lczero_options["cpuct"]))
 
         silence_stderr = cfg.get("silence_stderr", False)
 

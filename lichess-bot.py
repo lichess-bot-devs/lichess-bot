@@ -18,6 +18,7 @@ from conversation import Conversation, ChatLine
 from functools import partial
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
+import threading
 
 try:
     from http.client import RemoteDisconnected
@@ -62,10 +63,22 @@ def start(li, user_profile, engine_factory, config):
     busy_processes = 0
     queued_processes = 0
 
+    def cmd_thread_func():
+        while True:
+            cmd = input("").rstrip()
+            if cmd == "x" or cmd == "X":
+                print("exiting lichess-bot...")
+                control_queue.put_nowait({"type": "exit"})
+                break
+
+    threading.Thread(target = cmd_thread_func).start()
+
     with logging_pool.LoggingPool(max_games+1) as pool:
         while not terminated:
             event = control_queue.get()
-            if event["type"] == "local_game_done":
+            if event["type"] == "exit":
+                break
+            elif event["type"] == "local_game_done":
                 busy_processes -= 1
                 print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":

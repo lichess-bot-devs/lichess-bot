@@ -10,6 +10,7 @@ import logging
 import multiprocessing
 import traceback
 import logging_pool
+import signal
 import time
 import backoff
 from config import load_config
@@ -42,6 +43,13 @@ def watch_control_stream(control_queue, li):
         else:
             control_queue.put_nowait({"type": "ping"})
 
+terminated = False
+
+def signal_handler(signal, frame):
+    global terminated
+    terminated = True
+signal.signal(signal.SIGINT, signal_handler)
+
 def start(li, user_profile, engine_factory, config):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
@@ -55,7 +63,7 @@ def start(li, user_profile, engine_factory, config):
     queued_processes = 0
 
     with logging_pool.LoggingPool(max_games+1) as pool:
-        while True:
+        while not terminated:
             event = control_queue.get()
             if event["type"] == "local_game_done":
                 busy_processes -= 1
@@ -94,7 +102,7 @@ def start(li, user_profile, engine_factory, config):
                         print("    Skip missing {}".format(chlng))
                     else:
                         raise exception
-
+    print("Terminated")
     control_stream.terminate()
     control_stream.join()
 

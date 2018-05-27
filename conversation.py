@@ -45,7 +45,18 @@ class Conversation():
         elif cmd == "id":
             self.send_reply(line, "ID {}".format(ID))
         elif cmd == "elsie" or cmd == "leela":
-            responses = ["Stop it. Let me focus!", "Yes?", "Like what you see? Help me improve at: {}".format(LINKS["LCzero"])]
+            responses = [
+                "Stop it. Let me focus!",
+                "Yes?",
+                "Like what you see? Help me improve at: {}".format(LINKS["LCzero"]),
+                "Is that a free piece or are you happy to see me?",
+                "Take the knight, it's a free knight!",
+                "Pawns are small guys with big dreams",
+                "Boomtown,  population you!",
+                "Passed pawns must be pushed!",
+                "The passed Pawn is a criminal, who should be kept under lock and key. Mild measures, such as police surveillance, are not sufficient",
+                "COME ON HARRY! GET IN THERE, SON!",
+                "Sit at the chessboard and play with yourself. It's amazing."]
             self.send_reply(line, random.choice(responses))
         elif cmd == "info":
             for name, url in LINKS.items():

@@ -116,6 +116,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
         play_first_move(game, engine, board, li)
+        engine.get_stats()
 
     engine.set_time_control(game)
 
@@ -141,6 +142,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        engine.get_stats()
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
                 else:

@@ -66,8 +66,11 @@ class EngineWrapper:
     def quit(self):
         self.engine.quit()
 
-    def get_handler_stats(self, info, stats):
-        stats_info = []
+    def get_handler_stats(self, info, stats, is_me):
+        if is_me.lower() != "leelachess":
+            return self.stats_info
+
+        self.stats_info = []
         for stat in stats:
             if stat in info:
                 str = "{}: {}".format(stat, info[stat])
@@ -77,7 +80,7 @@ class EngineWrapper:
                         str = "win %: {:.2f}".format(feval*100)
                 stats_info.append(str)
 
-        return stats_info
+        return self.stats_info
 
 
 class UCIEngine(EngineWrapper):
@@ -100,6 +103,7 @@ class UCIEngine(EngineWrapper):
 
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
+        self.stats_info = []
 
     def pre_game(self, game):
         if game.speed == "ultraBullet" or game.speed == "bullet":
@@ -145,8 +149,8 @@ class UCIEngine(EngineWrapper):
         self.engine.stop()
 
 
-    def get_stats(self):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
+    def get_stats(self, is_me):
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], is_me)
 
 
 class XBoardEngine(EngineWrapper):
@@ -212,8 +216,8 @@ class XBoardEngine(EngineWrapper):
             self.engine.otim(wtime / 10)
         return self.engine.go()
 
-    def get_stats(self):
-        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+    def get_stats(self, is_me):
+        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"], is_me)
 
 
     def name(self):

@@ -78,7 +78,7 @@ class EngineWrapper:
                     for k,v in info[stat].items():
                         feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
                         str = "win %: {:.2f}".format(feval*100)
-                stats_info.append(str)
+                self.stats_info.append(str)
 
         return self.stats_info
 

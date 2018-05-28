@@ -66,8 +66,8 @@ class EngineWrapper:
     def quit(self):
         self.engine.quit()
 
-    def get_handler_stats(self, info, stats, is_me):
-        if is_me.lower() != "leelachess":
+    def get_handler_stats(self, info, stats):
+        if self.is_ponder:
             return self.stats_info
 
         self.stats_info = []
@@ -104,10 +104,11 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
         self.stats_info = []
+        self.is_ponder = False
 
     def pre_game(self, game):
         if game.speed == "ultraBullet" or game.speed == "bullet":
-            self.engine.setoption({"slowmover": "60"})
+            self.engine.setoption({"slowmover": "80"})
 
     def first_search(self, board, movetime):
         self.engine.position(board)
@@ -116,11 +117,6 @@ class UCIEngine(EngineWrapper):
 
 
     def search(self, board, wtime, btime, winc, binc):
-        # HACK: until python-chess is updated. using this hack to send full move list to leela
-        board = board.copy()
-        board.is_reversible = lambda move: False
-        # -------------------------------
-
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         cmds = self.go_commands
@@ -136,21 +132,18 @@ class UCIEngine(EngineWrapper):
         return best_move
 
     def ponder(self, board):
-        # HACK: until python-chess is updated. using this hack to send full move list to leela
-        board = board.copy()
-        board.is_reversible = lambda move: False
-        # -------------------------------
-
+        self.is_ponder = True
         self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         ponder = self.engine.go(infinite=True, async_callback=True)
 
     def stop(self):
         self.engine.stop()
+        self.is_ponder = False
 
 
-    def get_stats(self, is_me):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"], is_me)
+    def get_stats(self):
+        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
 
 class XBoardEngine(EngineWrapper):
@@ -216,8 +209,8 @@ class XBoardEngine(EngineWrapper):
             self.engine.otim(wtime / 10)
         return self.engine.go()
 
-    def get_stats(self, is_me):
-        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"], is_me)
+    def get_stats(self):
+        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 
 
     def name(self):

@@ -36,7 +36,7 @@ class Conversation():
             msg = "Supported commands: !name, !eval, !id, !leela, !hardware, !info, !queue, and !howto"
             self.send_reply(line, msg)
         elif cmd == "eval" and line.room == "spectator":
-            stats = self.engine.get_stats(game.me.name)
+            stats = self.engine.get_stats(game.me.id)
             num_moves = int(len(game.state["moves"].split())/2.0) + 1
             stats.append("move: {}".format(num_moves))
             self.send_reply(line, ", ".join(stats))

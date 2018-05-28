@@ -106,10 +106,6 @@ class UCIEngine(EngineWrapper):
         self.stats_info = []
         self.is_ponder = False
 
-    def pre_game(self, game):
-        if game.speed == "ultraBullet" or game.speed == "bullet":
-            self.engine.setoption({"slowmover": "80"})
-
     def first_search(self, board, movetime):
         self.engine.position(board)
         best_move, _ = self.engine.go(movetime=movetime)

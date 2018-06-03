@@ -188,13 +188,17 @@ def play_first_book_move(game, engine, board, li, config):
 
 def get_book_move(board, config):
     with chess.polyglot.open_reader(config["book"]) as reader:
-        try: # python-chess can raise "IndexError"
-            if config.get("random"):
-                return reader.choice(board).move()
-            else:
+        try:
+            selection = config.get("selection", "weighted_random")
+            if selection == "weighted_random":
+                return reader.weighted_choice(board).move()
+            elif selection == "uniform_random":
+                return reader.choice(board, config.get("min_weight", 1)).move()
+            elif selection == "best_move":
                 return reader.find(board, config.get("min_weight", 1)).move()
-        except:
-            pass
+        except IndexError:
+            # python-chess raises "IndexError" if no entries found
+            return None
 
 
 def setup_board(game):

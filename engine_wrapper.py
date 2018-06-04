@@ -3,6 +3,7 @@ import chess
 import chess.xboard
 import chess.uci
 import backoff
+import math
 import subprocess
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
@@ -22,16 +23,24 @@ def create_engine(config, board):
         if "gpu" in lczero_options:
             commands.append("--gpu")
             commands.append(str(lczero_options["gpu"]))
-        if "tempdecay" in lczero_options:
-            commands.append("--tempdecay")
-            commands.append(str(lczero_options["tempdecay"]))
+        if "tempdecay-moves" in lczero_options:
+            commands.append("--tempdecay-moves={}".format(lczero_options["tempdecay-moves"]))
+            commands.append("--temperature=1.5")
         if lczero_options.get("noise"):
             commands.append("--noise")
         if "log" in lczero_options:
-            commands.append("--logfile")
+            commands.append("-l")
             commands.append(lczero_options["log"])
+        if "nncache" in lczero_options:
+            commands.append("--nncache={}".format(lczero_options["nncache"]))
+        if "fpu-reduction" in lczero_options:
+            commands.append("--fpu-reduction={}".format(lczero_options["fpu-reduction"]))
+        if "cpuct" in lczero_options:
+            commands.append("--cpuct={}".format(lczero_options["cpuct"]))
+        if "backend" in lczero_options:
+            commands.append("--backend={}".format(lczero_options["backend"]))
 
-    silence_stderr = cfg.get("silence_stderr", False)
+        silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
@@ -53,27 +62,27 @@ class EngineWrapper:
     def search(self, board, wtime, btime, winc, binc):
         pass
 
-    def print_stats(self):
-        pass
-
     def name(self):
         return self.engine.name
-
+    
     def quit(self):
         self.engine.quit()
 
-    def print_handler_stats(self, info, stats):
-        for stat in stats:
-            if stat in info:
-                print("    {}: {}".format(stat, info[stat]))
-
     def get_handler_stats(self, info, stats):
-        stats_str = []
+        if self.is_ponder:
+            return self.stats_info
+
+        self.stats_info = []
         for stat in stats:
             if stat in info:
-                stats_str.append("{}: {}".format(stat, info[stat]))
+                str = "{}: {}".format(stat, info[stat])
+                if stat == "score":
+                    for k,v in info[stat].items():
+                        feval = 0.322978*math.atan(0.0034402*v.cp) + 0.5
+                        str = "win %: {:.2f}".format(feval*100)
+                self.stats_info.append(str)
 
-        return stats_str
+        return self.stats_info
 
 
 class UCIEngine(EngineWrapper):
@@ -96,7 +105,8 @@ class UCIEngine(EngineWrapper):
 
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
-
+        self.stats_info = []
+        self.is_ponder = False
 
     def first_search(self, board, movetime):
         self.engine.position(board)
@@ -105,6 +115,7 @@ class UCIEngine(EngineWrapper):
 
 
     def search(self, board, wtime, btime, winc, binc):
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         cmds = self.go_commands
         best_move, _ = self.engine.go(
@@ -118,13 +129,15 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
+    def ponder(self, board):
+        self.is_ponder = True
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
+        self.engine.position(board)
+        ponder = self.engine.go(infinite=True, async_callback=True)
 
     def stop(self):
         self.engine.stop()
-
-
-    def print_stats(self):
-        self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
+        self.is_ponder = False
 
 
     def get_stats(self):
@@ -193,9 +206,6 @@ class XBoardEngine(EngineWrapper):
             self.engine.time(btime / 10)
             self.engine.otim(wtime / 10)
         return self.engine.go()
-
-    def print_stats(self):
-        self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])

@@ -47,7 +47,7 @@ def start(li, user_profile, engine_factory, config):
     max_games = challenge_config.get("concurrency", 1)
     print("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
-    challenge_queue = []
+    challenge_queue = manager.list()
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
@@ -65,7 +65,9 @@ def start(li, user_profile, engine_factory, config):
                 if chlng.is_supported(challenge_config):
                     challenge_queue.append(chlng)
                     if (challenge_config.get("sort_by", "best") == "best"):
-                        challenge_queue.sort(key=lambda c: -c.score())
+                        list_c = list(challenge_queue)
+                        list_c.sort(key=lambda c: -c.score())
+                        challenge_queue = list_c
                 else:
                     try:
                         li.decline_challenge(chlng.id)
@@ -79,7 +81,7 @@ def start(li, user_profile, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
                 busy_processes += 1
                 print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             while ((queued_processes + busy_processes) < max_games and challenge_queue): # keep processing the queue until empty or max_games is reached
@@ -99,22 +101,22 @@ def start(li, user_profile, engine_factory, config):
     control_stream.join()
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
+def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue):
     updates = li.get_game_stream(game_id).iter_lines()
 
     #Initial response of stream will be the full game info. Store it
     game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
     engine = engine_factory(board)
-    conversation = Conversation(game, engine, li, __version__)
-
+    conversation = Conversation(game, engine, li, __version__, challenge_queue, config)
+    conversation.send_greeting()
     print("+++ {}".format(game))
-
     engine_cfg = config["engine"]
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
         play_first_move(game, engine, board, li)
+        engine.get_stats()
 
     engine.set_time_control(game)
 
@@ -129,6 +131,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
                 if is_engine_move(game, moves):
+                    engine.stop()
                     if config.get("fake_think_time") and len(moves) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
                         accel = 1 - max(0, min(100, len(moves) - 20)) / 150
@@ -139,8 +142,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                         best_move = get_book_move(board, polyglot_cfg)
                     if best_move == None:
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        engine.get_stats()
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
+                else:
+                    engine.ponder(board)
             elif u_type == "ping":
                 if game.should_abort_now():
                     print("    Aborting {} by lack of activity".format(game.url()))
@@ -160,7 +166,7 @@ def play_first_move(game, engine, board, li):
     moves = game.state["moves"].split()
     if is_engine_move(game, moves):
         # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(board, 10000)
+        best_move = engine.first_search(board, 2000)
         li.make_move(game.id, best_move)
         return True
     return False

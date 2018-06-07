@@ -188,10 +188,10 @@ def play_first_book_move(game, engine, board, li, config):
 
 def get_book_move(board, config):
     if board.uci_variant == "chess":
-        book = config["book"]
+        book = config["standard"]
     else:
-        if config.get("{}_book".format(board.uci_variant)):
-            book = config["{}_book".format(board.uci_variant)]
+        if config.get("{}".format(board.uci_variant)):
+            book = config["{}".format(board.uci_variant)]
         else:
             return None
 

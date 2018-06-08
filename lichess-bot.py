@@ -120,8 +120,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
 
     engine_cfg = config["engine"]
     polyglot_cfg = engine_cfg.get("polyglot", {})
+    book_cfg = polyglot_cfg.get("book", {})
 
-    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
+    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
         play_first_move(game, engine, board, li)
 
     engine.set_time_control(game)
@@ -144,7 +145,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                         time.sleep(sleep)
                     best_move = None
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
-                        best_move = get_book_move(board, polyglot_cfg)
+                        best_move = get_book_move(board, book_cfg)
                     if best_move == None:
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)

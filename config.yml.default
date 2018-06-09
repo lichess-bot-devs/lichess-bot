@@ -7,7 +7,15 @@ engine:                      # engine settings
   protocol: "uci"            # "uci" or "xboard"
   polyglot:
     enabled: false           # activate polyglot book
-    book: "engines/book.bin" # book file path
+    book:
+      standard: "engines/book.bin" # book file path of standard chess
+#      atomic: "atomic book path"
+#      giveaway: "antichess book path"
+#      crazyhouse: "crazyhouse book path"
+#      horde: "horde book path"
+#      kingofthehill: "kingOfTheHill book path"
+#      racingkings: "racingKings book path"
+#      3check: "threeCheck book path"
     max_depth: 8             # half move max depth
     min_weight: 1            # selects move with highest weight but not below this value
     selection: "weighted_random" # move slection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in 2. and 3. case)

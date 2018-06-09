@@ -120,8 +120,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
 
     engine_cfg = config["engine"]
     polyglot_cfg = engine_cfg.get("polyglot", {})
+    book_cfg = polyglot_cfg.get("book", {})
 
-    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, polyglot_cfg):
+    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
         play_first_move(game, engine, board, li)
 
     engine.set_time_control(game)
@@ -144,7 +145,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                         time.sleep(sleep)
                     best_move = None
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
-                        best_move = get_book_move(board, polyglot_cfg)
+                        best_move = get_book_move(board, book_cfg)
                     if best_move == None:
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
@@ -187,18 +188,31 @@ def play_first_book_move(game, engine, board, li, config):
 
 
 def get_book_move(board, config):
-    with chess.polyglot.open_reader(config["book"]) as reader:
+    if board.uci_variant == "chess":
+        book = config["standard"]
+    else:
+        if config.get("{}".format(board.uci_variant)):
+            book = config["{}".format(board.uci_variant)]
+        else:
+            return None
+
+    with chess.polyglot.open_reader(book) as reader:
         try:
             selection = config.get("selection", "weighted_random")
             if selection == "weighted_random":
-                return reader.weighted_choice(board).move()
+                move = reader.weighted_choice(board).move()
             elif selection == "uniform_random":
-                return reader.choice(board, config.get("min_weight", 1)).move()
+                move = reader.choice(board, config.get("min_weight", 1)).move()
             elif selection == "best_move":
-                return reader.find(board, config.get("min_weight", 1)).move()
+                move = reader.find(board, config.get("min_weight", 1)).move()
         except IndexError:
             # python-chess raises "IndexError" if no entries found
-            return None
+            move = None
+
+    if move is not None:
+        print("Got move {} from book {}".format(move, book))
+
+    return move
 
 
 def setup_board(game):

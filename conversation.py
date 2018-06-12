@@ -6,7 +6,7 @@ LINKS = {
     "Lichess Bots": "https://lichess.org/api#tag/Chess-Bot"
 }
 
-ID = 361
+ID = 395
 
 class Conversation():
     def __init__(self, game, engine, xhr, version, challenge_queue):

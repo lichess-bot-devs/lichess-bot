@@ -51,6 +51,7 @@ challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously
   sort_by: "best"            # possible values: "best", "first"
   accept_bot: false          # accepts challenges coming from other bots
+  max_increment: 0           # the maximum amount of acceptable increment. 0 will reject
   variants:                  # chess variants to accept (http://lichess.org/variant)
     - standard
 #   - fromPosition

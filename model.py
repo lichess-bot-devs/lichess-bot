@@ -32,7 +32,7 @@ class Challenge():
             return False
         variants = config["variants"]
         tc = config["time_controls"]
-        inc = config["max_increment"]
+        inc = config.get("max_increment", 180)
         modes = config["modes"]
         return self.is_supported_time_control(tc, inc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 

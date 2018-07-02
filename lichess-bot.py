@@ -154,7 +154,17 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 if game.should_abort_now():
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
-    except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError, HTTPError) as exception:
+    except HTTPError as exception:
+        ongoing_games = li.get_ongoing_games()
+        game_over = True
+        for ongoing_game in ongoing_games:
+            if ongoing_game["gameId"] == game.id:
+                game_over = False
+                break
+        if not game_over:
+            print("Abandoning game due to connection error")
+            traceback.print_exception(type(exception), exception, exception.__traceback__)
+    except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
         print("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
     finally:

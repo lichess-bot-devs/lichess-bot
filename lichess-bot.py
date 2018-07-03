@@ -122,12 +122,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     polyglot_cfg = engine_cfg.get("polyglot", {})
     book_cfg = polyglot_cfg.get("book", {})
 
-    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
-        play_first_move(game, engine, board, li)
-
-    engine.set_time_control(game)
-
     try:
+        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+            play_first_move(game, engine, board, li)
+
+        engine.set_time_control(game)
+
         for binary_chunk in updates:
             upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
             u_type = upd["type"] if upd else "ping"

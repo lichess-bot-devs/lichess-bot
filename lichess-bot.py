@@ -27,6 +27,9 @@ except ImportError:
 
 __version__ = "1.1.0"
 
+def is_final(exception):
+    return isinstance(exception, HTTPError) and exception.response.status_code < 500
+
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
         return False
@@ -34,7 +37,7 @@ def upgrade_account(li):
     print("Succesfully upgraded to Bot Account!")
     return True
 
-@backoff.on_exception(backoff.expo, BaseException, max_time=600)
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def watch_control_stream(control_queue, li):
     for evnt in li.get_event_stream().iter_lines():
         if evnt:
@@ -106,7 +109,7 @@ def start(li, user_profile, engine_factory, config):
     control_stream.terminate()
     control_stream.join()
 
-@backoff.on_exception(backoff.expo, BaseException, max_time=600)
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     updates = li.get_game_stream(game_id).iter_lines()
 

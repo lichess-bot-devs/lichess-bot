@@ -10,6 +10,7 @@ class Challenge():
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
         self.increment = c_info["timeControl"]["increment"]
+
         self.challenger = c_info.get("challenger")
         self.challenger_title = self.challenger.get("title") if self.challenger else None
         self.challenger_is_bot = self.challenger_title == "BOT"
@@ -21,8 +22,8 @@ class Challenge():
     def is_supported_variant(self, supported):
         return self.variant in supported
 
-    def is_supported_time_control(self, supported_speed, supported_increment):
-        return self.speed in supported_speed and self.increment <= supported_increment
+    def is_supported_time_control(self, supported_speed, supported_increment_max, supported_increment_min):
+        return self.speed in supported_speed and self.increment <= supported_increment_max and self.increment >= supported_increment_min
 
     def is_supported_mode(self, supported):
         return "rated" in supported if self.rated else "casual" in supported
@@ -32,9 +33,10 @@ class Challenge():
             return False
         variants = config["variants"]
         tc = config["time_controls"]
-        inc = config.get("max_increment", 180)
+        inc_max = config.get("max_increment", 180)
+        inc_min = config.get("min_increment", 180)
         modes = config["modes"]
-        return self.is_supported_time_control(tc, inc) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
+        return self.is_supported_time_control(tc, inc_max, inc_min) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 
     def score(self):
         rated_bonus = 200 if self.rated else 0

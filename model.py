@@ -34,7 +34,7 @@ class Challenge():
         variants = config["variants"]
         tc = config["time_controls"]
         inc_max = config.get("max_increment", 180)
-        inc_min = config.get("min_increment", 180)
+        inc_min = config.get("min_increment", 0)
         modes = config["modes"]
         return self.is_supported_time_control(tc, inc_max, inc_min) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
 

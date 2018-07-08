@@ -9,8 +9,7 @@ class Challenge():
         self.variant = c_info["variant"]["key"]
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
-        self.increment = c_info["timeControl"]["increment"]
-
+        self.increment = c_info.get("timeControl", {}).get("increment", -1)
         self.challenger = c_info.get("challenger")
         self.challenger_title = self.challenger.get("title") if self.challenger else None
         self.challenger_is_bot = self.challenger_title == "BOT"
@@ -23,6 +22,8 @@ class Challenge():
         return self.variant in supported
 
     def is_supported_time_control(self, supported_speed, supported_increment_max, supported_increment_min):
+        if self.increment < 0:
+            return self.speed in supported_speed
         return self.speed in supported_speed and self.increment <= supported_increment_max and self.increment >= supported_increment_min
 
     def is_supported_mode(self, supported):

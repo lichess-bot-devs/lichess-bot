@@ -125,12 +125,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     polyglot_cfg = engine_cfg.get("polyglot", {})
     book_cfg = polyglot_cfg.get("book", {})
 
-    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
-        play_first_move(game, engine, board, li)
-
-    engine.set_time_control(game)
-
     try:
+        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+            play_first_move(game, engine, board, li)
+
+        engine.set_time_control(game)
+
         for binary_chunk in updates:
             upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
             u_type = upd["type"] if upd else "ping"
@@ -157,7 +157,17 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 if game.should_abort_now():
                     print("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
-    except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError, HTTPError) as exception:
+    except HTTPError as exception:
+        ongoing_games = li.get_ongoing_games()
+        game_over = True
+        for ongoing_game in ongoing_games:
+            if ongoing_game["gameId"] == game.id:
+                game_over = False
+                break
+        if not game_over:
+            print("Abandoning game due to connection error")
+            traceback.print_exception(type(exception), exception, exception.__traceback__)
+    except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
         print("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
     finally:

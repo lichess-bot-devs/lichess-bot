@@ -4,7 +4,7 @@ url: "https://lichess.org/"  # lichess base URL
 engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
-  protocol: "uci"            # "uci" or "xboard"
+  protocol: "http"            # "uci" or "xboard" or "http"
   polyglot:
     enabled: false           # activate polyglot book
     book:
@@ -43,6 +43,9 @@ engine:                      # engine settings
 #   noise: true              # Randomness in the search algorithm. This makes sure that even unfavored lines are given a "lucky" shot
 #   log: "./engines/log.txt" # save log of lczero debug output
   silence_stderr: false      # some engines (yes you, leela) are very noisy
+
+http_engine:
+  url: "http://play.lczero.org/getMoveHardcore"
 
 abort_time: 20               # time to abort a game in seconds when there is no activity
 fake_think_time: false       # artificially slow down the bot to pretend like it's thinking

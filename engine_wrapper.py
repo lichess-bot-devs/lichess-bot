@@ -4,12 +4,18 @@ import chess.xboard
 import chess.uci
 import backoff
 import subprocess
+import requests
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
+    silence_stderr = cfg.get("silence_stderr", False)
+
+    if engine_type == "http":
+        return UCIHttpEngine(board, [], config["http_engine"] or {}, silence_stderr)
+
     lczero_options = cfg.get("lczero")
     commands = [engine_path]
     if lczero_options:
@@ -30,8 +36,6 @@ def create_engine(config, board):
         if "log" in lczero_options:
             commands.append("--logfile")
             commands.append(lczero_options["log"])
-
-    silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
@@ -74,6 +78,43 @@ class EngineWrapper:
                 stats_str.append("{}: {}".format(stat, info[stat]))
 
         return stats_str
+
+class UCIHttpEngine(EngineWrapper):
+
+    def __init__(self, board, commands, options, silence_stderr=False):
+        print('options', options)
+        commands = commands[0] if len(commands) == 1 else commands
+        self.go_commands = options.get("go_commands", {})
+        self.api_url = options.get('url')
+
+    def request_move(self, board):
+        arr_moves = [m.uci() for m in board.move_stack]
+        if len(arr_moves) == 0:
+            arr_moves = ['0']
+
+        payload = {'pgn': ' '.join(arr_moves)}
+        r = requests.get(self.api_url, params=payload)
+        
+        resp = r.json()
+        # {'pgn': 'e2e4', 'centipawn': '-2', 'bestMove': {'toSq': 'e6', 'fromSq': 'e7', 'uci': 'e7e6'}, 'netId': '22934', 'moveType': 'Hardcore'}
+
+        return resp['bestMove']['uci']
+
+    def first_search(self, board, movetime):
+        best_move = self.request_move(board)
+        return best_move
+
+
+    def search(self, board, wtime, btime, winc, binc):
+        cmds = self.go_commands
+        best_move = self.request_move(board)
+        return best_move
+
+    def stop(self):
+        print('stop')
+    
+    def quit(self):
+        print('quit')
 
 
 class UCIEngine(EngineWrapper):

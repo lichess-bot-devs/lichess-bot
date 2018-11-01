@@ -3,6 +3,6 @@ chardet==3.0.4
 idna==2.6
 python-chess==0.23.6
 PyYAML==3.13
-requests==2.18.4
+requests>=2.20.0
 urllib3==1.22
 backoff==1.5.0

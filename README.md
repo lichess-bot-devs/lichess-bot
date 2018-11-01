@@ -16,6 +16,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`
+```
+cp config.yml.default config.yml
+```
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
 ### Windows:

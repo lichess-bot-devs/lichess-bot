@@ -140,7 +140,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 game.state = upd
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
-                if is_engine_move(game, moves):
+                if not board.is_game_over() and is_engine_move(game, moves):
                     if config.get("fake_think_time") and len(moves) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
                         accel = 1 - max(0, min(100, len(moves) - 20)) / 150

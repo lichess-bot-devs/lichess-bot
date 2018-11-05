@@ -271,9 +271,10 @@ if __name__ == "__main__":
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')
     parser.add_argument('--config', help='Specify a configuration file (defaults to ./config.yml)')
+    parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logger = logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO)
+    logger = logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile)
 
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)

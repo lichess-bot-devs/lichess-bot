@@ -34,7 +34,7 @@ def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
         return False
 
-    print("Succesfully upgraded to Bot Account!")
+    logger.info("Succesfully upgraded to Bot Account!")
     return True
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
@@ -50,13 +50,15 @@ terminated = False
 
 def signal_handler(signal, frame):
     global terminated
+    logger.debug("Recieved SIGINT. Terminating client.")
     terminated = True
+
 signal.signal(signal.SIGINT, signal_handler)
 
 def start(li, user_profile, engine_factory, config):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
-    print("You're now connected to {} and awaiting challenges.".format(config["url"]))
+    logger.info("You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
     challenge_queue = []
     control_queue = manager.Queue()
@@ -70,7 +72,7 @@ def start(li, user_profile, engine_factory, config):
             event = control_queue.get()
             if event["type"] == "local_game_done":
                 busy_processes -= 1
-                print("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                logger.info("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
                 if chlng.is_supported(challenge_config):
@@ -80,32 +82,32 @@ def start(li, user_profile, engine_factory, config):
                 else:
                     try:
                         li.decline_challenge(chlng.id)
-                        print("    Decline {}".format(chlng))
+                        logger.info("    Decline {}".format(chlng))
                     except HTTPError as exception:
                         if exception.response.status_code != 404: # ignore missing challenge
                             raise exception
             elif event["type"] == "gameStart":
                 if queued_processes <= 0:
-                    print("Something went wrong. Game is starting and we don't have a queued process")
+                    logger.debug("Something went wrong. Game is starting and we don't have a queued process")
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config])
                 busy_processes += 1
-                print("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             while ((queued_processes + busy_processes) < max_games and challenge_queue): # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
                 try:
                     response = li.accept_challenge(chlng.id)
-                    print("    Accept {}".format(chlng))
+                    logger.info("    Accept {}".format(chlng))
                     queued_processes += 1
-                    print("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                    logger.info("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 except HTTPError as exception:
                     if exception.response.status_code == 404: # ignore missing challenge
-                        print("    Skip missing {}".format(chlng))
+                        logger.info("    Skip missing {}".format(chlng))
                     else:
                         raise exception
-    print("Terminated")
+    logger.info("Terminated")
     control_stream.terminate()
     control_stream.join()
 
@@ -119,7 +121,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li, __version__)
 
-    print("+++ {}".format(game))
+    logger.info("+++ {}".format(game))
 
     engine_cfg = config["engine"]
     polyglot_cfg = engine_cfg.get("polyglot", {})
@@ -155,7 +157,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                     game.abort_in(config.get("abort_time", 20))
             elif u_type == "ping":
                 if game.should_abort_now():
-                    print("    Aborting {} by lack of activity".format(game.url()))
+                    logger.info("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except HTTPError as exception:
         ongoing_games = li.get_ongoing_games()
@@ -165,13 +167,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 game_over = False
                 break
         if not game_over:
-            print("Abandoning game due to connection error")
+            logger.warn("Abandoning game due to connection error")
             traceback.print_exception(type(exception), exception, exception.__traceback__)
     except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
-        print("Abandoning game due to connection error")
+        logger.error("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
     finally:
-        print("--- {} Game over".format(game.url()))
+        logger.info("--- {} Game over".format(game.url()))
         engine.quit()
         # This can raise queue.NoFull, but that should only happen if we're not processing
         # events fast enough and in this case I believe the exception should be raised
@@ -223,7 +225,7 @@ def get_book_move(board, config):
             move = None
 
     if move is not None:
-        print("Got move {} from book {}".format(move, book))
+        logger.info("Got move {} from book {}".format(move, book))
 
     return move
 
@@ -266,7 +268,6 @@ def intro():
 """.lstrip() % __version__
 
 if __name__ == "__main__":
-    print(intro())
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')
@@ -274,7 +275,9 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logger = logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile)
+    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile, format="%(asctime)-15s: %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.info(intro())
 
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
@@ -282,7 +285,7 @@ if __name__ == "__main__":
     user_profile = li.get_profile()
     username = user_profile["username"]
     is_bot = user_profile.get("title") == "BOT"
-    print("Welcome {}!".format(username))
+    logger.info("Welcome {}!".format(username))
 
     if args.u is True and is_bot is False:
         is_bot = upgrade_account(li)
@@ -291,4 +294,4 @@ if __name__ == "__main__":
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
         start(li, user_profile, engine_factory, CONFIG)
     else:
-        print("{} is not a bot account. Please upgrade your it to a bot account!".format(user_profile["username"]))
+        logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))

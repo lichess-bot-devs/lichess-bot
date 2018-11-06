@@ -55,6 +55,9 @@ pip install -r requirements.txt
 **WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
 - run `python lichess-bot.py -u`
 
+## To Quit
+- Press CTRL+C
+- It may take some time to quit
 
 ## LeelaChessZero
 - Download the weights for the id you want to play from here: http://lczero.org/networks

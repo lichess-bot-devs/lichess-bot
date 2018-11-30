@@ -39,12 +39,16 @@ def upgrade_account(li):
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def watch_control_stream(control_queue, li):
-    for evnt in li.get_event_stream().iter_lines():
-        if evnt:
-            event = json.loads(evnt.decode('utf-8'))
-            control_queue.put_nowait(event)
-        else:
-            control_queue.put_nowait({"type": "ping"})
+    try:
+        for evnt in li.get_event_stream().iter_lines():
+            if evnt:
+                event = json.loads(evnt.decode('utf-8'))
+                control_queue.put_nowait(event)
+            else:
+                control_queue.put_nowait({"type": "ping"})
+    except ChunkedEncodingError as exception:
+        logger.error("Restarting to whatch control stream due to incomplete read error.")
+        watch_control_stream(control_queue, li)
 
 terminated = False
 

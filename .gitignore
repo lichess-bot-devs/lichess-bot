@@ -2,3 +2,7 @@ config.yml
 __pycache__
 /engines/*
 !/engines/README.md
+
+# avoid pushing project files when people use PyCharm
+.idea/
+

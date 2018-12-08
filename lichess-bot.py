@@ -259,13 +259,13 @@ def update_board(board, move):
     return board
 
 def intro():
-    return r"""
-.   _/|
-.  // o\
-.  || ._)  lichess-bot %s
-.  //__\
-.  )___(   Play on Lichess with a bot
-""".lstrip() % __version__
+    return r"""\n
+    .   _/|
+    .  // o\
+    .  || ._)  lichess-bot %s
+    .  //__\
+    .  )___(   Play on Lichess with a bot
+    """.lstrip() % __version__
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')

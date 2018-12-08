@@ -18,6 +18,7 @@ from conversation import Conversation, ChatLine
 from functools import partial
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
+from ColorLogger import enable_color_logging
 
 try:
     from http.client import RemoteDisconnected
@@ -268,6 +269,7 @@ def intro():
 """.lstrip() % __version__
 
 if __name__ == "__main__":
+    enable_color_logging(logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')

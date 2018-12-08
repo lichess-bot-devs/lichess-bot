@@ -62,7 +62,8 @@ pip install -r requirements.txt
 ## LeelaChessZero
 - Download the weights for the id you want to play from here: http://lczero.org/networks
 - Extract the weights from the zip archive and rename it to `latest.txt`
-- Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
+- For Windows, download the lczero binary from https://github.com/glinscott/leela-chess/releases
+- For Mac/Linux, build the lczero binary yourself following [LeelaChessZero/lc0/README](https://github.com/LeelaChessZero/lc0/blob/master/README.md)
 - Copy both the files into the `engine.dir` directory
 - Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `latest.txt`
 - You can specify the number of `engine.threads` in the config.yml file as well

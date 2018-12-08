@@ -11,6 +11,7 @@ import multiprocessing
 import traceback
 import logging_pool
 import signal
+import sys
 import time
 import backoff
 from config import load_config
@@ -40,12 +41,18 @@ def upgrade_account(li):
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def watch_control_stream(control_queue, li):
-    for evnt in li.get_event_stream().iter_lines():
-        if evnt:
-            event = json.loads(evnt.decode('utf-8'))
-            control_queue.put_nowait(event)
-        else:
-            control_queue.put_nowait({"type": "ping"})
+    response = li.get_event_stream()
+    try:
+        for line in response.iter_lines():
+            if line:
+                event = json.loads(line.decode('utf-8'))
+                control_queue.put_nowait(event)
+            else:
+                control_queue.put_nowait({"type": "ping"})
+    except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
+        logger.error("Terminating client due to connection error")
+        traceback.print_exception(type(exception), exception, exception.__traceback__)
+        sys.exit()
 
 terminated = False
 
@@ -114,10 +121,11 @@ def start(li, user_profile, engine_factory, config):
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
-    updates = li.get_game_stream(game_id).iter_lines()
+    response = li.get_game_stream(game_id)
+    lines = response.iter_lines()
 
     #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(updates).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
+    game = model.Game(json.loads(next(lines)), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
     engine = engine_factory(board)
     conversation = Conversation(game, engine, li, __version__)
@@ -134,7 +142,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
 
         engine.set_time_control(game)
 
-        for binary_chunk in updates:
+        for binary_chunk in lines:
             upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
@@ -160,7 +168,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 if game.should_abort_now():
                     logger.info("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
-    except HTTPError as exception:
+    except HTTPError as e:
         ongoing_games = li.get_ongoing_games()
         game_over = True
         for ongoing_game in ongoing_games:
@@ -168,8 +176,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                 game_over = False
                 break
         if not game_over:
-            logger.warn("Abandoning game due to connection error")
-            traceback.print_exception(type(exception), exception, exception.__traceback__)
+            logger.warn("Abandoning game due to HTTP "+response.status_code)
     except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
         logger.error("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)

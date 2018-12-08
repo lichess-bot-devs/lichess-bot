@@ -1,7 +1,7 @@
 """
 @file: Colorer.py
 
-Script which allows are colored logging output multiplattform.
+Script which allows colored logging output with multiplattform support.
 The script is based on this post and was slightly adjusted:
 # https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output
 

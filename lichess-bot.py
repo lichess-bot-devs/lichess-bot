@@ -27,7 +27,16 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
+
+terminated = False
+
+def signal_handler(signal, frame):
+    global terminated
+    logger.debug("Recieved SIGINT. Terminating client.")
+    terminated = True
+
+signal.signal(signal.SIGINT, signal_handler)
 
 def is_final(exception):
     return isinstance(exception, HTTPError) and exception.response.status_code < 500
@@ -53,15 +62,8 @@ def watch_control_stream(control_queue, li):
         logger.error("Terminating client due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
         sys.exit()
-
-terminated = False
-
-def signal_handler(signal, frame):
-    global terminated
-    logger.debug("Recieved SIGINT. Terminating client.")
-    terminated = True
-
-signal.signal(signal.SIGINT, signal_handler)
+        global terminated
+        terminated = True
 
 def start(li, user_profile, engine_factory, config):
     challenge_config = config["challenge"]

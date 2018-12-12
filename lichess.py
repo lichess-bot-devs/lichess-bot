@@ -13,6 +13,7 @@ import backoff
 
 ENDPOINTS = {
     "profile": "/api/account",
+    "playing": "/api/account/playing",
     "stream": "/api/bot/game/stream/{}",
     "stream_event": "/api/stream/event",
     "game": "/api/bot/game/{}",
@@ -95,6 +96,10 @@ class Lichess():
         profile = self.api_get(ENDPOINTS["profile"])
         self.set_user_agent(profile["username"])
         return profile
+
+    def get_ongoing_games(self):
+        ongoing_games = self.api_get(ENDPOINTS["playing"])["nowPlaying"]
+        return ongoing_games
 
     def resign(self, game_id):
         self.api_post(ENDPOINTS["resign"].format(game_id))

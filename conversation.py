@@ -6,7 +6,7 @@ LINKS = {
     "Lichess Bots": "https://lichess.org/api#tag/Chess-Bot"
 }
 
-ID = 395
+ID = 11248
 
 class Conversation():
     def __init__(self, game, engine, xhr, version, challenge_queue):
@@ -62,7 +62,7 @@ class Conversation():
             for name, url in LINKS.items():
                 self.send_reply(line, "{}: {}".format(name, url))
         elif cmd == "hardware" or cmd == "gpu":
-            self.send_reply(line, "GTX 1050 Ti 4GB, i7-3770 @ 3.40 GHz, Ubuntu 16.04, Linux 4.4.0")
+            self.send_reply(line, "GTX 1060 6GB, i5-6600K @ 3.50 GHz, Windows 10 Pro")
         elif cmd == "queue" or cmd == "challengers":
             if not self.challengers:
                 self.send_reply(line, "No players in the queue!")

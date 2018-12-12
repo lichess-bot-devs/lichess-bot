@@ -14,6 +14,7 @@ def create_engine(config, board):
     lczero_options = cfg.get("lczero")
     commands = [engine_path]
     if lczero_options:
+        commands.append("--logfile=leela.log")
         if "weights" in lczero_options:
             commands.append("-w")
             commands.append(lczero_options["weights"])
@@ -37,13 +38,14 @@ def create_engine(config, board):
             commands.append("--fpu-reduction={}".format(lczero_options["fpu-reduction"]))
         if "cpuct" in lczero_options:
             commands.append("--cpuct={}".format(lczero_options["cpuct"]))
-
+        if "slowmover" in lczero_options:
+            commands.append("--slowmover={}".format(lczero_options["slowmover"]))
         silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
 
-    return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options", {}), silence_stderr)
 
 
 class EngineWrapper:
@@ -91,7 +93,7 @@ class UCIEngine(EngineWrapper):
 
         self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
         self.engine.uci()
-
+        print(options)
         if options:
             self.engine.setoption(options)
 

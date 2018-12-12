@@ -30,7 +30,7 @@ pip install -r requirements.txt
 - Setup virtualenv:
 ```
 virtualenv .venv -p python (if this fails you probably need to add Python to your PATH)
-./.venv/Scripts/activate (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
+./.venv/Scripts/activate (.\.venv\Scripts\activate should work in cmd in administator mode) (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
 pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`
@@ -55,11 +55,15 @@ pip install -r requirements.txt
 **WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
 - run `python lichess-bot.py -u`
 
+## To Quit
+- Press CTRL+C
+- It may take some time to quit
 
 ## LeelaChessZero
 - Download the weights for the id you want to play from here: http://lczero.org/networks
 - Extract the weights from the zip archive and rename it to `latest.txt`
-- Download the lczero binary from here: https://github.com/glinscott/leela-chess/releases
+- For Windows, download the lczero binary from https://github.com/glinscott/leela-chess/releases
+- For Mac/Linux, build the lczero binary yourself following [LeelaChessZero/lc0/README](https://github.com/LeelaChessZero/lc0/blob/master/README.md)
 - Copy both the files into the `engine.dir` directory
 - Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `latest.txt`
 - You can specify the number of `engine.threads` in the config.yml file as well

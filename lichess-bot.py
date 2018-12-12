@@ -32,6 +32,7 @@ __version__ = "1.1.1"
 terminated = False
 
 def signal_handler(signal, frame):
+    global logger
     global terminated
     logger.debug("Recieved SIGINT. Terminating client.")
     terminated = True

@@ -97,10 +97,10 @@ class UCIEngine(EngineWrapper):
         if options:
             self.engine.setoption(options)
 
-        self.engine.setoption({
-            "UCI_Variant": type(board).uci_variant,
-            "UCI_Chess960": board.chess960
-        })
+        #self.engine.setoption({
+        #    "UCI_Variant": type(board).uci_variant
+        #   # "UCI_Chess960": board.chess960
+        #})
         self.engine.position(board)
 
         info_handler = chess.uci.InfoHandler()
@@ -115,7 +115,7 @@ class UCIEngine(EngineWrapper):
 
 
     def search(self, board, wtime, btime, winc, binc):
-        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
+        #self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         cmds = self.go_commands
         best_move, _ = self.engine.go(
@@ -131,7 +131,7 @@ class UCIEngine(EngineWrapper):
 
     def ponder(self, board):
         self.is_ponder = True
-        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
+        #self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         ponder = self.engine.go(infinite=True, async_callback=True)
 

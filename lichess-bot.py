@@ -269,13 +269,13 @@ def update_board(board, move):
     return board
 
 def intro():
-    return r"""\n
+    return r"""
     .   _/|
     .  // o\
     .  || ._)  lichess-bot %s
     .  //__\
     .  )___(   Play on Lichess with a bot
-    """.lstrip() % __version__
+    """ % __version__
 
 if __name__ == "__main__":
     enable_color_logging(logging.INFO)

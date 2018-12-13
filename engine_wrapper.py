@@ -10,26 +10,39 @@ def create_engine(config, board):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
-    lczero_options = cfg.get("lczero")
+    lczero_options = cfg.get("lczero", None)
     commands = [engine_path]
+
+    """    
+    weights: "engines/weights_run1_22062.pb.gz" # weights file path
+    threads: 4               # max CPU threads the engine can use
+    minibatch-size: 256
+    cpuct: 3.1
+    cpuct-base: 19652.00000
+    cpuct-factor: 2.000000
+    nncache: 20000000
+    max-collision-events: 256
+    backend: multiplexing
+    backend-opts: "(backend=cudnn-fp16,gpu=0),(backend=cudnn,gpu=1)"
+    slowmover: 1.3
+    immediate-time-use: 0.60
+    max-prefetch: 32
+    temperature: 0.00
+    temp-visit-offset: 0.00
+    smart-pruning-factor: 1.33
+    fpu-reduction: 1.20
+    fpu-value: 1.00
+    fpu-strategy: reduction
+    policy-softmax-temp: 2.20
+    max-collision-visits: 9999
+    multi-pv: 1
+    ramlimit-mb: 0
+    logfile: sf10vleela.log
+    """
     if lczero_options:
-        if "weights" in lczero_options:
-            commands.append("-w")
-            commands.append(lczero_options["weights"])
-        if "threads" in lczero_options:
-            commands.append("-t")
-            commands.append(str(lczero_options["threads"]))
-        if "gpu" in lczero_options:
-            commands.append("--gpu")
-            commands.append(str(lczero_options["gpu"]))
-        if "tempdecay" in lczero_options:
-            commands.append("--tempdecay")
-            commands.append(str(lczero_options["tempdecay"]))
-        if lczero_options.get("noise"):
-            commands.append("--noise")
-        if "log" in lczero_options:
-            commands.append("--logfile")
-            commands.append(lczero_options["log"])
+        for k, v in lczero_options:
+            commands.append("--{}".format(k))
+            commands.append(v)
 
     silence_stderr = cfg.get("silence_stderr", False)
 

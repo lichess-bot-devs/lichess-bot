@@ -36,7 +36,7 @@ def create_engine(config, board):
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
 
-    return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options", {}), silence_stderr)
 
 
 class EngineWrapper:
@@ -81,6 +81,8 @@ class UCIEngine(EngineWrapper):
     def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
         self.go_commands = options.get("go_commands", {})
+        self.pondering = False
+        self.stats_info = []
 
         self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
         self.engine.uci()
@@ -121,14 +123,22 @@ class UCIEngine(EngineWrapper):
 
     def stop(self):
         self.engine.stop()
-
+        self.pondering = False
 
     def print_stats(self):
         self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
 
+    def ponder(self, board):
+        self.pondering = True
+        self.engine.setoption({"UCI_Variant": type(board).uci_variant})
+        self.engine.position(board)
+        ponder = self.engine.go(infinite=True, async_callback=True)
 
     def get_stats(self):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
+        if not self.pondering:
+            self.stats_info = self.get_handler_stats(self.engine.info_handlers[0].info,
+                                                     ["depth", "nps", "nodes", "score"])
+        return self.stats_info
 
 
 class XBoardEngine(EngineWrapper):

@@ -135,6 +135,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
     logger.info("+++ {}".format(game))
 
     engine_cfg = config["engine"]
+    pondering = engine_cfg.get("ponder", False)
+    protocol = engine_cfg.get("protocol")
     polyglot_cfg = engine_cfg.get("polyglot", {})
     book_cfg = polyglot_cfg.get("book", {})
 
@@ -163,9 +165,15 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, book_cfg)
                     if best_move == None:
+                        engine.stop()
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        engine.get_stats()
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
+                else:
+                    if pondering and protocol == "uci":
+                        engine.ponder(board)
+
             elif u_type == "ping":
                 if game.should_abort_now():
                     logger.info("    Aborting {} by lack of activity".format(game.url()))

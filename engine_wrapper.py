@@ -13,7 +13,7 @@ def create_engine(config, board):
     engine_type = cfg.get("protocol")
     lczero_options = cfg.get("lczero")
     commands = [engine_path]
-    
+
     if lczero_options:
         for k, v in lczero_options:
             commands.append("--{}".format(k))

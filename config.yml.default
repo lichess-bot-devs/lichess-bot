@@ -5,6 +5,7 @@ engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
+  uci_ponder: true           # think on opponent time; only works if "protocol" is "uci"
   polyglot:
     enabled: false           # activate polyglot book
     book:
@@ -20,6 +21,7 @@ engine:                      # engine settings
     min_weight: 1            # selects move with highest weight but not below this value
     selection: "weighted_random" # move slection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in 2. and 3. case)
   uci_options:               # arbitrary UCI options passed to the engine
+    Ponder: true
     Move Overhead: 100       # increase if your bot flags games too often
     Threads: 2               # max CPU threads the engine can use
     Hash: 256                # max memory (in megabytes) the engine can allocate

@@ -103,6 +103,16 @@ class UCIEngine(EngineWrapper):
         best_move, _ = self.engine.go(movetime=movetime)
         return best_move
 
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+        self.engine.position(board)
+        best_move, ponder_move = self.engine.go(
+            wtime=wtime,
+            btime=btime,
+            winc=winc,
+            binc=binc,
+            ponder=ponder
+        )
+        return ( best_move , ponder_move )
 
     def search(self, board, wtime, btime, winc, binc):
         self.engine.position(board)

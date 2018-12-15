@@ -21,13 +21,15 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 from ColorLogger import enable_color_logging
 
+logger = logging.getLogger(__name__)
+
 try:
     from http.client import RemoteDisconnected
     # New in version 3.5: Previously, BadStatusLine('') was raised.
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 terminated = False
 
@@ -163,9 +165,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config):
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, book_cfg)
                     if best_move == None:
+                        engine.stop()
                         best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
+                elif engine_cfg.get("uci_ponder", False) and engine_cfg.get("protocol") == "uci":
+                    engine.stop()
+                    engine.ponder(board)
             elif u_type == "ping":
                 if game.should_abort_now():
                     logger.info("    Aborting {} by lack of activity".format(game.url()))
@@ -286,10 +292,9 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile, format="%(asctime)-15s: %(message)s")
-    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile,
+                        format="%(asctime)-15s: %(message)s")
     logger.info(intro())
-
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 

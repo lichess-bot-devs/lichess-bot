@@ -38,13 +38,6 @@ engine:                      # engine settings
 #     nalimov: "Nalimov Path"
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
-# lczero:                    # lczero specific settings
-#   weights: "engines/latest.txt" # weights file path
-#   threads: 1               # max CPU threads the engine can use
-#   gpu: 0                   # which GPU to use
-#   tempdecay: 10            # After search is complete, the tempdecay can pick slightly weaker moves to offer variety. 10 is good tradeoff
-#   noise: true              # Randomness in the search algorithm. This makes sure that even unfavored lines are given a "lucky" shot
-#   log: "./engines/log.txt" # save log of lczero debug output
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 abort_time: 20               # time to abort a game in seconds when there is no activity

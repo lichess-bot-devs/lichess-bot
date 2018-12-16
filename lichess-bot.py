@@ -21,13 +21,15 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 from ColorLogger import enable_color_logging
 
+logger = logging.getLogger(__name__)
+
 try:
     from http.client import RemoteDisconnected
     # New in version 3.5: Previously, BadStatusLine('') was raised.
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 terminated = False
 
@@ -286,10 +288,9 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile, format="%(asctime)-15s: %(message)s")
-    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile,
+                        format="%(asctime)-15s: %(message)s")
     logger.info(intro())
-
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
 

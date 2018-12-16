@@ -16,6 +16,8 @@ class Conversation():
         pass
 
     def command(self, line, game, cmd):
+        if cmd == "commands" or cmd == "help":
+            self.send_reply(line, "Supported commands: !name, !howto, and !eval")
         if cmd == "wait" and game.is_abortable():
             game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")

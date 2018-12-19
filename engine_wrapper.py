@@ -179,6 +179,16 @@ class XBoardEngine(EngineWrapper):
 
         return bestmove
 
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+        self.engine.setboard(board)
+        if board.turn == chess.WHITE:
+            self.engine.time(wtime / 10)
+            self.engine.otim(btime / 10)
+        else:
+            self.engine.time(btime / 10)
+            self.engine.otim(wtime / 10)
+        return ( self.engine.go() , None )
+    
     def search(self, board, wtime, btime, winc, binc):
         self.engine.setboard(board)
         if board.turn == chess.WHITE:

@@ -10,26 +10,11 @@ def create_engine(config, board):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
-    lczero_options = cfg.get("lczero")
+    engine_options = cfg.get("engine_options")
     commands = [engine_path]
-    if lczero_options:
-        if "weights" in lczero_options:
-            commands.append("-w")
-            commands.append(lczero_options["weights"])
-        if "threads" in lczero_options:
-            commands.append("-t")
-            commands.append(str(lczero_options["threads"]))
-        if "gpu" in lczero_options:
-            commands.append("--gpu")
-            commands.append(str(lczero_options["gpu"]))
-        if "tempdecay" in lczero_options:
-            commands.append("--tempdecay")
-            commands.append(str(lczero_options["tempdecay"]))
-        if lczero_options.get("noise"):
-            commands.append("--noise")
-        if "log" in lczero_options:
-            commands.append("--logfile")
-            commands.append(lczero_options["log"])
+    if engine_options:
+        for k, v in engine_options.items():
+            commands.append("--{}={}".format(k, v))
 
     silence_stderr = cfg.get("silence_stderr", False)
 

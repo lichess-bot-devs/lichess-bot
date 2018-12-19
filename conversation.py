@@ -1,11 +1,12 @@
 from time import time
 
 class Conversation():
-    def __init__(self, game, engine, xhr, version):
+    def __init__(self, game, engine, xhr, version, challenge_queue):
         self.game = game
         self.engine = engine
         self.xhr = xhr
         self.version = version
+        self.challengers = challenge_queue
 
     command_prefix = "!"
 
@@ -16,6 +17,8 @@ class Conversation():
         pass
 
     def command(self, line, game, cmd):
+        if cmd == "commands" or cmd == "help":
+            self.send_reply(line, "Supported commands: !name, !howto, !eval, !queue")
         if cmd == "wait" and game.is_abortable():
             game.abort_in(60)
             self.send_reply(line, "Waiting 60 seconds...")
@@ -28,6 +31,12 @@ class Conversation():
             self.send_reply(line, ", ".join(stats))
         elif cmd == "eval":
             self.send_reply(line, "I don't tell that to my opponent, sorry.")
+        elif cmd == "queue":
+            if self.challengers:
+                challengers = ", ".join(["@" + challenger.challenger_name for challenger in reversed(self.challengers)])
+                self.send_reply(line, "Challenge queue: {}".format(challengers))
+            else:
+                self.send_reply(line, "No challenges queued.")
 
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)

@@ -282,7 +282,6 @@ def intro():
     """ % __version__
 
 if __name__ == "__main__":
-    enable_color_logging(logging.INFO)
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')
     parser.add_argument('-u', action='store_true', help='Add this flag to upgrade your account to a bot account.')
     parser.add_argument('-v', action='store_true', help='Verbose output. Changes log level from INFO to DEBUG.')
@@ -292,6 +291,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile,
                         format="%(asctime)-15s: %(message)s")
+    enable_color_logging(debug_lvl=logging.DEBUG if args.v else logging.INFO)
     logger.info(intro())
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)

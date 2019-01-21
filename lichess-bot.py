@@ -63,9 +63,7 @@ def watch_control_stream(control_queue, li):
     except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
         logger.error("Terminating client due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
-        sys.exit()
-        global terminated
-        terminated = True
+        control_queue.put_nowait({"type": "terminated"})
 
 def start(li, user_profile, engine_factory, config):
     challenge_config = config["challenge"]
@@ -82,7 +80,9 @@ def start(li, user_profile, engine_factory, config):
     with logging_pool.LoggingPool(max_games+1) as pool:
         while not terminated:
             event = control_queue.get()
-            if event["type"] == "local_game_done":
+            if event["type"] == "terminated":
+                break
+            elif event["type"] == "local_game_done":
                 busy_processes -= 1
                 logger.info("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":

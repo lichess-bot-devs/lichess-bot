@@ -143,4 +143,3 @@ def enable_color_logging(debug_lvl=logging.DEBUG):
     formatter = logging.Formatter(FORMAT, "%Y-%m-%d %H:%M:%S")
 
     ch.setFormatter(formatter)
-    root.addHandler(ch)

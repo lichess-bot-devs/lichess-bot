@@ -60,6 +60,7 @@ pip install -r requirements.txt
 - It may take some time to quit
 
 ## LeelaChessZero
+
 - Download the weights for the id you want to play from here: http://lczero.org/networks
 - Extract the weights from the zip archive and rename it to `latest.txt`
 - For Windows, download the lczero binary from https://github.com/glinscott/leela-chess/releases
@@ -69,6 +70,10 @@ pip install -r requirements.txt
 - You can specify the number of `engine.threads` in the config.yml file as well
 - To start: `python lichess-bot.py`
 
+## For Docker
+
+Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot
+inside a Docker container.
 
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.

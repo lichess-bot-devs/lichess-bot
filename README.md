@@ -66,8 +66,8 @@ pip install -r requirements.txt
 - For Windows, download the lczero binary from https://github.com/glinscott/leela-chess/releases
 - For Mac/Linux, build the lczero binary yourself following [LeelaChessZero/lc0/README](https://github.com/LeelaChessZero/lc0/blob/master/README.md)
 - Copy both the files into the `engine.dir` directory
-- Change the `engine.name` and `engine.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `latest.txt`
-- You can specify the number of `engine.threads` in the config.yml file as well
+- Change the `engine.name` and `engine.engine_options.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `weights.pb.gz`
+- You can specify the number of `engine.uci_options.threads` in the config.yml file as well
 - To start: `python lichess-bot.py`
 
 ## For Docker

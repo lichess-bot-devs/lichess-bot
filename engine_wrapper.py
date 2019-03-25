@@ -14,32 +14,10 @@ def create_engine(config, board):
     lczero_options = cfg.get("lczero")
     commands = [engine_path]
     if lczero_options:
-        commands.append("--logfile=leela.log")
-        if "weights" in lczero_options:
-            commands.append("-w")
-            commands.append(lczero_options["weights"])
-        if "threads" in lczero_options:
-            commands.append("-t")
-            commands.append(str(lczero_options["threads"]))
-        if "gpu" in lczero_options:
-            commands.append("--gpu")
-            commands.append(str(lczero_options["gpu"]))
-        if "tempdecay-moves" in lczero_options:
-            commands.append("--tempdecay-moves={}".format(lczero_options["tempdecay-moves"]))
-            commands.append("--temperature=1.5")
-        if lczero_options.get("noise"):
-            commands.append("--noise")
-        if "log" in lczero_options:
-            commands.append("-l")
-            commands.append(lczero_options["log"])
-        if "nncache" in lczero_options:
-            commands.append("--nncache={}".format(lczero_options["nncache"]))
-        if "fpu-reduction" in lczero_options:
-            commands.append("--fpu-reduction={}".format(lczero_options["fpu-reduction"]))
-        if "cpuct" in lczero_options:
-            commands.append("--cpuct={}".format(lczero_options["cpuct"]))
-        if "slowmover" in lczero_options:
-            commands.append("--slowmover={}".format(lczero_options["slowmover"]))
+        for k, v in lczero_options.items():
+            commands.append("--{}={}".format(k, v))
+        #commands.append("-w")
+        #commands.append("engines/lc0-v0.20.2-windows-cuda/32930.pb.gz")
         silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
@@ -74,6 +52,7 @@ class EngineWrapper:
 
         self.stats_info = []
         for stat in stats:
+            print(stat)
             if stat in info:
                 str = "{}: {}".format(stat, info[stat])
                 if stat == "score":
@@ -107,38 +86,56 @@ class UCIEngine(EngineWrapper):
         self.engine.info_handlers.append(info_handler)
         self.stats_info = []
         self.is_ponder = False
+        self.engine.ucinewgame()
 
     def first_search(self, board, movetime):
         self.engine.position(board)
-        best_move, _ = self.engine.go(movetime=movetime)
+        best_move, _ = self.engine.go(nodes=100)
         return best_move
 
 
-    def search(self, board, wtime, btime, winc, binc):
+    def search(self, board, wtime, btime, winc, binc, game):
         #self.engine.setoption({"UCI_Variant": type(board).uci_variant})
         self.engine.position(board)
         cmds = self.go_commands
-        best_move, _ = self.engine.go(
-            wtime=wtime,
-            btime=btime,
-            winc=winc,
-            binc=binc,
-            depth=cmds.get("depth"),
-            nodes=cmds.get("nodes"),
-            movetime=cmds.get("movetime")
-        )
+        if game.speed == 'ultraBullet' or game.speed == 'bullet':
+            best_move, _ = self.engine.go(
+                wtime=wtime,
+                btime=btime,
+                winc=winc,
+                binc=binc,
+                depth=cmds.get("depth"),
+                nodes=5000,
+                movetime=cmds.get("movetime")
+            )
+        else:
+            best_move, _ = self.engine.go(
+                wtime=wtime,
+                btime=btime,
+                winc=winc,
+                binc=binc,
+                depth=cmds.get("depth"),
+                nodes=cmds.get("nodes"),
+                movetime=cmds.get("movetime")
+            )
         return best_move
 
-    def ponder(self, board):
+    def ponder(self, board, game):
         self.is_ponder = True
-        #self.engine.setoption({"UCI_Variant": type(board).uci_variant})
-        self.engine.position(board)
-        ponder = self.engine.go(infinite=True, async_callback=True)
+        #return
+        if game.speed == "ultraBullet" or game.speed == "bullet":
+            return
+        else:
+            self.engine.position(board)
+            ponder = self.engine.go(infinite=True, async_callback=True)
+
 
     def stop(self):
         self.engine.stop()
         self.is_ponder = False
 
+    def set_time_control(self, game):
+        pass
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])

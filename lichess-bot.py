@@ -21,6 +21,8 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
 from ColorLogger import enable_color_logging
 
+logger = logging.getLogger(__name__)
+
 try:
     from http.client import RemoteDisconnected
     # New in version 3.5: Previously, BadStatusLine('') was raised.
@@ -32,9 +34,9 @@ __version__ = "1.1.1"
 terminated = False
 
 def signal_handler(signal, frame):
-    global logger
+    #global logger
     global terminated
-    logger.debug("Recieved SIGINT. Terminating client.")
+    #logger.debug("Recieved SIGINT. Terminating client.")
     terminated = True
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -114,7 +116,7 @@ def start(li, user_profile, engine_factory, config):
                     response = li.accept_challenge(chlng.id)
                     logger.info("    Accept {}".format(chlng))
                     queued_processes += 1
-                    logger.info("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                    #logger.info("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 except HTTPError as exception:
                     if exception.response.status_code == 404: # ignore missing challenge
                         logger.info("    Skip missing {}".format(chlng))
@@ -133,7 +135,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     game = model.Game(json.loads(next(lines).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
     engine = engine_factory(board)
-    conversation = Conversation(game, engine, li, __version__, challenge_queue)
+    conversation = Conversation(game, engine, li, __version__, challenge_queue, config)
     conversation.send_greeting()
     print("+++ {}".format(game))
     engine_cfg = config["engine"]
@@ -141,7 +143,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     book_cfg = polyglot_cfg.get("book", {})
 
     try:
-        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+        if polyglot_cfg.get("enabled"):
+            play_first_book_move(game, engine, board, li, book_cfg)
+        else:
             play_first_move(game, engine, board, li)
 
         engine.set_time_control(game)
@@ -156,7 +160,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
                 if not board.is_game_over() and is_engine_move(game, moves):
-                    if config.get("fake_think_time") and len(moves) > 9:
+                    print("playing move")
+                    if config.get("fake_think_time") and len(moves) > 6:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
                         accel = 1 - max(0, min(100, len(moves) - 20)) / 150
                         sleep = min(5, delay * accel)
@@ -164,18 +169,22 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = None
                     if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                         best_move = get_book_move(board, book_cfg)
+                        engine.stop()
                     if best_move == None:
-                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                        engine.stop()
+                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"], game)
                         engine.get_stats()
+                        engine.stop()
                     li.make_move(game.id, best_move)
                     game.abort_in(config.get("abort_time", 20))
                 else:
-                    engine.ponder(board)
+                    engine.ponder(board, game)
             elif u_type == "ping":
                 if game.should_abort_now():
-                    logger.info("    Aborting {} by lack of activity".format(game.url()))
+                    #logger.info("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
     except HTTPError as e:
+        print(e)
         ongoing_games = li.get_ongoing_games()
         game_over = True
         for ongoing_game in ongoing_games:
@@ -183,12 +192,16 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 game_over = False
                 break
         if not game_over:
-            logger.warn("Abandoning game due to HTTP "+response.status_code)
+            print("Abandoning game due to HTTP "+response.status_code)
+            #logger.warn("Abandoning game due to HTTP "+response.status_code)
     except (RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError) as exception:
-        logger.error("Abandoning game due to connection error")
+        #logger.error("Abandoning game due to connection error")
         traceback.print_exception(type(exception), exception, exception.__traceback__)
+    except Exception as e:
+        #logger.error("Unhandled error")
+        traceback.print_exception(type(e), e, e.__traceback__)
     finally:
-        logger.info("--- {} Game over".format(game.url()))
+        #logger.info("--- {} Game over".format(game.url()))
         engine.quit()
         # This can raise queue.NoFull, but that should only happen if we're not processing
         # events fast enough and in this case I believe the exception should be raised
@@ -207,25 +220,23 @@ def play_first_move(game, engine, board, li):
 
 def play_first_book_move(game, engine, board, li, config):
     moves = game.state["moves"].split()
+    print("book move function")
     if is_engine_move(game, moves):
         book_move = get_book_move(board, config)
         if book_move:
+            print("found book move")
             li.make_move(game.id, book_move)
             return True
         else:
+            print("book move not found")
             return play_first_move(game, engine, board, li)
     return False
 
 
 def get_book_move(board, config):
-    if board.uci_variant == "chess":
-        book = config["standard"]
-    else:
-        if config.get("{}".format(board.uci_variant)):
-            book = config["{}".format(board.uci_variant)]
-        else:
-            return None
-
+    #if board.uci_variant == "chess":
+    book = config["standard"]
+    print(book)
     with chess.polyglot.open_reader(book) as reader:
         try:
             selection = config.get("selection", "weighted_random")
@@ -236,11 +247,13 @@ def get_book_move(board, config):
             elif selection == "best_move":
                 move = reader.find(board, config.get("min_weight", 1)).move()
         except IndexError:
+            print("Index Error")
             # python-chess raises "IndexError" if no entries found
             move = None
 
     if move is not None:
-        logger.info("Got move {} from book {}".format(move, book))
+        print("Got move {} from book {}".format(move, book))
+        #logger.info("Got move {} from book {}".format(move, book))
 
     return move
 
@@ -291,8 +304,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile, format="%(asctime)-15s: %(message)s")
-    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.DEBUG, filename="bot.log", format="%(asctime)-15s: %(message)s")
     logger.info(intro())
 
     CONFIG = load_config(args.config or "./config.yml")

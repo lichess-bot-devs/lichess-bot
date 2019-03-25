@@ -13,12 +13,11 @@ def create_engine(config, board):
     engine_type = cfg.get("protocol")
     lczero_options = cfg.get("lczero")
     commands = [engine_path]
+
     if lczero_options:
-        for k, v in lczero_options.items():
-            commands.append("--{}={}".format(k, v))
-        #commands.append("-w")
-        #commands.append("engines/lc0-v0.20.2-windows-cuda/32930.pb.gz")
-        silence_stderr = cfg.get("silence_stderr", False)
+        for k, v in lczero_options:
+            commands.append("--{}".format(k))
+            commands.append(v)
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)

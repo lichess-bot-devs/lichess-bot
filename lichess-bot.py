@@ -1,25 +1,22 @@
 import argparse
-import chess
-from chess.variant import find_variant
-import chess.polyglot
-import engine_wrapper
-import model
+import backoff
 import json
-import lichess
 import logging
 import multiprocessing
 import traceback
-import logging_pool
 import signal
-import sys
-import time
-import backoff
-from config import load_config
-from conversation import Conversation, ChatLine
+
 from functools import partial
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from urllib3.exceptions import ProtocolError
-from ColorLogger import enable_color_logging
+
+from src import logging_pool, lichess, engine_wrapper
+from src.models.game import Game
+from src.models.challenge import Challenge
+from src.models.book import Book
+from src.config import load_config
+from src.conversation import Conversation, ChatLine
+from src.color_logger import enable_color_logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,19 +26,22 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "1.1.4"
-
+__version__ = "1.1.5"
 terminated = False
+
 
 def signal_handler(signal, frame):
     global terminated
     logger.debug("Recieved SIGINT. Terminating client.")
     terminated = True
 
+
 signal.signal(signal.SIGINT, signal_handler)
+
 
 def is_final(exception):
     return isinstance(exception, HTTPError) and exception.response.status_code < 500
+
 
 def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
@@ -49,6 +49,7 @@ def upgrade_account(li):
 
     logger.info("Succesfully upgraded to Bot Account!")
     return True
+
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def watch_control_stream(control_queue, li):
@@ -65,7 +66,8 @@ def watch_control_stream(control_queue, li):
         traceback.print_exception(type(exception), exception, exception.__traceback__)
         control_queue.put_nowait({"type": "terminated"})
 
-def start(li, user_profile, engine_factory, config):
+
+def start(li, profile, engine_factory, config):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
     logger.info("You're now connected to {} and awaiting challenges.".format(config["url"]))
@@ -77,7 +79,7 @@ def start(li, user_profile, engine_factory, config):
     busy_processes = 0
     queued_processes = 0
 
-    with logging_pool.LoggingPool(max_games+1) as pool:
+    with logging_pool.LoggingPool(max_games + 1) as pool:
         while not terminated:
             event = control_queue.get()
             if event["type"] == "terminated":
@@ -86,10 +88,10 @@ def start(li, user_profile, engine_factory, config):
                 busy_processes -= 1
                 logger.info("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
             elif event["type"] == "challenge":
-                chlng = model.Challenge(event["challenge"])
+                chlng = Challenge(event["challenge"])
                 if chlng.is_supported(challenge_config):
                     challenge_queue.append(chlng)
-                    if (challenge_config.get("sort_by", "best") == "best"):
+                    if challenge_config.get("sort_by", "best") == "best":
                         list_c = list(challenge_queue)
                         list_c.sort(key=lambda c: -c.score())
                         challenge_queue = list_c
@@ -106,10 +108,14 @@ def start(li, user_profile, engine_factory, config):
                 else:
                     queued_processes -= 1
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
+                pool.apply_async(
+                    play_game,
+                    [li, game_id, control_queue, engine_factory, profile, config, challenge_queue]
+                )
                 busy_processes += 1
                 logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-            while ((queued_processes + busy_processes) < max_games and challenge_queue): # keep processing the queue until empty or max_games is reached
+            # keep processing the queue until empty or max_games is reached
+            while (queued_processes + busy_processes) < max_games and challenge_queue:
                 chlng = challenge_queue.pop(0)
                 try:
                     response = li.accept_challenge(chlng.id)
@@ -125,27 +131,34 @@ def start(li, user_profile, engine_factory, config):
     control_stream.terminate()
     control_stream.join()
 
+
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue):
+def play_game(li, game_id, control_queue, engine_factory, profile, config, challenge_queue):
     response = li.get_game_stream(game_id)
     lines = response.iter_lines()
 
-    #Initial response of stream will be the full game info. Store it
-    game = model.Game(json.loads(next(lines).decode('utf-8')), user_profile["username"], li.baseUrl, config.get("abort_time", 20))
-    board = setup_board(game)
-    engine = engine_factory(board)
+    # Initial response of stream will be the full game info. Store it
+    game = Game(
+        json.loads(next(lines).decode('utf-8')),
+        profile["username"],
+        li.baseUrl,
+        config.get("abort_time", 20),
+        config.get("fake_think_time", 0)
+    )
+    engine = engine_factory(game.board)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
+    book = Book(config["engine"].get("polyglot", {}), game.board.uci_variant)
 
     logger.info("+++ {}".format(game))
 
-    engine_cfg = config["engine"]
-    polyglot_cfg = engine_cfg.get("polyglot", {})
-    book_cfg = polyglot_cfg.get("book", {})
-
     try:
-        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
-            play_first_move(game, engine, board, li)
+        best_move = None
+        if book.is_enabled() and game.is_my_move():
+            best_move = book.get_move(game.board)
+        if best_move is None:
+            best_move = engine.first_search(game.board, 10000)
 
+        li.make_move(game.id, best_move)
         engine.set_time_control(game)
 
         for binary_chunk in lines:
@@ -156,20 +169,23 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             elif u_type == "gameState":
                 game.state = upd
                 moves = upd["moves"].split()
-                board = update_board(board, moves[-1])
-                if not board.is_game_over() and is_engine_move(game, moves):
-                    if config.get("fake_think_time") and len(moves) > 9:
-                        delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
-                        accel = 1 - max(0, min(100, len(moves) - 20)) / 150
-                        sleep = min(5, delay * accel)
-                        time.sleep(sleep)
+                game.update_board(moves[-1])
+
+                if not game.board.is_game_over() and game.is_my_move():
+                    game.fake_think()
                     best_move = None
-                    if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
-                        best_move = get_book_move(board, book_cfg)
-                    if best_move == None:
-                        best_move = engine.search(board, upd["wtime"], upd["btime"], upd["winc"], upd["binc"])
+                    if book.enabled and len(moves) <= book.max_depth:
+                        best_move = book.get_move(game.board)
+                    if not best_move:
+                        best_move = engine.search(
+                            game.board,
+                            upd["wtime"],
+                            upd["btime"],
+                            upd["winc"],
+                            upd["binc"]
+                        )
                     li.make_move(game.id, best_move)
-                    game.abort_in(config.get("abort_time", 20))
+                    game.update_abort_time()
             elif u_type == "ping":
                 if game.should_abort_now():
                     logger.info("    Aborting {} by lack of activity".format(game.url()))
@@ -194,84 +210,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         control_queue.put_nowait({"type": "local_game_done"})
 
 
-def play_first_move(game, engine, board, li):
-    moves = game.state["moves"].split()
-    if is_engine_move(game, moves):
-        # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(board, 10000)
-        li.make_move(game.id, best_move)
-        return True
-    return False
-
-
-def play_first_book_move(game, engine, board, li, config):
-    moves = game.state["moves"].split()
-    if is_engine_move(game, moves):
-        book_move = get_book_move(board, config)
-        if book_move:
-            li.make_move(game.id, book_move)
-            return True
-        else:
-            return play_first_move(game, engine, board, li)
-    return False
-
-
-def get_book_move(board, config):
-    if board.uci_variant == "chess":
-        book = config["standard"]
-    else:
-        if config.get("{}".format(board.uci_variant)):
-            book = config["{}".format(board.uci_variant)]
-        else:
-            return None
-
-    with chess.polyglot.open_reader(book) as reader:
-        try:
-            selection = config.get("selection", "weighted_random")
-            if selection == "weighted_random":
-                move = reader.weighted_choice(board).move()
-            elif selection == "uniform_random":
-                move = reader.choice(board, config.get("min_weight", 1)).move()
-            elif selection == "best_move":
-                move = reader.find(board, config.get("min_weight", 1)).move()
-        except IndexError:
-            # python-chess raises "IndexError" if no entries found
-            move = None
-
-    if move is not None:
-        logger.info("Got move {} from book {}".format(move, book))
-
-    return move
-
-
-def setup_board(game):
-    if game.variant_name.lower() == "chess960":
-        board = chess.Board(game.initial_fen, chess960=True)
-    elif game.variant_name == "From Position":
-        board = chess.Board(game.initial_fen)
-    else:
-        VariantBoard = find_variant(game.variant_name)
-        board = VariantBoard()
-    moves = game.state["moves"].split()
-    for move in moves:
-        board = update_board(board, move)
-
-    return board
-
-
-def is_white_to_move(game, moves):
-    return len(moves) % 2 == (0 if game.white_starts else 1)
-
-
-def is_engine_move(game, moves):
-    return game.is_white == is_white_to_move(game, moves)
-
-
-def update_board(board, move):
-    uci_move = chess.Move.from_uci(move)
-    board.push(uci_move)
-    return board
-
 def intro():
     return r"""
     .   _/|
@@ -280,6 +218,7 @@ def intro():
     .  //__\
     .  )___(   Play on Lichess with a bot
     """ % __version__
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Play on Lichess with a bot')

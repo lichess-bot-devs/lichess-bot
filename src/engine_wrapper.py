@@ -5,6 +5,7 @@ import chess.uci
 import backoff
 import subprocess
 
+
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
     cfg = config["engine"]
@@ -82,12 +83,10 @@ class UCIEngine(EngineWrapper):
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
 
-
     def first_search(self, board, movetime):
         self.engine.position(board)
         best_move, _ = self.engine.go(movetime=movetime)
         return best_move
-
 
     def search(self, board, wtime, btime, winc, binc):
         self.engine.position(board)
@@ -103,14 +102,11 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
-
     def stop(self):
         self.engine.stop()
 
-
     def print_stats(self):
         self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
-
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
@@ -184,7 +180,6 @@ class XBoardEngine(EngineWrapper):
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
-
 
     def name(self):
         try:

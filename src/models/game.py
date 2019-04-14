@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 from src.constants import TEN_YEARS_IN_MS, MAX_ABORT_MOVES, MIN_FAKE_THINK_MOVES
 from src.models.player import Player
+import logging
 
 
 class Game:
@@ -51,7 +52,7 @@ class Game:
         return "black" if self.is_white else "white"
 
     def url(self):
-        return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))
+        return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color()))
 
     def is_abortable(self):
         return len(self.state["moves"]) < MAX_ABORT_MOVES
@@ -98,8 +99,5 @@ class Game:
             sleep = min(5, delay * accel)
             time.sleep(sleep)
 
-    def __str__(self):
-        return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.__str__())
-
-    def __repr__(self):
-        return self.__str__()
+    def get_pretty_name(self):
+        return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent().name)

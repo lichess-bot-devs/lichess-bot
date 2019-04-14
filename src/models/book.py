@@ -11,11 +11,10 @@ class Book:
 
     def __init__(self, polyglot_cfg, variant):
         self.book_cfg = polyglot_cfg.get("book", {})
-        self.book = self.book_cfg.get(self.variant, None)
         self.variant = "standard" if variant == "chess" else variant
+        self.book = self.book_cfg.get(self.variant, None)
         self.selection = self.book_cfg.get("selection", None)
-
-        self.enabled = polyglot_cfg.get("enabled", False) and self.book
+        self.enabled = polyglot_cfg.get("enabled", False) and self.book_cfg.get(self.variant, None)
 
         self.max_depth = polyglot_cfg.get("max_depth", 8) * 2 - 1
         self.min_weight = self.book_cfg.get("min_weight", 1)

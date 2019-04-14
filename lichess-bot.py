@@ -149,8 +149,7 @@ def play_game(li, game_id, control_queue, engine_factory, profile, config, chall
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
     book = Book(config["engine"].get("polyglot", {}), game.board.uci_variant)
 
-    logger.info("+++ {}".format(game))
-
+    logger.info("+++ {}".format(game.get_pretty_name()))
     try:
         best_move = None
         if book.is_enabled() and game.is_my_move():

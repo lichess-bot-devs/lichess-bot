@@ -170,6 +170,7 @@ class XBoardEngine(EngineWrapper):
         return bestmove
 
     def search(self, board, wtime, btime, winc, binc):
+        self.engine.force()
         try:
             self.engine.usermove(board.peek())
         except IndexError:

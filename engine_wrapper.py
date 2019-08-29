@@ -170,7 +170,11 @@ class XBoardEngine(EngineWrapper):
         return bestmove
 
     def search(self, board, wtime, btime, winc, binc):
-        self.engine.setboard(board)
+        self.engine.force()
+        try:
+            self.engine.usermove(board.peek())
+        except IndexError:
+            self.engine.setboard(board)
         if board.turn == chess.WHITE:
             self.engine.time(wtime / 10)
             self.engine.otim(btime / 10)

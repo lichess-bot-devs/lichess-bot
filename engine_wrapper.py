@@ -88,6 +88,16 @@ class UCIEngine(EngineWrapper):
         best_move, _ = self.engine.go(movetime=movetime)
         return best_move
 
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+        self.engine.position(board)
+        best_move, ponder_move = self.engine.go(
+            wtime=wtime,
+            btime=btime,
+            winc=winc,
+            binc=binc,
+            ponder=ponder
+        )
+        return ( best_move , ponder_move )
 
     def search(self, board, wtime, btime, winc, binc):
         self.engine.position(board)
@@ -176,11 +186,11 @@ class XBoardEngine(EngineWrapper):
         except IndexError:
             self.engine.setboard(board)
         if board.turn == chess.WHITE:
-            self.engine.time(wtime / 10)
-            self.engine.otim(btime / 10)
+            self.engine.time(wtime)
+            self.engine.otim(btime)
         else:
-            self.engine.time(btime / 10)
-            self.engine.otim(wtime / 10)
+            self.engine.time(btime)
+            self.engine.otim(wtime)
         return self.engine.go()
 
     def print_stats(self):

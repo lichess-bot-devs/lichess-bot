@@ -70,7 +70,7 @@ class Game():
         self.black = Player(json.get("black"))
         self.initial_fen = json.get("initialFen")
         self.state = json.get("state")
-        self.is_white = bool(self.white.name and self.white.name == username)
+        self.is_white = bool(self.white.name and self.white.name.lower() == username.lower())
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
         self.me = self.white if self.is_white else self.black
@@ -78,6 +78,7 @@ class Game():
         self.base_url = base_url
         self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
         self.abort_at = time.time() + abort_time
+        self.terminate_at = time.time() + (self.clock_initial + self.clock_increment) / 1000 + abort_time + 60
 
     def url(self):
         return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))
@@ -85,12 +86,16 @@ class Game():
     def is_abortable(self):
         return len(self.state["moves"]) < 6
 
-    def abort_in(self, seconds):
+    def ping(self, abort_in, terminate_in):
         if (self.is_abortable()):
-            self.abort_at = time.time() + seconds
+            self.abort_at = time.time() + abort_in
+        self.terminate_at = time.time() + terminate_in
 
     def should_abort_now(self):
         return self.is_abortable() and time.time() > self.abort_at
+
+    def should_terminate_now(self):
+        return time.time() > self.terminate_at
 
     def my_remaining_seconds(self):
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000

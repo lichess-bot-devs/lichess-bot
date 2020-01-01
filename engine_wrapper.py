@@ -4,6 +4,7 @@ import chess.xboard
 import chess.uci
 import backoff
 import subprocess
+from strategies import strategies
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
@@ -20,6 +21,9 @@ def create_engine(config, board):
 
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
+
+    if engine_type == "strategy":
+        return StrategyEngine(board, cfg["name"], cfg.get("strategy_options", {}) or {}, silence_stderr)
 
     return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
 
@@ -60,6 +64,30 @@ class EngineWrapper:
 
         return stats_str
 
+
+class StrategyEngine(EngineWrapper):
+
+    def __init__(self, board, name, options=None, silence_stderr=False):
+        self.strategy_name = name
+        self.strategy_func = strategies[self.strategy_name]
+
+    def set_time_control(self, game):
+        pass
+
+    def first_search(self, board, movetime):
+        return self.strategy_func(board)
+
+    def search(self, board, wtime, btime, winc, binc):
+        return self.strategy_func(board)
+
+    def print_stats(self):
+        pass
+
+    def name(self):
+        return self.strategy_name
+
+    def quit(self):
+        pass
 
 class UCIEngine(EngineWrapper):
 

@@ -3,8 +3,8 @@ url: "https://lichess.org/"  # lichess base URL
 
 engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
-  name: "engine_name"        # binary name of the engine to use
-  protocol: "uci"            # "uci" or "xboard"
+  name: "engine_name"        # (binary) name of the engine to use
+  protocol: "uci"            # "uci" or "xboard" or "strategy"
   polyglot:
     enabled: false           # activate polyglot book
     book:

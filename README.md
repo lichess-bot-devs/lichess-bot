@@ -49,6 +49,7 @@ pip install -r requirements.txt
 - Place your engine(s) in the `engine.dir` directory
 - In `config.yml`, enter the binary name as the `engine.name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
+- You can also write a direct strategy (a Python function from `chess.Board` to `chess.Move`) instead of a UCI or XBoard compliant engine. See the[strategies.py](strategies.py) file for a tiny example.
 
 
 ## Lichess Upgrade to Bot Account

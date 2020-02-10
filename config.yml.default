@@ -5,6 +5,7 @@ engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
+  uci_ponder: true           # think on opponent time; only works if "protocol" is "uci"
   polyglot:
     enabled: false           # activate polyglot book
     book:
@@ -23,6 +24,7 @@ engine:                      # engine settings
 #   cpuct: 3.1
   uci_options:               # arbitrary UCI options passed to the engine
     Move Overhead: 100       # increase if your bot flags games too often
+    Ponder: true
     Threads: 2               # max CPU threads the engine can use
     Hash: 256                # max memory (in megabytes) the engine can allocate
 #   go_commands:             # additional options to pass to the UCI go command
@@ -41,6 +43,7 @@ engine:                      # engine settings
 
 abort_time: 20               # time to abort a game in seconds when there is no activity
 fake_think_time: false       # artificially slow down the bot to pretend like it's thinking
+move_overhead: 2000          # increase if your bot flags games too often
 
 challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously

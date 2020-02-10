@@ -5,7 +5,7 @@ import os.path
 def load_config(config_file):
     with open(config_file) as stream:
         try:
-            CONFIG = yaml.load(stream)
+            CONFIG = yaml.safe_load(stream)
         except Exception as e:
             print("There appears to be a syntax problem with your config.yml")
             raise e

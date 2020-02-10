@@ -188,11 +188,11 @@ class XBoardEngine(EngineWrapper):
 
         # XBoard engines expect time in units of 1/100 seconds.
         if board.turn == chess.WHITE:
-            self.engine.time(wtime//10)
-            self.engine.otim(btime//10)
+            self.engine.time(wtime // 10)
+            self.engine.otim(btime // 10)
         else:
-            self.engine.time(btime//10)
-            self.engine.otim(wtime//10)
+            self.engine.time(btime // 10)
+            self.engine.otim(wtime // 10)
         return self.engine.go()
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):

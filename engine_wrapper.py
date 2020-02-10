@@ -185,13 +185,18 @@ class XBoardEngine(EngineWrapper):
             self.engine.usermove(board.peek())
         except IndexError:
             self.engine.setboard(board)
+
+        # XBoard engines expect time in units of 1/100 seconds.
         if board.turn == chess.WHITE:
-            self.engine.time(wtime)
-            self.engine.otim(btime)
+            self.engine.time(wtime // 10)
+            self.engine.otim(btime // 10)
         else:
-            self.engine.time(btime)
-            self.engine.otim(wtime)
+            self.engine.time(btime // 10)
+            self.engine.otim(wtime // 10)
         return self.engine.go()
+
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+        return self.search(board, wtime, btime, winc, binc), None
 
     def print_stats(self):
         self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])

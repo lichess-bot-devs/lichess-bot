@@ -195,6 +195,9 @@ class XBoardEngine(EngineWrapper):
             self.engine.otim(wtime//10)
         return self.engine.go()
 
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+        return self.search(board, wtime, btime, winc, binc), None
+
     def print_stats(self):
         self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 

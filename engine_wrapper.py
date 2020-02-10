@@ -185,12 +185,14 @@ class XBoardEngine(EngineWrapper):
             self.engine.usermove(board.peek())
         except IndexError:
             self.engine.setboard(board)
+
+        # XBoard engines expect time in units of 1/100 seconds.
         if board.turn == chess.WHITE:
-            self.engine.time(wtime)
-            self.engine.otim(btime)
+            self.engine.time(wtime//10)
+            self.engine.otim(btime//10)
         else:
-            self.engine.time(btime)
-            self.engine.otim(wtime)
+            self.engine.time(btime//10)
+            self.engine.otim(wtime//10)
         return self.engine.go()
 
     def print_stats(self):

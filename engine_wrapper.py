@@ -41,7 +41,7 @@ class EngineWrapper:
     def print_stats(self):
         pass
 
-    def opponent_info(self, game):
+    def get_opponent_info(self, game):
         pass
 
     def name(self):
@@ -128,7 +128,7 @@ class UCIEngine(EngineWrapper):
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
-    def opponent_info(self, game):
+    def get_opponent_info(self, game):
         name = game.opponent.name
         rating = game.opponent.rating
         title = game.opponent.title if game.opponent.title else "none"
@@ -224,7 +224,7 @@ class XBoardEngine(EngineWrapper):
         except:
             return None
 
-    def opponent_info(self, game):
+    def get_opponent_info(self, game):
         title = game.opponent.title + " " if game.opponent.title else ""
         self.engine.opponent_name(title + game.opponent.name)
         self.engine.rating(game.me.rating, game.opponent.rating)

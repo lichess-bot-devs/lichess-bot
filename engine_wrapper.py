@@ -228,7 +228,7 @@ class XBoardEngine(EngineWrapper):
     def get_opponent_info(self, game):
         title = game.opponent.title + " " if game.opponent.title else ""
         if game.opponent.name:
-            self.engine.opponent_name(title + name)
+            self.engine.opponent_name(title + game.opponent.name)
         if game.me.rating is not None and game.opponent.rating is not None:
             self.engine.rating(game.me.rating, game.opponent.rating)
         if game.opponent.title == "BOT":

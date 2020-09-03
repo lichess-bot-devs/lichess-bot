@@ -167,13 +167,13 @@ class XBoardEngine(EngineWrapper):
                 for egttype, egtpath in value.items():
                     try:
                         self.engine.egtpath(egttype, egtpath)
-                    except EngineStateException:
+                    except chess.EngineStateException:
                         # If the user specifies more TBs than the engine supports, ignore the error.
                         pass
             else:
                 try:
                     self.engine.features.set_option(option, value)
-                except EngineStateException:
+                except chess.EngineStateException:
                     pass
 
     def set_time_control(self, game):

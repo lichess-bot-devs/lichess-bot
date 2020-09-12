@@ -386,7 +386,8 @@ def is_engine_move(game, moves):
 
 def update_board(board, move):
     uci_move = chess.Move.from_uci(move)
-    board.push(uci_move)
+    if board.is_legal(uci_move):
+        board.push(uci_move)
     return board
 
 def intro():

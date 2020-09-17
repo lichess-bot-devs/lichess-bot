@@ -388,6 +388,8 @@ def update_board(board, move):
     uci_move = chess.Move.from_uci(move)
     if board.is_legal(uci_move):
         board.push(uci_move)
+    else:
+        logger.debug('Ignoring illegal move {} on board {}'.format(move, board.fen()))
     return board
 
 def intro():

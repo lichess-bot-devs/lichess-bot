@@ -136,6 +136,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
     engine = engine_factory(board)
+    engine.get_opponent_info(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info("+++ {}".format(game))

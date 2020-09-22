@@ -175,8 +175,15 @@ class XBoardEngine(EngineWrapper):
     def send_time(self):
         self.engine.level(0, self.minutes, self.seconds, self.inc)
 
+    def send_last_move(self, board):
+        self.engine.force()
+        try:
+            self.engine.usermove(board.peek())
+        except IndexError:
+            self.engine.setboard(board)
+
     def first_search(self, board, movetime):
-        self.engine.setboard(board)
+        self.send_last_move(board)
         self.engine.st(movetime // 1000)
         bestmove = self.engine.go()
         self.send_time()
@@ -184,11 +191,7 @@ class XBoardEngine(EngineWrapper):
         return bestmove
 
     def search(self, board, wtime, btime, winc, binc):
-        self.engine.force()
-        try:
-            self.engine.usermove(board.peek())
-        except IndexError:
-            self.engine.setboard(board)
+        self.send_last_move(board)
 
         # XBoard engines expect time in units of 1/100 seconds.
         if board.turn == chess.WHITE:

@@ -167,9 +167,9 @@ class XBoardEngine(EngineWrapper):
                     pass
 
     def set_time_control(self, game):
-        self.minutes = game.clock_initial / 1000 / 60
-        self.seconds = game.clock_initial / 1000 % 60
-        self.inc = game.clock_increment / 1000
+        self.minutes = game.clock_initial / 1000 // 60
+        self.seconds = game.clock_initial // 1000 % 60
+        self.inc = game.clock_increment // 1000
         self.send_time()
 
     def send_time(self):
@@ -177,7 +177,7 @@ class XBoardEngine(EngineWrapper):
 
     def first_search(self, board, movetime):
         self.engine.setboard(board)
-        self.engine.st(movetime / 1000)
+        self.engine.st(movetime // 1000)
         bestmove = self.engine.go()
         self.send_time()
 

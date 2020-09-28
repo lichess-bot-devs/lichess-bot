@@ -171,7 +171,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     break
     else:
         moves = game.state["moves"].split()
-        if not board.is_game_over(claim_draw=True) and is_engine_move(game, moves):
+        if not is_game_over(game) and is_engine_move(game, moves):
             book_move = None
             best_move = None
             ponder_move = None
@@ -214,7 +214,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 game.state = upd
                 moves = upd["moves"].split()
                 board = update_board(board, moves[-1])
-                if not board.is_game_over(claim_draw=True) and is_engine_move(game, moves):
+                if not is_game_over(game) and is_engine_move(game, moves):
                     if config.get("fake_think_time") and len(moves) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
                         accel = 1 - max(0, min(100, len(moves) - 20)) / 150
@@ -383,6 +383,10 @@ def is_white_to_move(game, moves):
 
 def is_engine_move(game, moves):
     return game.is_white == is_white_to_move(game, moves)
+
+
+def is_game_over(game):
+    return game.state["status"] != "started"
 
 
 def update_board(board, move):

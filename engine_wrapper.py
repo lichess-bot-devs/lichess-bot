@@ -152,7 +152,13 @@ class XBoardEngine(EngineWrapper):
         if options:
             self._handle_options(options)
 
-        self.engine.setboard(board)
+        if board.fen() != chess.STARTING_FEN:
+            self.engine.force()
+            if board.root().fen() != chess.STARTING_FEN:
+                self.engine.setboard(board.root())
+            for move in board.move_stack:
+                self.engine.usermove(move)
+        self.last_fen_seen = board.fen()
 
         post_handler = chess.xboard.PostHandler()
         self.engine.post_handlers.append(post_handler)
@@ -186,11 +192,14 @@ class XBoardEngine(EngineWrapper):
         self.engine.level(0, self.minutes, self.seconds, self.inc)
 
     def send_last_move(self, board):
+        if board.fen() == self.last_fen_seen:
+            return
         self.engine.force()
         try:
             self.engine.usermove(board.peek())
         except IndexError:
             self.engine.setboard(board)
+        self.last_fen_seen = board.fen()
 
     def first_search(self, board, movetime):
         self.send_last_move(board)

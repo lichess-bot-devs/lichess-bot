@@ -28,7 +28,7 @@ ENDPOINTS = {
 
 
 # docs: https://lichess.org/api
-class Lichess():
+class Lichess:
 
     def __init__(self, token, url, version):
         self.version = version

@@ -8,7 +8,7 @@ def error(msg, *args):
     return multiprocessing.get_logger().error(msg, *args)
 
 
-class LogExceptions(object):
+class LogExceptions:
     def __init__(self, callable):
         self.__callable = callable
 

@@ -2,7 +2,7 @@ import time
 from urllib.parse import urljoin
 
 
-class Challenge():
+class Challenge:
     def __init__(self, c_info):
         self.id = c_info["id"]
         self.rated = c_info["rated"]
@@ -57,7 +57,7 @@ class Challenge():
         return self.__str__()
 
 
-class Game():
+class Game:
     def __init__(self, json, username, base_url, abort_time):
         self.username = username
         self.id = json.get("id")
@@ -108,7 +108,7 @@ class Game():
         return self.__str__()
 
 
-class Player():
+class Player:
     def __init__(self, json):
         self.id = json.get("id")
         self.name = json.get("name")

@@ -67,7 +67,7 @@ def watch_control_stream(control_queue, li):
                     control_queue.put_nowait(event)
                 else:
                     control_queue.put_nowait({"type": "ping"})
-        except:
+        except Exception:
             pass
 
 
@@ -103,7 +103,7 @@ def start(li, user_profile, engine_factory, config):
                     try:
                         li.decline_challenge(chlng.id)
                         logger.info("    Decline {}".format(chlng))
-                    except:
+                    except Exception:
                         pass
             elif event["type"] == "gameStart":
                 if queued_processes <= 0:

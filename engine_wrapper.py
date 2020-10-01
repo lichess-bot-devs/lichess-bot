@@ -231,7 +231,7 @@ class XBoardEngine(EngineWrapper):
     def name(self):
         try:
             return self.engine.features.get("myname")
-        except:
+        except Exception:
             return None
 
     def get_opponent_info(self, game):

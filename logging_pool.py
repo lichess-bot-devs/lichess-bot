@@ -2,6 +2,7 @@ import traceback
 from multiprocessing.pool import Pool
 import multiprocessing
 
+
 # Shortcut to multiprocessing's logger
 def error(msg, *args):
     return multiprocessing.get_logger().error(msg, *args)

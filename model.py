@@ -2,6 +2,7 @@ import sys
 import time
 from urllib.parse import urljoin
 
+
 class Challenge():
     def __init__(self, c_info):
         self.id = c_info["id"]
@@ -56,13 +57,14 @@ class Challenge():
     def __repr__(self):
         return self.__str__()
 
+
 class Game():
     def __init__(self, json, username, base_url, abort_time):
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
         clock = json.get("clock", {}) or {}
-        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10) # unlimited = 10 years
+        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10)  # unlimited = 10 years
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
         self.variant_name = json.get("variant")["name"]

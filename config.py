@@ -2,6 +2,7 @@ import yaml
 import os
 import os.path
 
+
 def load_config(config_file):
     with open(config_file) as stream:
         try:
@@ -10,7 +11,7 @@ def load_config(config_file):
             print("There appears to be a syntax problem with your config.yml")
             raise e
 
-        #[section, type, error message]
+        # [section, type, error message]
         sections = [["token", str, "Section `token` must be a string wrapped in quotes."],
                     ["url", str, "Section `url` must be a string wrapped in quotes."],
                     ["engine", dict, "Section `engine` must be a dictionary with indented keys followed by colons.."],

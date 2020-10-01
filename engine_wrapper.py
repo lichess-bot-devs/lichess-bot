@@ -5,6 +5,7 @@ import chess.uci
 import backoff
 import subprocess
 
+
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, board):
     cfg = config["engine"]
@@ -70,7 +71,7 @@ class UCIEngine(EngineWrapper):
         commands = commands[0] if len(commands) == 1 else commands
         self.go_commands = options.get("go_commands", {})
 
-        self.engine = chess.uci.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
+        self.engine = chess.uci.popen_engine(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
         self.engine.uci()
 
         if options:
@@ -84,7 +85,6 @@ class UCIEngine(EngineWrapper):
 
         info_handler = chess.uci.InfoHandler()
         self.engine.info_handlers.append(info_handler)
-
 
     def first_search(self, board, movetime):
         self.engine.position(board)
@@ -100,7 +100,7 @@ class UCIEngine(EngineWrapper):
             binc=binc,
             ponder=ponder
         )
-        return ( best_move , ponder_move )
+        return (best_move, ponder_move)
 
     def search(self, board, wtime, btime, winc, binc):
         self.engine.position(board)
@@ -116,14 +116,11 @@ class UCIEngine(EngineWrapper):
         )
         return best_move
 
-
     def stop(self):
         self.engine.stop()
 
-
     def print_stats(self):
         self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
-
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
@@ -136,11 +133,12 @@ class UCIEngine(EngineWrapper):
             player_type = "computer" if title == "BOT" else "human"
             self.engine.setoption({"UCI_Opponent": "{} {} {} {}".format(title, rating, player_type, name)})
 
+
 class XBoardEngine(EngineWrapper):
 
     def __init__(self, board, commands, options=None, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
-        self.engine = chess.xboard.popen_engine(commands, stderr = subprocess.DEVNULL if silence_stderr else None)
+        self.engine = chess.xboard.popen_engine(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
 
         self.engine.xboard()
 
@@ -229,7 +227,6 @@ class XBoardEngine(EngineWrapper):
 
     def get_stats(self):
         return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
-
 
     def name(self):
         try:

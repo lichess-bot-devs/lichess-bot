@@ -26,7 +26,6 @@ def create_engine(config, board):
 
 
 class EngineWrapper:
-
     def __init__(self, board, commands, options=None, silence_stderr=False):
         pass
 
@@ -66,7 +65,6 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-
     def __init__(self, board, commands, options, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
         self.go_commands = options.get("go_commands", {})
@@ -135,7 +133,6 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-
     def __init__(self, board, commands, options=None, silence_stderr=False):
         commands = commands[0] if len(commands) == 1 else commands
         self.engine = chess.xboard.popen_engine(commands, stderr=subprocess.DEVNULL if silence_stderr else None)

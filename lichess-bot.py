@@ -190,14 +190,14 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 btime = max(0, btime - move_overhead)
             if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                 book_move = get_book_move(board, book_cfg)
-            if book_move == None:
+            if book_move is None:
                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                 best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
                 engine.print_stats()
             else:
                 best_move = book_move
 
-            if is_uci_ponder and not ( ponder_move is None ):
+            if is_uci_ponder and ponder_move is not None:
                 ponder_board = board.copy()
                 ponder_board.push(best_move)
                 ponder_board.push(ponder_move)
@@ -231,7 +231,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     book_move = None
                     best_move = None
                     ponder_move = None
-                    if not ( ponder_thread is None ):
+                    if ponder_thread is not None:
                         move_uci = moves[-1]
                         if ponder_uci == move_uci:
                             engine.engine.ponderhit()
@@ -255,19 +255,19 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if not deferredFirstMove:
                         if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                             book_move = get_book_move(board, book_cfg)
-                        if best_move == None:
-                            if book_move == None:
+                        if best_move is None:
+                            if book_move is None:
                                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                                 best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, upd["winc"], upd["binc"])
                                 engine.print_stats()
                             else:
                                 best_move = book_move
                         else:
-                            if not ( book_move == None ):
+                            if book_move is not None:
                                 best_move = book_move
                                 ponder_move = None
 
-                        if is_uci_ponder and not ( ponder_move is None ):
+                        if is_uci_ponder and ponder_move is not None:
                             ponder_board = board.copy()
                             ponder_board.push(best_move)
                             ponder_board.push(ponder_move)
@@ -309,7 +309,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     logger.info("--- {} Game over".format(game.url()))
     engine.engine.stop()
     engine.quit()
-    if not ( ponder_thread is None ):
+    if ponder_thread is not None:
         ponder_thread.join()
         ponder_thread = None
 

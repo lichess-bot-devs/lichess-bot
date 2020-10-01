@@ -16,7 +16,7 @@ class LogExceptions(object):
         try:
             result = self.__callable(*args, **kwargs)
 
-        except Exception as e:
+        except Exception:
             # Here we add some debugging help. If multiprocessing's
             # debugging is on, it will arrange to log the traceback
             error(traceback.format_exc())

@@ -8,10 +8,8 @@ import json
 import lichess
 import logging
 import multiprocessing
-import traceback
 import logging_pool
 import signal
-import sys
 import time
 import backoff
 import threading

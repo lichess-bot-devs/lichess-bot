@@ -1,5 +1,3 @@
-from time import time
-
 class Conversation():
     def __init__(self, game, engine, xhr, version, challenge_queue):
         self.game = game

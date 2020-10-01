@@ -25,6 +25,21 @@ def create_engine(config, board):
     return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
 
 
+def print_handler_stats(info, stats):
+    for stat in stats:
+        if stat in info:
+            print("    {}: {}".format(stat, info[stat]))
+
+
+def get_handler_stats(info, stats):
+    stats_str = []
+    for stat in stats:
+        if stat in info:
+            stats_str.append("{}: {}".format(stat, info[stat]))
+
+    return stats_str
+
+
 class EngineWrapper:
     def __init__(self, board, commands, options=None, silence_stderr=False):
         pass
@@ -49,19 +64,6 @@ class EngineWrapper:
 
     def quit(self):
         self.engine.quit()
-
-    def print_handler_stats(self, info, stats):
-        for stat in stats:
-            if stat in info:
-                print("    {}: {}".format(stat, info[stat]))
-
-    def get_handler_stats(self, info, stats):
-        stats_str = []
-        for stat in stats:
-            if stat in info:
-                stats_str.append("{}: {}".format(stat, info[stat]))
-
-        return stats_str
 
 
 class UCIEngine(EngineWrapper):
@@ -118,10 +120,10 @@ class UCIEngine(EngineWrapper):
         self.engine.stop()
 
     def print_stats(self):
-        self.print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
+        print_handler_stats(self.engine.info_handlers[0].info, ["string", "depth", "nps", "nodes", "score"])
 
     def get_stats(self):
-        return self.get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
+        return get_handler_stats(self.engine.info_handlers[0].info, ["depth", "nps", "nodes", "score"])
 
     def get_opponent_info(self, game):
         name = game.opponent.name
@@ -220,10 +222,10 @@ class XBoardEngine(EngineWrapper):
         return self.search(board, wtime, btime, winc, binc), None
 
     def print_stats(self):
-        self.print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+        print_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 
     def get_stats(self):
-        return self.get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
+        return get_handler_stats(self.engine.post_handlers[0].post, ["depth", "nodes", "score"])
 
     def name(self):
         try:

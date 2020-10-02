@@ -135,7 +135,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     initial_state = json.loads(next(lines).decode('utf-8'))
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
-    engine = engine_factory(board)
+    
+    if config["engine"]["protocol"] == "uci":
+        options = config["engine"]["uci_options"]
+    else:
+        options = None
+    
+    engine = engine_factory(board, None, options)
     engine.get_opponent_info(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 

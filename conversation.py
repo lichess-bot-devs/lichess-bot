@@ -12,7 +12,6 @@ class Conversation:
         print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text.encode("utf-8")))
         if (line.text[0] == self.command_prefix):
             self.command(line, game, line.text[1:].lower())
-        pass
 
     def command(self, line, game, cmd):
         if cmd == "commands" or cmd == "help":

@@ -173,7 +173,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if not play_first_move(game, engine, board, li):
                         deferredFirstMove = True
                 break
-            except (HTTPError) as exception:
+            except HTTPError as exception:
                 if exception.response.status_code == 400:  # fallthrough
                     break
     else:
@@ -210,7 +210,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     while not terminated:
         try:
             binary_chunk = next(lines)
-        except(StopIteration):
+        except StopIteration:
             break
         try:
             upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None

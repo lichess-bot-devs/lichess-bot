@@ -88,7 +88,7 @@ class Game:
         return len(self.state["moves"]) < 6
 
     def ping(self, abort_in, terminate_in):
-        if (self.is_abortable()):
+        if self.is_abortable():
             self.abort_at = time.time() + abort_in
         self.terminate_at = time.time() + terminate_in
 

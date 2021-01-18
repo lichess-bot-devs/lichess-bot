@@ -9,14 +9,14 @@ engine:                      # engine settings
   polyglot:
     enabled: false           # activate polyglot book
     book:
-      standard: "engines/book.bin" # book file path of standard chess
-#      atomic: "atomic book path"
-#      giveaway: "antichess book path"
-#      crazyhouse: "crazyhouse book path"
-#      horde: "horde book path"
-#      kingofthehill: "kingOfTheHill book path"
-#      racingkings: "racingKings book path"
-#      3check: "threeCheck book path"
+      standard: # list of book file paths for variant standard
+        - engines/book1.bin
+        - engines/book2.bin
+#      atomic: # list of book file paths for variant atomic
+#        - engines/atomicbook1.bin
+#        - engines/atomicbook2.bin
+#      etc.
+#      use the same pattern for giveaway, crazyhouse, horde, kingofthehill, racingkings, 3check as well
       min_weight: 1            # selects move with highest weight but not below this value
       selection: "weighted_random" # move slection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in 2. and 3. case)
     max_depth: 8             # half move max depth

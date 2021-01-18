@@ -177,13 +177,15 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             ponder_move = None
             wtime = game.state["wtime"]
             btime = game.state["btime"]
-            if board.turn == chess.WHITE:
-                wtime = max(0, wtime - move_overhead)
-            else:
-                btime = max(0, btime - move_overhead)
+            start_time = time.perf_counter_ns()
+
             if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                 book_move = get_book_move(board, book_cfg)
             if book_move == None:
+                if board.turn == chess.WHITE:
+                    wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
+                else:
+                    btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                 best_move , ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
                 engine.print_stats()
@@ -195,6 +197,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 ponder_board.push(best_move)
                 ponder_board.push(ponder_move)
                 ponder_uci = ponder_move.uci()
+                if board.turn == chess.WHITE:
+                    wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000) + game.state["winc"])
+                else:
+                    btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000) + game.state["binc"])
                 logger.info("Pondering for wtime {} btime {}".format(wtime, btime))
                 ponder_thread = threading.Thread(target = ponder_thread_func, args = (game, engine, ponder_board, wtime, btime, game.state["winc"], game.state["binc"]))
                 ponder_thread.start()
@@ -240,16 +246,17 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
                     wtime = upd["wtime"]
                     btime = upd["btime"]
-                    if board.turn == chess.WHITE:
-                        wtime = max(0, wtime - move_overhead)
-                    else:
-                        btime = max(0, btime - move_overhead)
+                    start_time = time.perf_counter_ns()
 
                     if not deferredFirstMove:
                         if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                             book_move = get_book_move(board, book_cfg)
                         if best_move == None:
                             if book_move == None:
+                                if board.turn == chess.WHITE:
+                                    wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
+                                else:
+                                    btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                                 best_move , ponder_move = engine.search_with_ponder(board, wtime, btime, upd["winc"], upd["binc"])
                                 engine.print_stats()
@@ -265,6 +272,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             ponder_board.push(best_move)
                             ponder_board.push(ponder_move)
                             ponder_uci = ponder_move.uci()
+                            if board.turn == chess.WHITE:
+                                wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000) + upd["winc"])
+                            else:
+                                btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000) + upd["binc"])
                             logger.info("Pondering for wtime {} btime {}".format(wtime, btime))
                             ponder_thread = threading.Thread(target = ponder_thread_func, args = (game, engine, ponder_board, wtime, btime, upd["winc"], upd["binc"]))
                             ponder_thread.start()

@@ -1,8 +1,8 @@
-import sys
 import time
 from urllib.parse import urljoin
 
-class Challenge():
+
+class Challenge:
     def __init__(self, c_info):
         self.id = c_info["id"]
         self.rated = c_info["rated"]
@@ -56,13 +56,14 @@ class Challenge():
     def __repr__(self):
         return self.__str__()
 
-class Game():
+
+class Game:
     def __init__(self, json, username, base_url, abort_time):
         self.username = username
         self.id = json.get("id")
         self.speed = json.get("speed")
         clock = json.get("clock", {}) or {}
-        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10) # unlimited = 10 years
+        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10)  # unlimited = 10 years
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
         self.variant_name = json.get("variant")["name"]
@@ -87,7 +88,7 @@ class Game():
         return len(self.state["moves"]) < 6
 
     def ping(self, abort_in, terminate_in):
-        if (self.is_abortable()):
+        if self.is_abortable():
             self.abort_at = time.time() + abort_in
         self.terminate_at = time.time() + terminate_in
 
@@ -107,7 +108,7 @@ class Game():
         return self.__str__()
 
 
-class Player():
+class Player:
     def __init__(self, json):
         self.id = json.get("id")
         self.name = json.get("name")

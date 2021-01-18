@@ -1,6 +1,4 @@
-from time import time
-
-class Conversation():
+class Conversation:
     def __init__(self, game, engine, xhr, version, challenge_queue):
         self.game = game
         self.engine = engine
@@ -14,7 +12,6 @@ class Conversation():
         print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text.encode("utf-8")))
         if (line.text[0] == self.command_prefix):
             self.command(line, game, line.text[1:].lower())
-        pass
 
     def command(self, line, game, cmd):
         if cmd == "commands" or cmd == "help":
@@ -42,7 +39,7 @@ class Conversation():
         self.xhr.chat(self.game.id, line.room, reply)
 
 
-class ChatLine():
+class ChatLine:
     def __init__(self, json):
         self.room = json.get("room")
         self.username = json.get("username")

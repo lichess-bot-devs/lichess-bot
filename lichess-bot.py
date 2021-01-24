@@ -108,7 +108,7 @@ def start(li, user_profile, engine_factory, config):
                         if not chlng.is_supported_mode(challenge["modes"]):
                             reason = "casual" if chlng.rated else "rated"
                         li.decline_challenge(chlng.id, reason=reason)
-                        logger.info("    Decline {}".format(chlng))
+                        logger.info("    Decline {} for reason '{}'".format(chlng, reason))
                     except Exception:
                         pass
             elif event["type"] == "gameStart":

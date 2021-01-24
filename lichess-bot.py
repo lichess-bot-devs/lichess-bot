@@ -99,7 +99,15 @@ def start(li, user_profile, engine_factory, config):
                         challenge_queue = list_c
                 else:
                     try:
-                        li.decline_challenge(chlng.id)
+                        reason = "generic"
+                        challenge = config["challenge"]                         
+                        if not chlng.is_supported_variant(challenge["variants"]):
+                            reason = "variant"
+                        if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0)):
+                            reason = "timeControl"
+                        if not chlng.is_supported_mode(challenge["modes"]):
+                            reason = "casual" if chlng.rated else "rated"
+                        li.decline_challenge(chlng.id, reason=reason)
                         logger.info("    Decline {}".format(chlng))
                     except Exception:
                         pass

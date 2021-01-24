@@ -58,8 +58,7 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final)
-    def api_post(self, path, data=None, headers=None):
-        print("post", path, data, headers)
+    def api_post(self, path, data=None, headers=None):        
         url = urljoin(self.baseUrl, path)
         response = self.session.post(url, data=data, headers=headers, timeout=2)
         response.raise_for_status()

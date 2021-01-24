@@ -30,7 +30,9 @@ class Challenge:
         return "rated" in supported if self.rated else "casual" in supported
 
     def is_supported(self, config):
-        if not config.get("accept_bot", False) and self.challenger_is_bot:
+        if ( not config.get("accept_bot", False) ) and self.challenger_is_bot:
+            return False
+        if config.get("only_bot", False) and ( not self.challenger_is_bot ):
             return False
         variants = config["variants"]
         tc = config["time_controls"]

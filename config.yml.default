@@ -49,6 +49,7 @@ challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously
   sort_by: "best"            # possible values: "best", "first"
   accept_bot: false          # accepts challenges coming from other bots
+  only_bot: false            # accept challenges by bots only
   max_increment: 180         # maximum amount of increment to accaept a challenge. the max is 180. set to 0 for no increment
   min_increment: 0           # minimum amount of increment to accept a challenge
   variants:                  # chess variants to accept (http://lichess.org/variant)

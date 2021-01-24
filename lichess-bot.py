@@ -99,8 +99,20 @@ def start(li, user_profile, engine_factory, config):
                         challenge_queue = list_c
                 else:
                     try:
-                        li.decline_challenge(chlng.id)
-                        logger.info("    Decline {}".format(chlng))
+                        reason = "generic"
+                        challenge = config["challenge"]                         
+                        if not chlng.is_supported_variant(challenge["variants"]):
+                            reason = "variant"
+                        if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0)):
+                            reason = "timeControl"
+                        if not chlng.is_supported_mode(challenge["modes"]):
+                            reason = "casual" if chlng.rated else "rated"                        
+                        if ( not challenge.get("accept_bot", False) ) and chlng.challenger_is_bot:
+                            reason = "noBot"
+                        if challenge.get("only_bot", False) and ( not chlng.challenger_is_bot ):
+                            reason = "onlyBot"
+                        li.decline_challenge(chlng.id, reason=reason)
+                        logger.info("    Decline {} for reason '{}'".format(chlng, reason))
                     except Exception:
                         pass
             elif event["type"] == "gameStart":

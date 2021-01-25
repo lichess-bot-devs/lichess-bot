@@ -239,7 +239,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             elif u_type == "gameState":
                 game.state = upd
                 moves = upd["moves"].split()
-                board = update_board(board, moves[-1])
+                if len(moves) > 0 and len(moves) != len(board.move_stack):
+                    board = update_board(board, moves[-1])
                 if not is_game_over(game) and is_engine_move(game, moves):
                     if config.get("fake_think_time") and len(moves) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015

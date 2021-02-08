@@ -22,7 +22,7 @@ def create_engine(config, board):
     if engine_type == "xboard":
         return XBoardEngine(board, commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
 
-    return UCIEngine(board, commands, cfg.get("uci_options", {}) or {}, silence_stderr)
+    return UCIEngine(board, commands, cfg.get("uci_options", {}), cfg.get("go_commands", {}), silence_stderr)
 
 
 def print_handler_stats(info, stats):
@@ -67,9 +67,9 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, board, commands, options, silence_stderr=False):
-        commands = commands[0] if len(commands) == 1 else commands
-        self.go_commands = options.get("go_commands", {})
+    def __init__(self, board, commands, options, go_commands={}, silence_stderr=False):
+        commands = commands[0] if len(commands) == 1 else commands        
+        self.go_commands = go_commands
 
         self.engine = chess.uci.popen_engine(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
         self.engine.uci()
@@ -93,13 +93,22 @@ class UCIEngine(EngineWrapper):
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         self.engine.position(board)
-        best_move, ponder_move = self.engine.go(
-            wtime=wtime,
-            btime=btime,
-            winc=winc,
-            binc=binc,
-            ponder=ponder
-        )
+        cmds = self.go_commands        
+        if len(cmds) > 0:
+            best_move, ponder_move = self.engine.go(
+                nodes=cmds.get("nodes"),
+                depth=cmds.get("depth"),
+                movetime=cmds.get("movetime"),
+                ponder=ponder
+            )
+        else:
+            best_move, ponder_move = self.engine.go(
+                wtime=wtime,
+                btime=btime,
+                winc=winc,
+                binc=binc,
+                ponder=ponder
+            )
         return (best_move, ponder_move)
 
     def search(self, board, wtime, btime, winc, binc):

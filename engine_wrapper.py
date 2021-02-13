@@ -18,9 +18,18 @@ def create_engine(config):
     silence_stderr = cfg.get("silence_stderr", False)
 
     if engine_type == "xboard":
-        return XBoardEngine(commands, cfg.get("xboard_options", {}) or {}, silence_stderr)
+        options = remove_managed_options(cfg.get("xboard_options", {}) or {})
+        return XBoardEngine(commands, options, silence_stderr)
 
-    return UCIEngine(commands, cfg.get("uci_options", {}) or {}, silence_stderr)
+    options = remove_managed_options(cfg.get("uci_options", {}) or {})
+    return UCIEngine(commands, options, silence_stderr)
+
+
+def remove_managed_options(config):
+    def is_managed(key):
+        return chess.engine.Option(key, None, None, None, None, None).is_managed()
+
+    return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
 def print_handler_stats(info, stats):

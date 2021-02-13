@@ -153,8 +153,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     initial_state = json.loads(next(lines).decode('utf-8'))
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
-    engine = engine_factory(board)
+    engine = engine_factory()
     engine.get_opponent_info(game)
+    engine.set_time_control(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info("+++ {}".format(game))
@@ -175,8 +176,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         global ponder_results
         best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
         ponder_results[game.id] = (best_move, ponder_move)
-
-    engine.set_time_control(game)
 
     if len(board.move_stack) < 2:
         while not terminated:
@@ -254,13 +253,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if ponder_thread is not None:
                         move_uci = moves[-1]
                         if ponder_uci == move_uci:
-                            engine.engine.ponderhit()
+                            engine.ponderhit()
                             ponder_thread.join()
                             ponder_thread = None
                             best_move, ponder_move = ponder_results[game.id]
                             engine.print_stats()
                         else:
-                            engine.engine.stop()
+                            engine.stop()
                             ponder_thread.join()
                             ponder_thread = None
                         ponder_uci = None
@@ -327,7 +326,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 break
 
     logger.info("--- {} Game over".format(game.url()))
-    engine.engine.stop()
+    engine.stop()
     engine.quit()
     if ponder_thread is not None:
         ponder_thread.join()

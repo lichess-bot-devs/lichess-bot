@@ -136,6 +136,8 @@ def start(li, user_profile, engine_factory, config):
                         logger.info("    Skip missing {}".format(chlng))
                     queued_processes -= 1
 
+            control_queue.task_done()
+
     logger.info("Terminated")
     control_stream.terminate()
     control_stream.join()

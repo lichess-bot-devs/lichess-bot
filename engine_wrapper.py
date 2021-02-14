@@ -99,7 +99,7 @@ class UCIEngine(EngineWrapper):
                                         black_inc=binc / 1000,
                                         depth=cmds.get("depth"),
                                         nodes=cmds.get("nodes"),
-                                        time=cmds.get("movetime"))
+                                        time=float(cmds.get("movetime")) / 1000)
         result = self.engine.play(board, time_limit, ponder=ponder, info=chess.engine.INFO_ALL)
         self.last_move_info = result.info
         return (result.move, result.ponder)

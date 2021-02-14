@@ -81,7 +81,7 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
     def __init__(self, commands, options, silence_stderr=False):
-        self.go_commands = options.pop("go_commands", {})
+        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
         self.engine.configure(options)
         self.last_move_info = {}
@@ -93,13 +93,16 @@ class UCIEngine(EngineWrapper):
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         cmds = self.go_commands
+        movetime = cmds.get("movetime")
+        if movetime is not None:
+            movetime = float(movetime) / 1000
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
                                         black_inc=binc / 1000,
                                         depth=cmds.get("depth"),
                                         nodes=cmds.get("nodes"),
-                                        time=float(cmds.get("movetime")) / 1000)
+                                        time=movetime)
         result = self.engine.play(board, time_limit, ponder=ponder, info=chess.engine.INFO_ALL)
         self.last_move_info = result.info
         return (result.move, result.ponder)

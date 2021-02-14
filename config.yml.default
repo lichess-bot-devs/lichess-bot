@@ -51,6 +51,8 @@ challenge:                   # incoming challenges
   only_bot: false            # accept challenges by bots only
   max_increment: 180         # maximum amount of increment to accaept a challenge. the max is 180. set to 0 for no increment
   min_increment: 0           # minimum amount of increment to accept a challenge
+  max_base: 315360000        # maximum amount of base time to accept a challenge. the max is 315360000 (10 years)
+  min_base: 0                # minimum amount of base time to accept a challenge
   variants:                  # chess variants to accept (http://lichess.org/variant)
     - standard
 #   - fromPosition

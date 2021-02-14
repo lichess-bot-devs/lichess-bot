@@ -136,6 +136,8 @@ def start(li, user_profile, engine_factory, config):
                         logger.info("    Skip missing {}".format(chlng))
                     queued_processes -= 1
 
+            control_queue.task_done()
+
     logger.info("Terminated")
     control_stream.terminate()
     control_stream.join()
@@ -188,8 +190,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 if exception.response.status_code == 400:  # fallthrough
                     break
     else:
-        moves = game.state["moves"].split()
-        if not is_game_over(game) and is_engine_move(game, moves):
+        if not is_game_over(game) and is_engine_move(game, board):
             book_move = None
             best_move = None
             ponder_move = None
@@ -197,7 +198,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             btime = game.state["btime"]
             start_time = time.perf_counter_ns()
 
-            if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
+            if polyglot_cfg.get("enabled") and len(board.move_stack) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                 book_move = get_book_move(board, book_cfg)
 
             if book_move is None:
@@ -237,13 +238,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":
                 game.state = upd
-                moves = upd["moves"].split()
-                if len(moves) > 0 and len(moves) != len(board.move_stack):
-                    board = update_board(board, moves[-1])
-                if not is_game_over(game) and is_engine_move(game, moves):
-                    if config.get("fake_think_time") and len(moves) > 9:
+                board = setup_board(game)
+                if not is_game_over(game) and is_engine_move(game, board):
+                    if config.get("fake_think_time") and len(board.move_stack) > 9:
                         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
-                        accel = 1 - max(0, min(100, len(moves) - 20)) / 150
+                        accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
                         sleep = min(5, delay * accel)
                         time.sleep(sleep)
 
@@ -251,7 +250,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = None
                     ponder_move = None
                     if ponder_thread is not None:
-                        move_uci = moves[-1]
+                        move_uci = board.move_stack[-1].uci()
                         if ponder_uci == move_uci:
                             engine.ponderhit()
                             ponder_thread.join()
@@ -269,7 +268,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
 
                     if not deferredFirstMove:
-                        if polyglot_cfg.get("enabled") and len(moves) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
+                        if polyglot_cfg.get("enabled") and len(board.move_stack) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                             book_move = get_book_move(board, book_cfg)
 
                         if best_move is None:
@@ -338,8 +337,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
 
 def play_first_move(game, engine, board, li):
-    moves = game.state["moves"].split()
-    if is_engine_move(game, moves):
+    if is_engine_move(game, board):
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move = engine.first_search(board, 10000)
         engine.print_stats()
@@ -349,8 +347,7 @@ def play_first_move(game, engine, board, li):
 
 
 def play_first_book_move(game, engine, board, li, config):
-    moves = game.state["moves"].split()
-    if is_engine_move(game, moves):
+    if is_engine_move(game, board):
         book_move = get_book_move(board, config)
         if book_move:
             li.make_move(game.id, book_move)
@@ -398,32 +395,22 @@ def setup_board(game):
     else:
         VariantBoard = find_variant(game.variant_name)
         board = VariantBoard()
-    moves = game.state["moves"].split()
-    for move in moves:
-        board = update_board(board, move)
+
+    for move in game.state["moves"].split():
+        try:
+            board.push_uci(move)
+        except ValueError as e:
+            logger.debug('Ignoring illegal move {} on board {} ({})'.format(move, board.fen(), e))
 
     return board
 
 
-def is_white_to_move(game, moves):
-    return len(moves) % 2 == (0 if game.white_starts else 1)
-
-
-def is_engine_move(game, moves):
-    return game.is_white == is_white_to_move(game, moves)
+def is_engine_move(game, board):
+    return game.is_white == (board.turn == chess.WHITE)
 
 
 def is_game_over(game):
     return game.state["status"] != "started"
-
-
-def update_board(board, move):
-    uci_move = chess.Move.from_uci(move)
-    if board.is_legal(uci_move):
-        board.push(uci_move)
-    else:
-        logger.debug('Ignoring illegal move {} on board {}'.format(move, board.fen()))
-    return board
 
 
 def intro():

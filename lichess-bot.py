@@ -100,16 +100,16 @@ def start(li, user_profile, engine_factory, config):
                 else:
                     try:
                         reason = "generic"
-                        challenge = config["challenge"]                         
+                        challenge = config["challenge"]
                         if not chlng.is_supported_variant(challenge["variants"]):
                             reason = "variant"
                         if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0)):
                             reason = "timeControl"
                         if not chlng.is_supported_mode(challenge["modes"]):
-                            reason = "casual" if chlng.rated else "rated"                        
-                        if ( not challenge.get("accept_bot", False) ) and chlng.challenger_is_bot:
+                            reason = "casual" if chlng.rated else "rated"
+                        if not challenge.get("accept_bot", False) and chlng.challenger_is_bot:
                             reason = "noBot"
-                        if challenge.get("only_bot", False) and ( not chlng.challenger_is_bot ):
+                        if challenge.get("only_bot", False) and not chlng.challenger_is_bot:
                             reason = "onlyBot"
                         li.decline_challenge(chlng.id, reason=reason)
                         logger.info("    Decline {} for reason '{}'".format(chlng, reason))
@@ -383,7 +383,7 @@ def get_book_move(board, config):
         if move is not None:
             logger.info("Got move {} from book {}".format(move, book))
             return move
-        
+
     return None
 
 

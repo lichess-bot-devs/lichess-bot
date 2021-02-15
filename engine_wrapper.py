@@ -17,12 +17,9 @@ def create_engine(config):
 
     silence_stderr = cfg.get("silence_stderr", False)
 
-    if engine_type == "xboard":
-        options = remove_managed_options(cfg.get("xboard_options", {}) or {})
-        return XBoardEngine(commands, options, silence_stderr)
-
-    options = remove_managed_options(cfg.get("uci_options", {}) or {})
-    return UCIEngine(commands, options, silence_stderr)
+    Engine = XBoardEngine if engine_type == "xboard" else UCIEngine
+    options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
+    return Engine(commands, options, silence_stderr)
 
 
 def remove_managed_options(config):

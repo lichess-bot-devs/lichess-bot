@@ -128,7 +128,14 @@ class UCIEngine(EngineWrapper):
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options=None, silence_stderr=False):
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
+
+        egt_paths = options.pop("egtpath", {}) or {}
+        features = self.engine.protocol.features
+        egt_types_from_engine = features["egt"].split(",") if "egt" in features else []
+        for egt_type in egt_types_from_engine:
+            options[f"egtpath {egt_type}"] = egt_paths[egt_type]
         self.engine.configure(options)
+
         self.last_move_info = {}
         self.time_control_sent = False
 

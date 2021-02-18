@@ -37,10 +37,16 @@ class EngineWrapper:
         pass
 
     def first_search(self, board, movetime):
-        pass
+        best_move, _ = self.search(board, chess.engine.Limit(time=movetime // 1000), False)
+        return best_move
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         pass
+
+    def search(self, board, time_limit, ponder):
+        result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
+        self.last_move_info = result.info
+        return result.move, result.ponder
 
     def ponderhit(self):
         pass
@@ -74,11 +80,6 @@ class UCIEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def first_search(self, board, movetime):
-        result = self.engine.play(board, chess.engine.Limit(time=movetime / 1000), info=chess.engine.INFO_ALL)
-        self.last_move_info = result.info
-        return result.move
-
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         cmds = self.go_commands
         movetime = cmds.get("movetime")
@@ -91,9 +92,7 @@ class UCIEngine(EngineWrapper):
                                         depth=cmds.get("depth"),
                                         nodes=cmds.get("nodes"),
                                         time=movetime)
-        result = self.engine.play(board, time_limit, ponder=ponder, info=chess.engine.INFO_ALL)
-        self.last_move_info = result.info
-        return (result.move, result.ponder)
+        return self.search(board, time_limit, ponder)
 
     def stop(self):
         self.engine.protocol.send_line("stop")
@@ -133,25 +132,13 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line(f"level 0 {self.minutes}:{self.seconds} {self.inc}")
         self.time_control_sent = True
 
-    def first_search(self, board, movetime):
-        result = self.engine.play(board,
-                                  chess.engine.Limit(time=movetime // 1000),
-                                  info=chess.engine.INFO_ALL)
-        self.last_move_info = result.info
-        return result.move
-
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         if not self.time_control_sent:
             self.send_time()
 
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000)
-        result = self.engine.play(board,
-                                  time_limit,
-                                  info=chess.engine.INFO_ALL,
-                                  ponder=ponder)
-        self.last_move_info = result.info
-        return result.move, None
+        return self.search(board, time_limit, ponder)
 
     def stop(self):
         self.engine.protocol.send_line("?")

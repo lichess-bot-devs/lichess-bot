@@ -29,21 +29,6 @@ def remove_managed_options(config):
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
-def print_handler_stats(info, stats):
-    for stat in stats:
-        if stat in info:
-            print("    {}: {}".format(stat, info[stat]))
-
-
-def get_handler_stats(info, stats):
-    stats_str = []
-    for stat in stats:
-        if stat in info:
-            stats_str.append("{}: {}".format(stat, info[stat]))
-
-    return stats_str
-
-
 class EngineWrapper:
     def __init__(self, commands, options=None, silence_stderr=False):
         pass
@@ -61,7 +46,13 @@ class EngineWrapper:
         pass
 
     def print_stats(self):
-        pass
+        for line in self.get_stats():
+            print(f"    {line}")
+
+    def get_stats(self):
+        info = self.last_move_info
+        stats = ["depth", "nps", "nodes", "score"]
+        return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):
         pass
@@ -106,12 +97,6 @@ class UCIEngine(EngineWrapper):
 
     def stop(self):
         self.engine.protocol.send_line("stop")
-
-    def print_stats(self):
-        print_handler_stats(self.last_move_info, ["string", "depth", "nps", "nodes", "score"])
-
-    def get_stats(self):
-        return get_handler_stats(self.last_move_info, ["depth", "nps", "nodes", "score"])
 
     def get_opponent_info(self, game):
         name = game.opponent.name
@@ -170,12 +155,6 @@ class XBoardEngine(EngineWrapper):
 
     def stop(self):
         self.engine.protocol.send_line("?")
-
-    def print_stats(self):
-        print_handler_stats(self.last_move_info, ["depth", "nodes", "score"])
-
-    def get_stats(self):
-        return get_handler_stats(self.last_move_info, ["depth", "nodes", "score"])
 
     def get_opponent_info(self, game):
         if game.opponent.name and self.engine.protocol.features.get("name", True):

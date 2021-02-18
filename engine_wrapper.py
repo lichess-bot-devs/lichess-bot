@@ -15,11 +15,11 @@ def create_engine(config):
         for k, v in engine_options.items():
             commands.append("--{}={}".format(k, v))
 
-    silence_stderr = cfg.get("silence_stderr", False)
+    stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
 
     Engine = XBoardEngine if engine_type == "xboard" else UCIEngine
     options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
-    return Engine(commands, options, silence_stderr)
+    return Engine(commands, options, stderr)
 
 
 def remove_managed_options(config):
@@ -30,7 +30,7 @@ def remove_managed_options(config):
 
 
 class EngineWrapper:
-    def __init__(self, commands, options=None, silence_stderr=False):
+    def __init__(self, commands, options, stderr):
         pass
 
     def set_time_control(self, game):
@@ -68,9 +68,9 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, commands, options, silence_stderr=False):
+    def __init__(self, commands, options, stderr):
         self.go_commands = options.pop("go_commands", {}) or {}
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
         self.engine.configure(options)
         self.last_move_info = {}
 
@@ -111,8 +111,8 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-    def __init__(self, commands, options=None, silence_stderr=False):
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=subprocess.DEVNULL if silence_stderr else None)
+    def __init__(self, commands, options, stderr):
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
 
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features

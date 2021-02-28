@@ -171,11 +171,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     ponder_thread = None
     ponder_uci = None
 
-    def ponder_thread_func(game, engine, board, wtime, btime, winc, binc):
-        global ponder_results
-        best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
-        ponder_results[game.id] = (best_move, ponder_move)
-
     first_move = True
     while not terminated:
         try:
@@ -311,6 +306,11 @@ def start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, 
         wtime = max(0, wtime - move_overhead - setup_time + game.state["winc"])
     else:
         btime = max(0, btime - move_overhead - setup_time + game.state["binc"])
+
+    def ponder_thread_func(game, engine, board, wtime, btime, winc, binc):
+        global ponder_results
+        best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
+        ponder_results[game.id] = (best_move, ponder_move)
 
     logger.info("Pondering for wtime {} btime {}".format(wtime, btime))
     ponder_thread = threading.Thread(target=ponder_thread_func, args=(game, engine, ponder_board, wtime, btime, game.state["winc"], game.state["binc"]))

@@ -208,7 +208,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                 best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
-                engine.print_stats()
             else:
                 best_move = book_move
 
@@ -256,7 +255,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             ponder_thread.join()
                             ponder_thread = None
                             best_move, ponder_move = ponder_results[game.id]
-                            engine.print_stats()
                         else:
                             engine.stop()
                             ponder_thread.join()
@@ -279,7 +277,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                                     btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                                 best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, upd["winc"], upd["binc"])
-                                engine.print_stats()
                             else:
                                 best_move = book_move
                         else:
@@ -340,7 +337,6 @@ def play_first_move(game, engine, board, li):
     if is_engine_move(game, board):
         # need to hardcode first movetime since Lichess has 30 sec limit.
         best_move = engine.first_search(board, 10000)
-        engine.print_stats()
         li.make_move(game.id, best_move)
         return True
     return False

@@ -215,12 +215,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             ponder_thread.join()
                             ponder_thread = None
 
+                    start_time = time.perf_counter_ns()
                     if len(board.move_stack) < 2:
-                        play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
+                        best_move, ponder_move = play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
                     else:
-                        start_time = time.perf_counter_ns()
                         best_move, ponder_move = play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move)
-                        ponder_thread, ponder_uci = start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
+                    ponder_thread, ponder_uci = start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)
@@ -250,8 +250,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
 
 def play_first_move(game, engine, board, li, polyglot_cfg, book_cfg):
-    # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
-    li.make_move(game.id, get_book_move(board, polyglot_cfg, book_cfg) or engine.first_search(board, 10000))
+    best_move = get_book_move(board, polyglot_cfg, book_cfg)
+    ponder_move = None
+    if best_move is None:
+        # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
+        best_move, ponder_move = engine.first_search(board, 10000)
+    li.make_move(game.id, best_move)
+    return best_move, ponder_move
 
 
 def get_book_move(board, polyglot_cfg, book_config):

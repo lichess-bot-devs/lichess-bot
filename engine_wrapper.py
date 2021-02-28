@@ -37,8 +37,7 @@ class EngineWrapper:
         pass
 
     def first_search(self, board, movetime):
-        best_move, _ = self.search(board, chess.engine.Limit(time=movetime // 1000), False)
-        return best_move
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         pass

@@ -309,24 +309,25 @@ def play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_
 
 
 def start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead):
-    if is_uci_ponder and ponder_move is not None:
-        ponder_board = board.copy()
-        ponder_board.push(best_move)
-        ponder_board.push(ponder_move)
+    if not is_uci_ponder or ponder_move is None:
+        return None, None
 
-        wtime = game.state["wtime"]
-        btime = game.state["btime"]
-        setup_time = int((time.perf_counter_ns() - start_time) / 1000000)
-        if board.turn == chess.WHITE:
-            wtime = max(0, wtime - move_overhead - setup_time + game.state["winc"])
-        else:
-            btime = max(0, btime - move_overhead - setup_time + game.state["binc"])
+    ponder_board = board.copy()
+    ponder_board.push(best_move)
+    ponder_board.push(ponder_move)
 
-        logger.info("Pondering for wtime {} btime {}".format(wtime, btime))
-        ponder_thread = threading.Thread(target=ponder_thread_func, args=(game, engine, ponder_board, wtime, btime, game.state["winc"], game.state["binc"]))
-        ponder_thread.start()
-        return ponder_thread, ponder_move.uci()
-    return None, None
+    wtime = game.state["wtime"]
+    btime = game.state["btime"]
+    setup_time = int((time.perf_counter_ns() - start_time) / 1000000)
+    if board.turn == chess.WHITE:
+        wtime = max(0, wtime - move_overhead - setup_time + game.state["winc"])
+    else:
+        btime = max(0, btime - move_overhead - setup_time + game.state["binc"])
+
+    logger.info("Pondering for wtime {} btime {}".format(wtime, btime))
+    ponder_thread = threading.Thread(target=ponder_thread_func, args=(game, engine, ponder_board, wtime, btime, game.state["winc"], game.state["binc"]))
+    ponder_thread.start()
+    return ponder_thread, ponder_move.uci()
 
 
 def setup_board(game):

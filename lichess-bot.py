@@ -192,7 +192,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 if not is_game_over(game) and is_engine_move(game, board):
                     fake_thinking(config, board, game)
 
-                    best_move, ponder_move = get_pondering_results(ponder_thread, ponder_uci, board, engine)
+                    best_move, ponder_move = get_pondering_results(ponder_thread, ponder_uci, game, board, engine)
                     start_time = time.perf_counter_ns()
                     if len(board.move_stack) < 2:
                         best_move, ponder_move = choose_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
@@ -318,7 +318,7 @@ def start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, 
     return ponder_thread, ponder_move.uci()
 
 
-def get_pondering_results(ponder_thread, ponder_uci, board, engine):
+def get_pondering_results(ponder_thread, ponder_uci, game, board, engine):
     if ponder_thread is None:
         return None, None
 

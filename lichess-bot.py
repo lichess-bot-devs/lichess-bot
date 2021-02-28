@@ -170,8 +170,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     book_cfg = polyglot_cfg.get("book", {})
 
     ponder_thread = None
-    deferredFirstMove = False
-
     ponder_uci = None
 
     def ponder_thread_func(game, engine, board, wtime, btime, winc, binc):
@@ -182,9 +180,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     if len(board.move_stack) < 2:
         while not terminated:
             try:
-                if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
-                    if not play_first_move(game, engine, board, li):
-                        deferredFirstMove = True
+                if is_engine_move(game, board):
+                    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+                        play_first_move(game, engine, board, li)
                 break
             except HTTPError as exception:
                 if exception.response.status_code == 400:  # fallthrough
@@ -265,7 +263,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     btime = upd["btime"]
                     start_time = time.perf_counter_ns()
 
-                    if not deferredFirstMove:
+                    if len(board.move_stack) < 2:
+                        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+                            play_first_move(game, engine, board, li)
+                    else:
                         if polyglot_cfg.get("enabled") and len(board.move_stack) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
                             book_move = get_book_move(board, book_cfg)
 
@@ -297,10 +298,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             ponder_thread = threading.Thread(target=ponder_thread_func, args=(game, engine, ponder_board, wtime, btime, upd["winc"], upd["binc"]))
                             ponder_thread.start()
                         li.make_move(game.id, best_move)
-                    else:
-                        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
-                            play_first_move(game, engine, board, li)
-                        deferredFirstMove = False
                 if board.turn == chess.WHITE:
                     game.ping(config.get("abort_time", 20), (upd["wtime"] + upd["winc"]) / 1000 + 60)
                 else:
@@ -334,23 +331,18 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
 
 def play_first_move(game, engine, board, li):
-    if is_engine_move(game, board):
-        # need to hardcode first movetime since Lichess has 30 sec limit.
-        best_move = engine.first_search(board, 10000)
-        li.make_move(game.id, best_move)
-        return True
-    return False
+    # need to hardcode first movetime since Lichess has 30 sec limit.
+    best_move = engine.first_search(board, 10000)
+    li.make_move(game.id, best_move)
 
 
 def play_first_book_move(game, engine, board, li, config):
-    if is_engine_move(game, board):
-        book_move = get_book_move(board, config)
-        if book_move:
-            li.make_move(game.id, book_move)
-            return True
-        else:
-            return play_first_move(game, engine, board, li)
-    return False
+    book_move = get_book_move(board, config)
+    if book_move:
+        li.make_move(game.id, book_move)
+        return True
+    else:
+        return False
 
 
 def get_book_move(board, config):

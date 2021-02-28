@@ -188,23 +188,20 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     break
     else:
         if not is_game_over(game) and is_engine_move(game, board):
-            best_move = None
             ponder_move = None
             wtime = game.state["wtime"]
             btime = game.state["btime"]
             start_time = time.perf_counter_ns()
 
-            book_move = get_book_move(board, polyglot_cfg, book_cfg)
+            best_move = get_book_move(board, polyglot_cfg, book_cfg)
 
-            if book_move is None:
+            if best_move is None:
                 if board.turn == chess.WHITE:
                     wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                 else:
                     btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                 logger.info("Searching for wtime {} btime {}".format(wtime, btime))
                 best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
-            else:
-                best_move = book_move
 
             if is_uci_ponder and ponder_move is not None:
                 ponder_board = board.copy()
@@ -263,21 +260,17 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
                     else:
                         book_move = get_book_move(board, polyglot_cfg, book_cfg)
+                        if book_move:
+                            best_move = book_move
+                            ponder_move = None
 
                         if best_move is None:
-                            if book_move is None:
-                                if board.turn == chess.WHITE:
-                                    wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
-                                else:
-                                    btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
-                                logger.info("Searching for wtime {} btime {}".format(wtime, btime))
-                                best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, upd["winc"], upd["binc"])
+                            if board.turn == chess.WHITE:
+                                wtime = max(0, wtime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
                             else:
-                                best_move = book_move
-                        else:
-                            if book_move is not None:
-                                best_move = book_move
-                                ponder_move = None
+                                btime = max(0, btime - move_overhead - int((time.perf_counter_ns() - start_time) / 1000000))
+                            logger.info("Searching for wtime {} btime {}".format(wtime, btime))
+                            best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, upd["winc"], upd["binc"])
 
                         if is_uci_ponder and ponder_move is not None:
                             ponder_board = board.copy()

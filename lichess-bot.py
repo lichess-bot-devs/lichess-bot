@@ -181,7 +181,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         while not terminated:
             try:
                 if is_engine_move(game, board):
-                    if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+                    if not play_first_book_move(game, engine, board, li, polyglot_cfg, book_cfg):
                         play_first_move(game, engine, board, li)
                 break
             except HTTPError as exception:
@@ -189,15 +189,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     break
     else:
         if not is_game_over(game) and is_engine_move(game, board):
-            book_move = None
             best_move = None
             ponder_move = None
             wtime = game.state["wtime"]
             btime = game.state["btime"]
             start_time = time.perf_counter_ns()
 
-            if polyglot_cfg.get("enabled") and len(board.move_stack) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
-                book_move = get_book_move(board, book_cfg)
+            book_move = get_book_move(board, polyglot_cfg, book_cfg)
 
             if book_move is None:
                 if board.turn == chess.WHITE:
@@ -243,7 +241,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         sleep = min(5, delay * accel)
                         time.sleep(sleep)
 
-                    book_move = None
                     best_move = None
                     ponder_move = None
                     if ponder_thread is not None:
@@ -264,11 +261,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
 
                     if len(board.move_stack) < 2:
-                        if not polyglot_cfg.get("enabled") or not play_first_book_move(game, engine, board, li, book_cfg):
+                        if not play_first_book_move(game, engine, board, li, polyglot_cfg, book_cfg):
                             play_first_move(game, engine, board, li)
                     else:
-                        if polyglot_cfg.get("enabled") and len(board.move_stack) <= polyglot_cfg.get("max_depth", 8) * 2 - 1:
-                            book_move = get_book_move(board, book_cfg)
+                        book_move = get_book_move(board, polyglot_cfg, book_cfg)
 
                         if best_move is None:
                             if book_move is None:
@@ -336,8 +332,8 @@ def play_first_move(game, engine, board, li):
     li.make_move(game.id, best_move)
 
 
-def play_first_book_move(game, engine, board, li, config):
-    book_move = get_book_move(board, config)
+def play_first_book_move(game, engine, board, li, polyglot_cfg, book_config):
+    book_move = get_book_move(board, polyglot_cfg, book_config)
     if book_move:
         li.make_move(game.id, book_move)
         return True
@@ -345,25 +341,28 @@ def play_first_book_move(game, engine, board, li, config):
         return False
 
 
-def get_book_move(board, config):
+def get_book_move(board, polyglot_cfg, book_config):
+    if not polyglot_cfg.get("enabled") or len(board.move_stack) > polyglot_cfg.get("max_depth", 8) * 2 - 1:
+        return None
+
     if board.uci_variant == "chess":
-        books = config["standard"]
+        books = book_config["standard"]
     else:
-        if config.get("{}".format(board.uci_variant)):
-            books = config["{}".format(board.uci_variant)]
+        if book_config.get("{}".format(board.uci_variant)):
+            books = book_config["{}".format(board.uci_variant)]
         else:
             return None
 
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:
-                selection = config.get("selection", "weighted_random")
+                selection = book_config.get("selection", "weighted_random")
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=config.get("min_weight", 1)).move
+                    move = reader.choice(board, minimum_weight=book_config.get("min_weight", 1)).move
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=config.get("min_weight", 1)).move
+                    move = reader.find(board, minimum_weight=book_config.get("min_weight", 1)).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found
                 move = None

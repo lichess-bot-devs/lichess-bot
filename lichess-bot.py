@@ -201,20 +201,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         sleep = min(5, delay * accel)
                         time.sleep(sleep)
 
-                    best_move = None
-                    ponder_move = None
-                    if ponder_thread is not None:
-                        move_uci = board.move_stack[-1].uci()
-                        if ponder_uci == move_uci:
-                            engine.ponderhit()
-                            ponder_thread.join()
-                            ponder_thread = None
-                            best_move, ponder_move = ponder_results[game.id]
-                        else:
-                            engine.stop()
-                            ponder_thread.join()
-                            ponder_thread = None
-
+                    best_move, ponder_move = get_pondering_results(ponder_thread, ponder_uci, board, engine)
                     start_time = time.perf_counter_ns()
                     if len(board.move_stack) < 2:
                         best_move, ponder_move = choose_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
@@ -333,6 +320,21 @@ def start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, 
     ponder_thread = threading.Thread(target=ponder_thread_func, args=(game, engine, ponder_board, wtime, btime, game.state["winc"], game.state["binc"]))
     ponder_thread.start()
     return ponder_thread, ponder_move.uci()
+
+
+def get_pondering_results(ponder_thread, ponder_uci, board, engine):
+    if ponder_thread is None:
+        return None, None
+
+    move_uci = board.move_stack[-1].uci()
+    if ponder_uci == move_uci:
+        engine.ponderhit()
+        ponder_thread.join()
+        return ponder_results[game.id]
+    else:
+        engine.stop()
+        ponder_thread.join()
+        return None, None
 
 
 def setup_board(game):

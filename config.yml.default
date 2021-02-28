@@ -1,9 +1,9 @@
-token: "xxxxxxxxxxxxxxxx"    # lichess OAuth2 Token
+token: "miFi7GYLkmcTGkIe"    # lichess OAuth2 Token
 url: "https://lichess.org/"  # lichess base URL
 
 engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
-  name: "engine_name"        # binary name of the engine to use
+  name: "stockfish.exe"        # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
   uci_ponder: true           # think on opponent time; only works if "protocol" is "uci"
   polyglot:
@@ -26,7 +26,7 @@ engine:                      # engine settings
     Move Overhead: 100       # increase if your bot flags games too often
     Ponder: true
     Threads: 2               # max CPU threads the engine can use
-    Hash: 256                # max memory (in megabytes) the engine can allocate
+#    Hash: 256                # max memory (in megabytes) the engine can allocate
 #   go_commands:             # additional options to pass to the UCI go command
 #     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.

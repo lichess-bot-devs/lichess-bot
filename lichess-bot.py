@@ -181,8 +181,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         while not terminated:
             try:
                 if is_engine_move(game, board):
-                    if not play_first_book_move(game, engine, board, li, polyglot_cfg, book_cfg):
-                        play_first_move(game, engine, board, li)
+                    play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
                 break
             except HTTPError as exception:
                 if exception.response.status_code == 400:  # fallthrough
@@ -261,8 +260,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
 
                     if len(board.move_stack) < 2:
-                        if not play_first_book_move(game, engine, board, li, polyglot_cfg, book_cfg):
-                            play_first_move(game, engine, board, li)
+                        play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
                     else:
                         book_move = get_book_move(board, polyglot_cfg, book_cfg)
 
@@ -326,19 +324,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def play_first_move(game, engine, board, li):
-    # need to hardcode first movetime since Lichess has 30 sec limit.
-    best_move = engine.first_search(board, 10000)
-    li.make_move(game.id, best_move)
-
-
-def play_first_book_move(game, engine, board, li, polyglot_cfg, book_config):
-    book_move = get_book_move(board, polyglot_cfg, book_config)
-    if book_move:
-        li.make_move(game.id, book_move)
-        return True
-    else:
-        return False
+def play_first_move(game, engine, board, li, polyglot_cfg, book_cfg):
+    # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
+    li.make_move(game.id, get_book_move(board, polyglot_cfg, book_cfg) or engine.first_search(board, 10000))
 
 
 def get_book_move(board, polyglot_cfg, book_config):

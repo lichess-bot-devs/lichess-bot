@@ -195,11 +195,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 game.state = upd
                 board = setup_board(game)
                 if not is_game_over(game) and is_engine_move(game, board):
-                    if config.get("fake_think_time") and len(board.move_stack) > 9:
-                        delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
-                        accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
-                        sleep = min(5, delay * accel)
-                        time.sleep(sleep)
+                    fake_thinking(config, board, game)
 
                     best_move, ponder_move = get_pondering_results(ponder_thread, ponder_uci, board, engine)
                     start_time = time.perf_counter_ns()
@@ -335,6 +331,14 @@ def get_pondering_results(ponder_thread, ponder_uci, board, engine):
         engine.stop()
         ponder_thread.join()
         return None, None
+
+
+def fake_thinking(config, board, game):
+    if config.get("fake_think_time") and len(board.move_stack) > 9:
+        delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
+        accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
+        sleep = min(5, delay * accel)
+        time.sleep(sleep)
 
 
 def setup_board(game):

@@ -257,7 +257,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     engine.quit()
     if ponder_thread is not None:
         ponder_thread.join()
-        ponder_thread = None
 
     # This can raise queue.NoFull, but that should only happen if we're not processing
     # events fast enough and in this case I believe the exception should be raised

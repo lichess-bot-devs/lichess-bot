@@ -301,6 +301,7 @@ def play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_
             wtime = max(0, wtime - move_overhead - book_time)
         else:
             btime = max(0, btime - move_overhead - book_time)
+
         logger.info("Searching for wtime {} btime {}".format(wtime, btime))
         best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
 

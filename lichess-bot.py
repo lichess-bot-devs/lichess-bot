@@ -247,9 +247,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         li.abort(game.id)
                     break
         except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError):
-            if game.id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games()):
-                continue
-            else:
+            if game.id not in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games()):
                 break
 
     logger.info("--- {} Game over".format(game.url()))

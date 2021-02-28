@@ -154,7 +154,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     # Initial response of stream will be the full game info. Store it
     initial_state = json.loads(next(lines).decode('utf-8'))
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
-    board = setup_board(game)
     engine = engine_factory()
     engine.get_opponent_info(game)
     engine.set_time_control(game)
@@ -177,28 +176,18 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
         ponder_results[game.id] = (best_move, ponder_move)
 
-    if len(board.move_stack) < 2:
-        while not terminated:
-            try:
-                if is_engine_move(game, board):
-                    play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
-                break
-            except HTTPError as exception:
-                if exception.response.status_code == 400:  # fallthrough
-                    break
-    else:
-        if not is_game_over(game) and is_engine_move(game, board):
-            start_time = time.perf_counter_ns()
-            best_move, ponder_move = play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, None, None)
-            ponder_thread, ponder_uci = start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
-
+    first_move = True
     while not terminated:
         try:
-            binary_chunk = next(lines)
+            if first_move:
+                upd = game.state
+                first_move = False
+            else:
+                binary_chunk = next(lines)
+                upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
         except StopIteration:
             break
         try:
-            upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)

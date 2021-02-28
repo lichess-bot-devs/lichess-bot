@@ -217,9 +217,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
                     start_time = time.perf_counter_ns()
                     if len(board.move_stack) < 2:
-                        best_move, ponder_move = play_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
+                        best_move, ponder_move = choose_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
                     else:
-                        best_move, ponder_move = play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move)
+                        best_move, ponder_move = choose_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move)
+                    li.make_move(game.id, best_move)
                     ponder_thread, ponder_uci = start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
@@ -249,13 +250,12 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def play_first_move(game, engine, board, li, polyglot_cfg, book_cfg):
+def choose_first_move(game, engine, board, li, polyglot_cfg, book_cfg):
     best_move = get_book_move(board, polyglot_cfg, book_cfg)
     ponder_move = None
     if best_move is None:
         # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
         best_move, ponder_move = engine.first_search(board, 10000)
-    li.make_move(game.id, best_move)
     return best_move, ponder_move
 
 
@@ -292,7 +292,7 @@ def get_book_move(board, polyglot_cfg, book_config):
     return None
 
 
-def play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move):
+def choose_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move):
     book_move = get_book_move(board, polyglot_cfg, book_cfg)
     if book_move:
         best_move = book_move
@@ -310,7 +310,6 @@ def play_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_
         logger.info("Searching for wtime {} btime {}".format(wtime, btime))
         best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
 
-    li.make_move(game.id, best_move)
     return best_move, ponder_move
 
 

@@ -195,11 +195,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move, ponder_move = get_pondering_results(ponder_thread, ponder_uci, game, board, engine)
                     start_time = time.perf_counter_ns()
                     if len(board.move_stack) < 2:
-                        best_move, ponder_move = choose_first_move(game, engine, board, li, polyglot_cfg, book_cfg)
+                        best_move, ponder_move = choose_first_move(engine, board, polyglot_cfg, book_cfg)
                     else:
-                        best_move, ponder_move = choose_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move)
+                        best_move, ponder_move = choose_move(engine, board, game, polyglot_cfg, book_cfg, best_move, ponder_move, start_time, move_overhead)
                     li.make_move(game.id, best_move)
-                    ponder_thread, ponder_uci = start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
+                    ponder_thread, ponder_uci = start_pondering(engine, board, game, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)
@@ -228,13 +228,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_first_move(game, engine, board, li, polyglot_cfg, book_cfg):
-    best_move = get_book_move(board, polyglot_cfg, book_cfg)
-    ponder_move = None
-    if best_move is None:
-        # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
-        best_move, ponder_move = engine.first_search(board, 10000)
-    return best_move, ponder_move
+def choose_first_move(engine, board, polyglot_cfg, book_cfg):
+    book_move = get_book_move(board, polyglot_cfg, book_cfg)
+    if book_move is not None:
+        return book_move, None
+
+    # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
+    return engine.first_search(board, 10000)
 
 
 def get_book_move(board, polyglot_cfg, book_config):
@@ -270,28 +270,27 @@ def get_book_move(board, polyglot_cfg, book_config):
     return None
 
 
-def choose_move(li, game, board, engine, polyglot_cfg, book_cfg, start_time, move_overhead, best_move, ponder_move):
+def choose_move(engine, board, game, polyglot_cfg, book_cfg, best_move, ponder_move, start_time, move_overhead):
     book_move = get_book_move(board, polyglot_cfg, book_cfg)
-    if book_move:
-        best_move = book_move
-        ponder_move = None
+    if book_move is not None:
+        return book_move, None
 
-    if best_move is None:
-        wtime = game.state["wtime"]
-        btime = game.state["btime"]
-        book_time = int((time.perf_counter_ns() - start_time) / 1000000)
-        if board.turn == chess.WHITE:
-            wtime = max(0, wtime - move_overhead - book_time)
-        else:
-            btime = max(0, btime - move_overhead - book_time)
+    if best_move is not None:
+        return best_move, ponder_move
 
-        logger.info("Searching for wtime {} btime {}".format(wtime, btime))
-        best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
+    wtime = game.state["wtime"]
+    btime = game.state["btime"]
+    book_time = int((time.perf_counter_ns() - start_time) / 1000000)
+    if board.turn == chess.WHITE:
+        wtime = max(0, wtime - move_overhead - book_time)
+    else:
+        btime = max(0, btime - move_overhead - book_time)
 
-    return best_move, ponder_move
+    logger.info("Searching for wtime {} btime {}".format(wtime, btime))
+    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
 
 
-def start_pondering(game, board, engine, is_uci_ponder, best_move, ponder_move, start_time, move_overhead):
+def start_pondering(engine, board, game, is_uci_ponder, best_move, ponder_move, start_time, move_overhead):
     if not is_uci_ponder or ponder_move is None:
         return None, None
 

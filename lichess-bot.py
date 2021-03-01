@@ -190,9 +190,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 game.state = upd
                 board = setup_board(game)
                 if not is_game_over(game) and is_engine_move(game, board):
+                    start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
 
-                    start_time = time.perf_counter_ns()
                     best_move, ponder_move = get_book_move(board, polyglot_cfg, book_cfg), None
                     if best_move is None:
                         if len(board.move_stack) < 2:
@@ -272,11 +272,11 @@ def get_book_move(board, polyglot_cfg, book_config):
 def choose_move(engine, board, game, start_time, move_overhead):
     wtime = game.state["wtime"]
     btime = game.state["btime"]
-    book_time = int((time.perf_counter_ns() - start_time) / 1000000)
+    pre_move_time = int((time.perf_counter_ns() - start_time) / 1000000)
     if board.turn == chess.WHITE:
-        wtime = max(0, wtime - move_overhead - book_time)
+        wtime = max(0, wtime - move_overhead - pre_move_time)
     else:
-        btime = max(0, btime - move_overhead - book_time)
+        btime = max(0, btime - move_overhead - pre_move_time)
 
     logger.info("Searching for wtime {} btime {}".format(wtime, btime))
     return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])

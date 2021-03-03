@@ -180,10 +180,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             else:
                 binary_chunk = next(lines)
                 upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
-        except StopIteration:
-            break
 
-        try:
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)
@@ -220,6 +217,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError):
             if game.id not in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games()):
                 break
+        except StopIteration:
+            break
 
     logger.info("--- {} Game over".format(game.url()))
     engine.stop()

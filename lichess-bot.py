@@ -166,7 +166,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
     polyglot_cfg = engine_cfg.get("polyglot", {})
-    book_cfg = polyglot_cfg.get("book", {})
 
     ponder_thread = None
     ponder_uci = None
@@ -191,7 +190,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
 
-                    best_move, ponder_move = get_book_move(board, polyglot_cfg, book_cfg), None
+                    best_move, ponder_move = get_book_move(board, polyglot_cfg), None
                     if best_move is None:
                         if len(board.move_stack) < 2:
                             best_move, ponder_move = choose_first_move(engine, board)
@@ -236,9 +235,11 @@ def choose_first_move(engine, board):
     return engine.first_search(board, 10000)
 
 
-def get_book_move(board, polyglot_cfg, book_config):
+def get_book_move(board, polyglot_cfg):
     if not polyglot_cfg.get("enabled") or len(board.move_stack) > polyglot_cfg.get("max_depth", 8) * 2 - 1:
         return None
+
+    book_config = polyglot_cfg.get("book", {})
 
     if board.uci_variant == "chess":
         books = book_config["standard"]

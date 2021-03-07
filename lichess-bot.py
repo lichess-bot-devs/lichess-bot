@@ -28,7 +28,7 @@ try:
 except ImportError:
     from http.client import BadStatusLine as RemoteDisconnected
 
-__version__ = "1.1.5"
+__version__ = "1.2.0"
 
 terminated = False
 
@@ -248,6 +248,9 @@ def get_book_move(board, polyglot_cfg):
             books = book_config["{}".format(board.uci_variant)]
         else:
             return None
+
+    if isinstance(books, str):
+        books = [books]
 
     for book in books:
         with chess.polyglot.open_reader(book) as reader:

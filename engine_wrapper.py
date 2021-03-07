@@ -66,6 +66,9 @@ class EngineWrapper:
     def name(self):
         return self.engine.id["name"]
 
+    def report_game_result(self, game, board):
+        pass
+
     def stop(self):
         pass
 
@@ -108,6 +111,9 @@ class UCIEngine(EngineWrapper):
     def ponderhit(self):
         self.engine.protocol.send_line("ponderhit")
 
+    def report_game_result(self, game, board):
+        self.engine.protocol._position(board)
+
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
@@ -139,6 +145,47 @@ class XBoardEngine(EngineWrapper):
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000)
         return self.search(board, time_limit, ponder)
+
+    def report_game_result(self, game, board):
+        self.engine.protocol._new(board, None, {})
+
+        winner = game.state.get('winner')
+        termination = game.state.get('status')
+
+        if winner == 'white':
+            game_result = '1-0'
+        elif winner == 'black':
+            game_result = '0-1'
+        elif termination == 'aborted':
+            game_result = '*'
+        else:
+            game_result = '1/2-1/2'
+
+        if termination == 'mate':
+            endgame_message = winner.title() + ' mates'
+        elif termination == 'outoftime':
+            endgame_message = 'Time forfeiture'
+        elif termination == 'resign':
+            resigner = 'black' if winner == 'white' else 'white'
+            endgame_message = resigner.title() + ' resigns'
+        elif termination == 'aborted':
+            endgame_message = 'Game aborted'
+        elif termination == 'draw':
+            if board.is_fifty_moves():
+                endgame_message = '50-move rule'
+            elif board.is_repetition():
+                endgame_message = 'Threefold repetition'
+            else:
+                endgame_message = 'Draw by agreement'
+        elif termination:
+            endgame_message = termination
+        else:
+            endgame_message = ''
+
+        if endgame_message:
+            endgame_message = ' {' + endgame_message + '}'
+
+        self.engine.protocol.send_line('result ' + game_result + endgame_message)
 
     def stop(self):
         self.engine.protocol.send_line("?")

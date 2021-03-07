@@ -37,8 +37,7 @@ class EngineWrapper:
         pass
 
     def first_search(self, board, movetime):
-        best_move, _ = self.search(board, chess.engine.Limit(time=movetime // 1000), False)
-        return best_move
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
         pass
@@ -46,6 +45,7 @@ class EngineWrapper:
     def search(self, board, time_limit, ponder):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
         self.last_move_info = result.info
+        self.print_stats()
         return result.move, result.ponder
 
     def ponderhit(self):

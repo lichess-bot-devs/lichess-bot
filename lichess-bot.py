@@ -100,16 +100,16 @@ def start(li, user_profile, engine_factory, config):
                 else:
                     try:
                         reason = "generic"
-                        challenge = config["challenge"]                         
+                        challenge = config["challenge"]
                         if not chlng.is_supported_variant(challenge["variants"]):
                             reason = "variant"
                         if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0)):
                             reason = "timeControl"
                         if not chlng.is_supported_mode(challenge["modes"]):
-                            reason = "casual" if chlng.rated else "rated"                        
-                        if ( not challenge.get("accept_bot", False) ) and chlng.challenger_is_bot:
+                            reason = "casual" if chlng.rated else "rated"
+                        if not challenge.get("accept_bot", False) and chlng.challenger_is_bot:
                             reason = "noBot"
-                        if challenge.get("only_bot", False) and ( not chlng.challenger_is_bot ):
+                        if challenge.get("only_bot", False) and not chlng.challenger_is_bot:
                             reason = "onlyBot"
                         li.decline_challenge(chlng.id, reason=reason)
                         logger.info("    Decline {} for reason '{}'".format(chlng, reason))
@@ -155,8 +155,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     initial_state = json.loads(next(lines).decode('utf-8'))
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     board = setup_board(game)
-    engine = engine_factory(board)
+    engine = engine_factory()
     engine.get_opponent_info(game)
+    engine.set_time_control(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info("+++ {}".format(game))
@@ -177,8 +178,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         global ponder_results
         best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
         ponder_results[game.id] = (best_move, ponder_move)
-
-    engine.set_time_control(game)
 
     if len(board.move_stack) < 2:
         while not terminated:
@@ -253,13 +252,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if ponder_thread is not None:
                         move_uci = board.move_stack[-1].uci()
                         if ponder_uci == move_uci:
-                            engine.engine.ponderhit()
+                            engine.ponderhit()
                             ponder_thread.join()
                             ponder_thread = None
                             best_move, ponder_move = ponder_results[game.id]
                             engine.print_stats()
                         else:
-                            engine.engine.stop()
+                            engine.stop()
                             ponder_thread.join()
                             ponder_thread = None
                         ponder_uci = None
@@ -326,7 +325,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 break
 
     logger.info("--- {} Game over".format(game.url()))
-    engine.engine.stop()
+    engine.stop()
     engine.quit()
     if ponder_thread is not None:
         ponder_thread.join()
@@ -372,11 +371,11 @@ def get_book_move(board, config):
             try:
                 selection = config.get("selection", "weighted_random")
                 if selection == "weighted_random":
-                    move = reader.weighted_choice(board).move()
+                    move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=config.get("min_weight", 1)).move()
+                    move = reader.choice(board, minimum_weight=config.get("min_weight", 1)).move
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=config.get("min_weight", 1)).move()
+                    move = reader.find(board, minimum_weight=config.get("min_weight", 1)).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found
                 move = None
@@ -384,7 +383,7 @@ def get_book_move(board, config):
         if move is not None:
             logger.info("Got move {} from book {}".format(move, book))
             return move
-        
+
     return None
 
 

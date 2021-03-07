@@ -366,6 +366,9 @@ def get_book_move(board, config):
         else:
             return None
 
+    if isinstance(books, str):
+        books = [books]
+
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:

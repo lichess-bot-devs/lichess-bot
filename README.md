@@ -1,5 +1,5 @@
 # lichess-bot
-A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
+A bridge between [Lichess API](https://lichess.org/api#tag/Bot) and bots.
 
 
 ## How to Install
@@ -8,12 +8,14 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Chess-Bot) and bots.
 - NOTE: Only Python 3 is supported!
 - Download the repo into lichess-bot directory
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`
+- Install pip: `apt install python3-pip`
 - Install virtualenv: `pip install virtualenv`
-- Setup virtualenv:
+- Setup virtualenv: `apt install python3-venv`
 ```
+python3 -m venv venv #if this fails you probably need to add Python3 to your PATH
 virtualenv .venv -p python3 #if this fails you probably need to add Python3 to your PATH
-source .venv/bin/activate
-pip install -r requirements.txt
+source ./venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary

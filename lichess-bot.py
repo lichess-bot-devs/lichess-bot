@@ -255,13 +255,13 @@ def get_book_move(board, polyglot_cfg):
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:
-                selection = book_config.get("selection", "weighted_random")
+                selection = polyglot_cfg.get("selection", "weighted_random")
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=book_config.get("min_weight", 1)).move
+                    move = reader.choice(board, minimum_weight=polyglot_cfg.get("min_weight", 1)).move
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=book_config.get("min_weight", 1)).move
+                    move = reader.find(board, minimum_weight=polyglot_cfg.get("min_weight", 1)).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found
                 move = None

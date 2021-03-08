@@ -22,11 +22,7 @@ from ColorLogger import enable_color_logging
 
 logger = logging.getLogger(__name__)
 
-try:
-    from http.client import RemoteDisconnected
-    # New in version 3.5: Previously, BadStatusLine('') was raised.
-except ImportError:
-    from http.client import BadStatusLine as RemoteDisconnected
+from http.client import RemoteDisconnected
 
 __version__ = "1.2.0"
 

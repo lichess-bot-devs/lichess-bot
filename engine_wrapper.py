@@ -156,10 +156,11 @@ class XBoardEngine(EngineWrapper):
             game_result = '1-0'
         elif winner == 'black':
             game_result = '0-1'
-        elif termination == 'aborted':
-            game_result = '*'
-        else:
+        elif termination == 'draw':
             game_result = '1/2-1/2'
+        else:
+            game_result = '*'
+
 
         if termination == 'mate':
             endgame_message = winner.title() + ' mates'

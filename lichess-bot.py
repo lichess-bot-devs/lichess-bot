@@ -190,9 +190,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     if board.turn == chess.WHITE:
-                        logger.info('move: {}'.format(int(len(board.move_stack) / 2 + 1)))
+                        print('move: {}'.format(int(len(board.move_stack) / 2 + 1)))
                     else:
-                        logger.info('move: {}'.format(int(len(board.move_stack) / 2 + 0.5)))
+                        print('move: {}'.format(int(len(board.move_stack) / 2 + 0.5)))
 
                     best_move, ponder_move = get_book_move(board, polyglot_cfg), None
                     if best_move is None:

@@ -2,6 +2,9 @@ import os
 import chess.engine
 import backoff
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
@@ -53,7 +56,7 @@ class EngineWrapper:
 
     def print_stats(self):
         for line in self.get_stats():
-            print(f"    {line}")
+            logger.info(f"    {line}")
 
     def get_stats(self):
         info = self.last_move_info

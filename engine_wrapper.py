@@ -147,6 +147,7 @@ class XBoardEngine(EngineWrapper):
         return self.search(board, time_limit, ponder)
 
     def report_game_result(self, game, board):
+        # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
 
         winner = game.state.get('winner')

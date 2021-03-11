@@ -189,7 +189,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 if not is_game_over(game) and is_engine_move(game, board):
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
-                    print("move: {}".format(len(board.move_stack) // 2 + 1))
+                    print_move_number(board)
 
                     best_move, ponder_move = get_book_move(board, polyglot_cfg), None
                     if best_move is None:
@@ -335,6 +335,10 @@ def fake_thinking(config, board, game):
         accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
         sleep = min(5, delay * accel)
         time.sleep(sleep)
+
+
+def print_move_number(board):
+    logger.info("\nmove: {}".format(len(board.move_stack) // 2 + 1))
 
 
 def setup_board(game):

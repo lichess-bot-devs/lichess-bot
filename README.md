@@ -31,8 +31,8 @@ python3 -m pip install -r requirements.txt
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
 ```
-virtualenv .venv -p python (if this fails you probably need to add Python to your PATH)
-./.venv/Scripts/activate (.\.venv\Scripts\activate should work in cmd in administator mode) (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
+python -m venv .venu (if this fails you probably need to add Python to your PATH)
+./.venv/Scripts/Activate.ps1 (.\.venv\Scripts\activate.bat should work in cmd in administator mode) (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
 pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`

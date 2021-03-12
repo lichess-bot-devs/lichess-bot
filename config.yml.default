@@ -33,11 +33,7 @@ engine:                      # engine settings
 # xboard_options:            # arbitrary xboard options passed to the engine
 #   cores: "4"
 #   memory: "4096"
-#   egtpath:                 # dir containing egtb, relative to this project
-#     gaviota: "Gaviota path"
-#     nalimov: "Nalimov Path"
-#     scorpio: "Scorpio Path"
-#     syzygy: "Syzygy Path"
+#   SyzygyPath: "Syzygy Path"         # dir containing Syzygytb, relative to this project
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 abort_time: 20               # time to abort a game in seconds when there is no activity

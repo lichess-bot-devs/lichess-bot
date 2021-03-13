@@ -5,7 +5,7 @@ engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
-  uci_ponder: true           # think on opponent time; only works if "protocol" is "uci"
+  ponder: true               # think on opponent time
   polyglot:
     enabled: false           # activate polyglot book
     book:

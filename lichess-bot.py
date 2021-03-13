@@ -12,7 +12,6 @@ import logging_pool
 import signal
 import time
 import backoff
-import threading
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -22,11 +21,7 @@ from ColorLogger import enable_color_logging
 
 logger = logging.getLogger(__name__)
 
-try:
-    from http.client import RemoteDisconnected
-    # New in version 3.5: Previously, BadStatusLine('') was raised.
-except ImportError:
-    from http.client import BadStatusLine as RemoteDisconnected
+from http.client import RemoteDisconnected
 
 __version__ = "1.2.0"
 
@@ -103,7 +98,7 @@ def start(li, user_profile, engine_factory, config):
                         challenge = config["challenge"]
                         if not chlng.is_supported_variant(challenge["variants"]):
                             reason = "variant"
-                        if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0)):
+                        if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0), challenge.get("max_base", 315360000), challenge.get("min_base", 0)):
                             reason = "timeControl"
                         if not chlng.is_supported_mode(challenge["modes"]):
                             reason = "casual" if chlng.rated else "rated"
@@ -167,9 +162,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     move_overhead = config.get("move_overhead", 1000)
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
-    ponder_thread = None
-    ponder_uci = None
-
     first_move = True
     while not terminated:
         try:
@@ -189,17 +181,15 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 if not is_game_over(game) and is_engine_move(game, board):
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
+                    print_move_number(board)
 
-                    best_move, ponder_move = get_book_move(board, polyglot_cfg), None
+                    best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
-                            best_move, ponder_move = choose_first_move(engine, board)
+                            best_move = choose_first_move(engine, board, is_uci_ponder)
                         else:
-                            best_move, ponder_move = get_pondering_results(ponder_thread, ponder_uci, game, board, engine)
-                            if best_move is None:
-                                best_move, ponder_move = choose_move(engine, board, game, start_time, move_overhead)
+                            best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
-                    ponder_thread, ponder_uci = start_pondering(engine, board, game, is_uci_ponder, best_move, ponder_move, start_time, move_overhead)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)
@@ -222,17 +212,15 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     logger.info("--- {} Game over".format(game.url()))
     engine.stop()
     engine.quit()
-    if ponder_thread is not None:
-        ponder_thread.join()
 
     # This can raise queue.NoFull, but that should only happen if we're not processing
     # events fast enough and in this case I believe the exception should be raised
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_first_move(engine, board):
+def choose_first_move(engine, board, ponder):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
-    return engine.first_search(board, 10000)
+    return engine.first_search(board, 10000, ponder)
 
 
 def get_book_move(board, polyglot_cfg):
@@ -255,13 +243,13 @@ def get_book_move(board, polyglot_cfg):
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:
-                selection = book_config.get("selection", "weighted_random")
+                selection = polyglot_cfg.get("selection", "weighted_random")
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=book_config.get("min_weight", 1)).move
+                    move = reader.choice(board, minimum_weight=polyglot_cfg.get("min_weight", 1)).move
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=book_config.get("min_weight", 1)).move
+                    move = reader.find(board, minimum_weight=polyglot_cfg.get("min_weight", 1)).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found
                 move = None
@@ -273,7 +261,7 @@ def get_book_move(board, polyglot_cfg):
     return None
 
 
-def choose_move(engine, board, game, start_time, move_overhead):
+def choose_move(engine, board, game, ponder, start_time, move_overhead):
     wtime = game.state["wtime"]
     btime = game.state["btime"]
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1000000)
@@ -283,49 +271,7 @@ def choose_move(engine, board, game, start_time, move_overhead):
         btime = max(0, btime - move_overhead - pre_move_time)
 
     logger.info("Searching for wtime {} btime {}".format(wtime, btime))
-    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"])
-
-
-def start_pondering(engine, board, game, is_uci_ponder, best_move, ponder_move, start_time, move_overhead):
-    if not is_uci_ponder or ponder_move is None:
-        return None, None
-
-    ponder_board = board.copy()
-    ponder_board.push(best_move)
-    ponder_board.push(ponder_move)
-
-    wtime = game.state["wtime"]
-    btime = game.state["btime"]
-    setup_time = int((time.perf_counter_ns() - start_time) / 1000000)
-    if board.turn == chess.WHITE:
-        wtime = max(0, wtime - move_overhead - setup_time + game.state["winc"])
-    else:
-        btime = max(0, btime - move_overhead - setup_time + game.state["binc"])
-
-    def ponder_thread_func(game, engine, board, wtime, btime, winc, binc):
-        global ponder_results
-        best_move, ponder_move = engine.search_with_ponder(board, wtime, btime, winc, binc, True)
-        ponder_results[game.id] = (best_move, ponder_move)
-
-    logger.info("Pondering for wtime {} btime {}".format(wtime, btime))
-    ponder_thread = threading.Thread(target=ponder_thread_func, args=(game, engine, ponder_board, wtime, btime, game.state["winc"], game.state["binc"]))
-    ponder_thread.start()
-    return ponder_thread, ponder_move.uci()
-
-
-def get_pondering_results(ponder_thread, ponder_uci, game, board, engine):
-    if ponder_thread is None:
-        return None, None
-
-    move_uci = board.move_stack[-1].uci()
-    if ponder_uci == move_uci:
-        engine.ponderhit()
-        ponder_thread.join()
-        return ponder_results[game.id]
-    else:
-        engine.stop()
-        ponder_thread.join()
-        return None, None
+    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder)
 
 
 def fake_thinking(config, board, game):
@@ -334,6 +280,10 @@ def fake_thinking(config, board, game):
         accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
         sleep = min(5, delay * accel)
         time.sleep(sleep)
+
+
+def print_move_number(board):
+    logger.info("\nmove: {}".format(len(board.move_stack) // 2 + 1))
 
 
 def setup_board(game):

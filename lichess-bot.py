@@ -98,7 +98,7 @@ def start(li, user_profile, engine_factory, config):
                         challenge = config["challenge"]
                         if not chlng.is_supported_variant(challenge["variants"]):
                             reason = "variant"
-                        if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0)):
+                        if not chlng.is_supported_time_control(challenge["time_controls"], challenge.get("max_increment", 180), challenge.get("min_increment", 0), challenge.get("max_base", 315360000), challenge.get("min_base", 0)):
                             reason = "timeControl"
                         if not chlng.is_supported_mode(challenge["modes"]):
                             reason = "casual" if chlng.rated else "rated"

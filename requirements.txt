@@ -1,8 +1,8 @@
-certifi==2018.11.29
-chardet==3.0.4
-idna==2.8
+certifi==2020.12.05
+chardet==4.0.0
+idna==2.10
 chess==1.4.0
-PyYAML>=4.2b1
-requests>=2.21.0
-urllib3==1.24.2
-backoff==1.7.1
+PyYAML>=5.4.1
+requests>=2.25.1
+urllib3==1.26.3
+backoff==1.10.0

@@ -36,20 +36,17 @@ class EngineWrapper:
     def set_time_control(self, game):
         pass
 
-    def first_search(self, board, movetime):
-        return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
+    def first_search(self, board, movetime, ponder):
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder)
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         pass
 
     def search(self, board, time_limit, ponder):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
         self.last_move_info = result.info
         self.print_stats()
-        return result.move, result.ponder
-
-    def ponderhit(self):
-        pass
+        return result.move
 
     def print_stats(self):
         for line in self.get_stats():
@@ -83,7 +80,7 @@ class UCIEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         cmds = self.go_commands
         movetime = cmds.get("movetime")
         if movetime is not None:
@@ -107,9 +104,6 @@ class UCIEngine(EngineWrapper):
             title = game.opponent.title if game.opponent.title else "none"
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
-
-    def ponderhit(self):
-        self.engine.protocol.send_line("ponderhit")
 
     def report_game_result(self, game, board):
         self.engine.protocol._position(board)
@@ -138,7 +132,7 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line(f"level 0 {self.minutes}:{self.seconds} {self.inc}")
         self.time_control_sent = True
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder=False):
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         if not self.time_control_sent:
             self.send_time()
 

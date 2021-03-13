@@ -30,14 +30,11 @@ engine:                      # engine settings
 #     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.
 #     movetime: 1000         # Integer. Search exactly movetime milliseconds.
+#   SyzygyPath: "Syzygy Path"         # dir containing Syzygytb, relative to this project
 # xboard_options:            # arbitrary xboard options passed to the engine
 #   cores: "4"
 #   memory: "4096"
-#   egtpath:                 # dir containing egtb, relative to this project
-#     gaviota: "Gaviota path"
-#     nalimov: "Nalimov Path"
-#     scorpio: "Scorpio Path"
-#     syzygy: "Syzygy Path"
+
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 abort_time: 20               # time to abort a game in seconds when there is no activity

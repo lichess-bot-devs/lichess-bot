@@ -292,7 +292,7 @@ def setup_board(game):
     if game.variant_name.lower() == "chess960":
         board = chess.Board(game.initial_fen, chess960=True)
     elif game.variant_name == "From Position":
-        board = chess.Board(game.initial_fen)
+        board = chess.Board(game.initial_fen, chess960=True) # Assumes the engine allows chess960 since castling is handled the chess960 way no matter what.
     else:
         VariantBoard = find_variant(game.variant_name)
         board = VariantBoard()

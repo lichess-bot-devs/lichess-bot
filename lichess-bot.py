@@ -186,7 +186,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board, is_uci_ponder)
+                            best_move = choose_first_move(engine, board)
                         else:
                             best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
@@ -218,11 +218,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_first_move(engine, board, ponder):
+def choose_first_move(engine, board):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info("Searching for time {}".format(search_time))
-    return engine.first_search(board, search_time, ponder)
+    return engine.first_search(board, search_time)
 
 
 def get_book_move(board, polyglot_cfg):

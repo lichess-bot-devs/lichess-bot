@@ -13,6 +13,7 @@ import logging_pool
 import signal
 import time
 import backoff
+import sys
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -85,10 +86,11 @@ def logging_listener_proc(queue, configurer, level, log_filename):
 
 
 def game_logging_configurer(queue, level):
-    h = logging.handlers.QueueHandler(queue)
-    root = logging.getLogger()
-    root.addHandler(h)
-    root.setLevel(level)
+    if sys.platform == 'win32':
+        h = logging.handlers.QueueHandler(queue)
+        root = logging.getLogger()
+        root.addHandler(h)
+        root.setLevel(level)
 
 
 def start(li, user_profile, engine_factory, config, logging_level, log_filename):

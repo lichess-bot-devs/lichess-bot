@@ -322,7 +322,8 @@ def fake_thinking(config, board, game):
 
 
 def print_move_number(board):
-    logger.info("\nmove: {}".format(len(board.move_stack) // 2 + 1))
+    logger.info("")
+    logger.info("move: {}".format(len(board.move_stack) // 2 + 1))
 
 
 def setup_board(game):

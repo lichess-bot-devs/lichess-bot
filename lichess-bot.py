@@ -77,10 +77,7 @@ def logging_listener_proc(queue, configurer, level, log_filename):
     logger = logging.getLogger()
     while not terminated:
         try:
-            record = queue.get()
-            if record is None:
-                break
-            logger.handle(record)
+            logger.handle(queue.get())
         except Exception:
             pass
 
@@ -111,7 +108,10 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
 
     with logging_pool.LoggingPool(max_games + 1) as pool:
         while not terminated:
-            event = control_queue.get()
+            try:
+                event = control_queue.get()
+            except InterruptedError:
+                continue
             if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":
@@ -169,7 +169,8 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
     logger.info("Terminated")
     control_stream.terminate()
     control_stream.join()
-    logging_queue.put_nowait(None)
+    logging_listener.terminate()
+    logging_listener.join()
 
 
 ponder_results = {}

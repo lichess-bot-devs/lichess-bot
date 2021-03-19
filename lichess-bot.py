@@ -190,6 +190,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         else:
                             best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
+                    time.sleep(0.04)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)

@@ -160,6 +160,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     is_uci = engine_cfg["protocol"] == "uci"
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
+    delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True
@@ -190,7 +191,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         else:
                             best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
-                    time.sleep(0.06)
+                    time.sleep(delay_seconds)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)

@@ -86,6 +86,7 @@ def game_logging_configurer(queue, level):
     if sys.platform == 'win32':
         h = logging.handlers.QueueHandler(queue)
         root = logging.getLogger()
+        root.handlers.clear()
         root.addHandler(h)
         root.setLevel(level)
 

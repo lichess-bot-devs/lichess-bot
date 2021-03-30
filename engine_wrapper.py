@@ -48,16 +48,17 @@ class EngineWrapper:
     def search(self, board, time_limit, ponder):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
         self.last_move_info = result.info
-        self.print_stats()
+        self.print_stats(board)
         return result.move
 
-    def print_stats(self):
-        for line in self.get_stats():
+    def print_stats(self, board):
+        for line in self.get_stats(board):
             logger.info(f"    {line}")
 
-    def get_stats(self):
+    def get_stats(self, board):
         info = self.last_move_info
-        stats = ["depth", "nps", "nodes", "score"]
+        info["ponderpv"] = board.variation_san(info["pv"])
+        stats = ["ponderpv", "depth", "nps", "nodes", "score"]
         return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):

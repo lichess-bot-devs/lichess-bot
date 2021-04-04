@@ -142,7 +142,9 @@ ponder_results = {}
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue):
+def play_game(li, game_id, engine_factory, user_profile, config):
+    li.chat(game_id,"player","Hello buddy! I am @B0t_N0_1 This bot has been made by @Entcingseal. NEED A BOT? contact https://lichess.org/inbox/Enticingseal :D ")
+    li.chat(game_id,"spectator","Hi Guys!  I am @B0t_N0_1 This bot has been made by @Entcingseal. NEED A BOT? contact https://lichess.org/inbox/Enticingseal XD ")
     response = li.get_game_stream(game_id)
     lines = response.iter_lines()
 

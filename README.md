@@ -65,12 +65,20 @@ pip install -r requirements.txt
 
 - Download the weights for the id you want to play from here: https://lczero.org/play/networks/bestnets/
 - Extract the weights from the zip archive and rename it to `latest.txt`
-- For Windows, download the lczero binary from https://github.com/LeelaChessZero/lc0/releases
 - For Mac/Linux, build the lczero binary yourself following [LeelaChessZero/lc0/README](https://github.com/LeelaChessZero/lc0/blob/master/README.md)
 - Copy both the files into the `engine.dir` directory
-- Change the `engine.name` and `engine.engine_options.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `weights.pb.gz`
+- Change the `engine.name` and `engine.engine_options.weights` keys in config.yml to `lczero` and `weights.pb.gz`
 - You can specify the number of `engine.uci_options.threads` in the config.yml file as well
 - To start: `python lichess-bot.py`
+
+## LeelaChessZero (Windows CPU 2021)
+
+- For Windows modern CPUs, download the lczero binary from https://github.com/LeelaChessZero/lc0/releases ex: `lc0-v0.27.0-windows-cpu-dnnl.zip`
+- Unzip the file, it comes with lc0.exe , dnnl.dll, and a weights file ex: `703810.pb.gz` (amongst other files)
+- all three main files need to be copied to the engines directory
+- the lc0.exe should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file)
+- Change the `engine.name` key in config.yml to `lc0.exe`, no need to edit config.yml concerning the weights file as the lc0.exe will use whatever *.pb.gz is in the same folder (have only one *pb.gz in the engines directory)
+- To start: `python lichess-bot.py` 
 
 ## For Docker
 

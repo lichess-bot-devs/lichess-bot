@@ -20,7 +20,15 @@ def create_engine(config):
 
     stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
 
-    Engine = XBoardEngine if engine_type == "xboard" else UCIEngine
+    if engine_type == "xboard":
+        Engine = XBoardEngine
+    elif engine_type == "uci":
+        Engine = UCIEngine
+    elif engine_type == "homemade":
+        Engine = getHomemadeEngine()
+    else:
+        raise ValueError(
+            f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
     return Engine(commands, options, stderr)
 
@@ -148,3 +156,8 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
+
+def getHomemadeEngine():
+    raise NotImplementedError(
+        "    You haven't changed the getHomemadeEngine function yet!\n"
+        "    See docs/creating-a-custom-bot.md")

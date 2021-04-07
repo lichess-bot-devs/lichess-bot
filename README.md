@@ -61,7 +61,7 @@ pip install -r requirements.txt
 - Press CTRL+C
 - It may take some time to quit
 
-## LeelaChessZero
+## LeelaChessZero (Mac/Linux)
 
 - Download the weights for the id you want to play from here: https://lczero.org/play/networks/bestnets/
 - Extract the weights from the zip archive and rename it to `latest.txt`

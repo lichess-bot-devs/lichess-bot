@@ -39,14 +39,14 @@ class ExampleEngine(MinimalEngine):
 
 class RandomMove(ExampleEngine):
     def search(self, board, *args):
-        return self.finish(random.choice(list(board.legal_moves)))
+        return random.choice(list(board.legal_moves))
 
 
 class Alphabetical(ExampleEngine):
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
-        return self.finish(moves[0])
+        return moves[0]
 
 
 # Uci representation is first_move, right?
@@ -54,4 +54,4 @@ class FirstMove(ExampleEngine):
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=str)
-        return self.finish(moves[0])
+        return moves[0]

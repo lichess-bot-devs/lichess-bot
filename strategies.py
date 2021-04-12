@@ -5,7 +5,6 @@ And some handy classes to extend
 
 import chess
 import random
-import time
 from engine_wrapper import EngineWrapper
 
 

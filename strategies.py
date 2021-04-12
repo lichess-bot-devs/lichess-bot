@@ -9,10 +9,6 @@ import time
 from engine_wrapper import EngineWrapper
 
 
-# In ms
-RATE_LIMITING_DELAY = 100
-
-
 class MinimalEngine(EngineWrapper):
     """
     Subclass this to prevent some pitfalls

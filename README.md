@@ -84,27 +84,24 @@ Steps to create a custom bot
 1. Do all the steps in the [How to Install](#how-to-install)
 2. In the `config.yml`, change the engine protocol to `homemade`
 3. Create a class in some file that extends `EngineWrapper` (in `engine_wrapper.py`)
-    - For example, you could implement a random_mover_bot like this: 
-      ```python
-      import random
-      from engine_wrapper import EngineWrapper
-      class RandomMover(EngineWrapper):
-          def first_search(self, board, movetime, ponder):
-              return self.search(board, movetime, ponder)
+    - Or extend `MinimalEngine` (in `strategies.py`),
+      if you don't want to deal with a few random errors.
+    - Look at the `strategies.py` file to see some examples.
+    - If you don't know what to implement, look at the `EngineWrapper` or `UCIEngine` class.
+        - You don't have to create your own engine, even though it's an "EngineWrapper" class.<br>
+          The examples just implement `search`.
+4. At the bottom of `engine_wrapper.py` change `getHomemadeEngine()` to return your class
+    - In this case, you could change it to:
 
-          def search(self, board, _time_limit, _ponder):
-              return random.choice(board.legal_moves)
-      ```
-   - If you don't know what to implement, look at the `EngineWrapper` or `UCIEngine` class.
-4. In `engine_wrapper.py` change `getHomemadeEngine()` to return your class
-    - For example, you could change it to: 
       ```python
-      # Note: This function is at the bottom of the file
       def getHomemadeEngine():
-         import yourclass
-         return yourclass
+          import strategies
+          return strategies.RandomMover
       ```
 
+5. In the folder `engines` create a file named `engine_name`,
+   possibly with some explainer text like `dummy engine file`.
+    - Required because config.yml has `engine.dir`, and the code checks if it exists
 
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.

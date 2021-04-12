@@ -160,4 +160,4 @@ class XBoardEngine(EngineWrapper):
 def getHomemadeEngine():
     raise NotImplementedError(
         "    You haven't changed the getHomemadeEngine function yet!\n"
-        "    See docs/creating-a-custom-bot.md")
+        "    See section \"Creating a custom bot\" in the Readme")

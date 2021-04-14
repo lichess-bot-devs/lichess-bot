@@ -8,14 +8,45 @@ import random
 from engine_wrapper import EngineWrapper
 
 
+class FillerEngine:
+    """
+    Not meant to be an actual engine.
+
+    This is only used to provide the property "self.engine"
+    in "MinimalEngine" which extends "EngineWrapper"
+    """
+    def __init__(self, main_engine, engine_name):
+        self.id = {
+            "name": engine_name
+        }
+        self.name = engine_name
+        self.main_engine = main_engine
+
+    def __getattr__(self, method_name):
+        main_engine = self.main_engine
+        def method(*args, **kwargs):
+            nonlocal main_engine
+            nonlocal method_name
+            return main_engine.notify(method_name, *args, **kwargs)
+
+        return method
+
+
 class MinimalEngine(EngineWrapper):
     """
-    Subclass this to prevent some pitfalls
+    Subclass this to prevent a few random errors
+    
+    Even though MinimalEngine extends EngineWrapper,
+    you don't have to actually wrap an engine.
+    
+    At minimum, just implement `search`,
+    however you can also change other methods like
+    `notify`, `first_search`, `get_time_control`, etc.
     """
     def __init__(self, *args):
         super().__init__(*args)
         self.last_move_info = []
-        self.engine = self
+        self.engine = FillerEngine(self, self.__class__.__name__)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         timeleft = 0
@@ -25,8 +56,21 @@ class MinimalEngine(EngineWrapper):
             timeleft = btime
         return self.search(board, timeleft, ponder)
 
-    # Prevents infinite recursion - self.engine.quit is called in EngineWrapper
-    def quit(self):
+    def search(self, board, timeleft, ponder):
+        raise NotImplementedError("The search method is not implemented")
+
+    def notify(self, method_name, *args, **kwargs):
+        """
+        The EngineWrapper class sometimes calls methods on "self.engine".
+        "self.engine" is a filler property that notifies <self> 
+        whenever an attribute is called.
+
+        Nothing happens unless the main engine does something.
+
+        Simply put, the following code is equivalent
+        self.engine.<method_name>(<*args>, <**kwargs>)
+        self.notify(<method_name>, <*args>, <**kwargs>)
+        """
         pass
 
 

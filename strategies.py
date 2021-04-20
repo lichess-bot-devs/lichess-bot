@@ -15,15 +15,16 @@ class FillerEngine:
     This is only used to provide the property "self.engine"
     in "MinimalEngine" which extends "EngineWrapper"
     """
-    def __init__(self, main_engine, engine_name):
+    def __init__(self, main_engine, name=None):
         self.id = {
-            "name": engine_name
+            "name": name
         }
-        self.name = engine_name
+        self.name = name
         self.main_engine = main_engine
 
     def __getattr__(self, method_name):
         main_engine = self.main_engine
+
         def method(*args, **kwargs):
             nonlocal main_engine
             nonlocal method_name
@@ -35,18 +36,21 @@ class FillerEngine:
 class MinimalEngine(EngineWrapper):
     """
     Subclass this to prevent a few random errors
-    
+
     Even though MinimalEngine extends EngineWrapper,
     you don't have to actually wrap an engine.
-    
+
     At minimum, just implement `search`,
     however you can also change other methods like
     `notify`, `first_search`, `get_time_control`, etc.
     """
-    def __init__(self, *args):
+    def __init__(self, *args, name=None):
         super().__init__(*args)
+
+        self.name = self.__class__.__name__ if name is None else name
+
         self.last_move_info = []
-        self.engine = FillerEngine(self, self.__class__.__name__)
+        self.engine = FillerEngine(self, name=self.name)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         timeleft = 0
@@ -78,7 +82,7 @@ class ExampleEngine(MinimalEngine):
     pass
 
 
-# Names from tom7's excellent eloWorld video
+# Strategy names and ideas from tom7's excellent eloWorld video
 
 class RandomMove(ExampleEngine):
     def search(self, board, *args):
@@ -92,8 +96,8 @@ class Alphabetical(ExampleEngine):
         return moves[0]
 
 
-# Uci representation is first_move, right?
 class FirstMove(ExampleEngine):
+    """Gets the first move when sorted by uci representation"""
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=str)

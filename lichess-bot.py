@@ -143,7 +143,6 @@ def start(li, user_profile, engine_factory, config):
                         logger.info("    Skip missing {}".format(chlng))
                     queued_processes -= 1
 
-
             control_queue.task_done()
 
     logger.info("Terminated")
@@ -162,8 +161,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     # Initial response of stream will be the full game info. Store it
     initial_state = json.loads(next(lines).decode('utf-8'))
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
-    is_correspondence = game.perf_name == "Correspondence"
-
     engine = engine_factory()
     engine.get_opponent_info(game)
     engine.set_time_control(game)
@@ -175,6 +172,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     is_uci = engine_cfg["protocol"] == "uci"
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
+    is_correspondence = game.perf_name == "Correspondence"
     correspondence_time = config.get("correspondence_time ", 60) * 1000;
     polyglot_cfg = engine_cfg.get("polyglot", {})
 

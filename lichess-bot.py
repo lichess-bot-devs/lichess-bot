@@ -245,8 +245,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
 def corrospondence_wait(control_queue, game_id):
     time.sleep(600)
-    control_queue.put_nowait({"type": "corrospondence_check", "id": game_id})
-
+    control_queue.put_nowait({"type": "correspondence_check", "id": game_id})
 
 
 def choose_move_time(engine, board, search_time, ponder):

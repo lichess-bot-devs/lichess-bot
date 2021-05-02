@@ -151,7 +151,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     is_correspondence = game.perf_name == "Correspondence"
 
-    if is_correspondence and not game.me:
+    if is_correspondence and not game.my_move():
         logger.info("--- {} Ignoring correspondence game".format(game.url()))
         return
 

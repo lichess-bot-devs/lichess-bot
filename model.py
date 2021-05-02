@@ -1,7 +1,6 @@
 import time
 from urllib.parse import urljoin
 
-
 class Challenge:
     def __init__(self, c_info):
         self.id = c_info["id"]
@@ -88,6 +87,9 @@ class Game:
 
     def url(self):
         return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))
+
+    def my_move(self):
+        return len(self.state.get("moves").split()) % 2 == (0 if self.my_color == "white" else 1)
 
     def is_abortable(self):
         return len(self.state["moves"]) < 6

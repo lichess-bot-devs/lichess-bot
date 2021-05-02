@@ -119,6 +119,18 @@ def start(li, user_profile, engine_factory, config):
                 logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 game_id = event["game"]["id"]
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
+            elif event["type"] == "correspondence_check":
+                game_id = event["id"]
+                if (queued_processes + busy_processes) < max_games:
+                    if queued_processes > 0:
+                        queued_processes -= 1
+
+                    busy_processes += 1
+                    logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                    pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
+                else:
+                    pool.apply_async(corrospondence_wait, [control_queue, game_id])
+
             while ((queued_processes + busy_processes) < max_games and challenge_queue):  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
                 try:
@@ -130,6 +142,7 @@ def start(li, user_profile, engine_factory, config):
                     if isinstance(exception, HTTPError) and exception.response.status_code == 404:  # ignore missing challenge
                         logger.info("    Skip missing {}".format(chlng))
                     queued_processes -= 1
+
 
             control_queue.task_done()
 
@@ -151,10 +164,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     is_correspondence = game.perf_name == "Correspondence"
 
-    if is_correspondence and not game.my_move():
-        logger.info("--- {} Ignoring correspondence game".format(game.url()))
-        return
-
     engine = engine_factory()
     engine.get_opponent_info(game)
     engine.set_time_control(game)
@@ -170,6 +179,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True
+    first_state = True
     while not terminated:
         try:
             if first_move:
@@ -201,12 +211,14 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     li.make_move(game.id, best_move)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
-                game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)
+                game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, 0 if first_state else 300)
 
-                if is_correspondence:
-                    break
+                if first_state:
+                    first_state = False
             elif u_type == "ping":
-                if game.should_abort_now():
+                if is_correspondence and game.should_disconnect_now():
+                    break
+                elif game.should_abort_now():
                     logger.info("    Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
                     break
@@ -221,16 +233,22 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         except StopIteration:
             break
 
+    engine.quit()
+    engine.stop()
+
     if is_correspondence:
         logger.info("--- {} Disconnecting from correspondence game".format(game.url()))
+        control_queue.put_nowait({"type": "local_game_done"})
+        corrospondence_wait(control_queue, game_id)
     else:
         logger.info("--- {} Game over".format(game.url()))
-    engine.stop()
-    engine.quit()
+        control_queue.put_nowait({"type": "local_game_done"})
 
-    # This can raise queue.NoFull, but that should only happen if we're not processing
-    # events fast enough and in this case I believe the exception should be raised
-    control_queue.put_nowait({"type": "local_game_done"})
+
+def corrospondence_wait(control_queue, game_id):
+    time.sleep(600)
+    control_queue.put_nowait({"type": "corrospondence_check", "id": game_id})
+
 
 
 def choose_move_time(engine, board, search_time, ponder):

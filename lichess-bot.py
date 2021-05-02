@@ -157,9 +157,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     logger.info("+++ {}".format(game))
 
     engine_cfg = config["engine"]
+    is_correspondence = game.perf_name == "Correspondence"
     is_uci = engine_cfg["protocol"] == "uci"
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
+    correspondence_time = config.get("correspondence_time ", 10000)
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True
@@ -187,12 +189,17 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     if best_move is None:
                         if len(board.move_stack) < 2:
                             best_move = choose_first_move(engine, board, is_uci_ponder)
+                        elif is_correspondence:
+                            best_move = choose_move_time(engine, board, correspondence_time, is_uci_ponder)
                         else:
                             best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)
+
+                if is_correspondence:
+                    break
             elif u_type == "ping":
                 if game.should_abort_now():
                     logger.info("    Aborting {} by lack of activity".format(game.url()))
@@ -209,7 +216,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         except StopIteration:
             break
 
-    logger.info("--- {} Game over".format(game.url()))
+    if is_correspondence:
+        logger.info("--- {} Disconnecting from correspondence game".format(game.url()))
+    else:
+        logger.info("--- {} Game over".format(game.url()))
     engine.stop()
     engine.quit()
 
@@ -218,11 +228,15 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
+def choose_move_time(engine, board, search_time, ponder):
+    logger.info("Searching for time {}".format(search_time))
+    return engine.search_for(board, search_time, ponder)
+
+
 def choose_first_move(engine, board, ponder):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
-    logger.info("Searching for time {}".format(search_time))
-    return engine.first_search(board, search_time, ponder)
+    return choose_move_time(engine, board, search_time, ponder)
 
 
 def get_book_move(board, polyglot_cfg):

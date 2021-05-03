@@ -119,7 +119,7 @@ def start(li, user_profile, engine_factory, config):
                 logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 game_id = event["game"]["id"]
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
-            elif event["type"] == "correspondence_check":
+            elif event["type"] == "correspondence_check_in":
                 game_id = event["id"]
                 if (queued_processes + busy_processes) < max_games:
                     if queued_processes > 0:
@@ -173,11 +173,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
     is_correspondence = game.perf_name == "Correspondence"
-    correspondence_time = config.get("correspondence_time ", 60) * 1000;
+    correspondence_time = config.get("correspondence_time", 60) * 1000;
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True
-    first_state = True
+    first_gamestate = True
     while not terminated:
         try:
             if first_move:
@@ -209,10 +209,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     li.make_move(game.id, best_move)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
-                game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, 0 if first_state else 300)
+                game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, 0 if first_gamestate else 300)
 
-                if first_state:
-                    first_state = False
+                if first_gamestate:
+                    first_gamestate = False
             elif u_type == "ping":
                 if is_correspondence and game.should_disconnect_now():
                     break
@@ -245,7 +245,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
 def corrospondence_wait(control_queue, game_id):
     time.sleep(600)
-    control_queue.put_nowait({"type": "correspondence_check", "id": game_id})
+    control_queue.put_nowait({"type": "correspondence_check_in", "id": game_id})
 
 
 def choose_move_time(engine, board, search_time, ponder):

@@ -98,9 +98,6 @@ class Game:
         self.terminate_at = time.time() + terminate_in
         self.disconnect_at = time.time() + disconnect_in
 
-    def is_my_move(self):
-        return len(self.state.get("moves").split()) % 2 == (0 if self.is_white else 1)
-
     def should_abort_now(self):
         return self.is_abortable() and time.time() > self.abort_at
 
@@ -108,7 +105,7 @@ class Game:
         return time.time() > self.terminate_at
 
     def should_disconnect_now(self):
-        return time.time() > self.disconnect_at and not self.is_my_move()
+        return time.time() > self.disconnect_at
 
     def my_remaining_seconds(self):
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000

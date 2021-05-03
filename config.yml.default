@@ -43,7 +43,7 @@ engine:                      # engine settings
 abort_time: 20               # time to abort a game in seconds when there is no activity
 fake_think_time: false       # artificially slow down the bot to pretend like it's thinking
 move_overhead: 2000          # increase if your bot flags games too often
-correspondence_time: 60      # time in seconds to search in correspondence games
+correspondence_move_time: 60 # time in seconds to search in correspondence games
 
 challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously

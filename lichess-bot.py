@@ -136,11 +136,10 @@ def start(li, user_profile, engine_factory, config):
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue])
             if event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping):
                 wait_for_correspondence_ping = False
-                while correspondence_queue and busy_processes < max_games:
-                    if queued_processes > 0:
-                        queued_processes -= 1
+                while (busy_processes + queued_processes) < max_games:
                     game_id = correspondence_queue.get();
-                    if not game_id: # prevent feedback loops
+                    # stop checking in on games if we have checked in on all games since the last correspondence_ping
+                    if not game_id:
                         wait_for_correspondence_ping = True
                         correspondence_queue.put("")
                         break

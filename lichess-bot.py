@@ -79,7 +79,7 @@ def start(li, user_profile, engine_factory, config):
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
-    correspondence_config = config.get("correspondence", {})
+    correspondence_config = config.get("correspondence", {}) or {}
     correspondence_checkin_period = correspondence_config.get("checkin_period", 600)
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping, args=[control_queue, correspondence_checkin_period])
     correspondence_pinger.start()
@@ -132,6 +132,7 @@ def start(li, user_profile, engine_factory, config):
                 logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 game_id = event["game"]["id"]
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue])
+
             if event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping):
                 wait_for_correspondence_ping = False
                 while (busy_processes + queued_processes) < max_games:
@@ -190,7 +191,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
     is_correspondence = game.perf_name == "Correspondence"
-    correspondence_config = config.get("correspondence", {})
+    correspondence_config = config.get("correspondence", {}) or {}
     correspondence_move_time = correspondence_config.get("move_time", 60) * 1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
@@ -215,6 +216,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
+                    correspondence_disconnect_time = correspondence_config.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
@@ -222,7 +224,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             best_move = choose_first_move(engine, board, is_uci_ponder)
                         elif is_correspondence:
                             best_move = choose_move_time(engine, board, correspondence_move_time, is_uci_ponder)
-                            correspondence_disconnect_time = correspondence_config.get("disconnect_time", 300)
                         else:
                             best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)

@@ -79,9 +79,7 @@ def start(li, user_profile, engine_factory, config):
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
-    if not config["correspondence"]:
-        config["correspondence"] = {}
-    correspondence_config = config["correspondence"]
+    correspondence_config = config.get("correspondence", {})
     correspondence_checkin_period = correspondence_config.get("checkin_period", 600)
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping, args=[control_queue, correspondence_checkin_period])
     correspondence_pinger.start()
@@ -192,7 +190,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
     move_overhead = config.get("move_overhead", 1000)
     is_correspondence = game.perf_name == "Correspondence"
-    correspondence_config = config["correspondence"]
+    correspondence_config = config.get("correspondence", {})
     correspondence_move_time = correspondence_config.get("move_time", 60) * 1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
@@ -228,6 +226,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         else:
                             best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
+                elif not game.state.get("moves"):
+                    correspondence_disconnect_time = correspondence_config.get("disconnect_time", 300)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, correspondence_disconnect_time)

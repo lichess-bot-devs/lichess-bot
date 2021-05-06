@@ -186,13 +186,14 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     logger.info("+++ {}".format(game))
 
-    engine_cfg = config["engine"]
-    is_uci = engine_cfg["protocol"] == "uci"
-    is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
-    move_overhead = config.get("move_overhead", 1000)
     is_correspondence = game.perf_name == "Correspondence"
     correspondence_config = config.get("correspondence", {}) or {}
     correspondence_move_time = correspondence_config.get("move_time", 60) * 1000
+
+    engine_cfg = config["engine"]
+    is_uci = engine_cfg["protocol"] == "uci"
+    is_uci_ponder = is_uci and (correspondence_config.get("uci_ponder", False) if is_correspondence else engine_cfg.get("uci_ponder", False))
+    move_overhead = config.get("move_overhead", 1000)
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True

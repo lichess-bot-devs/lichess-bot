@@ -1,7 +1,7 @@
 certifi==2020.12.05
 chardet==4.0.0
 idna==2.10
-chess==1.4.0
+chess==1.5.0
 PyYAML>=5.4.1
 requests>=2.25.1
 urllib3==1.26.4

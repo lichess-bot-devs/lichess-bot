@@ -267,7 +267,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
                     time.sleep(delay_seconds)
-                elif not game.state.get("moves"):
+                elif len(board.move_stack) == 0:
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'

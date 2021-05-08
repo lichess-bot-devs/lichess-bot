@@ -32,6 +32,21 @@ def remove_managed_options(config):
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
+class Termination:
+    MATE = 'mate'
+    TIMEOUT = 'outoftime'
+    RESIGN = 'resign'
+    ABORT = 'aborted'
+    DRAW = 'draw'
+
+
+class Game_Ending:
+    WHITE_WINS = '1-0'
+    BLACK_WINS = '0-1'
+    DRAW = '1/2-1/2'
+    INCOMPLETE = '*'
+
+
 class EngineWrapper:
     def __init__(self, commands, options, stderr):
         pass
@@ -151,25 +166,24 @@ class XBoardEngine(EngineWrapper):
         termination = game.state.get('status')
 
         if winner == 'white':
-            game_result = '1-0'
+            game_result = Game_Ending.WHITE_WINS
         elif winner == 'black':
-            game_result = '0-1'
-        elif termination == 'draw':
-            game_result = '1/2-1/2'
+            game_result = Game_Ending.BLACK_WINS
+        elif termination == Termination.DRAW:
+            game_result = Game_Ending.DRAW
         else:
-            game_result = '*'
+            game_result = Game_Ending.INCOMPLETE
 
-
-        if termination == 'mate':
+        if termination == Termination.MATE:
             endgame_message = winner.title() + ' mates'
-        elif termination == 'outoftime':
+        elif termination == Termination.TIMEOUT:
             endgame_message = 'Time forfeiture'
-        elif termination == 'resign':
+        elif termination == Termination.RESIGN:
             resigner = 'black' if winner == 'white' else 'white'
             endgame_message = resigner.title() + ' resigns'
-        elif termination == 'aborted':
+        elif termination == Termination.ABORT:
             endgame_message = 'Game aborted'
-        elif termination == 'draw':
+        elif termination == Termination.DRAW:
             if board.is_fifty_moves():
                 endgame_message = '50-move rule'
             elif board.is_repetition():

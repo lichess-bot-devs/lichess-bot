@@ -7,11 +7,13 @@ import model
 import json
 import lichess
 import logging
+import logging.handlers
 import multiprocessing
 import logging_pool
 import signal
 import time
 import backoff
+import sys
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -70,7 +72,32 @@ def do_correspondence_ping(control_queue, period):
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def start(li, user_profile, engine_factory, config):
+def listener_configurer(level, filename):
+    logging.basicConfig(level=level, filename=filename,
+                        format="%(asctime)-15s: %(message)s")
+    enable_color_logging(level)
+
+
+def logging_listener_proc(queue, configurer, level, log_filename):
+    configurer(level, log_filename)
+    logger = logging.getLogger()
+    while not terminated:
+        try:
+            logger.handle(queue.get())
+        except Exception:
+            pass
+
+
+def game_logging_configurer(queue, level):
+    if sys.platform == 'win32':
+        h = logging.handlers.QueueHandler(queue)
+        root = logging.getLogger()
+        root.handlers.clear()
+        root.addHandler(h)
+        root.setLevel(level)
+
+
+def start(li, user_profile, engine_factory, config, logging_level, log_filename):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
     logger.info("You're now connected to {} and awaiting challenges.".format(config["url"]))
@@ -79,8 +106,8 @@ def start(li, user_profile, engine_factory, config):
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
-    correspondence_config = config.get("correspondence", {}) or {}
-    correspondence_checkin_period = correspondence_config.get("checkin_period", 600)
+    correspondence_cfg = config.get("correspondence", {}) or {}
+    correspondence_checkin_period = correspondence_cfg.get("checkin_period", 600)
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping, args=[control_queue, correspondence_checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
@@ -89,9 +116,16 @@ def start(li, user_profile, engine_factory, config):
     busy_processes = 0
     queued_processes = 0
 
+    logging_queue = manager.Queue()
+    logging_listener = multiprocessing.Process(target=logging_listener_proc, args=(logging_queue, listener_configurer, logging_level, log_filename))
+    logging_listener.start()
+
     with logging_pool.LoggingPool(max_games + 1) as pool:
         while not terminated:
-            event = control_queue.get()
+            try:
+                event = control_queue.get()
+            except InterruptedError:
+                continue
             if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":
@@ -131,7 +165,7 @@ def start(li, user_profile, engine_factory, config):
                 busy_processes += 1
                 logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, logging_queue, correspondence_queue, game_logging_configurer, logging_level])
 
             if event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping):
                 if event["type"] == "correspondence_ping" and wait_for_correspondence_ping:
@@ -147,7 +181,7 @@ def start(li, user_profile, engine_factory, config):
                     else:
                         busy_processes += 1
                         logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-                        pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue])
+                        pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
             while ((queued_processes + busy_processes) < max_games and challenge_queue):  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
@@ -168,13 +202,15 @@ def start(li, user_profile, engine_factory, config):
     control_stream.join()
     correspondence_pinger.terminate()
     correspondence_pinger.join()
-
-
-ponder_results = {}
+    logging_listener.terminate()
+    logging_listener.join()
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue):
+def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, logging_configurer, logging_level):
+    logging_configurer(logging_queue, logging_level)
+    logger = logging.getLogger(__name__)
+
     response = li.get_game_stream(game_id)
     lines = response.iter_lines()
 
@@ -183,19 +219,19 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     engine = engine_factory()
     engine.get_opponent_info(game)
-    engine.set_time_control(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info("+++ {}".format(game))
 
     is_correspondence = game.perf_name == "Correspondence"
-    correspondence_config = config.get("correspondence", {}) or {}
-    correspondence_move_time = correspondence_config.get("move_time", 60) * 1000
+    correspondence_cfg = config.get("correspondence", {}) or {}
+    correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
 
     engine_cfg = config["engine"]
-    is_uci = engine_cfg["protocol"] == "uci"
-    is_uci_ponder = is_uci and (correspondence_config.get("uci_ponder", False) if is_correspondence else engine_cfg.get("uci_ponder", False))
+    ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
+    can_ponder = ponder_cfg.get("uci_ponder", False) or ponder_cfg.get('ponder', False)
     move_overhead = config.get("move_overhead", 1000)
+    delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True
@@ -219,19 +255,20 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
-                    correspondence_disconnect_time = correspondence_config.get("disconnect_time", 300)
+                    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board, is_uci_ponder)
+                            best_move = choose_first_move(engine, board, can_ponder)
                         elif is_correspondence:
-                            best_move = choose_move_time(engine, board, correspondence_move_time, is_uci_ponder)
+                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
                         else:
-                            best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
+                            best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
+                    time.sleep(delay_seconds)
                 elif not game.state.get("moves"):
-                    correspondence_disconnect_time = correspondence_config.get("disconnect_time", 300)
+                    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, correspondence_disconnect_time)
@@ -336,7 +373,8 @@ def fake_thinking(config, board, game):
 
 
 def print_move_number(board):
-    logger.info("\nmove: {}".format(len(board.move_stack) // 2 + 1))
+    logger.info("")
+    logger.info("move: {}".format(len(board.move_stack) // 2 + 1))
 
 
 def setup_board(game):
@@ -383,9 +421,10 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile,
+    logging_level = logging.DEBUG if args.v else logging.INFO
+    logging.basicConfig(level=logging_level, filename=args.logfile,
                         format="%(asctime)-15s: %(message)s")
-    enable_color_logging(debug_lvl=logging.DEBUG if args.v else logging.INFO)
+    enable_color_logging(debug_lvl=logging_level)
     logger.info(intro())
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
@@ -400,6 +439,6 @@ if __name__ == "__main__":
 
     if is_bot:
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
-        start(li, user_profile, engine_factory, CONFIG)
+        start(li, user_profile, engine_factory, CONFIG, logging_level, args.logfile)
     else:
         logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))

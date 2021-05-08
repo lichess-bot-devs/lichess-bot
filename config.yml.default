@@ -5,7 +5,7 @@ engine:                      # engine settings
   dir: "./engines/"          # dir containing engines, relative to this project
   name: "engine_name"        # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
-  uci_ponder: true           # think on opponent time; only works if "protocol" is "uci"
+  ponder: true               # think on opponent time
   polyglot:
     enabled: false           # activate polyglot book
     book:
@@ -42,6 +42,7 @@ engine:                      # engine settings
 
 abort_time: 20               # time to abort a game in seconds when there is no activity
 fake_think_time: false       # artificially slow down the bot to pretend like it's thinking
+rate_limiting_delay: 0       # time (in ms) to delay after sending a move to prevent "Too Many Requests" errors
 move_overhead: 2000          # increase if your bot flags games too often
 
 correspondence:

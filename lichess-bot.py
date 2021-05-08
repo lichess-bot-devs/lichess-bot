@@ -157,8 +157,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     logger.info("+++ {}".format(game))
 
     engine_cfg = config["engine"]
-    is_uci = engine_cfg["protocol"] == "uci"
-    is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
+    can_ponder = engine_cfg.get("uci_ponder", False) or engine_cfg.get('ponder', False)
     move_overhead = config.get("move_overhead", 1000)
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
@@ -186,9 +185,9 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board, is_uci_ponder)
+                            best_move = choose_first_move(engine, board, can_ponder)
                         else:
-                            best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
+                            best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'

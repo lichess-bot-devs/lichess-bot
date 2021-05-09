@@ -260,13 +260,15 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board, can_ponder)
+                            best_move = choose_first_move(engine, board)
                         elif is_correspondence:
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
                         else:
                             best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
                     time.sleep(delay_seconds)
+                elif is_game_over(game):
+                    engine.report_game_result(game, board)
                 elif len(board.move_stack) == 0:
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
@@ -307,10 +309,11 @@ def choose_move_time(engine, board, search_time, ponder):
     return engine.search_for(board, search_time, ponder)
 
 
-def choose_first_move(engine, board, ponder):
+def choose_first_move(engine, board):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
-    return choose_move_time(engine, board, search_time, ponder)
+    logger.info("Searching for time {}".format(search_time))
+    return engine.first_search(board, search_time)
 
 
 def get_book_move(board, polyglot_cfg):

@@ -48,7 +48,7 @@ def run_bot():
         li.challenge_ai()
         lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
     else:
-        print("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
+        lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
     games = li.current_games()['nowPlaying']
     game_ids = list(map(lambda game: game['gameId'], games))
     for game in game_ids:
@@ -60,7 +60,7 @@ def run_bot():
 
 def test_bot():
     download_sf()
-    print("Downloaded SF")
+    lichess_bot.logger.info("Downloaded SF")
     run_bot()
 
 

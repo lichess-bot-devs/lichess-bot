@@ -2,6 +2,9 @@ import os
 import chess.engine
 import backoff
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
@@ -17,7 +20,15 @@ def create_engine(config):
 
     stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
 
-    Engine = XBoardEngine if engine_type == "xboard" else UCIEngine
+    if engine_type == "xboard":
+        Engine = XBoardEngine
+    elif engine_type == "uci":
+        Engine = UCIEngine
+    elif engine_type == "homemade":
+        Engine = getHomemadeEngine()
+    else:
+        raise ValueError(
+            f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
     return Engine(commands, options, stderr)
 
@@ -29,15 +40,28 @@ def remove_managed_options(config):
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
+class Termination:
+    MATE = 'mate'
+    TIMEOUT = 'outoftime'
+    RESIGN = 'resign'
+    ABORT = 'aborted'
+    DRAW = 'draw'
+
+
+class Game_Ending:
+    WHITE_WINS = '1-0'
+    BLACK_WINS = '0-1'
+    DRAW = '1/2-1/2'
+    INCOMPLETE = '*'
+
+
 class EngineWrapper:
     def __init__(self, commands, options, stderr):
         pass
 
-    def set_time_control(self, game):
-        pass
-
-    def first_search(self, board, movetime, ponder):
-        return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder)
+    def first_search(self, board, movetime):
+        # No pondering after the first move since a different clock is used afterwards.
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         pass
@@ -50,7 +74,7 @@ class EngineWrapper:
 
     def print_stats(self):
         for line in self.get_stats():
-            print(f"    {line}")
+            logger.info(f"    {line}")
 
     def get_stats(self):
         info = self.last_move_info
@@ -62,6 +86,9 @@ class EngineWrapper:
 
     def name(self):
         return self.engine.id["name"]
+
+    def report_game_result(self, game, board):
+        pass
 
     def stop(self):
         pass
@@ -102,37 +129,69 @@ class UCIEngine(EngineWrapper):
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
+    def report_game_result(self, game, board):
+        self.engine.protocol._position(board)
+
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
-
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
         egt_types_from_engine = features["egt"].split(",") if "egt" in features else []
         for egt_type in egt_types_from_engine:
             options[f"egtpath {egt_type}"] = egt_paths[egt_type]
         self.engine.configure(options)
-
         self.last_move_info = {}
-        self.time_control_sent = False
-
-    def set_time_control(self, game):
-        self.minutes = game.clock_initial // 1000 // 60
-        self.seconds = game.clock_initial // 1000 % 60
-        self.inc = game.clock_increment // 1000
-
-    def send_time(self):
-        self.engine.protocol.send_line(f"level 0 {self.minutes}:{self.seconds} {self.inc}")
-        self.time_control_sent = True
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        if not self.time_control_sent:
-            self.send_time()
-
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000)
+                                        black_clock=btime / 1000,
+                                        white_inc=winc / 1000,
+                                        black_inc=binc / 1000)
         return self.search(board, time_limit, ponder)
+
+    def report_game_result(self, game, board):
+        # Send final moves, if any, to engine
+        self.engine.protocol._new(board, None, {})
+
+        winner = game.state.get('winner')
+        termination = game.state.get('status')
+
+        if winner == 'white':
+            game_result = Game_Ending.WHITE_WINS
+        elif winner == 'black':
+            game_result = Game_Ending.BLACK_WINS
+        elif termination == Termination.DRAW:
+            game_result = Game_Ending.DRAW
+        else:
+            game_result = Game_Ending.INCOMPLETE
+
+        if termination == Termination.MATE:
+            endgame_message = winner.title() + ' mates'
+        elif termination == Termination.TIMEOUT:
+            endgame_message = 'Time forfeiture'
+        elif termination == Termination.RESIGN:
+            resigner = 'black' if winner == 'white' else 'white'
+            endgame_message = resigner.title() + ' resigns'
+        elif termination == Termination.ABORT:
+            endgame_message = 'Game aborted'
+        elif termination == Termination.DRAW:
+            if board.is_fifty_moves():
+                endgame_message = '50-move rule'
+            elif board.is_repetition():
+                endgame_message = 'Threefold repetition'
+            else:
+                endgame_message = 'Draw by agreement'
+        elif termination:
+            endgame_message = termination
+        else:
+            endgame_message = ''
+
+        if endgame_message:
+            endgame_message = ' {' + endgame_message + '}'
+
+        self.engine.protocol.send_line('result ' + game_result + endgame_message)
 
     def stop(self):
         self.engine.protocol.send_line("?")
@@ -145,3 +204,8 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
+
+def getHomemadeEngine():
+    raise NotImplementedError(
+        "    You haven't changed the getHomemadeEngine function yet!\n"
+        "    See section \"Creating a custom bot\" in the Readme")

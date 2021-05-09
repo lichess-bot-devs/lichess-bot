@@ -7,11 +7,13 @@ import model
 import json
 import lichess
 import logging
+import logging.handlers
 import multiprocessing
 import logging_pool
 import signal
 import time
 import backoff
+import sys
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -64,7 +66,32 @@ def watch_control_stream(control_queue, li):
             pass
 
 
-def start(li, user_profile, engine_factory, config):
+def listener_configurer(level, filename):
+    logging.basicConfig(level=level, filename=filename,
+                        format="%(asctime)-15s: %(message)s")
+    enable_color_logging(level)
+
+
+def logging_listener_proc(queue, configurer, level, log_filename):
+    configurer(level, log_filename)
+    logger = logging.getLogger()
+    while not terminated:
+        try:
+            logger.handle(queue.get())
+        except Exception:
+            pass
+
+
+def game_logging_configurer(queue, level):
+    if sys.platform == 'win32':
+        h = logging.handlers.QueueHandler(queue)
+        root = logging.getLogger()
+        root.handlers.clear()
+        root.addHandler(h)
+        root.setLevel(level)
+
+
+def start(li, user_profile, engine_factory, config, logging_level, log_filename):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
     logger.info("You're now connected to {} and awaiting challenges.".format(config["url"]))
@@ -76,9 +103,16 @@ def start(li, user_profile, engine_factory, config):
     busy_processes = 0
     queued_processes = 0
 
+    logging_queue = manager.Queue()
+    logging_listener = multiprocessing.Process(target=logging_listener_proc, args=(logging_queue, listener_configurer, logging_level, log_filename))
+    logging_listener.start()
+
     with logging_pool.LoggingPool(max_games + 1) as pool:
         while not terminated:
-            event = control_queue.get()
+            try:
+                event = control_queue.get()
+            except InterruptedError:
+                continue
             if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":
@@ -118,7 +152,7 @@ def start(li, user_profile, engine_factory, config):
                 busy_processes += 1
                 logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue])
+                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, logging_queue, game_logging_configurer, logging_level])
             while ((queued_processes + busy_processes) < max_games and challenge_queue):  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
                 try:
@@ -136,13 +170,15 @@ def start(li, user_profile, engine_factory, config):
     logger.info("Terminated")
     control_stream.terminate()
     control_stream.join()
-
-
-ponder_results = {}
+    logging_listener.terminate()
+    logging_listener.join()
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue):
+def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, logging_queue, logging_configurer, logging_level):
+    logging_configurer(logging_queue, logging_level)
+    logger = logging.getLogger(__name__)
+
     response = li.get_game_stream(game_id)
     lines = response.iter_lines()
 
@@ -151,15 +187,14 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
     engine = engine_factory()
     engine.get_opponent_info(game)
-    engine.set_time_control(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info("+++ {}".format(game))
 
     engine_cfg = config["engine"]
-    is_uci = engine_cfg["protocol"] == "uci"
-    is_uci_ponder = is_uci and engine_cfg.get("uci_ponder", False)
+    can_ponder = engine_cfg.get("uci_ponder", False) or engine_cfg.get('ponder', False)
     move_overhead = config.get("move_overhead", 1000)
+    delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
     first_move = True
@@ -186,10 +221,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board, is_uci_ponder)
+                            best_move = choose_first_move(engine, board)
                         else:
-                            best_move = choose_move(engine, board, game, is_uci_ponder, start_time, move_overhead)
+                            best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
                     li.make_move(game.id, best_move)
+                    time.sleep(delay_seconds)
+                elif is_game_over(game):
+                    engine.report_game_result(game, board)
 
                 wb = 'w' if board.turn == chess.WHITE else 'b'
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60)
@@ -218,9 +256,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_first_move(engine, board, ponder):
+def choose_first_move(engine, board):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
-    return engine.first_search(board, 10000, ponder)
+    search_time = 10000
+    logger.info("Searching for time {}".format(search_time))
+    return engine.first_search(board, search_time)
 
 
 def get_book_move(board, polyglot_cfg):
@@ -283,7 +323,8 @@ def fake_thinking(config, board, game):
 
 
 def print_move_number(board):
-    logger.info("\nmove: {}".format(len(board.move_stack) // 2 + 1))
+    logger.info("")
+    logger.info("move: {}".format(len(board.move_stack) // 2 + 1))
 
 
 def setup_board(game):
@@ -330,9 +371,10 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--logfile', help="Log file to append logs to.", default=None)
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.v else logging.INFO, filename=args.logfile,
+    logging_level = logging.DEBUG if args.v else logging.INFO
+    logging.basicConfig(level=logging_level, filename=args.logfile,
                         format="%(asctime)-15s: %(message)s")
-    enable_color_logging(debug_lvl=logging.DEBUG if args.v else logging.INFO)
+    enable_color_logging(debug_lvl=logging_level)
     logger.info(intro())
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
@@ -347,6 +389,6 @@ if __name__ == "__main__":
 
     if is_bot:
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
-        start(li, user_profile, engine_factory, CONFIG)
+        start(li, user_profile, engine_factory, CONFIG, logging_level, args.logfile)
     else:
         logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))

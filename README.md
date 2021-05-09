@@ -1,4 +1,7 @@
 # lichess-bot
+
+[![Python Build](https://github.com/ShailChoksi/lichess-bot/actions/workflows/python-build.yml/badge.svg)](https://github.com/ShailChoksi/lichess-bot/actions/workflows/python-build.yml)
+
 A bridge between [Lichess API](https://lichess.org/api#tag/Bot) and bots.
 
 
@@ -31,8 +34,8 @@ python3 -m pip install -r requirements.txt
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
 ```
-virtualenv .venv -p python (if this fails you probably need to add Python to your PATH)
-./.venv/Scripts/activate (.\.venv\Scripts\activate should work in cmd in administator mode) (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
+python -m venv .venv (if this fails you probably need to add Python to your PATH)
+./.venv/Scripts/Activate.ps1 (.\.venv\Scripts\activate.bat should work in cmd in administator mode) (This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there [you may need to run Powershell as administrator]. After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y")
 pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`
@@ -61,21 +64,55 @@ pip install -r requirements.txt
 - Press CTRL+C
 - It may take some time to quit
 
-## LeelaChessZero
+## LeelaChessZero (Mac/Linux)
 
 - Download the weights for the id you want to play from here: https://lczero.org/play/networks/bestnets/
 - Extract the weights from the zip archive and rename it to `latest.txt`
-- For Windows, download the lczero binary from https://github.com/LeelaChessZero/lc0/releases
 - For Mac/Linux, build the lczero binary yourself following [LeelaChessZero/lc0/README](https://github.com/LeelaChessZero/lc0/blob/master/README.md)
 - Copy both the files into the `engine.dir` directory
-- Change the `engine.name` and `engine.engine_options.weights` keys in config.yml to `lczero` (`lczero.exe` for Windows)  and `weights.pb.gz`
+- Change the `engine.name` and `engine.engine_options.weights` keys in config.yml to `lczero` and `weights.pb.gz`
 - You can specify the number of `engine.uci_options.threads` in the config.yml file as well
 - To start: `python lichess-bot.py`
+
+## LeelaChessZero (Windows CPU 2021)
+
+- For Windows modern CPUs, download the lczero binary from https://github.com/LeelaChessZero/lc0/releases ex: `lc0-v0.27.0-windows-cpu-dnnl.zip`
+- Unzip the file, it comes with lc0.exe , dnnl.dll, and a weights file ex: `703810.pb.gz` (amongst other files)
+- all three main files need to be copied to the engines directory
+- the lc0.exe should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file)
+- Change the `engine.name` key in config.yml to `lc0.exe`, no need to edit config.yml concerning the weights file as the lc0.exe will use whatever *.pb.gz is in the same folder (have only one *pb.gz in the engines directory)
+- To start: `python lichess-bot.py` 
 
 ## For Docker
 
 Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot
 inside a Docker container.
+
+## Creating a custom bot
+
+Steps to create a custom bot
+
+1. Do all the steps in the [How to Install](#how-to-install)
+2. In the `config.yml`, change the engine protocol to `homemade`
+3. Create a class in some file that extends `EngineWrapper` (in `engine_wrapper.py`)
+    - Or extend `MinimalEngine` (in `strategies.py`),
+      if you don't want to deal with a few random errors.
+    - Look at the `strategies.py` file to see some examples.
+    - If you don't know what to implement, look at the `EngineWrapper` or `UCIEngine` class.
+        - You don't have to create your own engine, even though it's an "EngineWrapper" class.<br>
+          The examples just implement `search`.
+4. At the bottom of `engine_wrapper.py` change `getHomemadeEngine()` to return your class
+    - In this case, you could change it to:
+
+      ```python
+      def getHomemadeEngine():
+          import strategies
+          return strategies.RandomMover
+      ```
+
+5. In the folder `engines` create a file named `engine_name`,
+   possibly with some explainer text like `dummy engine file`.
+    - Required because config.yml has `engine.dir`, and the code checks if it exists
 
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.

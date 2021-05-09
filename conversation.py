@@ -1,3 +1,8 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class Conversation:
     def __init__(self, game, engine, xhr, version, challenge_queue):
         self.game = game
@@ -9,7 +14,7 @@ class Conversation:
     command_prefix = "!"
 
     def react(self, line, game):
-        print("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text.encode("utf-8")))
+        logger.info("*** {} [{}] {}: {}".format(self.game.url(), line.room, line.username, line.text.encode("utf-8")))
         if (line.text[0] == self.command_prefix):
             self.command(line, game, line.text[1:].lower())
 
@@ -20,7 +25,8 @@ class Conversation:
             game.ping(60, 120)
             self.send_reply(line, "Waiting 60 seconds...")
         elif cmd == "name":
-            self.send_reply(line, "{} (lichess-bot v{})".format(self.engine.name(), self.version))
+            name = game.me.name
+            self.send_reply(line, "{} running {} (lichess-bot v{})".format(name, self.engine.name(), self.version))
         elif cmd == "howto":
             self.send_reply(line, "How to run your own bot: Check out 'Lichess Bot API'")
         elif cmd == "eval" and line.room == "spectator":

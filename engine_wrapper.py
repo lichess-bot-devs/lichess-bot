@@ -32,6 +32,21 @@ def remove_managed_options(config):
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
+class Termination:
+    MATE = 'mate'
+    TIMEOUT = 'outoftime'
+    RESIGN = 'resign'
+    ABORT = 'aborted'
+    DRAW = 'draw'
+
+
+class Game_Ending:
+    WHITE_WINS = '1-0'
+    BLACK_WINS = '0-1'
+    DRAW = '1/2-1/2'
+    INCOMPLETE = '*'
+
+
 class EngineWrapper:
     def __init__(self, commands, options, stderr):
         pass
@@ -63,6 +78,9 @@ class EngineWrapper:
 
     def name(self):
         return self.engine.id["name"]
+
+    def report_game_result(self, game, board):
+        pass
 
     def stop(self):
         pass
@@ -103,6 +121,9 @@ class UCIEngine(EngineWrapper):
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
+    def report_game_result(self, game, board):
+        self.engine.protocol._position(board)
+
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
@@ -121,6 +142,48 @@ class XBoardEngine(EngineWrapper):
                                         white_inc=winc / 1000,
                                         black_inc=binc / 1000)
         return self.search(board, time_limit, ponder)
+
+    def report_game_result(self, game, board):
+        # Send final moves, if any, to engine
+        self.engine.protocol._new(board, None, {})
+
+        winner = game.state.get('winner')
+        termination = game.state.get('status')
+
+        if winner == 'white':
+            game_result = Game_Ending.WHITE_WINS
+        elif winner == 'black':
+            game_result = Game_Ending.BLACK_WINS
+        elif termination == Termination.DRAW:
+            game_result = Game_Ending.DRAW
+        else:
+            game_result = Game_Ending.INCOMPLETE
+
+        if termination == Termination.MATE:
+            endgame_message = winner.title() + ' mates'
+        elif termination == Termination.TIMEOUT:
+            endgame_message = 'Time forfeiture'
+        elif termination == Termination.RESIGN:
+            resigner = 'black' if winner == 'white' else 'white'
+            endgame_message = resigner.title() + ' resigns'
+        elif termination == Termination.ABORT:
+            endgame_message = 'Game aborted'
+        elif termination == Termination.DRAW:
+            if board.is_fifty_moves():
+                endgame_message = '50-move rule'
+            elif board.is_repetition():
+                endgame_message = 'Threefold repetition'
+            else:
+                endgame_message = 'Draw by agreement'
+        elif termination:
+            endgame_message = termination
+        else:
+            endgame_message = ''
+
+        if endgame_message:
+            endgame_message = ' {' + endgame_message + '}'
+
+        self.engine.protocol.send_line('result ' + game_result + endgame_message)
 
     def stop(self):
         self.engine.protocol.send_line("?")

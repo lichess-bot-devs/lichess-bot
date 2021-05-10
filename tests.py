@@ -32,14 +32,6 @@ def run_bot(logging_level):
     if not is_bot:
         is_bot = lichess_bot.upgrade_account(li)
 
-    games = li.current_games()['nowPlaying']
-    game_ids = list(map(lambda game: game['gameId'], games))
-    for game in game_ids:
-        try:
-            li.abort(game)
-        except:
-            pass
-
     if is_bot:
         engine_factory = lichess_bot.partial(lichess_bot.engine_wrapper.create_engine, CONFIG)
         li.challenge_ai()

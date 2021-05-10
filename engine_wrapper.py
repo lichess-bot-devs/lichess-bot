@@ -158,7 +158,7 @@ class XBoardEngine(EngineWrapper):
                                         white_inc=winc / 1000,
                                         black_inc=binc / 1000,
                                         xboard_depth=cmds.get("xboard_depth"),
-                                        xboard_nodes=cmds.get("nodes"),
+                                        xboard_nodes=cmds.get("xboard_nodes"),
                                         xboard_time=xboard_movetime)
         return self.search(board, time_limit, ponder)
         

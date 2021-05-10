@@ -2,8 +2,8 @@ import pytest
 import zipfile
 import requests
 from shutil import copyfile
-copyfile('lichess-bot.py', 'lichess_bot.py')
-import lichess_bot
+import importlib
+lichess_bot = importlib.import_module("lichess-bot")
 
 
 def test_nothing():

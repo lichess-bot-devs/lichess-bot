@@ -5,7 +5,7 @@ engine:                      # Engine settings.
   dir: "./engines/"          # dir containing engines, relative to this project.
   name: "engine_name"        # Binary name of the engine to use.
   protocol: "uci"            # "uci" or "xboard"
-  ponder: true               # Think on opponent time.
+  ponder: true               # Think on opponent's time.
   polyglot:
     enabled: false           # Activate polyglot book.
     book:
@@ -26,10 +26,10 @@ engine:                      # Engine settings.
     Move Overhead: 100       # Increase if your bot flags games too often.
     Threads: 2               # Max CPU threads the engine can use.
     Hash: 256                # Max memory (in megabytes) the engine can allocate.
-# go_commands:               # Additional options to pass to the UCI go command.
-#   nodes: 1                 # Search so many nodes only.
-#   depth: 5                 # Search depth ply only.
-#   movetime: 1000           # Integer. Search exactly movetime milliseconds.
+#   go_commands:             # Additional options to pass to the UCI go command.
+#     nodes: 1               # Search so many nodes only.
+#     depth: 5               # Search depth ply only.
+#     movetime: 1000         # Integer. Search exactly movetime milliseconds.
 # xboard_options:            # Arbitrary xboard options passed to the engine.
 #   cores: "4"
 #   memory: "4096"
@@ -47,7 +47,7 @@ move_overhead: 2000          # Increase if your bot flags games too often.
 
 correspondence:
     move_time: 60            # Time in seconds to search in correspondence games.
-    checkin_period: 600      # How often to check for opponent moves in correspondence games that have been disconnected from.
+    checkin_period: 600      # How often to check for opponent moves in correspondence games after disconnecting.
     disconnect_time: 300     # Time before disconnecting from a correspondence game.
     ponder: false            # Ponder in correspondence games the bot is connected to.
 

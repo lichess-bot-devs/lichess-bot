@@ -59,6 +59,9 @@ class EngineWrapper:
     def __init__(self, commands, options, stderr):
         pass
 
+    def search_for(self, board, movetime, ponder):
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder)
+
     def first_search(self, board, movetime):
         # No pondering after the first move since a different clock is used afterwards.
         return self.search(board, chess.engine.Limit(time=movetime // 1000), False)

@@ -45,6 +45,12 @@ fake_think_time: false       # artificially slow down the bot to pretend like it
 rate_limiting_delay: 0       # time (in ms) to delay after sending a move to prevent "Too Many Requests" errors
 move_overhead: 2000          # increase if your bot flags games too often
 
+correspondence:
+    move_time: 60            # time in seconds to search in correspondence games
+    checkin_period: 600      # how often to check for opponent moves in correspondence games that have been disconnected from
+    disconnect_time: 300     # time before disconnecting from a correspondence game
+    ponder: false            # ponder in correspondence games the bot is connected to
+
 challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously
   sort_by: "best"            # possible values: "best", "first"

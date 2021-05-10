@@ -1,7 +1,6 @@
 import time
 from urllib.parse import urljoin
 
-
 class Challenge:
     def __init__(self, c_info):
         self.id = c_info["id"]
@@ -85,6 +84,7 @@ class Game:
         self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
         self.abort_at = time.time() + abort_time
         self.terminate_at = time.time() + (self.clock_initial + self.clock_increment) / 1000 + abort_time + 60
+        self.disconnect_at = time.time()
 
     def url(self):
         return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))
@@ -92,16 +92,20 @@ class Game:
     def is_abortable(self):
         return len(self.state["moves"]) < 6
 
-    def ping(self, abort_in, terminate_in):
+    def ping(self, abort_in, terminate_in, disconnect_in):
         if self.is_abortable():
             self.abort_at = time.time() + abort_in
         self.terminate_at = time.time() + terminate_in
+        self.disconnect_at = time.time() + disconnect_in
 
     def should_abort_now(self):
         return self.is_abortable() and time.time() > self.abort_at
 
     def should_terminate_now(self):
         return time.time() > self.terminate_at
+
+    def should_disconnect_now(self):
+        return time.time() > self.disconnect_at
 
     def my_remaining_seconds(self):
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000

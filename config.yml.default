@@ -26,10 +26,10 @@ engine:                      # engine settings
     Move Overhead: 100       # increase if your bot flags games too often
     Threads: 2               # max CPU threads the engine can use
     Hash: 256                # max memory (in megabytes) the engine can allocate
-#   go_commands:             # additional options to pass to the UCI go command
-#     nodes: 1               # Search so many nodes only.
-#     depth: 5               # Search depth ply only.
-#     movetime: 1000         # Integer. Search exactly movetime milliseconds.
+#   uci_go_commands:         # additional options to pass to the UCI go command
+#     uci_nodes: 1           # Search so many nodes only.
+#     uci_depth: 5           # Search depth ply only.
+#     uci_movetime: 1000     # Integer. Search exactly movetime milliseconds.
 # xboard_options:            # arbitrary xboard options passed to the engine
 #   cores: "4"
 #   memory: "4096"
@@ -38,6 +38,10 @@ engine:                      # engine settings
 #     nalimov: "Nalimov Path"
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
+#   xboard_go_commands:      # Additional options to pass to the XBoard go command.
+#     xboard_nodes: 1        # Search so many nodes only.
+#     xboard_depth: 5        # Search depth ply only.
+#     xboard_movetime: 1000  # Integer. Search exactly movetime milliseconds.
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 abort_time: 20               # time to abort a game in seconds when there is no activity

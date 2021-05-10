@@ -102,23 +102,23 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
-        self.go_commands = options.pop("go_commands", {}) or {}
+        self.uci_go_commands = options.pop("uci_go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
         self.engine.configure(options)
         self.last_move_info = {}
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        cmds = self.go_commands
-        movetime = cmds.get("movetime")
-        if movetime is not None:
-            movetime = float(movetime) / 1000
+        cmds = self.uci_go_commands
+        uci_movetime = cmds.get("uci_movetime")
+        if uci_movetime is not None:
+            uci_movetime = float(uci_movetime) / 1000
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
                                         black_inc=binc / 1000,
-                                        depth=cmds.get("depth"),
-                                        nodes=cmds.get("nodes"),
-                                        time=movetime)
+                                        uci_depth=cmds.get("uci_depth"),
+                                        uci_nodes=cmds.get("uci_nodes"),
+                                        uci_time=uci_movetime)
         return self.search(board, time_limit, ponder)
 
     def stop(self):
@@ -138,6 +138,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
+        self.xboard_go_commands = options.pop("xboard_go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
@@ -148,19 +149,26 @@ class XBoardEngine(EngineWrapper):
         self.last_move_info = {}
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
+        cmds = self.xboard_go_commands
+        xboard_movetime = cmds.get("xboard_movetime")
+        if xboard_movetime is not None:
+            xboard_movetime = float(xboard_movetime) / 1000
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
-                                        black_inc=binc / 1000)
+                                        black_inc=binc / 1000,
+                                        xboard_depth=cmds.get("xboard_depth"),
+                                        xboard_nodes=cmds.get("nodes"),
+                                        xboard_time=xboard_movetime)
         return self.search(board, time_limit, ponder)
-
+        
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
-
+        
         winner = game.state.get('winner')
         termination = game.state.get('status')
-
+        
         if winner == 'white':
             game_result = Game_Ending.WHITE_WINS
         elif winner == 'black':
@@ -169,7 +177,7 @@ class XBoardEngine(EngineWrapper):
             game_result = Game_Ending.DRAW
         else:
             game_result = Game_Ending.INCOMPLETE
-
+            
         if termination == Termination.MATE:
             endgame_message = winner.title() + ' mates'
         elif termination == Termination.TIMEOUT:
@@ -190,15 +198,15 @@ class XBoardEngine(EngineWrapper):
             endgame_message = termination
         else:
             endgame_message = ''
-
+            
         if endgame_message:
             endgame_message = ' {' + endgame_message + '}'
-
+            
         self.engine.protocol.send_line('result ' + game_result + endgame_message)
-
+        
     def stop(self):
         self.engine.protocol.send_line("?")
-
+        
     def get_opponent_info(self, game):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
             title = game.opponent.title + " " if game.opponent.title else ""
@@ -207,7 +215,7 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
-
+            
 def getHomemadeEngine():
     raise NotImplementedError(
         "    You haven't changed the getHomemadeEngine function yet!\n"

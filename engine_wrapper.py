@@ -67,7 +67,18 @@ class EngineWrapper:
         return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        pass
+        cmds = self.go_commands
+        movetime = cmds.get("movetime")
+        if movetime is not None:
+            movetime = float(movetime) / 1000
+        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
+                                        black_clock=btime / 1000,
+                                        white_inc=winc / 1000,
+                                        black_inc=binc / 1000,
+                                        depth=cmds.get("depth"),
+                                        nodes=cmds.get("nodes"),
+                                        time=movetime)
+        return self.search(board, time_limit, ponder)
 
     def search(self, board, time_limit, ponder):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
@@ -102,24 +113,10 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
-        self.uci_go_commands = options.pop("uci_go_commands", {}) or {}
+        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
         self.engine.configure(options)
         self.last_move_info = {}
-
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        cmds = self.uci_go_commands
-        uci_movetime = cmds.get("uci_movetime")
-        if uci_movetime is not None:
-            uci_movetime = float(uci_movetime) / 1000
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000,
-                                        uci_depth=cmds.get("uci_depth"),
-                                        uci_nodes=cmds.get("uci_nodes"),
-                                        uci_time=uci_movetime)
-        return self.search(board, time_limit, ponder)
 
     def stop(self):
         self.engine.protocol.send_line("stop")
@@ -147,20 +144,6 @@ class XBoardEngine(EngineWrapper):
             options[f"egtpath {egt_type}"] = egt_paths[egt_type]
         self.engine.configure(options)
         self.last_move_info = {}
-
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        cmds = self.xboard_go_commands
-        xboard_movetime = cmds.get("xboard_movetime")
-        if xboard_movetime is not None:
-            xboard_movetime = float(xboard_movetime) / 1000
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000,
-                                        xboard_depth=cmds.get("xboard_depth"),
-                                        xboard_nodes=cmds.get("xboard_nodes"),
-                                        xboard_time=xboard_movetime)
-        return self.search(board, time_limit, ponder)
         
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine

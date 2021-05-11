@@ -38,7 +38,7 @@ engine:                      # Engine settings.
 #     nalimov: "Nalimov Path"
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
-  silence_stderr: false      # Some engines (yes you, leela) are very noisy.
+  silence_stderr: false      # Some engines (yes you, Leela) are very noisy.
 
 abort_time: 20               # Time to abort a game in seconds when there is no activity.
 fake_think_time: false       # Artificially slow down the bot to pretend like it's thinking.
@@ -60,7 +60,7 @@ challenge:                   # Incoming challenges.
   min_increment: 0           # Minimum amount of increment to accept a challenge.
   max_base: 315360000        # Maximum amount of base time to accept a challenge. The max is 315360000 (10 years).
   min_base: 0                # Minimum amount of base time to accept a challenge.
-  variants:                  # Chess variants to accept (http://lichess.org/variant).
+  variants:                  # Chess variants to accept (https://lichess.org/variant).
     - standard
 #   - fromPosition
 #   - antichess

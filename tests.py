@@ -22,7 +22,7 @@ def download_sf():
 
 def run_bot(logging_level):
     lichess_bot.logger.info(lichess_bot.intro())
-    CONFIG = {'token': 'INSERT TOKEN HERE', 'url': 'https://lichess.org/', 'engine': {'dir': '.', 'name': 'sf.exe', 'protocol': 'uci', 'uci_ponder': True, 'polyglot': {'enabled': False}, 'uci_options': {'Move Overhead': 1000}, 'silence_stderr': False}, 'abort_time': 20, 'fake_think_time': False, 'move_overhead': 2000, 'challenge': {'concurrency': 0, 'sort_by': 'best', 'accept_bot': False, 'only_bot': False, 'max_increment': 180, 'min_increment': 0, 'max_base': 600, 'min_base': 0, 'variants': ['standard'], 'time_controls': ['bullet', 'blitz'], 'modes': ['casual', 'rated']}}
+    CONFIG = {'token': 'mZnkopRGcYJDmI5f', 'url': 'https://lichess.org/', 'engine': {'dir': '.', 'name': 'sf.exe', 'protocol': 'uci', 'uci_ponder': True, 'polyglot': {'enabled': False}, 'uci_options': {'Move Overhead': 1000}, 'silence_stderr': False}, 'abort_time': 20, 'fake_think_time': False, 'move_overhead': 2000, 'challenge': {'concurrency': 0, 'sort_by': 'best', 'accept_bot': False, 'only_bot': False, 'max_increment': 180, 'min_increment': 0, 'max_base': 600, 'min_base': 0, 'variants': ['standard'], 'time_controls': ['bullet', 'blitz'], 'modes': ['casual', 'rated']}}
     li = lichess_bot.lichess.Lichess(CONFIG["token"], CONFIG["url"], lichess_bot.__version__)
 
     user_profile = li.get_profile()

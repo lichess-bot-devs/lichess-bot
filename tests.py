@@ -57,6 +57,13 @@ def run_bot(logging_level):
         assert win
     else:
         lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
+    games = li.current_games()['nowPlaying']
+    game_ids = list(map(lambda game: game['gameId'], games))
+    for game in game_ids:
+        try:
+            li.abort(game)
+        except:
+            pass
 
 
 def test_bot():

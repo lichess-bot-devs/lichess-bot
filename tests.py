@@ -55,7 +55,6 @@ def run_bot(logging_level):
         color = 'w' if username in color else 'b'
         win = result == '1-0' and color == 'w' or result == '0-1' and color == 'b'
         assert win
-        lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
     else:
         lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
 

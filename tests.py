@@ -1,6 +1,7 @@
 import pytest
 import zipfile
 import requests
+import time
 from shutil import copyfile
 import importlib
 lichess_bot = importlib.import_module("lichess-bot")
@@ -34,17 +35,29 @@ def run_bot(logging_level):
 
     if is_bot:
         engine_factory = lichess_bot.partial(lichess_bot.engine_wrapper.create_engine, CONFIG)
-        li.challenge_ai()
+        games = li.current_games()['nowPlaying']
+        game_ids = list(map(lambda game: game['gameId'], games))
+        for game in game_ids:
+            try:
+                li.abort(game)
+            except:
+                pass
+        time.sleep(1)
+        game_id = li.challenge_ai()['id']
+        lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
+        response = requests.get('https://lichess.org/game/export/{}'.format(game_id))
+        response = response.text
+        response = response.lower()
+        response = response.split('\n')
+        result = list(filter(lambda line: 'result' in line, response))
+        result = result[0][9:-2]
+        color = list(filter(lambda line: 'white' in line, response))
+        color = 'w' if username in color else 'b'
+        win = result == '1-0' and color == 'w' or result == '0-1' and color == 'b'
+        assert win
         lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
     else:
         lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
-    games = li.current_games()['nowPlaying']
-    game_ids = list(map(lambda game: game['gameId'], games))
-    for game in game_ids:
-        try:
-            li.abort(game)
-        except:
-            pass
 
 
 def test_bot():

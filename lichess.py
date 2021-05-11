@@ -107,8 +107,8 @@ class Lichess:
         self.session.headers.update(self.header)
 
     def challenge_ai(self):
-        data = {"level": 6, "clock.limit": 60, "clock.increment": 2}
-        self.api_post(ENDPOINTS["challenge_ai"], data=data)
+        data = {"level": 4, "clock.limit": 60, "clock.increment": 2}
+        return self.api_post(ENDPOINTS["challenge_ai"], data=data)
 
     def current_games(self):
         current_games = self.api_get(ENDPOINTS["current_games"], data={'nb': 50})

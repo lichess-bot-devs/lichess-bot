@@ -23,8 +23,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest
+        pip install pytest pytest-timeout
         pip install -r requirements.txt
     - name: Test with pytest
       run: |
-        pytest tests.py
+        pytest tests.py -s --timeout=300

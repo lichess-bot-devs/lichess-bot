@@ -40,7 +40,7 @@ engine:                      # Engine settings.
 #     syzygy: "Syzygy Path"
 #   go_commands:             # Additional options to pass to the XBoard go command.
 #     depth: 5               # Search depth ply only.
-# Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
+#     Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
   silence_stderr: false      # Some engines (yes you, Leela) are very noisy.
 
 abort_time: 20               # Time to abort a game in seconds when there is no activity.

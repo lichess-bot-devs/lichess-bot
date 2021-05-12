@@ -148,10 +148,10 @@ class XBoardEngine(EngineWrapper):
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
-        
+
         winner = game.state.get('winner')
         termination = game.state.get('status')
-        
+
         if winner == 'white':
             game_result = Game_Ending.WHITE_WINS
         elif winner == 'black':
@@ -160,7 +160,7 @@ class XBoardEngine(EngineWrapper):
             game_result = Game_Ending.DRAW
         else:
             game_result = Game_Ending.INCOMPLETE
-            
+
         if termination == Termination.MATE:
             endgame_message = winner.title() + ' mates'
         elif termination == Termination.TIMEOUT:
@@ -181,15 +181,15 @@ class XBoardEngine(EngineWrapper):
             endgame_message = termination
         else:
             endgame_message = ''
-            
+
         if endgame_message:
             endgame_message = ' {' + endgame_message + '}'
-            
+
         self.engine.protocol.send_line('result ' + game_result + endgame_message)
-        
+
     def stop(self):
         self.engine.protocol.send_line("?")
-        
+
     def get_opponent_info(self, game):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
             title = game.opponent.title + " " if game.opponent.title else ""
@@ -198,7 +198,7 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
-            
+
 def getHomemadeEngine():
     raise NotImplementedError(
         "    You haven't changed the getHomemadeEngine function yet!\n"

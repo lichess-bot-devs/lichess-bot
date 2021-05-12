@@ -39,15 +39,8 @@ engine:                      # engine settings
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
 #   go_commands:             # Additional options to pass to the XBoard go command.
-#     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.
-#     movetime: 1000         # Integer. Search exactly movetime milliseconds.
-# Do note that 'nodes' and 'movetime' can have unexpected interactions for xboard engines when used together. 
-# The python-chess library implements 'nodes n' by sending 'nps 1' followed by 'st n'. On the other hand 
-# 'movetime t' is implemented by sending the engine 'st t'. So, the effect on the engine depends on which commands 
-# are sent first (which shouldn't be relied upon). 
-# https://www.gnu.org/software/xboard/engine-intf.html
-# https://github.com/niklasf/python-chess/blob/bbbaac9f046723d922a4f81c58bd2033c64ba3f7/chess/engine.py#L2098
+# Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
   silence_stderr: false      # some engines (yes you, leela) are very noisy
 
 abort_time: 20               # time to abort a game in seconds when there is no activity

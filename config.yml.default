@@ -2,7 +2,7 @@ token: "xxxxxxxxxxxxxxxx"    # Lichess OAuth2 Token.
 url: "https://lichess.org/"  # Lichess base URL.
 
 engine:                      # Engine settings.
-  dir: "./engines/"          # dir containing engines, relative to this project.
+  dir: "./engines/"          # Directory containing engines, relative to this project.
   name: "engine_name"        # Binary name of the engine to use.
   protocol: "uci"            # "uci" or "xboard"
   ponder: true               # Think on opponent's time.
@@ -30,22 +30,18 @@ engine:                      # Engine settings.
 #     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.
 #     movetime: 1000         # Integer. Search exactly movetime milliseconds.
-# xboard_options:            # Arbitrary xboard options passed to the engine.
+# xboard_options:            # Arbitrary XBoard options passed to the engine.
 #   cores: "4"
 #   memory: "4096"
-#   egtpath:                 # dir containing egtb (endgame tablabases), relative to this project. For 'xboard' engines.
+#   egtpath:                 # Directory containing egtb (endgame tablabases), relative to this project. For 'xboard' engines.
 #     gaviota: "Gaviota path"
 #     nalimov: "Nalimov Path"
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
-<<<<<<< HEAD
 #   go_commands:             # Additional options to pass to the XBoard go command.
 #     depth: 5               # Search depth ply only.
 # Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
-  silence_stderr: false      # some engines (yes you, leela) are very noisy
-=======
   silence_stderr: false      # Some engines (yes you, Leela) are very noisy.
->>>>>>> f6813e48655ea36791d6905a4e7491aec39e5a71
 
 abort_time: 20               # Time to abort a game in seconds when there is no activity.
 fake_think_time: false       # Artificially slow down the bot to pretend like it's thinking.

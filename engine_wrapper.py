@@ -201,6 +201,7 @@ class XBoardEngine(EngineWrapper):
 
     def offer_draw(self):
         if self.engine.protocol.features.get('draw', 1) != 0:
+            self.engine.protocol.send_line('force')
             self.engine.protocol.send_line('draw')
 
     def stop(self):

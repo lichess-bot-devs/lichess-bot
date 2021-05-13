@@ -258,14 +258,18 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
-                    if best_move is None:
+                    if best_move.move is None:
+                        check_for_draw_offer(game, engine)
                         if len(board.move_stack) < 2:
                             best_move = choose_first_move(engine, board)
                         elif is_correspondence:
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
                         else:
                             best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
-                    li.make_move(game.id, best_move)
+                    if best_move.resigned:
+                        li.resign(game.id)
+                    else:
+                        li.make_move(game.id, best_move)
                     time.sleep(delay_seconds)
                 elif is_game_over(game):
                     engine.report_game_result(game, board)
@@ -317,8 +321,9 @@ def choose_first_move(engine, board):
 
 
 def get_book_move(board, polyglot_cfg):
+    no_book_move = chess.engine.PlayResult(None, None)
     if not polyglot_cfg.get("enabled") or len(board.move_stack) > polyglot_cfg.get("max_depth", 8) * 2 - 1:
-        return None
+        return no_book_move
 
     book_config = polyglot_cfg.get("book", {})
 
@@ -328,7 +333,7 @@ def get_book_move(board, polyglot_cfg):
         if book_config.get("{}".format(board.uci_variant)):
             books = book_config["{}".format(board.uci_variant)]
         else:
-            return None
+            return no_book_move
 
     if isinstance(books, str):
         books = [books]
@@ -349,9 +354,9 @@ def get_book_move(board, polyglot_cfg):
 
         if move is not None:
             logger.info("Got move {} from book {}".format(move, book))
-            return move
+            return chess.engine.PlayResult(move, None)
 
-    return None
+    return no_book_move
 
 
 def choose_move(engine, board, game, ponder, start_time, move_overhead):
@@ -365,6 +370,12 @@ def choose_move(engine, board, game, ponder, start_time, move_overhead):
 
     logger.info("Searching for wtime {} btime {}".format(wtime, btime))
     return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder)
+
+
+def check_for_draw_offer(game, engine):
+    opponent = 'b' if game.is_white else 'w'
+    if game.state[f'{opponent}draw']:
+        engine.offer_draw()
 
 
 def fake_thinking(config, board, game):

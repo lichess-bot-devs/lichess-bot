@@ -73,7 +73,7 @@ class EngineWrapper:
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
         self.last_move_info = result.info
         self.print_stats()
-        return result.move
+        return result
 
     def print_stats(self):
         for line in self.get_stats():
@@ -91,6 +91,9 @@ class EngineWrapper:
         return self.engine.id["name"]
 
     def report_game_result(self, game, board):
+        pass
+
+    def offer_draw(self):
         pass
 
     def stop(self):
@@ -195,6 +198,10 @@ class XBoardEngine(EngineWrapper):
             endgame_message = ' {' + endgame_message + '}'
 
         self.engine.protocol.send_line('result ' + game_result + endgame_message)
+
+    def offer_draw(self):
+        if self.engine.protocol.features.get('draw', 1) != 0:
+            self.engine.protocol.send_line('draw')
 
     def stop(self):
         self.engine.protocol.send_line("?")

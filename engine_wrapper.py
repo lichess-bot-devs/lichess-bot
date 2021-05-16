@@ -200,7 +200,7 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line('result ' + game_result + endgame_message)
 
     def offer_draw(self):
-        if self.engine.protocol.features.get('draw', 1) != 0:
+        if self.engine.protocol.features.get('draw', True):
             self.engine.protocol.send_line('force')
             self.engine.protocol.send_line('draw')
 

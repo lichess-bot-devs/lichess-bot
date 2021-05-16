@@ -66,7 +66,7 @@ class Lichess:
 
     def make_move(self, game_id, move):
         return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
-                             params={'offeringDraw': int(move.draw_offered)})
+                             params={'offeringDraw': str(move.draw_offered).lower()})
 
     def chat(self, game_id, room, text):
         payload = {'room': room, 'text': text}

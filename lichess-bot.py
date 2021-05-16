@@ -259,13 +259,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move.move is None:
-                        check_for_draw_offer(game, engine)
+                        draw_offered = check_for_draw_offer(game)
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board)
+                            best_move = choose_first_move(engine, board, draw_offered)
                         elif is_correspondence:
-                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
+                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
-                            best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
+                            best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
                     if best_move.resigned:
                         li.resign(game.id)
                     else:
@@ -308,16 +308,16 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_move_time(engine, board, search_time, ponder):
+def choose_move_time(engine, board, search_time, ponder, draw_offered):
     logger.info("Searching for time {}".format(search_time))
-    return engine.search_for(board, search_time, ponder)
+    return engine.search_for(board, search_time, ponder, draw_offered)
 
 
-def choose_first_move(engine, board):
+def choose_first_move(engine, board, draw_offered):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info("Searching for time {}".format(search_time))
-    return engine.first_search(board, search_time)
+    return engine.first_search(board, search_time, draw_offered)
 
 
 def get_book_move(board, polyglot_cfg):
@@ -359,7 +359,7 @@ def get_book_move(board, polyglot_cfg):
     return no_book_move
 
 
-def choose_move(engine, board, game, ponder, start_time, move_overhead):
+def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):
     wtime = game.state["wtime"]
     btime = game.state["btime"]
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1000000)
@@ -369,13 +369,12 @@ def choose_move(engine, board, game, ponder, start_time, move_overhead):
         btime = max(0, btime - move_overhead - pre_move_time)
 
     logger.info("Searching for wtime {} btime {}".format(wtime, btime))
-    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder)
+    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder, draw_offered)
 
 
-def check_for_draw_offer(game, engine):
+def check_for_draw_offer(game):
     opponent = 'b' if game.is_white else 'w'
-    if game.state[f'{opponent}draw']:
-        engine.offer_draw()
+    return game.state[f'{opponent}draw']
 
 
 def fake_thinking(config, board, game):

@@ -11,7 +11,7 @@ def load_config(config_file):
         try:
             CONFIG = yaml.safe_load(stream)
         except Exception as e:
-            logger.error("There appears to be a syntax problem with your config.yml")
+            logger.error("    There appears to be a syntax problem with your config.yml")
             raise e
 
         # [section, type, error message]

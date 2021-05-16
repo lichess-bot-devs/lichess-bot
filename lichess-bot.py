@@ -32,7 +32,7 @@ terminated = False
 
 def signal_handler(signal, frame):
     global terminated
-    logger.debug("Recieved SIGINT. Terminating client.")
+    logger.debug("    Recieved SIGINT. Terminating client.")
     terminated = True
 
 
@@ -47,7 +47,7 @@ def upgrade_account(li):
     if li.upgrade_to_bot_account() is None:
         return False
 
-    logger.info("Succesfully upgraded to Bot Account!")
+    logger.info("    Succesfully upgraded to Bot Account!")
     return True
 
 
@@ -100,7 +100,7 @@ def game_logging_configurer(queue, level):
 def start(li, user_profile, engine_factory, config, logging_level, log_filename):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
-    logger.info("You're now connected to {} and awaiting challenges.".format(config["url"]))
+    logger.info("    You're now connected to {} and awaiting challenges.".format(config["url"]))
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
     control_queue = manager.Queue()
@@ -159,7 +159,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                         pass
             elif event["type"] == "gameStart":
                 if queued_processes <= 0:
-                    logger.debug("Something went wrong. Game is starting and we don't have a queued process")
+                    logger.debug("    Something went wrong. Game is starting and we don't have a queued process")
                 else:
                     queued_processes -= 1
                 busy_processes += 1
@@ -197,7 +197,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
 
             control_queue.task_done()
 
-    logger.info("Terminated")
+    logger.info("    Terminated")
     control_stream.terminate()
     control_stream.join()
     correspondence_pinger.terminate()
@@ -305,14 +305,14 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
 
 def choose_move_time(engine, board, search_time, ponder):
-    logger.info("Searching for time {}".format(search_time))
+    logger.info("    Searching for time {}".format(search_time))
     return engine.search_for(board, search_time, ponder)
 
 
 def choose_first_move(engine, board):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
-    logger.info("Searching for time {}".format(search_time))
+    logger.info("    Searching for time {}".format(search_time))
     return engine.first_search(board, search_time)
 
 
@@ -348,7 +348,7 @@ def get_book_move(board, polyglot_cfg):
                 move = None
 
         if move is not None:
-            logger.info("Got move {} from book {}".format(move, book))
+            logger.info("    Got move {} from book {}".format(move, book))
             return move
 
     return None
@@ -363,7 +363,7 @@ def choose_move(engine, board, game, ponder, start_time, move_overhead):
     else:
         btime = max(0, btime - move_overhead - pre_move_time)
 
-    logger.info("Searching for wtime {} btime {}".format(wtime, btime))
+    logger.info("    Searching for wtime {} btime {}".format(wtime, btime))
     return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder)
 
 
@@ -377,7 +377,7 @@ def fake_thinking(config, board, game):
 
 def print_move_number(board):
     logger.info("")
-    logger.info("move: {}".format(len(board.move_stack) // 2 + 1))
+    logger.info("    move: {}".format(len(board.move_stack) // 2 + 1))
 
 
 def setup_board(game):
@@ -393,7 +393,7 @@ def setup_board(game):
         try:
             board.push_uci(move)
         except ValueError as e:
-            logger.debug('Ignoring illegal move {} on board {} ({})'.format(move, board.fen(), e))
+            logger.debug("    Ignoring illegal move {} on board {} ({})".format(move, board.fen(), e))
 
     return board
 
@@ -435,7 +435,7 @@ if __name__ == "__main__":
     user_profile = li.get_profile()
     username = user_profile["username"]
     is_bot = user_profile.get("title") == "BOT"
-    logger.info("Welcome {}!".format(username))
+    logger.info("    Welcome {}!".format(username))
 
     if args.u and not is_bot:
         is_bot = upgrade_account(li)
@@ -444,4 +444,4 @@ if __name__ == "__main__":
         engine_factory = partial(engine_wrapper.create_engine, CONFIG)
         start(li, user_profile, engine_factory, CONFIG, logging_level, args.logfile)
     else:
-        logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
+        logger.error("    {} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))

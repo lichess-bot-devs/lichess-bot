@@ -403,7 +403,7 @@ def setup_board(game):
         try:
             board.push_uci(move)
         except ValueError as e:
-            logger.debug('Ignoring illegal move {} on board {} ({})'.format(move, board.fen(), e))
+            logger.debug("Ignoring illegal move {} on board {} ({})".format(move, board.fen(), e))
 
     return board
 

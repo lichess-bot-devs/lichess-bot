@@ -67,7 +67,18 @@ class EngineWrapper:
         return self.search(board, chess.engine.Limit(time=movetime // 1000), False, draw_offered)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        pass
+        cmds = self.go_commands
+        movetime = cmds.get("movetime")
+        if movetime is not None:
+            movetime = float(movetime) / 1000
+        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
+                                        black_clock=btime / 1000,
+                                        white_inc=winc / 1000,
+                                        black_inc=binc / 1000,
+                                        depth=cmds.get("depth"),
+                                        nodes=cmds.get("nodes"),
+                                        time=movetime)
+        return self.search(board, time_limit, ponder, draw_offered)
 
     def search(self, board, time_limit, ponder, draw_offered):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
@@ -107,20 +118,6 @@ class UCIEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        cmds = self.go_commands
-        movetime = cmds.get("movetime")
-        if movetime is not None:
-            movetime = float(movetime) / 1000
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000,
-                                        depth=cmds.get("depth"),
-                                        nodes=cmds.get("nodes"),
-                                        time=movetime)
-        return self.search(board, time_limit, ponder, draw_offered)
-
     def stop(self):
         self.engine.protocol.send_line("stop")
 
@@ -138,6 +135,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
+        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
@@ -146,13 +144,6 @@ class XBoardEngine(EngineWrapper):
             options[f"egtpath {egt_type}"] = egt_paths[egt_type]
         self.engine.configure(options)
         self.last_move_info = {}
-
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000)
-        return self.search(board, time_limit, ponder, draw_offered)
 
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine

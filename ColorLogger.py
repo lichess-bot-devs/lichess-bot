@@ -117,7 +117,7 @@ def add_coloring_to_emit_ansi(fn):
             # #'\x1b[35m' # pink
         else:
             color = '\x1b[0m'  # normal
-        args[1].msg = color + args[1].msg + '\x1b[0m'  # normal
+        args[1].msg = f'{color}  {args[1].msg}\x1b[0m'  # normal
         # print "after"
         return fn(*args)
 

@@ -373,8 +373,7 @@ def choose_move(engine, board, game, ponder, draw_offered, start_time, move_over
 
 
 def check_for_draw_offer(game):
-    opponent = 'b' if game.is_white else 'w'
-    return game.state[f'{opponent}draw']
+    return game.state[f'{game.opponent_color[0]}draw']
 
 
 def fake_thinking(config, board, game):

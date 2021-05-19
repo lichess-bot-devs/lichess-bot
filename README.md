@@ -61,12 +61,12 @@ Besides the above, there are many possible options for configuring the engine fo
 - `protocol`: Specify which protocol your engine uses. Choices are
     1. `"uci"` for the [Universal Chess Interface](http://wbec-ridderkerk.nl/html/UCIProtocol.html)
     2. `"xboard"` for the XBoard/WinBoard/[Chess Engine Communication Protocol](https://www.gnu.org/software/xboard/engine-intf.html)
-    3. `"homemade"` if you want to write your own engine in Python within lichess-bot. See **Creating a custom bot** below.
+    3. `"homemade"` if you want to write your own engine in Python within lichess-bot. See [**Creating a custom bot**](#creating-a-custom-bot) below.
 - `polyglot`: Tell lichess-bot whether your bot should use an opening book. Multiple books can be specified for each chess variant.
     - `enabled`: Whether to use the book at all.
     - `book`: A nested list of books. The next indented line should list a chess variant (`standard`, `3check`, `horde`, etc.) followed on succeeding indented lines with paths to the book files. See `config.yml.default` for examples.
 - `engine_options`: Command line options to pass to the engine on startup. For example, the `config.yml.default` has the configuration
-```
+```yml
   engine_options:
     cpuct: 3.1
 ```
@@ -102,7 +102,7 @@ option name EvalFile type string default nn-62ef826d1a6d.nnue
 uciok
 ```
 Any of the names following `option name` can be listed in `uci_options` in order to configure the Stockfish engine.
-```
+```yml
   uci_options:
     Move Overhead: 100
     Skill Level: 10
@@ -110,7 +110,7 @@ Any of the names following `option name` can be listed in `uci_options` in order
 The exception to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options` that is not in the list printed by the engine, that will cause an error when the engine starts. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
 
 One last option is `go_commands`. Beneath this option, arguments to the UCI `go` command can be passed. For example,
-```
+```yml
   go_commands:
     nodes: 1
     depth: 5
@@ -125,7 +125,7 @@ feature option="PGN File -string VALUE"
 feature option="CPU Count -spin VALUE MIN MAX"`
 ```
 Any of the options can be listed under `xboard_options` in order to configure the XBoard engine.
-```
+```yml
   xboard_options:
     Add Noise: False
     PGN File: lichess_games.pgn
@@ -134,7 +134,7 @@ Any of the options can be listed under `xboard_options` in order to configure th
 The exception to this are the options `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `xboard_options` that is not in the list printed by the engine, that will cause an error when the engine starts. The word prefixed with a hyphen indicates the expected type of the options: `-string` for a text string, `-spin` for a numeric value, `-check` for a boolean True/False value.
 
 One last option is `go_commands`. Beneath this option, commands prior to the `go` command can be passed. For example,
-```
+```yml
   go_commands:
     depth: 5
 ```
@@ -161,7 +161,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `max_base`: The maximum base time for a game.
   - `min_base`: The minimum base time for a game.
   - `variants`: An indented list of chess variants that the bot can handle.
-```
+```yml
   variants:
     - standard
     - horde
@@ -169,7 +169,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     # etc.
 ```
   - `time_controls`: An indented list of acceptable time control types from `bullet` to `correspondence`.
-```
+```yml
   time_controls:
     - bullet
     - blitz
@@ -178,7 +178,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - correpondence
 ```
   - `modes`: An indented list of acceptable game modes (`rated` and/or `casual`).
-```
+```yml
   modes:
     -rated
     -casual

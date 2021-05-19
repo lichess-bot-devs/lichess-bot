@@ -56,7 +56,7 @@ pip install -r requirements.txt
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
 
 ### Engine Configuration
-Besides the above, there are many possible options for configuring the engine for use with lichess-bot.
+Besides the above, there are many possible options within `config.yml` for configuring the engine for use with lichess-bot.
 
 - `protocol`: Specify which protocol your engine uses. Choices are
     1. `"uci"` for the [Universal Chess Interface](http://wbec-ridderkerk.nl/html/UCIProtocol.html)

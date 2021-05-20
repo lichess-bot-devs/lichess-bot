@@ -131,7 +131,7 @@ Any of the options can be listed under `xboard_options` in order to configure th
     PGN File: lichess_games.pgn
     CPU Count: 1
 ```
-The exception to this are the options `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `xboard_options` that is not in the list printed by the engine, that will cause an error when the engine starts. The word prefixed with a hyphen indicates the expected type of the options: `-string` for a text string, `-spin` for a numeric value, `-check` for a boolean True/False value.
+The exceptions to this are the options `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `xboard_options` that is not in the list printed by the engine, that will cause an error when the engine starts. The word prefixed with a hyphen indicates the expected type of the options: `-string` for a text string, `-spin` for a numeric value, `-check` for a boolean True/False value.
 
 One last option is `go_commands`. Beneath this option, commands prior to the `go` command can be passed. For example,
 ```yml
@@ -143,12 +143,12 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 - `abort_time`: How many seconds to wait before aborting a game due to opponent inaction. This only applies during the first six moves of the game.
 - `fake_think_time`: Artificially slow down the engine to simulate a person thinking about a move. The amount of thinking time decreases as the game goes on.
 - `rate_limiting_delay`: For extremely fast games, the lichess.org servers may respond with an error if too many moves are played to quickly. This option avoids this problem by pausing for a specified number of milliseconds after submitting a move before making the next move.
-- `move_overhead`: To prevent losing on time due to network lag, substract this many milliseconds from the time to think on each move.
+- `move_overhead`: To prevent losing on time due to network lag, subtract this many milliseconds from the time to think on each move.
 
 - `correspondence` These options control how the engine behaves during correspondence games.
   - `move_time`: How many seconds to think for each move.
   - `checkin_period`: How often (in seconds) to reconnect to games to check for new moves after disconnecting.
-  - `disconnect_time`: How many seconds to wait after the bot makes a move for an opponent to make a move. If no move is made during the wait, disconnect from the gmae.
+  - `disconnect_time`: How many seconds to wait after the bot makes a move for an opponent to make a move. If no move is made during the wait, disconnect from the game.
   - `ponder`: Whether the bot should ponder during the above waiting period.
 
 - `challenge`: Control what kind of games for which the bot should accept challenges. All of the following options must be satisfied by a challenge to be accepted.

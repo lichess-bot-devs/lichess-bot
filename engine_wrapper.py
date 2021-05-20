@@ -48,7 +48,7 @@ class Termination:
     DRAW = 'draw'
 
 
-class Game_Ending:
+class GameEnding:
     WHITE_WINS = '1-0'
     BLACK_WINS = '0-1'
     DRAW = '1/2-1/2'
@@ -88,7 +88,7 @@ class EngineWrapper:
 
     def print_stats(self):
         for line in self.get_stats():
-            logger.info(f"    {line}")
+            logger.info(f"{line}")
 
     def get_stats(self):
         info = self.last_move_info
@@ -153,13 +153,13 @@ class XBoardEngine(EngineWrapper):
         termination = game.state.get('status')
 
         if winner == 'white':
-            game_result = Game_Ending.WHITE_WINS
+            game_result = GameEnding.WHITE_WINS
         elif winner == 'black':
-            game_result = Game_Ending.BLACK_WINS
+            game_result = GameEnding.BLACK_WINS
         elif termination == Termination.DRAW:
-            game_result = Game_Ending.DRAW
+            game_result = GameEnding.DRAW
         else:
-            game_result = Game_Ending.INCOMPLETE
+            game_result = GameEnding.INCOMPLETE
 
         if termination == Termination.MATE:
             endgame_message = winner.title() + ' mates'

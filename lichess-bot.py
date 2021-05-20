@@ -154,7 +154,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                         if challenge.get("only_bot", False) and not chlng.challenger_is_bot:
                             reason = "onlyBot"
                         li.decline_challenge(chlng.id, reason=reason)
-                        logger.info("    Decline {} for reason '{}'".format(chlng, reason))
+                        logger.info("Decline {} for reason '{}'".format(chlng, reason))
                     except Exception:
                         pass
             elif event["type"] == "gameStart":
@@ -186,13 +186,13 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
             while ((queued_processes + busy_processes) < max_games and challenge_queue):  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
                 try:
-                    logger.info("    Accept {}".format(chlng))
+                    logger.info("Accept {}".format(chlng))
                     queued_processes += 1
                     li.accept_challenge(chlng.id)
                     logger.info("--- Process Queue. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 except (HTTPError, ReadTimeout) as exception:
                     if isinstance(exception, HTTPError) and exception.response.status_code == 404:  # ignore missing challenge
-                        logger.info("    Skip missing {}".format(chlng))
+                        logger.info("Skip missing {}".format(chlng))
                     queued_processes -= 1
 
             control_queue.task_done()
@@ -282,11 +282,11 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 if is_correspondence and not is_engine_move(game, board) and game.should_disconnect_now():
                     break
                 elif game.should_abort_now():
-                    logger.info("    Aborting {} by lack of activity".format(game.url()))
+                    logger.info("Aborting {} by lack of activity".format(game.url()))
                     li.abort(game.id)
                     break
                 elif game.should_terminate_now():
-                    logger.info("    Terminating {} by lack of activity".format(game.url()))
+                    logger.info("Terminating {} by lack of activity".format(game.url()))
                     if game.is_abortable():
                         li.abort(game.id)
                     break

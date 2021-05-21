@@ -115,7 +115,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
     game_queue = manager.Queue()
     game_queue.put("")
     wait_for_correspondence_ping = False
-    skip_correspondence = True
+    skip_correspondence = 2
 
     busy_processes = 0
     queued_processes = 0
@@ -192,7 +192,8 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                     # stop checking in on games if we have checked in on all games since the last correspondence_ping
                     if not game_id:
                         wait_for_correspondence_ping = True
-                        skip_correspodence = False
+                        if skip_correspodnece:
+                            skip_correspondence -= 1
                         break
                     else:
                         busy_processes += 1

@@ -2,6 +2,7 @@ import pytest
 import zipfile
 import requests
 import time
+import yaml
 from shutil import copyfile
 import importlib
 lichess_bot = importlib.import_module("lichess-bot")
@@ -41,7 +42,7 @@ def run_bot(CONFIG, logging_level):
                 li.abort(game)
             except:
                 pass
-        time.sleep(1)
+            time.sleep(2)
         game_id = li.challenge_ai()['id']
         lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
         response = requests.get('https://lichess.org/game/export/{}'.format(game_id))
@@ -63,6 +64,7 @@ def run_bot(CONFIG, logging_level):
             li.abort(game)
         except:
             pass
+        time.sleep(2)
 
 
 def test_bot():
@@ -71,7 +73,11 @@ def test_bot():
     lichess_bot.enable_color_logging(debug_lvl=logging_level)
     download_sf()
     lichess_bot.logger.info("Downloaded SF")
-    CONFIG = {'token': 'INSERT TOKEN HERE', 'url': 'https://lichess.org/', 'engine': {'dir': '.', 'name': 'sf.exe', 'protocol': 'uci', 'uci_ponder': True, 'polyglot': {'enabled': False}, 'uci_options': {'Move Overhead': 1000}, 'silence_stderr': False}, 'abort_time': 20, 'fake_think_time': False, 'move_overhead': 2000, 'challenge': {'concurrency': 0, 'sort_by': 'best', 'accept_bot': False, 'only_bot': False, 'max_increment': 180, 'min_increment': 0, 'max_base': 600, 'min_base': 0, 'variants': ['standard'], 'time_controls': ['bullet', 'blitz'], 'modes': ['casual', 'rated']}}
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+    CONFIG['token'] = 'INSERT TOKEN HERE'
+    CONFIG['engine']['dir'] = './'
+    CONFIG['engine']['name'] = 'sf.exe'
     run_bot(CONFIG, logging_level)
 
 

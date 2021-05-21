@@ -247,7 +247,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
-                conversation.react(ChatLine(upd), game)
+                try:
+                    conversation.react(ChatLine(upd), game, board)
+                except:
+                    pass
             elif u_type == "gameState":
                 game.state = upd
                 board = setup_board(game)

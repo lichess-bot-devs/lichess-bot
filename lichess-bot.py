@@ -115,7 +115,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
     game_queue = manager.Queue()
     game_queue.put("")
     wait_for_correspondence_ping = False
-    skip_correspondence = False
+    skip_correspondence = True
 
     busy_processes = 0
     queued_processes = 0
@@ -173,7 +173,6 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 game_id = event["game"]["id"]
                 if busy_processes >= max_games:
                     game_queue.put(game_id)
-                    skip_correspondence = True
                 else:
                     if queued_processes <= 0:
                         logger.debug("Something went wrong. Game is starting and we don't have a queued process")

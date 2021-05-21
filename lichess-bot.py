@@ -112,8 +112,8 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
     correspondence_checkin_period = correspondence_cfg.get("checkin_period", 600)
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping, args=[control_queue, correspondence_checkin_period])
     correspondence_pinger.start()
-    correspondence_queue = manager.Queue()
-    correspondence_queue.put("")
+    game_queue = manager.Queue()
+    game_queue.put("")
     wait_for_correspondence_ping = False
     busy_processes = 0
     queued_processes = 0
@@ -170,7 +170,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
                 if (busy_processes + queued_processes) >= max_games:
-                    correspondence_queue.put(game_id)
+                    game_queue.put(game_id)
                 else:
                     if queued_processes <= 0:
                         logger.debug("Something went wrong. Game is starting and we don't have a queued process")
@@ -178,15 +178,15 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                         queued_processes -= 1
                     busy_processes += 1
                     logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-                    pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
+                    pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, game_queue, logging_queue, game_logging_configurer, logging_level])
 
             if (event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping)) and not challenge_queue:
                 if event["type"] == "correspondence_ping" and wait_for_correspondence_ping:
-                    correspondence_queue.put("")
+                    game_queue.put("")
 
                 wait_for_correspondence_ping = False
                 while (busy_processes + queued_processes) < max_games:
-                    game_id = correspondence_queue.get()
+                    game_id = game_queue.get()
                     # stop checking in on games if we have checked in on all games since the last correspondence_ping
                     if not game_id:
                         wait_for_correspondence_ping = True
@@ -194,7 +194,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                     else:
                         busy_processes += 1
                         logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-                        pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
+                        pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, game_queue, logging_queue, game_logging_configurer, logging_level])
 
             while ((queued_processes + busy_processes) < max_games and challenge_queue):  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
@@ -220,7 +220,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, logging_configurer, logging_level):
+def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, game_queue, logging_queue, logging_configurer, logging_level):
     logging_configurer(logging_queue, logging_level)
     logger = logging.getLogger(__name__)
 
@@ -328,7 +328,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     if is_correspondence and not is_game_over(game):
         logger.info("--- Disconnecting from {}".format(game.url()))
-        correspondence_queue.put(game_id)
+        game_queue.put(game_id)
     else:
         logger.info("--- {} Game over".format(game.url()))
 

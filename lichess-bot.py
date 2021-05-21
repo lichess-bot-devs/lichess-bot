@@ -158,14 +158,17 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                     except Exception:
                         pass
             elif event["type"] == "gameStart":
-                if queued_processes <= 0:
-                    logger.debug("Something went wrong. Game is starting and we don't have a queued process")
-                else:
-                    queued_processes -= 1
-                busy_processes += 1
-                logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
                 game_id = event["game"]["id"]
-                pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
+                if (busy_processes + queued_processes) >= max_games:
+                    correspondence_queue.put(game_id)
+                else:
+                    if queued_processes <= 0:
+                        logger.debug("Something went wrong. Game is starting and we don't have a queued process")
+                    else:
+                        queued_processes -= 1
+                    busy_processes += 1
+                    logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                    pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
             if event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping):
                 if event["type"] == "correspondence_ping" and wait_for_correspondence_ping:

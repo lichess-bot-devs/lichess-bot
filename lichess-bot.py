@@ -169,7 +169,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                         pass
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
-                if (busy_processes + queued_processes) >= max_games:
+                if busy_processes >= max_games:
                     game_queue.put(game_id)
                 else:
                     if queued_processes <= 0:

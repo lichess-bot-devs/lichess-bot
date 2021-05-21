@@ -164,8 +164,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 if busy_processes >= max_games:
                     game_start_queue.put(game_id)
                 else:
-                    # skip correspondence games if this gameStart is from
-                    # the initial connection to lichess
+                    # skip correspondence games if this gameStart is from the initial connection to lichess
                     skip_correspondence = queued_processes == 0
                     if queued_processes > 0:
                         queued_processes -= 1

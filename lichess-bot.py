@@ -230,7 +230,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
 
     if is_correspondence and skip_correspondence:
-        logger.info("--- Skip {}".format(game.url()))
+        logger.info("--- Skiping {}".format(game.url()))
         game_queue.put(game_id)
         control_queue.put_nowait({"type": "local_game_done"})
         return

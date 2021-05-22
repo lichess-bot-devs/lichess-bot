@@ -35,7 +35,7 @@ def run_bot(CONFIG, logging_level):
 
     if is_bot:
         engine_factory = lichess_bot.partial(lichess_bot.engine_wrapper.create_engine, CONFIG)
-        games = li.current_games()['nowPlaying']
+        games = li.get_ongoing_games()
         game_ids = list(map(lambda game: game['gameId'], games))
         for game in game_ids:
             try:
@@ -57,7 +57,7 @@ def run_bot(CONFIG, logging_level):
         assert win
     else:
         lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
-    games = li.current_games()['nowPlaying']
+    games = li.get_ongoing_games()
     game_ids = list(map(lambda game: game['gameId'], games))
     for game in game_ids:
         try:

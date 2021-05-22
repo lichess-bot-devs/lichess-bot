@@ -18,8 +18,7 @@ ENDPOINTS = {
     "decline": "/api/challenge/{}/decline",
     "upgrade": "/api/bot/account/upgrade",
     "resign": "/api/bot/game/{}/resign",
-    "challenge_ai": "/api/challenge/ai",
-    "current_games": "/api/account/playing"
+    "challenge_ai": "/api/challenge/ai"
 }
 
 
@@ -43,9 +42,9 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final)
-    def api_get(self, path, data=None):
+    def api_get(self, path):
         url = urljoin(self.baseUrl, path)
-        response = self.session.get(url, timeout=2, data=data)
+        response = self.session.get(url, timeout=2)
         response.raise_for_status()
         return response.json()
 
@@ -109,7 +108,3 @@ class Lichess:
     def challenge_ai(self):
         data = {"level": 4, "clock.limit": 60, "clock.increment": 2}
         return self.api_post(ENDPOINTS["challenge_ai"], data=data)
-
-    def current_games(self):
-        current_games = self.api_get(ENDPOINTS["current_games"], data={'nb': 50})
-        return current_games

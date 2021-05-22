@@ -236,6 +236,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     first_move = True
     correspondence_disconnect_time = 0
+    board = None
     while not terminated:
         try:
             if first_move:

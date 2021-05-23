@@ -193,16 +193,15 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                     game_id = correspondence_queue.get()
                     # stop checking in on games if we have checked in on all games since the last correspondence_ping
                     if not game_id:
-                        if is_correspondence_ping and not correspondence_queue.empty():
+                        if is_correspondence_ping and correspondence_queue:
                             correspondence_queue.put("")
-                            continue
                         else:
                             wait_for_correspondence_ping = True
                             break
-
-                    busy_processes += 1
-                    logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
-                    pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
+                    else:
+                        busy_processes += 1
+                        logger.info("--- Process Used. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                        pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
             while ((queued_processes + busy_processes) < max_games and challenge_queue):  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)

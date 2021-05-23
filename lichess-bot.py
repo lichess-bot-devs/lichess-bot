@@ -162,6 +162,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
                 if game_id in startup_correspondence_games:
+                    logger.info("--- Enqueue {}".format(config["url"] + game_id))
                     correspondence_queue.put(game_id)
                     startup_correspondence_games.remove(game_id)
                 else:

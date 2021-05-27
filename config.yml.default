@@ -4,7 +4,7 @@ url: "https://lichess.org/"  # Lichess base URL.
 engine:                      # Engine settings.
   dir: "./engines/"          # Directory containing engines, relative to this project.
   name: "engine_name"        # Binary name of the engine to use.
-  protocol: "uci"            # "uci", "xboard" or "homemade"
+  protocol: "uci"            # "uci" or "xboard"
   ponder: true               # Think on opponent's time.
   polyglot:
     enabled: false           # Activate polyglot book.

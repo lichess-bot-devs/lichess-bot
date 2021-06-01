@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements.txt
     - name: Test with pytest
       run: |
-        pytest tests.py -s --timeout=300
+        pytest tests.py -s

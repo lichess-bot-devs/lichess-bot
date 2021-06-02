@@ -46,20 +46,20 @@ def run_bot(CONFIG, logging_level):
             time.sleep(2)
         while li.get_ongoing_games():
             time.sleep(60)
+        game_id = li.challenge_ai()['id']
+        time.sleep(2)
+        games = li.get_ongoing_games()
+        game_ids = list(map(lambda game: game['gameId'], games))
+        for game in game_ids:
+            if game != game_id:
+                try:
+                    li.abort(game)
+                except:
+                    pass
+                time.sleep(2)
         
         @pytest.mark.timeout(300)
         def run_test():
-            game_id = li.challenge_ai()['id']
-            time.sleep(2)
-            games = li.get_ongoing_games()
-            game_ids = list(map(lambda game: game['gameId'], games))
-            for game in game_ids:
-                if game != game_id:
-                    try:
-                        li.abort(game)
-                    except:
-                        pass
-                time.sleep(2)
             lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
             response = requests.get('https://lichess.org/game/export/{}'.format(game_id))
             response = response.text

@@ -48,7 +48,7 @@ class Termination:
     DRAW = 'draw'
 
 
-class Game_Ending:
+class GameEnding:
     WHITE_WINS = '1-0'
     BLACK_WINS = '0-1'
     DRAW = '1/2-1/2'
@@ -67,7 +67,18 @@ class EngineWrapper:
         return self.search(board, chess.engine.Limit(time=movetime // 1000), False, draw_offered)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        pass
+        cmds = self.go_commands
+        movetime = cmds.get("movetime")
+        if movetime is not None:
+            movetime = float(movetime) / 1000
+        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
+                                        black_clock=btime / 1000,
+                                        white_inc=winc / 1000,
+                                        black_inc=binc / 1000,
+                                        depth=cmds.get("depth"),
+                                        nodes=cmds.get("nodes"),
+                                        time=movetime)
+        return self.search(board, time_limit, ponder, draw_offered)
 
     def search(self, board, time_limit, ponder, draw_offered):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
@@ -77,7 +88,7 @@ class EngineWrapper:
 
     def print_stats(self):
         for line in self.get_stats():
-            logger.info(f"    {line}")
+            logger.info(f"{line}")
 
     def get_stats(self):
         info = self.last_move_info
@@ -107,20 +118,6 @@ class UCIEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        cmds = self.go_commands
-        movetime = cmds.get("movetime")
-        if movetime is not None:
-            movetime = float(movetime) / 1000
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000,
-                                        depth=cmds.get("depth"),
-                                        nodes=cmds.get("nodes"),
-                                        time=movetime)
-        return self.search(board, time_limit, ponder, draw_offered)
-
     def stop(self):
         self.engine.protocol.send_line("stop")
 
@@ -138,6 +135,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
+        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
@@ -147,13 +145,6 @@ class XBoardEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000)
-        return self.search(board, time_limit, ponder, draw_offered)
-
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
@@ -162,13 +153,13 @@ class XBoardEngine(EngineWrapper):
         termination = game.state.get('status')
 
         if winner == 'white':
-            game_result = Game_Ending.WHITE_WINS
+            game_result = GameEnding.WHITE_WINS
         elif winner == 'black':
-            game_result = Game_Ending.BLACK_WINS
+            game_result = GameEnding.BLACK_WINS
         elif termination == Termination.DRAW:
-            game_result = Game_Ending.DRAW
+            game_result = GameEnding.DRAW
         else:
-            game_result = Game_Ending.INCOMPLETE
+            game_result = GameEnding.INCOMPLETE
 
         if termination == Termination.MATE:
             endgame_message = winner.title() + ' mates'

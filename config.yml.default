@@ -1,66 +1,69 @@
-token: "xxxxxxxxxxxxxxxx"    # lichess OAuth2 Token
-url: "https://lichess.org/"  # lichess base URL
+token: "xxxxxxxxxxxxxxxx"    # Lichess OAuth2 Token.
+url: "https://lichess.org/"  # Lichess base URL.
 
-engine:                      # engine settings
-  dir: "./engines/"          # dir containing engines, relative to this project
-  name: "engine_name"        # binary name of the engine to use
+engine:                      # Engine settings.
+  dir: "./engines/"          # Directory containing engines, relative to this project.
+  name: "engine_name"        # Binary name of the engine to use.
   protocol: "uci"            # "uci" or "xboard"
-  ponder: true               # think on opponent time
+  ponder: true               # Think on opponent's time.
   polyglot:
-    enabled: false           # activate polyglot book
+    enabled: false           # Activate polyglot book.
     book:
-      standard: # list of book file paths for variant standard
+      standard:              # List of book file paths for variant standard.
         - engines/book1.bin
         - engines/book2.bin
-#      atomic: # list of book file paths for variant atomic
-#        - engines/atomicbook1.bin
-#        - engines/atomicbook2.bin
-#      etc.
-#      use the same pattern for giveaway, crazyhouse, horde, kingofthehill, racingkings, 3check as well
-    min_weight: 1            # does not select moves with weight below min_weight (min 0, max: 65535)
-    selection: "weighted_random" # move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in 2. and 3. case)
-    max_depth: 8             # half move max depth
-# engine_options:            # any custom command line params to pass to the engine
+#     atomic:                # List of book file paths for variant atomic.
+#       - engines/atomicbook1.bin
+#       - engines/atomicbook2.bin
+#     etc.
+#     Use the same pattern for 'giveaway' (antichess), 'crazyhouse', 'horde', 'kingofthehill', 'racingkings' and '3check' as well.
+    min_weight: 1            # Does not select moves with weight below min_weight (min 0, max: 65535).
+    selection: "weighted_random" # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
+    max_depth: 8             # Half move max depth.
+# engine_options:            # Any custom command line params to pass to the engine.
 #   cpuct: 3.1
-  uci_options:               # arbitrary UCI options passed to the engine
-    Move Overhead: 100       # increase if your bot flags games too often
-    Threads: 2               # max CPU threads the engine can use
-    Hash: 256                # max memory (in megabytes) the engine can allocate
-#   go_commands:             # additional options to pass to the UCI go command
+  uci_options:               # Arbitrary UCI options passed to the engine.
+    Move Overhead: 100       # Increase if your bot flags games too often.
+    Threads: 2               # Max CPU threads the engine can use.
+    Hash: 256                # Max memory (in megabytes) the engine can allocate.
+#   go_commands:             # Additional options to pass to the UCI go command.
 #     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.
 #     movetime: 1000         # Integer. Search exactly movetime milliseconds.
-# xboard_options:            # arbitrary xboard options passed to the engine
+# xboard_options:            # Arbitrary XBoard options passed to the engine.
 #   cores: "4"
 #   memory: "4096"
-#   egtpath:                 # dir containing egtb, relative to this project
+#   egtpath:                 # Directory containing egtb (endgame tablabases), relative to this project. For 'xboard' engines.
 #     gaviota: "Gaviota path"
 #     nalimov: "Nalimov Path"
 #     scorpio: "Scorpio Path"
 #     syzygy: "Syzygy Path"
-  silence_stderr: false      # some engines (yes you, leela) are very noisy
+#   go_commands:             # Additional options to pass to the XBoard go command.
+#     depth: 5               # Search depth ply only.
+#     Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
+  silence_stderr: false      # Some engines (yes you, Leela) are very noisy.
 
-abort_time: 20               # time to abort a game in seconds when there is no activity
-fake_think_time: false       # artificially slow down the bot to pretend like it's thinking
-rate_limiting_delay: 0       # time (in ms) to delay after sending a move to prevent "Too Many Requests" errors
-move_overhead: 2000          # increase if your bot flags games too often
+abort_time: 20               # Time to abort a game in seconds when there is no activity.
+fake_think_time: false       # Artificially slow down the bot to pretend like it's thinking.
+rate_limiting_delay: 0       # Time (in ms) to delay after sending a move to prevent "Too Many Requests" errors.
+move_overhead: 2000          # Increase if your bot flags games too often.
 
 correspondence:
-    move_time: 60            # time in seconds to search in correspondence games
-    checkin_period: 600      # how often to check for opponent moves in correspondence games that have been disconnected from
-    disconnect_time: 300     # time before disconnecting from a correspondence game
-    ponder: false            # ponder in correspondence games the bot is connected to
+    move_time: 60            # Time in seconds to search in correspondence games.
+    checkin_period: 600      # How often to check for opponent moves in correspondence games after disconnecting.
+    disconnect_time: 300     # Time before disconnecting from a correspondence game.
+    ponder: false            # Ponder in correspondence games the bot is connected to.
 
-challenge:                   # incoming challenges
-  concurrency: 1             # number of games to play simultaneously
-  sort_by: "best"            # possible values: "best", "first"
-  accept_bot: false          # accepts challenges coming from other bots
-  only_bot: false            # accept challenges by bots only
-  max_increment: 180         # maximum amount of increment to accept a challenge. the max is 180. set to 0 for no increment
-  min_increment: 0           # minimum amount of increment to accept a challenge
-  max_base: 315360000        # maximum amount of base time to accept a challenge. the max is 315360000 (10 years)
-  min_base: 0                # minimum amount of base time to accept a challenge
-  variants:                  # chess variants to accept (http://lichess.org/variant)
+challenge:                   # Incoming challenges.
+  concurrency: 1             # Number of games to play simultaneously.
+  sort_by: "best"            # Possible values: "best" and "first".
+  accept_bot: false          # Accepts challenges coming from other bots.
+  only_bot: false            # Accept challenges by bots only.
+  max_increment: 180         # Maximum amount of increment to accept a challenge. The max is 180. Set to 0 for no increment.
+  min_increment: 0           # Minimum amount of increment to accept a challenge.
+  max_base: 315360000        # Maximum amount of base time to accept a challenge. The max is 315360000 (10 years).
+  min_base: 0                # Minimum amount of base time to accept a challenge.
+  variants:                  # Chess variants to accept (https://lichess.org/variant).
     - standard
 #   - fromPosition
 #   - antichess
@@ -71,12 +74,12 @@ challenge:                   # incoming challenges
 #   - kingOfTheHill
 #   - racingKings
 #   - threeCheck
-  time_controls:             # time controls to accept
+  time_controls:             # Time controls to accept.
     - bullet
     - blitz
     - rapid
 #   - classical
 #   - correspondence
-  modes:                     # game modes to accept
-    - casual                 # unrated games
-    - rated                  # rated games - must comment if the engine doesn't try to win
+  modes:                     # Game modes to accept.
+    - casual                 # Unrated games.
+    - rated                  # Rated games - must comment if the engine doesn't try to win.

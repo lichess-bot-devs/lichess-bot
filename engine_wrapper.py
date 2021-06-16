@@ -1,5 +1,4 @@
 import os
-import chess
 import chess.engine
 import backoff
 import subprocess
@@ -58,7 +57,7 @@ class GameEnding:
 
 class EngineWrapper:
     def __init__(self, commands, options, stderr):
-        pass
+        self.go_commands = options.pop("go_commands", {}) or {}
 
     def search_for(self, board, movetime, ponder):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder)
@@ -68,7 +67,8 @@ class EngineWrapper:
         return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        movetime = wtime if board.turn is chess.WHITE else btime
+        cmds = self.go_commands
+        movetime = cmds.get("movetime")
         if movetime is not None:
             movetime = float(movetime) / 1000
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,

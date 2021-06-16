@@ -62,6 +62,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     1. `"uci"` for the [Universal Chess Interface](http://wbec-ridderkerk.nl/html/UCIProtocol.html)
     2. `"xboard"` for the XBoard/WinBoard/[Chess Engine Communication Protocol](https://www.gnu.org/software/xboard/engine-intf.html)
     3. `"homemade"` if you want to write your own engine in Python within lichess-bot. See [**Creating a custom bot**](#creating-a-custom-bot) below.
+- `ponder`: Specify whether your bot will ponder--i.e., think while the bot's opponent is choosing a move.
 - `polyglot`: Tell lichess-bot whether your bot should use an opening book. Multiple books can be specified for each chess variant.
     - `enabled`: Whether to use the book at all.
     - `book`: A nested list of books. The next indented line should list a chess variant (`standard`, `3check`, `horde`, etc.) followed on succeeding indented lines with paths to the book files. See `config.yml.default` for examples.

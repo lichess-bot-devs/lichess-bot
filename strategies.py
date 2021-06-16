@@ -58,12 +58,14 @@ class MinimalEngine(EngineWrapper):
         This method is meant to be overridden,
         it defines engines' implementation.
         
-        Parameters
-        ----------
+        --- Parameters ---
         board : chess.Board
         timeleft : chess.engine.Limit
         ponder : boolean
            Whether to think on opponent's time
+
+        --- Returns ---
+        An instance of `chess.engine.PlayResult`
         """
         raise NotImplementedError("The search method is not implemented")
 

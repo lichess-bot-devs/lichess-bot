@@ -57,7 +57,7 @@ class GameEnding:
 
 class EngineWrapper:
     def __init__(self, commands, options, stderr):
-        self.go_commands = options.pop("go_commands", {}) or {}
+        pass
 
     def search_for(self, board, movetime, ponder):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder)

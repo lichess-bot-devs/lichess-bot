@@ -52,15 +52,18 @@ class MinimalEngine(EngineWrapper):
         self.last_move_info = []
         self.engine = FillerEngine(self, name=self.name)
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        timeleft = 0
-        if board.turn:
-            timeleft = wtime
-        else:
-            timeleft = btime
-        return self.search(board, timeleft, ponder)
-
     def search(self, board, timeleft, ponder):
+        """
+        This method is meant to be overridden,
+        it defines engines' implementation.
+        
+        Parameters
+        ----------
+        board : chess.Board
+        timeleft : chess.engine.Limit
+        ponder : boolean
+           Whether to think on opponent's time
+        """
         raise NotImplementedError("The search method is not implemented")
 
     def notify(self, method_name, *args, **kwargs):

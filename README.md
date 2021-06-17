@@ -99,7 +99,7 @@ Steps to create a custom bot
     - If you don't know what to implement, look at the `EngineWrapper` or `UCIEngine` class.
         - You don't have to create your own engine, even though it's an "EngineWrapper" class.<br>
           The examples just implement `search`.
-4. In the `config.yml` file, change the name from engine_name to the name of your class
+4. In the `config.yml`, change the name from engine_name to the name of your class
     - In this case, you could change it to:
       
       `name: "RandomMover"`

@@ -128,10 +128,10 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 continue
 
             if event.get("type") is None:
-                logger.error("Unable to handle response from lichess.org:")
-                logger.error(event)
+                logger.warning("Unable to handle response from lichess.org:")
+                logger.warning(event)
                 if event.get("error") == "Missing scope":
-                    logger.error('Please check that the API access token for your bot has the scope "Play games with the bot API".')
+                    logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
                 continue
             
             if event["type"] == "terminated":

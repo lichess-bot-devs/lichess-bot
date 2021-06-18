@@ -132,8 +132,9 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 logger.error(event)
                 if event.get("error") == "Missing scope":
                     logger.error('Please check that the API access token for your bot has the scope "Play games with the bot API".')
-                    continue
-            elif event["type"] == "terminated":
+                continue
+            
+            if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":
                 busy_processes -= 1

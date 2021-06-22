@@ -51,6 +51,9 @@ class MinimalEngine(EngineWrapper):
 
         self.last_move_info = []
         self.engine = FillerEngine(self, name=self.name)
+        self.engine.id = {
+            "name": self.engine_name
+        }
 
     def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
         timeleft = 0

@@ -104,7 +104,7 @@ Steps to create a homemade bot:
 4. In the `config.yml`, change the name from engine_name to the name of your class
     - In this case, you could change it to:
       
-      `name: "RandomMover"`
+      `name: "RandomMove"`
 
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.

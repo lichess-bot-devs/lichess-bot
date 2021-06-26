@@ -16,7 +16,7 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Bot) and bots.
 - Setup virtualenv: `apt install python3-venv`
 ```
 python3 -m venv venv #if this fails you probably need to add Python3 to your PATH
-virtualenv .venv -p python3 #if this fails you probably need to add Python3 to your PATH
+virtualenv venv -p python3 #if this fails you probably need to add Python3 to your PATH
 source ./venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```

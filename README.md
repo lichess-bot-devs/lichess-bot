@@ -24,7 +24,7 @@ python3 -m pip install -r requirements.txt
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the config.yml as necessary
 
 ### Windows:
-- Here is a video on how to install the bot: (https://youtu.be/w-aJFk00POQ). Or you may proceed to the next steps.
+- Here is a video on how to install the bot: [click here](https://youtu.be/w-aJFk00POQ). Or you may proceed to the next steps.
 - NOTE: Only Python 3.7 or later is supported!
 - If you don't have Python, you may download it here: (https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last . It's better to install Python in a path without spaces, like "C:\Python\".
 - To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell" (you may use cmd too, but sometimes it may not work).
@@ -43,11 +43,11 @@ pip install -r requirements.txt
 
 
 ## Lichess OAuth
-- Create an account for your bot on [Lichess.org](https://lichess.org/signup)
+- Create an account for your bot on [Lichess](https://lichess.org/signup)
 - NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account
-- Once your account has been created and you are logged in, [create a personal OAuth2 token](https://lichess.org/account/oauth/token/create) with the "Play as a bot" selected and add a description
+- Once your account has been created and you are logged in, [New Oauth API token](https://lichess.org/account/oauth/token/create) with the "Play as a bot" selected and add a description
 - A `token` e.g. `Xb0ddNrLabc0lGK2` will be displayed. Store this in `config.yml` as the `token` field
-- NOTE: You won't see this token again on Lichess.
+- NOTE: You won't see this token again on Lichess, so try coping it!
 
 
 ## Setup Engine

@@ -25,7 +25,7 @@ def create_engine(config):
     elif engine_type == "uci":
         Engine = UCIEngine
     elif engine_type == "homemade":
-        Engine = getHomemadeEngine()
+        Engine = getHomemadeEngine(cfg["name"])
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
@@ -199,7 +199,7 @@ class XBoardEngine(EngineWrapper):
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
 
-def getHomemadeEngine():
-    raise NotImplementedError(
-        "    You haven't changed the getHomemadeEngine function yet!\n"
-        "    See section \"Creating a custom bot\" in the Readme")
+
+def getHomemadeEngine(name):
+    import strategies
+    return eval(f"strategies.{name}")

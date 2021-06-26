@@ -126,6 +126,14 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 event = control_queue.get()
             except InterruptedError:
                 continue
+
+            if event.get("type") is None:
+                logger.warning("Unable to handle response from lichess.org:")
+                logger.warning(event)
+                if event.get("error") == "Missing scope":
+                    logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
+                continue
+            
             if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":

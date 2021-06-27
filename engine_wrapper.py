@@ -92,12 +92,17 @@ class EngineWrapper:
 
     def get_stats(self, board, for_chat=False):
         info = self.last_move_info.copy()
+        if "pv" not in info:
+            info["pv"] = []
         if for_chat:
             stats = ["depth", "nps", "nodes", "score", "ponderpv"]
             bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info]
-            bot_stats = ", ".join(bot_stats)
-            pv_moves = ((140 - len(bot_stats) - 12) // 15) * 2
-            info["ponderpv"] = board.variation_san(info["pv"][:pv_moves])
+            len_bot_stats = len(", ".join(bot_stats)) + 12  # 12 is the length of ', ponderpv: '
+            ponder_pv = board.variation_san(info["pv"])
+            ponder_pv = ponder_pv.split()
+            while len(' '.join(ponder_pv)) + len_bot_stats > 140:
+                ponder_pv.pop()
+            info["ponderpv"] = ' '.join(ponder_pv)
         else:
             stats = ["depth", "nps", "nodes", "score", "ponderpv"]
             info["ponderpv"] = board.variation_san(info["pv"])

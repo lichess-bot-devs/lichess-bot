@@ -100,9 +100,14 @@ class EngineWrapper:
             len_bot_stats = len(", ".join(bot_stats)) + 12  # 12 is the length of ', ponderpv: '
             ponder_pv = board.variation_san(info["pv"])
             ponder_pv = ponder_pv.split()
-            while len(' '.join(ponder_pv)) + len_bot_stats > 140:
-                ponder_pv.pop()
-            info["ponderpv"] = ' '.join(ponder_pv)
+            try:
+                while len(' '.join(ponder_pv)) + len_bot_stats > 140:
+                    ponder_pv.pop()
+                if ponder_pv[-1].endswith('.'):
+                    ponder_pv.pop()
+                info["ponderpv"] = ' '.join(ponder_pv)
+            except IndexError:
+                pass
         else:
             stats = ["depth", "nps", "nodes", "score", "ponderpv"]
             info["ponderpv"] = board.variation_san(info["pv"])

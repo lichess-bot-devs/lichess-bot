@@ -45,7 +45,7 @@ pip install -r requirements.txt
 ## Lichess OAuth
 - Create an account for your bot on [Lichess.org](https://lichess.org/signup)
 - NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account
-- Once your account has been created and you are logged in, [create a personal OAuth2 token](https://lichess.org/account/oauth/token/create) with the "Play as a bot" selected and add a description
+- Once your account has been created and you are logged in, [create a personal OAuth2 token with the "Play games with the bot API" ('play:bot' scopes), "Read incoming challenges" ('challenge:read' scopes) and "Create, accept, decline challenges" ('challenge:write' scopes)](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&scopes[]=challenge:read&scopes[]=challenge:write&description=Lichess+Bot+Token) selected and a description added.
 - A `token` e.g. `Xb0ddNrLabc0lGK2` will be displayed. Store this in `config.yml` as the `token` field
 - NOTE: You won't see this token again on Lichess.
 

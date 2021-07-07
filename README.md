@@ -155,9 +155,12 @@ will append `nodes 1 depth 5 movetime 1000` to the command to start thinking of 
     -casual
 ```
 
-## Lichess Upgrade to Bot Account
-**WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
-- run `python lichess-bot.py -u`
+## To Run
+After activating the virtual environment created in the installation steps (the `source` line for Linux and Macs or the `activate` script for Windows), run
+```python
+python lichess-bot.py -u
+```
+The working directory for the engine execution will be the lichess-bot directory. If your engine requires files located elsewhere, make sure they are specified by absolute path or copy the files to an appropriate location inside the lichess-bot directory.
 
 ## To Quit
 - Press CTRL+C

@@ -163,8 +163,8 @@ python lichess-bot.py -u
 The working directory for the engine execution will be the lichess-bot directory. If your engine requires files located elsewhere, make sure they are specified by absolute path or copy the files to an appropriate location inside the lichess-bot directory.
 
 ## To Quit
-- Press CTRL+C
-- It may take some time to quit
+- Press `CTRL+C`.
+- It may take some time to quit.
 ## LeelaChessZero (Mac/Linux)
 
 - Download the weights for the id you want to play from here: https://lczero.org/play/networks/bestnets/

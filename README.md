@@ -55,6 +55,105 @@ pip install -r requirements.txt
 - In `config.yml`, enter the binary name as the `engine.name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
 - Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
 
+### Engine Configuration
+Besides the above, there are many possible options within `config.yml` for configuring the engine for use with lichess-bot.
+- `protocol`: Specify which protocol your engine uses. `"uci"` supported protocol.
+- `ponder`: Specify whether your bot will ponder, i.e., think while the bot's opponent is choosing a move.
+- `engine_options`: Command line options to pass to the engine on startup. For example, the `config.yml.default` has the configuration
+```yml
+  engine_options:
+    cpuct: 3.1
+```
+This would create the command-line option `--cpuct=3.1` to be used when starting the engine. Any number of options can be listed here, each getting their own command-line option.
+- `uci_options`: A list of options to pass to a USI engine after startup. Different engines have different options, so treat the options in `config.yml.default` as templates and not suggestions. When Uci engines start, they print a list of configurations that can modify their behavior. For example, Stockfish 14 prints the following when run at the command line:
+```
+id name Stockfish 14
+id author the Stockfish developers (see AUTHORS file)
+
+option name Debug Log File type string default
+option name Threads type spin default 1 min 1 max 512
+option name Hash type spin default 16 min 1 max 33554432
+option name Clear Hash type button
+option name Ponder type check default false
+option name MultiPV type spin default 1 min 1 max 500
+option name Skill Level type spin default 20 min 0 max 20
+option name Move Overhead type spin default 10 min 0 max 5000
+option name Slow Mover type spin default 100 min 10 max 1000
+option name nodestime type spin default 0 min 0 max 10000
+option name UCI_Chess960 type check default false
+option name UCI_AnalyseMode type check default false
+option name UCI_LimitStrength type check default false
+option name UCI_Elo type spin default 1350 min 1350 max 2850
+option name UCI_ShowWDL type check default false
+option name SyzygyPath type string default <empty>
+option name SyzygyProbeDepth type spin default 1 min 1 max 100
+option name Syzygy50MoveRule type check default true
+option name SyzygyProbeLimit type spin default 7 min 0 max 7
+option name Use NNUE type check default true
+option name EvalFile type string default nn-3475407dc199.nnue
+uciok
+```
+Any of the names following `option name` can be listed in `uci_options` in order to configure the Fairy Stockfish engine.
+```yml
+  uci_options:
+    Move Overhead: 100
+    Skill Level: 10
+```
+The exception to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in the `config.yml` file. Also, if an option is listed under `usi_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
+
+One last option is `go_commands`. Beneath this option, arguments to the USI `go` command can be passed. For example,
+```yml
+  go_commands:
+    nodes: 1
+    depth: 5
+    movetime: 1000
+```
+will append `nodes 1 depth 5 movetime 1000` to the command to start thinking of a move: `go startpos e2e4 e7e5 ...`.
+
+- `abort_time`: How many seconds to wait before aborting a game due to opponent inaction. This only applies during the first six moves of the game.
+- `fake_think_time`: Artificially slow down the engine to simulate a person thinking about a move. The amount of thinking time decreases as the game goes on.
+- `rate_limiting_delay`: For extremely fast games, the [lichess.org](https://lichess.org) servers may respond with an error if too many moves are played to quickly. This option avoids this problem by pausing for a specified number of milliseconds after submitting a move before making the next move.
+- `move_overhead`: To prevent losing on time due to network lag, subtract this many milliseconds from the time to think on each move.
+
+- `correspondence` These options control how the engine behaves during correspondence games.
+  - `move_time`: How many seconds to think for each move.
+  - `checkin_period`: How often (in seconds) to reconnect to games to check for new moves after disconnecting.
+  - `disconnect_time`: How many seconds to wait after the bot makes a move for an opponent to make a move. If no move is made during the wait, disconnect from the game.
+  - `ponder`: Whether the bot should ponder during the above waiting period.
+
+- `challenge`: Control what kind of games for which the bot should accept challenges. All of the following options must be satisfied by a challenge to be accepted.
+  - `concurrency`: The maximum number of games to play simultaneously.
+  - `sort_by`: Whether to start games by the best rated/titled opponent `"best"` or by first-come-first-serve `"first"`.
+  - `accept_bot`: Whether to accept challenges from other bots.
+  - `only_bot`: Whether to only accept challenges from other bots.
+  - `max_increment`: The maximum value of time increment.
+  - `min_increment`: The minimum value of time increment.
+  - `max_base`: The maximum base time for a game.
+  - `min_base`: The minimum base time for a game.
+
+- `variants`: An indented list of chess variants that the bot can handle.
+```yml
+  variants:
+    - standard
+    - fromPosition
+```
+
+- `time_controls`: An indented list of acceptable time control types from `ultraBullet` to `correspondence`.
+```yml
+  time_controls:
+    - ultraBullet
+    - bullet
+    - blitz
+    - rapid
+    - classical
+    - correpondence
+```
+- `modes`: An indented list of acceptable game modes (`rated` and/or `casual`).
+```yml
+  modes:
+    -rated
+    -casual
+```
 
 ## Lichess Upgrade to Bot Account
 **WARNING** This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).
@@ -63,7 +162,6 @@ pip install -r requirements.txt
 ## To Quit
 - Press CTRL+C
 - It may take some time to quit
-
 ## LeelaChessZero (Mac/Linux)
 
 - Download the weights for the id you want to play from here: https://lczero.org/play/networks/bestnets/

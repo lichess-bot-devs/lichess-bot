@@ -8,6 +8,8 @@ from shutil import copyfile
 import importlib
 lichess_bot = importlib.import_module("lichess-bot")
 
+TOKEN = 'INSERT TOKEN HERE'
+
 
 def test_nothing():
     assert True
@@ -93,7 +95,7 @@ def test_bot():
     lichess_bot.logger.info("Downloaded SF")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
-    CONFIG['token'] = 'INSERT TOKEN HERE'
+    CONFIG['token'] = TOKEN
     CONFIG['engine']['dir'] = './'
     CONFIG['engine']['name'] = 'sf.exe'
     run_bot(CONFIG, logging_level)

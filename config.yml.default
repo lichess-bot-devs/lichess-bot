@@ -85,3 +85,7 @@ challenge:                   # Incoming challenges.
   modes:                     # Game modes to accept.
     - casual                 # Unrated games.
     - rated                  # Rated games - must comment if the engine doesn't try to win.
+
+greeting:
+    hello: # Message to send to chat at the start of a game
+    goodbye: # Message to send to chat at the end of a game

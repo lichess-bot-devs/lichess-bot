@@ -242,6 +242,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
 
+    greeting_cfg = config.get("greeting", {}) or {}
+    hello = str(greeting_cfg.get("hello", "") or "")
+    goodbye = str(greeting_cfg.get("goodbye", "") or "")
+
     first_move = True
     correspondence_disconnect_time = 0
     while not terminated:
@@ -268,6 +272,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
+                            conversation.send_message("player", hello)
                             best_move = choose_first_move(engine, board)
                         elif is_correspondence:
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
@@ -277,6 +282,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     time.sleep(delay_seconds)
                 elif is_game_over(game):
                     engine.report_game_result(game, board)
+                    conversation.send_message("player", goodbye)
                 elif len(board.move_stack) == 0:
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 

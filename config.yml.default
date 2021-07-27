@@ -87,5 +87,9 @@ challenge:                   # Incoming challenges.
     - rated                  # Rated games - must comment if the engine doesn't try to win.
 
 greeting:
-    hello: # Message to send to chat at the start of a game
-    goodbye: # Message to send to chat at the end of a game
+    # Optional substitution keywords (include curly braces):
+    #   {opponent} to insert opponent's name
+    #   {me} to insert bot's name
+    # Any other word in curly braces will be removed.
+    hello: "" # Message to send to chat at the start of a game
+    goodbye: "" # Message to send to chat at the end of a game

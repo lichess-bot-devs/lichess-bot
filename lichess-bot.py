@@ -438,7 +438,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     move = random_move["uci"]
                     wdl = random_move["wdl"] * -1
                     dtz = random_move["dtz"] * -1
-                    dtm = data["moves"][0]["dtm"]
+                    dtm = random_move["dtm"]
                     if dtm:
                         dtm *= -1
                 if wdl is not None:

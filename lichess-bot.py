@@ -14,6 +14,7 @@ import signal
 import time
 import backoff
 import sys
+import random
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -241,6 +242,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     move_overhead = config.get("move_overhead", 1000)
     delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
+    chessdb_cfg = engine_cfg.get("chessdb_book", {})
+    online_egtb_cfg = engine_cfg.get("online_egtb", {})
 
     first_move = True
     correspondence_disconnect_time = 0
@@ -266,6 +269,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
+                    if best_move is None:
+                        best_move = get_online_egtb_move(li, board, game, online_egtb_cfg)
+                    if best_move is None:
+                        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
                             best_move = choose_first_move(engine, board)
@@ -358,6 +365,118 @@ def get_book_move(board, polyglot_cfg):
         if move is not None:
             logger.info("Got move {} from book {}".format(move, book))
             return move
+
+    return None
+
+
+def get_chessdb_move(li, board, game, chessdb_cfg):
+    wb = 'w' if board.turn == chess.WHITE else 'b'
+    if not chessdb_cfg.get("enabled", False) or game.state[f"{wb}time"] < chessdb_cfg.get("min_time", 20) * 1000 or board.uci_variant != "chess":
+        return None
+
+    move = None
+    quality = chessdb_cfg.get("move_quality", "good")
+
+    try:
+        if quality == "best":
+            data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=querypv&board={board.fen()}&json=1")
+            if data["status"] == "ok":
+                depth = data["depth"]
+                if depth >= chessdb_cfg.get("min_depth", 20):
+                    score = data["score"]
+                    move = data["pv"][0]
+                    logger.info("Got move {} from chessdb.cn (depth: {}, score: {})".format(move, depth, score))
+
+        elif quality == "good":
+            data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=querybest&board={board.fen()}&json=1")
+            if data["status"] == "ok":
+                move = data["move"]
+                logger.info("Got move {} from chessdb.cn".format(move))
+
+        elif quality == "all":
+            data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=query&board={board.fen()}&json=1")
+            if data["status"] == "ok":
+                move = data["move"]
+                logger.info("Got move {} from chessdb.cn".format(move))
+    except:
+        pass
+
+    if chessdb_cfg.get("contribute", True):
+        try:
+            li.api_get(f"http://www.chessdb.cn/cdb.php?action=queue&board={board.fen()}&json=1")
+        except:
+            pass
+
+    return move
+
+
+def get_online_egtb_move(li, board, game, online_egtb_cfg):
+    wb = 'w' if board.turn == chess.WHITE else 'b'
+    pieces = chess.popcount(board.occupied)
+    if not online_egtb_cfg.get("enabled", False) or game.state[f"{wb}time"] < online_egtb_cfg.get("min_time", 20) * 1000 or board.uci_variant not in ["chess", "antichess", "atomic"] and online_egtb_cfg.get("source", "lichess") == "lichess" or board.uci_variant != "chess" and online_egtb_cfg.get("source", "lichess") == "chessdb" or pieces > online_egtb_cfg.get("max_pieces", 7) or board.castling_rights:
+        return None
+
+    quality = online_egtb_cfg.get("move_quality", "best")
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+
+    try:
+        if online_egtb_cfg.get("source", "lichess") == "lichess":
+            max_pieces = 7 if board.uci_variant == "chess" else 6
+            if pieces <= max_pieces:
+                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}?fen={board.fen()}")
+                if quality == "best":
+                    move = data["moves"][0]["uci"]
+                    wdl = data["moves"][0]["wdl"] * -1
+                    dtz = data["moves"][0]["dtz"] * -1
+                    dtm = data["moves"][0]["dtm"]
+                    if dtm:
+                        dtm *= -1
+                else:
+                    best_wdl = data["moves"][0]["wdl"]
+                    possible_moves = list(filter(lambda possible_move: possible_move["wdl"] == best_wdl, data["moves"]))
+                    random_move = random.choice(possible_moves)
+                    move = random_move["uci"]
+                    wdl = random_move["wdl"] * -1
+                    dtz = random_move["dtz"] * -1
+                    dtm = data["moves"][0]["dtm"]
+                    if dtm:
+                        dtm *= -1
+                if wdl is not None:
+                    logger.info("Got move {} from tablebase.lichess.ovh (wdl: {}, dtz: {}, dtm: {})".format(move, wdl, dtz, dtm))
+                    return move
+        elif online_egtb_cfg.get("source", "lichess") == "chessdb":
+
+            def score_to_wdl(score):
+                if score < -20000:
+                    return -2
+                elif score < 0:
+                    return -1
+                elif score == 0:
+                    return 0
+                elif score <= 20000:
+                    return 1
+                else:
+                    return 2
+
+            if quality == "best":
+                data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=querypv&board={board.fen()}&json=1")
+                if data["status"] == "ok":
+                    score = data["score"]
+                    move = data["pv"][0]
+                    logger.info("Got move {} from chessdb.cn (wdl: {})".format(move, score_to_wdl(score)))
+                    return move
+            else:
+                data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=queryall&board={board.fen()}&json=1")
+                if data["status"] == "ok":
+                    best_wdl = score_to_wdl(data["moves"][0]["score"])
+                    possible_moves = list(filter(lambda possible_move: score_to_wdl(possible_move["score"]) == best_wdl, data["moves"]))
+                    random_move = random.choice(possible_moves)
+                    score = random_move["score"]
+                    move = random_move["uci"]
+                    logger.info("Got move {} from chessdb.cn (wdl: {})".format(move, score_to_wdl(score)))
+                    return move
+    except:
+        pass
 
     return None
 

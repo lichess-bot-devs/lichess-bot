@@ -243,6 +243,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
     chessdb_cfg = engine_cfg.get("chessdb_book", {})
+    lichess_cloud_cfg = engine_cfg.get("lichess_cloud_analysis", {})
     online_egtb_cfg = engine_cfg.get("online_egtb", {})
 
     first_move = True
@@ -273,6 +274,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         best_move = get_online_egtb_move(li, board, game, online_egtb_cfg)
                     if best_move is None:
                         best_move = get_chessdb_move(li, board, game, chessdb_cfg)
+                    if best_move is None:
+                        best_move = lichess_cloud_cfg(li, board, game, lichess_cloud_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
                             best_move = choose_first_move(engine, board)
@@ -408,6 +411,47 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
             pass
 
     return move
+
+
+def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
+    wb = 'w' if board.turn == chess.WHITE else 'b'
+    if not lichess_cloud_cfg.get("enabled", False) or game.state[f"{wb}time"] < lichess_cloud_cfg.get("min_time", 20) * 1000:
+        return None
+
+    quality = lichess_cloud_cfg.get("move_quality", "best")
+    multipv = 1 if quality == "best" else 5
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+
+    try:
+        data = li.api_get(f"https://lichess.org/api/cloud-eval?fen={board.fen()}&multiPv={multipv}&variant={variant}", raise_for_status=False)
+        if "error" not in data:
+            if quality == "best":
+                depth = data["depth"]
+                knodes = data["knodes"]
+                if depth >= lichess_cloud_cfg.get("min_depth", 20) and knodes >= lichess_cloud_cfg.get("min_knodes", 0):
+                    pv = data["pvs"][0]
+                    move = pv["moves"].split()[0]
+                    score = pv["cp"]
+                    logger.info("Got move {} from lichess cloud analysis (depth: {}, score: {}, knodes: {})".format(move, depth, score, knodes))
+            else:
+                depth = data["depth"]
+                knodes = data["knodes"]
+                if depth >= lichess_cloud_cfg.get("min_depth", 20) and knodes >= lichess_cloud_cfg.get("min_knodes", 0):
+                    best_eval = data["pvs"][0]["cp"]
+                    pvs = data["pvs"]
+                    max_difference = lichess_cloud_cfg.get("max_score_difference", 50)
+                    if wb == "w":
+                        pvs = list(filter(lambda pv: pv["cp"] >= best_eval - max_difference, pvs))
+                    else:
+                        pvs = list(filter(lambda pv: pv["cp"] <= best_eval + max_difference, pvs))
+                    pv = random.choice(pvs)
+                    move = pv["moves"].split()[0]
+                    score = pv["cp"]
+                    logger.info("Got move {} from lichess cloud analysis (depth: {}, score: {}, knodes: {})".format(move, depth, score, knodes))
+    except:
+        pass
+
+    return None
 
 
 def get_online_egtb_move(li, board, game, online_egtb_cfg):

@@ -401,13 +401,13 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
             if data["status"] == "ok":
                 move = data["move"]
                 logger.info("Got move {} from chessdb.cn".format(move))
-    except:
+    except Exception:
         pass
 
     if chessdb_cfg.get("contribute", True):
         try:
             li.api_get(f"http://www.chessdb.cn/cdb.php?action=queue&board={board.fen()}&json=1")
-        except:
+        except Exception:
             pass
 
     return move
@@ -448,7 +448,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                     move = pv["moves"].split()[0]
                     score = pv["cp"]
                     logger.info("Got move {} from lichess cloud analysis (depth: {}, score: {}, knodes: {})".format(move, depth, score, knodes))
-    except:
+    except Exception:
         pass
 
     return None
@@ -519,7 +519,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     move = random_move["uci"]
                     logger.info("Got move {} from chessdb.cn (wdl: {})".format(move, score_to_wdl(score)))
                     return move
-    except:
+    except Exception:
         pass
 
     return None

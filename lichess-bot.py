@@ -242,9 +242,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     move_overhead = config.get("move_overhead", 1000)
     delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
-    chessdb_cfg = engine_cfg.get("chessdb_book", {})
-    lichess_cloud_cfg = engine_cfg.get("lichess_cloud_analysis", {})
-    online_egtb_cfg = engine_cfg.get("online_egtb", {})
+    online_moves_cfg = engine_cfg.get("online_moves", {})
 
     first_move = True
     correspondence_disconnect_time = 0
@@ -271,11 +269,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move is None:
-                        best_move = get_online_egtb_move(li, board, game, online_egtb_cfg)
-                    if best_move is None:
-                        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
-                    if best_move is None:
-                        best_move = lichess_cloud_cfg(li, board, game, lichess_cloud_cfg)
+                        best_move = get_online_move(li, board, game, online_moves_cfg)
                     if best_move is None:
                         if len(board.move_stack) < 2:
                             best_move = choose_first_move(engine, board)
@@ -525,6 +519,18 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
         pass
 
     return None
+
+
+def get_online_move(li, board, game, online_moves_cfg):
+    online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
+    chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
+    lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
+    best_move = get_online_egtb_move(li, board, game, online_egtb_cfg)
+    if best_move is None:
+        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
+    if best_move is None:
+        best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
+    return best_move
 
 
 def choose_move(engine, board, game, ponder, start_time, move_overhead):

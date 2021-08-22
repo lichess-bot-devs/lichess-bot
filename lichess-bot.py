@@ -418,6 +418,8 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     if not lichess_cloud_cfg.get("enabled", False) or game.state[f"{wb}time"] < lichess_cloud_cfg.get("min_time", 20) * 1000:
         return None
 
+    move = None
+    
     quality = lichess_cloud_cfg.get("move_quality", "best")
     multipv = 1 if quality == "best" else 5
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
@@ -451,7 +453,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     except Exception:
         pass
 
-    return None
+    return move
 
 
 def get_online_egtb_move(li, board, game, online_egtb_cfg):

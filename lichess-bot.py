@@ -126,6 +126,14 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 event = control_queue.get()
             except InterruptedError:
                 continue
+
+            if event.get("type") is None:
+                logger.warning("Unable to handle response from lichess.org:")
+                logger.warning(event)
+                if event.get("error") == "Missing scope":
+                    logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
+                continue
+            
             if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":
@@ -262,14 +270,18 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
-                    if best_move is None:
+                    if best_move.move is None:
+                        draw_offered = check_for_draw_offer(game)
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board)
+                            best_move = choose_first_move(engine, board, draw_offered)
                         elif is_correspondence:
-                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
+                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
-                            best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
-                    li.make_move(game.id, best_move)
+                            best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
+                    if best_move.resigned:
+                        li.resign(game.id)
+                    else:
+                        li.make_move(game.id, best_move)
                     time.sleep(delay_seconds)
                 elif is_game_over(game):
                     engine.report_game_result(game, board)
@@ -308,21 +320,22 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_move_time(engine, board, search_time, ponder):
+def choose_move_time(engine, board, search_time, ponder, draw_offered):
     logger.info("Searching for time {}".format(search_time))
-    return engine.search_for(board, search_time, ponder)
+    return engine.search_for(board, search_time, ponder, draw_offered)
 
 
-def choose_first_move(engine, board):
+def choose_first_move(engine, board, draw_offered):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info("Searching for time {}".format(search_time))
-    return engine.first_search(board, search_time)
+    return engine.first_search(board, search_time, draw_offered)
 
 
 def get_book_move(board, polyglot_cfg):
+    no_book_move = chess.engine.PlayResult(None, None)
     if not polyglot_cfg.get("enabled") or len(board.move_stack) > polyglot_cfg.get("max_depth", 8) * 2 - 1:
-        return None
+        return no_book_move
 
     book_config = polyglot_cfg.get("book", {})
 
@@ -332,7 +345,7 @@ def get_book_move(board, polyglot_cfg):
         if book_config.get("{}".format(board.uci_variant)):
             books = book_config["{}".format(board.uci_variant)]
         else:
-            return None
+            return no_book_move
 
     if isinstance(books, str):
         books = [books]
@@ -353,12 +366,12 @@ def get_book_move(board, polyglot_cfg):
 
         if move is not None:
             logger.info("Got move {} from book {}".format(move, book))
-            return move
+            return chess.engine.PlayResult(move, None)
 
-    return None
+    return no_book_move
 
 
-def choose_move(engine, board, game, ponder, start_time, move_overhead):
+def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):
     wtime = game.state["wtime"]
     btime = game.state["btime"]
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1000000)
@@ -368,7 +381,11 @@ def choose_move(engine, board, game, ponder, start_time, move_overhead):
         btime = max(0, btime - move_overhead - pre_move_time)
 
     logger.info("Searching for wtime {} btime {}".format(wtime, btime))
-    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder)
+    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder, draw_offered)
+
+
+def check_for_draw_offer(game):
+    return game.state[f'{game.opponent_color[0]}draw']
 
 
 def fake_thinking(config, board, game):

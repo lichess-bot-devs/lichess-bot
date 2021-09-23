@@ -16,7 +16,7 @@ A bridge between [Lichess API](https://lichess.org/api#tag/Bot) and bots.
 - Setup virtualenv: `apt install python3-venv`
 ```
 python3 -m venv venv #if this fails you probably need to add Python3 to your PATH
-virtualenv .venv -p python3 #if this fails you probably need to add Python3 to your PATH
+virtualenv venv -p python3 #if this fails you probably need to add Python3 to your PATH
 source ./venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```
@@ -45,8 +45,8 @@ pip install -r requirements.txt
 ## Lichess OAuth
 - Create an account for your bot on [Lichess.org](https://lichess.org/signup)
 - NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account
-- Once your account has been created and you are logged in, [create a personal OAuth2 token](https://lichess.org/account/oauth/token/create) with the "Play as a bot" selected and add a description
-- A `token` e.g. `Xb0ddNrLabc0lGK2` will be displayed. Store this in `config.yml` as the `token` field
+- Once your account has been created and you are logged in, [create a personal OAuth2 token](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&description=lichess-bot) with the "Play as a bot" selected and add a description
+- A `token` e.g. `Xb0ddNrLabc0lGK2` will be displayed. Store this in `config.yml` as the `token` field. You can also set the token in the environment variable `$LICHESS_BOT_TOKEN`.
 - NOTE: You won't see this token again on Lichess.
 
 
@@ -88,31 +88,23 @@ pip install -r requirements.txt
 Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot
 inside a Docker container.
 
-## Creating a custom bot
+## Creating a homemade bot
 
-Steps to create a custom bot
+As an alternative to creating an entire chess engine and implementing one of the communiciation protocols (UCI or XBoard), a bot can also be created by writing a single class with a single method. The `search()` method in this new class takes the current board and the game clock as arguments and should return a move based on whatever criteria the coder desires.
+
+Steps to create a homemade bot:
 
 1. Do all the steps in the [How to Install](#how-to-install)
 2. In the `config.yml`, change the engine protocol to `homemade`
-3. Create a class in some file that extends `EngineWrapper` (in `engine_wrapper.py`)
-    - Or extend `MinimalEngine` (in `strategies.py`),
-      if you don't want to deal with a few random errors.
+3. Create a class in some file that extends `MinimalEngine` (in `strategies.py`).
     - Look at the `strategies.py` file to see some examples.
     - If you don't know what to implement, look at the `EngineWrapper` or `UCIEngine` class.
         - You don't have to create your own engine, even though it's an "EngineWrapper" class.<br>
           The examples just implement `search`.
-4. At the bottom of `engine_wrapper.py` change `getHomemadeEngine()` to return your class
+4. In the `config.yml`, change the name from engine_name to the name of your class
     - In this case, you could change it to:
-
-      ```python
-      def getHomemadeEngine():
-          import strategies
-          return strategies.RandomMover
-      ```
-
-5. In the folder `engines` create a file named `engine_name`,
-   possibly with some explainer text like `dummy engine file`.
-    - Required because config.yml has `engine.dir`, and the code checks if it exists
+      
+      `name: "RandomMove"`
 
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.

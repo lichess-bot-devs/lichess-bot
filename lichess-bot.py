@@ -268,16 +268,22 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
-                    if best_move is None:
+                    if best_move.move is None:
                         best_move = get_online_move(li, board, game, online_moves_cfg)
-                    if best_move is None:
+
+                    if best_move.move is None:
+                        draw_offered = check_for_draw_offer(game)
+
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board)
+                            best_move = choose_first_move(engine, board, draw_offered)
                         elif is_correspondence:
-                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder)
+                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
-                            best_move = choose_move(engine, board, game, can_ponder, start_time, move_overhead)
-                    li.make_move(game.id, best_move)
+                            best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
+                    if best_move.resigned:
+                        li.resign(game.id)
+                    else:
+                        li.make_move(game.id, best_move)
                     time.sleep(delay_seconds)
                 elif is_game_over(game):
                     engine.report_game_result(game, board)
@@ -316,21 +322,22 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     control_queue.put_nowait({"type": "local_game_done"})
 
 
-def choose_move_time(engine, board, search_time, ponder):
+def choose_move_time(engine, board, search_time, ponder, draw_offered):
     logger.info("Searching for time {}".format(search_time))
-    return engine.search_for(board, search_time, ponder)
+    return engine.search_for(board, search_time, ponder, draw_offered)
 
 
-def choose_first_move(engine, board):
+def choose_first_move(engine, board, draw_offered):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info("Searching for time {}".format(search_time))
-    return engine.first_search(board, search_time)
+    return engine.first_search(board, search_time, draw_offered)
 
 
 def get_book_move(board, polyglot_cfg):
+    no_book_move = chess.engine.PlayResult(None, None)
     if not polyglot_cfg.get("enabled") or len(board.move_stack) > polyglot_cfg.get("max_depth", 8) * 2 - 1:
-        return None
+        return no_book_move
 
     book_config = polyglot_cfg.get("book", {})
 
@@ -340,7 +347,7 @@ def get_book_move(board, polyglot_cfg):
         if book_config.get("{}".format(board.uci_variant)):
             books = book_config["{}".format(board.uci_variant)]
         else:
-            return None
+            return no_book_move
 
     if isinstance(books, str):
         books = [books]
@@ -361,9 +368,9 @@ def get_book_move(board, polyglot_cfg):
 
         if move is not None:
             logger.info("Got move {} from book {}".format(move, book))
-            return move
+            return chess.engine.PlayResult(move, None)
 
-    return None
+    return no_book_move
 
 
 def get_chessdb_move(li, board, game, chessdb_cfg):
@@ -413,7 +420,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
         return None
 
     move = None
-    
+
     quality = lichess_cloud_cfg.get("move_quality", "best")
     multipv = 1 if quality == "best" else 5
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
@@ -461,22 +468,23 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 
     try:
         if online_egtb_cfg.get("source", "lichess") == "lichess":
+            name_to_wld = {"loss": -2, "maybe-loss": -1, "blessed-loss": -1, "draw": 0, "cursed-win": 1, "maybe-win": 1, "win": 2}
             max_pieces = 7 if board.uci_variant == "chess" else 6
             if pieces <= max_pieces:
                 data = li.api_get(f"http://tablebase.lichess.ovh/{variant}?fen={board.fen()}")
                 if quality == "best":
                     move = data["moves"][0]["uci"]
-                    wdl = data["moves"][0]["wdl"] * -1
+                    wdl = name_to_wld[data["moves"][0]["category"]] * -1
                     dtz = data["moves"][0]["dtz"] * -1
                     dtm = data["moves"][0]["dtm"]
                     if dtm:
                         dtm *= -1
                 else:
-                    best_wdl = data["moves"][0]["wdl"]
-                    possible_moves = list(filter(lambda possible_move: possible_move["wdl"] == best_wdl, data["moves"]))
+                    best_wdl = name_to_wld[data["moves"][0]["category"]]
+                    possible_moves = list(filter(lambda possible_move: name_to_wld[possible_move["category"]] == best_wdl, data["moves"]))
                     random_move = random.choice(possible_moves)
                     move = random_move["uci"]
-                    wdl = random_move["wdl"] * -1
+                    wdl = name_to_wld[random_move["category"]] * -1
                     dtz = random_move["dtz"] * -1
                     dtm = random_move["dtm"]
                     if dtm:
@@ -530,10 +538,12 @@ def get_online_move(li, board, game, online_moves_cfg):
         best_move = get_chessdb_move(li, board, game, chessdb_cfg)
     if best_move is None:
         best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
-    return best_move
+    if best_move:
+        return chess.engine.PlayResult(chess.Move.from_uci(best_move), None)
+    return chess.engine.PlayResult(None, None)
 
 
-def choose_move(engine, board, game, ponder, start_time, move_overhead):
+def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):
     wtime = game.state["wtime"]
     btime = game.state["btime"]
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1000000)
@@ -543,7 +553,11 @@ def choose_move(engine, board, game, ponder, start_time, move_overhead):
         btime = max(0, btime - move_overhead - pre_move_time)
 
     logger.info("Searching for wtime {} btime {}".format(wtime, btime))
-    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder)
+    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder, draw_offered)
+
+
+def check_for_draw_offer(game):
+    return game.state[f'{game.opponent_color[0]}draw']
 
 
 def fake_thinking(config, board, game):

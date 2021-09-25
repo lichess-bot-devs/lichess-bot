@@ -381,7 +381,7 @@ def choose_move(engine, board, game, ponder, draw_offered, start_time, move_over
 
 
 def check_for_draw_offer(game):
-    return game.state[f'{game.opponent_color[0]}draw']
+    return game.state.get(f'{game.opponent_color[0]}draw', False)
 
 
 def fake_thinking(config, board, game):

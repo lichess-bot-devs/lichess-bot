@@ -177,7 +177,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                 game_id = event["game"]["id"]
                 pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
-            if event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping):
+            if (event["type"] == "correspondence_ping" or (event["type"] == "local_game_done" and not wait_for_correspondence_ping)) and not challenge_queue:
                 if event["type"] == "correspondence_ping" and wait_for_correspondence_ping:
                     correspondence_queue.put("")
 

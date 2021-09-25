@@ -44,6 +44,10 @@ class Conversation:
     def send_reply(self, line, reply):
         self.xhr.chat(self.game.id, line.room, reply)
 
+    def send_message(self, room, message):
+        if message:
+            self.send_reply(ChatLine({"room": room}), message)
+
 
 class ChatLine:
     def __init__(self, json):

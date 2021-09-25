@@ -4,6 +4,7 @@ And some handy classes to extend
 """
 
 import chess
+from chess.engine import PlayResult
 import random
 from engine_wrapper import EngineWrapper
 
@@ -64,6 +65,11 @@ class MinimalEngine(EngineWrapper):
         return self.search(board, timeleft, ponder, draw_offered)
 
     def search(self, board, timeleft, ponder, draw_offered):
+        """
+        The method to be implemented in your homemade engine
+
+        NOTE: This method must return an instance of "chess.engine.PlayResult"
+        """
         raise NotImplementedError("The search method is not implemented")
 
     def notify(self, method_name, *args, **kwargs):
@@ -89,14 +95,14 @@ class ExampleEngine(MinimalEngine):
 
 class RandomMove(ExampleEngine):
     def search(self, board, *args):
-        return random.choice(list(board.legal_moves))
+        return PlayResult(random.choice(list(board.legal_moves)), None)
 
 
 class Alphabetical(ExampleEngine):
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
-        return moves[0]
+        return PlayResult(moves[0], None)
 
 
 class FirstMove(ExampleEngine):
@@ -104,4 +110,4 @@ class FirstMove(ExampleEngine):
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=str)
-        return moves[0]
+        return PlayResult(moves[0], None)

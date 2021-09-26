@@ -199,13 +199,13 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 
 ## To Run
 After activating the virtual environment created in the installation steps (the `source` line for Linux and Macs or the `activate` script for Windows), run
-```python
+```
 python lichess-bot.py
 ```
 The working directory for the engine execution will be the lichess-bot directory. If your engine requires files located elsewhere, make sure they are specified by absolute path or copy the files to an appropriate location inside the lichess-bot directory.
 
 To output more information (including your engine's thinking output and debugging information), the `-v` option can be passed to lichess-bot:
-```python
+```
 python lichess-bot.py -v
 ```
 

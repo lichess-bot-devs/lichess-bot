@@ -55,6 +55,10 @@ class GameEnding:
     INCOMPLETE = '*'
 
 
+PONDERPV_CHARACTERS = 12  # the length of ', ponderpv: '
+MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
+
+
 class EngineWrapper:
     def __init__(self, commands, options, stderr):
         pass
@@ -97,15 +101,15 @@ class EngineWrapper:
         if for_chat:
             stats = ["depth", "nps", "nodes", "score", "ponderpv"]
             bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info]
-            len_bot_stats = len(", ".join(bot_stats)) + 12  # 12 is the length of ', ponderpv: '
+            len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = board.variation_san(info["pv"])
             ponder_pv = ponder_pv.split()
             try:
-                while len(' '.join(ponder_pv)) + len_bot_stats > 140:
+                while len(" ".join(ponder_pv)) + len_bot_stats > MAX_CHAT_MESSAGE_LEN:
                     ponder_pv.pop()
-                if ponder_pv[-1].endswith('.'):
+                if ponder_pv[-1].endswith("."):
                     ponder_pv.pop()
-                info["ponderpv"] = ' '.join(ponder_pv)
+                info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
         else:

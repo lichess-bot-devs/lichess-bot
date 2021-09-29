@@ -41,10 +41,11 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final)
-    def api_get(self, path):
+    def api_get(self, path, raise_for_status=True):
         url = urljoin(self.baseUrl, path)
         response = self.session.get(url, timeout=2)
-        response.raise_for_status()
+        if raise_for_status:
+            response.raise_for_status()
         return response.json()
 
     @backoff.on_exception(backoff.constant,
@@ -52,9 +53,9 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final)
-    def api_post(self, path, data=None, headers=None):
+    def api_post(self, path, data=None, headers=None, params=None):
         url = urljoin(self.baseUrl, path)
-        response = self.session.post(url, data=data, headers=headers, timeout=2)
+        response = self.session.post(url, data=data, headers=headers, params=params, timeout=2)
         response.raise_for_status()
         return response.json()
 
@@ -65,7 +66,8 @@ class Lichess:
         return self.api_post(ENDPOINTS["upgrade"])
 
     def make_move(self, game_id, move):
-        return self.api_post(ENDPOINTS["move"].format(game_id, move))
+        return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
+                             params={'offeringDraw': str(move.draw_offered).lower()})
 
     def chat(self, game_id, room, text):
         payload = {'room': room, 'text': text}

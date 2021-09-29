@@ -20,8 +20,30 @@ engine:                      # Engine settings.
     min_weight: 1            # Does not select moves with weight below min_weight (min 0, max: 65535).
     selection: "weighted_random" # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
     max_depth: 8             # Half move max depth.
+  online_moves:
+    chessdb_book:
+      enabled: false
+      min_time: 20
+      move_quality: "good"     # One of "all", "good", "best"
+      min_depth: 20            # Only for move_quality: "best"
+      contribute: true
+    lichess_cloud_analysis:
+      enabled: false
+      min_time: 20
+      move_quality: "good"     # One of "good", "best"
+      max_score_difference: 50 # Only for move_quality: "good". The maximum score difference (in cp) between the best move and the other moves.
+      min_depth: 20
+      min_knodes: 0
+    online_egtb:
+      enabled: false
+      min_time: 20
+      max_pieces: 7
+      source: "lichess"        # One of "lichess", "chessdb"
+      move_quality: "best"     # One of "good", "best"
 # engine_options:            # Any custom command line params to pass to the engine.
 #   cpuct: 3.1
+  homemade_options:
+#   Hash: 256  
   uci_options:               # Arbitrary UCI options passed to the engine.
     Move Overhead: 100       # Increase if your bot flags games too often.
     Threads: 2               # Max CPU threads the engine can use.
@@ -83,3 +105,11 @@ challenge:                   # Incoming challenges.
   modes:                     # Game modes to accept.
     - casual                 # Unrated games.
     - rated                  # Rated games - must comment if the engine doesn't try to win.
+
+greeting:
+    # Optional substitution keywords (include curly braces):
+    #   {opponent} to insert opponent's name
+    #   {me} to insert bot's name
+    # Any other words in curly braces will be removed.
+    hello: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to chat at the start of a game
+    goodbye: "Good game!" # Message to send to chat at the end of a game

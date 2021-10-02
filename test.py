@@ -143,4 +143,4 @@ def test_bot():
 
 
 if __name__ == '__main__':
-    test_bot()  # Make test.py copy test/lichess.py to lichess.py
+    test_bot()

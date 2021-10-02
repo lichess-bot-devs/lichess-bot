@@ -99,7 +99,7 @@ def game_logging_configurer(queue, level):
         root.setLevel(level)
 
 
-def start(li, user_profile, engine_factory, config, logging_level, log_filename):
+def start(li, user_profile, engine_factory, config, logging_level, log_filename, one_game=False):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
     logger.info("You're now connected to {} and awaiting challenges.".format(config["url"]))
@@ -141,6 +141,8 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
             elif event["type"] == "local_game_done":
                 busy_processes -= 1
                 logger.info("+++ Process Free. Total Queued: {}. Total Used: {}".format(queued_processes, busy_processes))
+                if one_game:
+                    break
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
                 if chlng.is_supported(challenge_config):

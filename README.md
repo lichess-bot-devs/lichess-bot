@@ -67,25 +67,24 @@ Besides the above, there are many possible options within `config.yml` for confi
     - `enabled`: Whether to use the book at all.
     - `book`: A nested list of books. The next indented line should list a chess variant (`standard`, `3check`, `horde`, etc.) followed on succeeding indented lines with paths to the book files. See `config.yml.default` for examples.
 - `online_moves`: This section gives your bot access to various online resources for choosing moves like opening books and endgame tablebases. This can be a supplement or a replacement for chess databases stored on your computer. There are three sections that correspond to three different online databases:
-    - `chessdb_book`: Consults a [Chinese chess position database](https://www.chessdb.cn/), which also hosts a xiangqi database.
-    - `lichess_cloud_analysis`: Consults [Lichess' own position analysis database](https://lichess.org/api#operation/apiCloudEval).
-    - `online_egtb`: Consults either the online Syzygy 7-piece endgame tablebase [hosted by Lichess](https://lichess.org/blog/W3WeMyQAACQAdfAL/7-piece-syzygy-tablebases-are-complete) or the chessdb listed above.
-The options for these online sources are as follows:
-    - Common to all:
+    1. `chessdb_book`: Consults a [Chinese chess position database](https://www.chessdb.cn/), which also hosts a xiangqi database.
+    2. `lichess_cloud_analysis`: Consults [Lichess' own position analysis database](https://lichess.org/api#operation/apiCloudEval).
+    3. `online_egtb`: Consults either the online Syzygy 7-piece endgame tablebase [hosted by Lichess](https://lichess.org/blog/W3WeMyQAACQAdfAL/7-piece-syzygy-tablebases-are-complete) or the chessdb listed above.
+    - Configurations common to all:
         - `enabled`: Whether to use the database at all.
         - `min_time`: The minimum time in seconds on the game clock necessary to allow the online database to be consulted.
-    - Only in `chessdb_book` and `lichess_cloud_analysis`:
+    - Configurations only in `chessdb_book` and `lichess_cloud_analysis`:
         - `move_quality`: Choice of `"all"` (`chessdb_book` only), `"good"`, or `"best"`.
             - `all`: Choose a random move from all legal moves.
             - `best`: Choose only the highest scoring move.
             - `good`: Choose randomly from the top moves. In `lichess_cloud_analysis`, the top moves list is controlled by `max_score_difference`. In `chessdb_book`, the top list is controlled by the online source.
         - `min_depth`: The minimum search depth for a move evaluation for a database move to be accepted.
-    - Only in `chessdb_book`:
+    - Configurations only in `chessdb_book`:
         - `contribute`: Send the current board position to chessdb for later analysis.
-    - Only in `lichess_cloud_analysis`:
+    - Configurations only in `lichess_cloud_analysis`:
         - `max_score_difference`: When `move_quality` is set to `"good"`, this option specifices the maximum difference between the top scoring move and any other move that will make up the set from which a move will be chosen randomly. If this options is set to 25 and the top move in a position has a score of 100, no move with a score of less than 75 will be returned.
         - `min_knodes`: The minimum number of kilonodes to search. The minimum number of nodes to search is this value times 1000.
-    - Only in `online_egtb`:
+    - Configurations only in `online_egtb`:
         -  `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
         - `source`: One of `chessdb` or `lichess`. Lichess also has tablebases for atomic and antichess while chessdb only has those for standard.
 - `engine_options`: Command line options to pass to the engine on startup. For example, the `config.yml.default` has the configuration

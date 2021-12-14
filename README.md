@@ -25,13 +25,13 @@ python3 -m pip install -r requirements.txt
 - **NOTE: Only Python 3.7 or later is supported!**
 - If you don't have Python, you may [download it here](https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\".
 - To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell" (you may use "cmd" too, but sometimes it may not work).
-- Then you may need to upgrade pip. Execute `python -m pip install --upgrade pip` in PowerShell.
+- Then you may need to upgrade pip. Execute `python3 -m pip install --upgrade pip` in PowerShell.
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in PowerShell: `cd [folder's adress]` (example, `cd C:\chess\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
 ```python
-python -m venv .venv # If this fails you probably need to add Python to your PATH.
+python3 -m venv .venv # If this fails you probably need to add Python3 to your PATH.
 ./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
 pip install -r requirements.txt
 ```
@@ -219,18 +219,18 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 
 ## Lichess Upgrade to Bot Account
 **WARNING: This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).**
-- run `python lichess-bot.py -u`.
+- run `python3 lichess-bot.py -u`.
 
 ## To Run
 After activating the virtual environment created in the installation steps (the `source` line for Linux and Macs or the `activate` script for Windows), run
 ```
-python lichess-bot.py
+python3 lichess-bot.py
 ```
 The working directory for the engine execution will be the lichess-bot directory. If your engine requires files located elsewhere, make sure they are specified by absolute path or copy the files to an appropriate location inside the lichess-bot directory.
 
 To output more information (including your engine's thinking output and debugging information), the `-v` option can be passed to lichess-bot:
 ```
-python lichess-bot.py -v
+python3 lichess-bot.py -v
 ```
 
 ## To Quit
@@ -244,7 +244,7 @@ python lichess-bot.py -v
 - Copy both the files into the `engine.dir` directory.
 - Change the `engine.name` and `engine.engine_options.weights` keys in `config.yml` file to `lczero` and `weights.pb.gz`.
 - You can specify the number of `engine.uci_options.threads` in the `config.yml` file as well.
-- To start: `python lichess-bot.py`.
+- To start: `python3 lichess-bot.py`.
 
 ## LeelaChessZero: Windows CPU 2021
 - For Windows modern CPUs, download the lczero binary from the [latest Lc0 release](https://github.com/LeelaChessZero/lc0/releases) (e.g. `lc0-v0.27.0-windows-cpu-dnnl.zip`).
@@ -252,7 +252,7 @@ python lichess-bot.py -v
 - All three main files need to be copied to the engines directory.
 - The `lc0.exe` should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file).
 - Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the engines directory).
-- To start: `python lichess-bot.py`.
+- To start: `python3 lichess-bot.py`.
 
 ## LeelaChessZero: Docker container
 Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot inside a Docker container.

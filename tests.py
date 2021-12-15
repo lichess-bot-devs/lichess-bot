@@ -16,12 +16,12 @@ def test_nothing():
 
 
 def download_sf():
-    response = requests.get('https://stockfishchess.org/files/stockfish_14_win_x64.zip', allow_redirects=True)
+    response = requests.get('https://stockfishchess.org/files/stockfish_14.1_win_x64.zip', allow_redirects=True)
     with open('sf_zip.zip', 'wb') as file:
         file.write(response.content)
     with zipfile.ZipFile('sf_zip.zip', 'r') as zip_ref:
         zip_ref.extractall('.')
-    copyfile('./stockfish_14_win_x64/stockfish_14_x64.exe', 'sf.exe')
+    copyfile('./stockfish_14.1_win_x64/stockfish_14.1_win_x64.exe', 'sf.exe')
 
 
 def run_bot(CONFIG, logging_level):

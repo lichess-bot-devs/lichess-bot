@@ -258,7 +258,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             if u_type == "chatLine":
                 try:
                     conversation.react(ChatLine(upd), game, board)
-                except:
+                except Exception:
                     pass
             elif u_type == "gameState":
                 game.state = upd

@@ -7,15 +7,10 @@ import yaml
 import chess
 import chess.engine
 import threading
-import random
 from shutil import copyfile
 import importlib
 copyfile('./test/lichess.py', 'lichess.py')
 lichess_bot = importlib.import_module("lichess-bot")
-
-
-def test_nothing():
-    assert True
 
 
 def download_sf():
@@ -26,11 +21,6 @@ def download_sf():
         zip_ref.extractall('.')
     copyfile('./stockfish_14.1_win_x64/stockfish_14.1_win_x64.exe', 'sf.exe')
     copyfile('./stockfish_14.1_win_x64/stockfish_14.1_win_x64.exe', 'sf2.exe')
-
-
-class RandomEngine:
-    def play(self, board, *args):
-        return random.choice(board.legal_moves)
 
 
 def run_bot(CONFIG, logging_level):

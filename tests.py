@@ -11,10 +11,6 @@ lichess_bot = importlib.import_module("lichess-bot")
 TOKEN = 'INSERT TOKEN HERE'
 
 
-def test_nothing():
-    assert True
-
-
 def download_sf():
     response = requests.get('https://stockfishchess.org/files/stockfish_14.1_win_x64.zip', allow_redirects=True)
     with open('sf_zip.zip', 'wb') as file:

@@ -250,7 +250,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     get_greeting = lambda greeting: str(greeting_cfg.get(greeting, "") or "").format_map(keyword_map)
     hello = get_greeting("hello")
     goodbye = get_greeting("goodbye")
-    
+
     first_move = True
     correspondence_disconnect_time = 0
     while not terminated:
@@ -269,6 +269,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                 game.state = upd
                 board = setup_board(game)
                 if not is_game_over(game) and is_engine_move(game, board):
+                    if len(board.move_stack) < 2:
+                        conversation.send_message("player", hello)
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
@@ -282,7 +284,6 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         draw_offered = check_for_draw_offer(game)
 
                         if len(board.move_stack) < 2:
-                            conversation.send_message("player", hello)
                             best_move = choose_first_move(engine, board, draw_offered)
                         elif is_correspondence:
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)

@@ -85,12 +85,15 @@ class EngineWrapper:
     def offer_draw_or_resign(self, result, board):
         if self.draw_or_resign.get('offer_draw_enabled', False) and len(self.scores) >= self.draw_or_resign.get('offer_draw_moves', 5):
             scores = self.scores[-self.draw_or_resign.get('offer_draw_moves', 5):]
-            if len(scores) == len(list(filter(lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get('offer_draw_score', 10), scores))) and len([board.piece_type_at(sq) for sq in chess.SQUARES if board.piece_type_at(sq)]) <= self.draw_or_resign.get('offer_draw_pieces', 10):
+            pieces_on_board = len([board.piece_type_at(sq) for sq in chess.SQUARES if board.piece_type_at(sq)])
+            scores_near_draw = lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get('offer_draw_score', 0)
+            if len(scores) == len(list(filter(scores_near_draw, scores))) and pieces_on_board <= self.draw_or_resign.get('offer_draw_pieces', 10):
                 result.draw_offered = True
 
         if self.draw_or_resign.get('resign_enabled', False) and len(self.scores) >= self.draw_or_resign.get('resign_moves', 3):
             scores = self.scores[-self.draw_or_resign.get('resign_moves', 3):]
-            if len(scores) == len(list(filter(lambda score: score.relative.score(mate_score=40000) <= self.draw_or_resign.get('resign_score', -1000), scores))):
+            scores_near_loss = lambda score: score.relative.score(mate_score=40000) <= self.draw_or_resign.get('resign_score', -1000)
+            if len(scores) == len(list(filter(scores_near_loss, scores))):
                 result.resigned = True
         return result
 

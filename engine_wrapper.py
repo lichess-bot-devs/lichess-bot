@@ -13,6 +13,7 @@ def create_engine(config):
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
+    draw_or_resign = cfg.get("draw_or_resign", {})
     commands = [engine_path]
     if engine_options:
         for k, v in engine_options.items():
@@ -30,7 +31,7 @@ def create_engine(config):
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
-    return Engine(commands, options, stderr)
+    return Engine(commands, options, stderr, draw_or_resign)
 
 
 def remove_managed_options(config):
@@ -56,8 +57,9 @@ class GameEnding:
 
 
 class EngineWrapper:
-    def __init__(self, commands, options, stderr):
-        pass
+    def __init__(self, commands, options, stderr, draw_or_resign):
+        self.scores = []
+        self.draw_or_resign = draw_or_resign
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -80,9 +82,23 @@ class EngineWrapper:
                                         time=movetime)
         return self.search(board, time_limit, ponder, draw_offered)
 
+    def offer_draw_or_resign(self, result, board):
+        if self.draw_or_resign.get('offer_draw_enabled', False) and len(self.scores) >= self.draw_or_resign.get('offer_draw_moves', 5):
+            scores = self.scores[-self.draw_or_resign.get('offer_draw_moves', 5):]
+            if len(scores) == len(list(filter(lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get('offer_draw_score', 10), scores))) and len([board.piece_type_at(sq) for sq in chess.SQUARES if board.piece_type_at(sq)]) <= self.draw_or_resign.get('offer_draw_pieces', 10):
+                result.draw_offered = True
+
+        if self.draw_or_resign.get('resign_enabled', False) and len(self.scores) >= self.draw_or_resign.get('resign_moves', 3):
+            scores = self.scores[-self.draw_or_resign.get('resign_moves', 3):]
+            if len(scores) == len(list(filter(lambda score: score.relative.score(mate_score=40000) <= self.draw_or_resign.get('resign_score', -1000), scores))):
+                result.resigned = True
+        return result
+
     def search(self, board, time_limit, ponder, draw_offered):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info
+        self.scores.append(self.last_move_info.get("score", float('nan')))
+        result = self.offer_draw_or_resign(result, board)
         self.print_stats()
         return result
 
@@ -112,7 +128,8 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr):
+    def __init__(self, commands, options, stderr, draw_or_resign):
+        super().__init__(commands, options, stderr, draw_or_resign)
         self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
         self.engine.configure(options)
@@ -134,7 +151,8 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr):
+    def __init__(self, commands, options, stderr, draw_or_resign):
+        super().__init__(commands, options, stderr, draw_or_resign)
         self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
         egt_paths = options.pop("egtpath", {}) or {}

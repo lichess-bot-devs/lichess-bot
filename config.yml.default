@@ -22,12 +22,12 @@ engine:                      # Engine settings.
     max_depth: 8             # Half move max depth.
   draw_or_resign:
     resign_enabled: false
-    resign_score: -1000      # If the score is less than or equal to this value, we resign (in cp)
+    resign_score: -1000      # If the score is less than or equal to this value, the bot resigns (in cp)
     resign_moves: 3          # How many moves in a row the score has to be below the resign value
     offer_draw_enabled: false
-    offer_draw_score: 0      # If the absolute value of the score is less than or equal to this value, we offer draw (in cp)
-    offer_draw_moves: 5      # How many moves in a row the score has to be below the draw value
-    offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to the value, we offer draw
+    offer_draw_score: 0      # If the absolute value of the score is less than or equal to this value, the bot offers/accepts draw (in cp)
+    offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value
+    offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw
   online_moves:
     chessdb_book:
       enabled: false

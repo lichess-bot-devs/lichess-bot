@@ -66,11 +66,8 @@ class Lichess:
         return self.api_post(ENDPOINTS["upgrade"])
 
     def make_move(self, game_id, move):
-        if move.resigned:
-            return self.resign(game_id)
-        else:
-            return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
-                                 params={'offeringDraw': str(move.draw_offered).lower()})
+        return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
+                             params={'offeringDraw': str(move.draw_offered).lower()})
 
     def chat(self, game_id, room, text):
         payload = {'room': room, 'text': text}

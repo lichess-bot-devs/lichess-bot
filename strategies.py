@@ -57,7 +57,7 @@ class MinimalEngine(EngineWrapper):
             "name": self.engine_name
         }
 
-    def search(self, board, timeleft, ponder, draw_offered):
+    def search(self, board, time_limit, ponder, draw_offered):
         """
         The method to be implemented in your homemade engine
 

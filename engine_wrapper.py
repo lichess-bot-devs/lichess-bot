@@ -3,6 +3,7 @@ import chess.engine
 import backoff
 import subprocess
 import logging
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def remove_managed_options(config):
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
-class Termination:
+class Termination(str, Enum):
     MATE = 'mate'
     TIMEOUT = 'outoftime'
     RESIGN = 'resign'
@@ -48,7 +49,7 @@ class Termination:
     DRAW = 'draw'
 
 
-class GameEnding:
+class GameEnding(str, Enum):
     WHITE_WINS = '1-0'
     BLACK_WINS = '0-1'
     DRAW = '1/2-1/2'

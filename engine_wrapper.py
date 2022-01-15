@@ -3,6 +3,7 @@ import chess.engine
 import backoff
 import subprocess
 import logging
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def create_engine(config):
     elif engine_type == "uci":
         Engine = UCIEngine
     elif engine_type == "homemade":
-        Engine = getHomemadeEngine()
+        Engine = getHomemadeEngine(cfg["name"])
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
@@ -40,7 +41,7 @@ def remove_managed_options(config):
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
-class Termination:
+class Termination(str, Enum):
     MATE = 'mate'
     TIMEOUT = 'outoftime'
     RESIGN = 'resign'
@@ -48,7 +49,7 @@ class Termination:
     DRAW = 'draw'
 
 
-class Game_Ending:
+class GameEnding(str, Enum):
     WHITE_WINS = '1-0'
     BLACK_WINS = '0-1'
     DRAW = '1/2-1/2'
@@ -59,22 +60,36 @@ class EngineWrapper:
     def __init__(self, commands, options, stderr):
         pass
 
-    def first_search(self, board, movetime):
+    def search_for(self, board, movetime, ponder, draw_offered):
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
+
+    def first_search(self, board, movetime, draw_offered):
         # No pondering after the first move since a different clock is used afterwards.
-        return self.search(board, chess.engine.Limit(time=movetime // 1000), False)
+        return self.search(board, chess.engine.Limit(time=movetime // 1000), False, draw_offered)
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        pass
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
+        cmds = self.go_commands
+        movetime = cmds.get("movetime")
+        if movetime is not None:
+            movetime = float(movetime) / 1000
+        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
+                                        black_clock=btime / 1000,
+                                        white_inc=winc / 1000,
+                                        black_inc=binc / 1000,
+                                        depth=cmds.get("depth"),
+                                        nodes=cmds.get("nodes"),
+                                        time=movetime)
+        return self.search(board, time_limit, ponder, draw_offered)
 
-    def search(self, board, time_limit, ponder):
-        result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder)
+    def search(self, board, time_limit, ponder, draw_offered):
+        result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info
         self.print_stats()
-        return result.move
+        return result
 
     def print_stats(self):
         for line in self.get_stats():
-            logger.info(f"    {line}")
+            logger.info(f"{line}")
 
     def get_stats(self):
         info = self.last_move_info
@@ -104,20 +119,6 @@ class UCIEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        cmds = self.go_commands
-        movetime = cmds.get("movetime")
-        if movetime is not None:
-            movetime = float(movetime) / 1000
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000,
-                                        depth=cmds.get("depth"),
-                                        nodes=cmds.get("nodes"),
-                                        time=movetime)
-        return self.search(board, time_limit, ponder)
-
     def stop(self):
         self.engine.protocol.send_line("stop")
 
@@ -135,6 +136,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr):
+        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
@@ -144,13 +146,6 @@ class XBoardEngine(EngineWrapper):
         self.engine.configure(options)
         self.last_move_info = {}
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000)
-        return self.search(board, time_limit, ponder)
-
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
@@ -159,13 +154,13 @@ class XBoardEngine(EngineWrapper):
         termination = game.state.get('status')
 
         if winner == 'white':
-            game_result = Game_Ending.WHITE_WINS
+            game_result = GameEnding.WHITE_WINS
         elif winner == 'black':
-            game_result = Game_Ending.BLACK_WINS
+            game_result = GameEnding.BLACK_WINS
         elif termination == Termination.DRAW:
-            game_result = Game_Ending.DRAW
+            game_result = GameEnding.DRAW
         else:
-            game_result = Game_Ending.INCOMPLETE
+            game_result = GameEnding.INCOMPLETE
 
         if termination == Termination.MATE:
             endgame_message = winner.title() + ' mates'
@@ -205,7 +200,7 @@ class XBoardEngine(EngineWrapper):
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
 
-def getHomemadeEngine():
-    raise NotImplementedError(
-        "    You haven't changed the getHomemadeEngine function yet!\n"
-        "    See section \"Creating a custom bot\" in the Readme")
+
+def getHomemadeEngine(name):
+    import strategies
+    return eval(f"strategies.{name}")

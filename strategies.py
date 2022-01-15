@@ -4,6 +4,7 @@ And some handy classes to extend
 """
 
 import chess
+from chess.engine import PlayResult
 import random
 from engine_wrapper import EngineWrapper
 
@@ -47,20 +48,28 @@ class MinimalEngine(EngineWrapper):
     def __init__(self, *args, name=None):
         super().__init__(*args)
 
-        self.name = self.__class__.__name__ if name is None else name
+        self.engine_name = self.__class__.__name__ if name is None else name
 
         self.last_move_info = []
         self.engine = FillerEngine(self, name=self.name)
+        self.engine.id = {
+            "name": self.engine_name
+        }
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder):
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
         timeleft = 0
         if board.turn:
             timeleft = wtime
         else:
             timeleft = btime
-        return self.search(board, timeleft, ponder)
+        return self.search(board, timeleft, ponder, draw_offered)
 
-    def search(self, board, timeleft, ponder):
+    def search(self, board, timeleft, ponder, draw_offered):
+        """
+        The method to be implemented in your homemade engine
+
+        NOTE: This method must return an instance of "chess.engine.PlayResult"
+        """
         raise NotImplementedError("The search method is not implemented")
 
     def notify(self, method_name, *args, **kwargs):
@@ -86,14 +95,14 @@ class ExampleEngine(MinimalEngine):
 
 class RandomMove(ExampleEngine):
     def search(self, board, *args):
-        return random.choice(list(board.legal_moves))
+        return PlayResult(random.choice(list(board.legal_moves)), None)
 
 
 class Alphabetical(ExampleEngine):
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
-        return moves[0]
+        return PlayResult(moves[0], None)
 
 
 class FirstMove(ExampleEngine):
@@ -101,4 +110,4 @@ class FirstMove(ExampleEngine):
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=str)
-        return moves[0]
+        return PlayResult(moves[0], None)

@@ -48,7 +48,7 @@ pip install -r requirements.txt
 ## Setup Engine
 - Place your engine(s) in the `engine: dir` directory
 - In `config.yml`, enter the binary name as the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
-- Leave the `weights` field empty or see LeelaChessZero section for Neural Nets
+- Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets
 
 ### Engine Configuration
 Besides the above, there are many possible options within `config.yml` for configuring the engine for use with lichess-bot.
@@ -56,7 +56,7 @@ Besides the above, there are many possible options within `config.yml` for confi
 - `protocol`: Specify which protocol your engine uses. Choices are
     1. `"uci"` for the [Universal Chess Interface](http://wbec-ridderkerk.nl/html/UCIProtocol.html)
     2. `"xboard"` for the XBoard/WinBoard/[Chess Engine Communication Protocol](https://www.gnu.org/software/xboard/engine-intf.html)
-    3. `"homemade"` if you want to write your own engine in Python within lichess-bot. See [**Creating a custom bot**](#creating-a-custom-bot) below.
+    3. `"homemade"` if you want to write your own engine in Python within lichess-bot. See [**Creating a homemade bot**](#creating-a-homemade-bot) below.
 - `ponder`: Specify whether your bot will ponder--i.e., think while the bot's opponent is choosing a move.
 - `polyglot`: Tell lichess-bot whether your bot should use an opening book. Multiple books can be specified for each chess variant.
     - `enabled`: Whether to use the book at all.
@@ -229,7 +229,7 @@ python lichess-bot.py -v
 - Press `CTRL+C`.
 - It may take some time to quit.
 
-## LeelaChessZero: Mac/Linux
+## <a name="leelachesszero"></a> LeelaChessZero: Mac/Linux
 - Download the weights for the id you want to play from [here](https://lczero.org/play/networks/bestnets/).
 - Extract the weights from the zip archive and rename it to `latest.txt`.
 - For Mac/Linux, build the lczero binary yourself following [LeelaChessZero/lc0/README](https://github.com/LeelaChessZero/lc0/blob/master/README.md).
@@ -249,7 +249,7 @@ python lichess-bot.py -v
 ## LeelaChessZero: Docker container
 Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot inside a Docker container.
 
-## Creating a homemade bot
+## <a name="creating-a-homemade-bot"></a> Creating a homemade bot
 As an alternative to creating an entire chess engine and implementing one of the communiciation protocols (`UCI` or `XBoard`), a bot can also be created by writing a single class with a single method. The `search()` method in this new class takes the current board and the game clock as arguments and should return a move based on whatever criteria the coder desires.
 
 Steps to create a homemade bot:

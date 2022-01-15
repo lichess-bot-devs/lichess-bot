@@ -31,7 +31,7 @@ def create_engine(config):
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
-    return Engine(commands, options, stderr)
+    return Engine(commands, options, stderr, cwd=cfg["dir"])
 
 
 def remove_managed_options(config):
@@ -61,7 +61,7 @@ MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
 
 
 class EngineWrapper:
-    def __init__(self, commands, options, stderr):
+    def __init__(self, commands, options, stderr, **kwargs):
         pass
 
     def search_for(self, board, movetime, ponder, draw_offered):
@@ -135,9 +135,9 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr):
+    def __init__(self, commands, options, stderr, **kwargs):
         self.go_commands = options.pop("go_commands", {}) or {}
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **kwargs)
         self.engine.configure(options)
         self.last_move_info = {}
 
@@ -157,9 +157,9 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr):
+    def __init__(self, commands, options, stderr, **kwargs):
         self.go_commands = options.pop("go_commands", {}) or {}
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **kwargs)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
         egt_types_from_engine = features["egt"].split(",") if "egt" in features else []

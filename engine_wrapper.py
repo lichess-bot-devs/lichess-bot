@@ -57,6 +57,10 @@ class GameEnding(str, Enum):
     INCOMPLETE = '*'
 
 
+PONDERPV_CHARACTERS = 12  # the length of ', ponderpv: '
+MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
+
+
 class EngineWrapper:
     def __init__(self, commands, options, stderr, draw_or_resign):
         self.scores = []
@@ -103,16 +107,34 @@ class EngineWrapper:
         self.last_move_info = result.info
         self.scores.append(self.last_move_info.get("score", float('nan')))
         result = self.offer_draw_or_resign(result, board)
-        self.print_stats()
+        self.print_stats(board)
         return result
 
-    def print_stats(self):
-        for line in self.get_stats():
+    def print_stats(self, board):
+        for line in self.get_stats(board):
             logger.info(f"{line}")
 
-    def get_stats(self):
-        info = self.last_move_info
-        stats = ["depth", "nps", "nodes", "score"]
+    def get_stats(self, board, for_chat=False):
+        info = self.last_move_info.copy()
+        if "pv" not in info:
+            info["pv"] = []
+        if for_chat:
+            stats = ["depth", "nps", "nodes", "score", "ponderpv"]
+            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info]
+            len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
+            ponder_pv = board.variation_san(info["pv"])
+            ponder_pv = ponder_pv.split()
+            try:
+                while len(" ".join(ponder_pv)) + len_bot_stats > MAX_CHAT_MESSAGE_LEN:
+                    ponder_pv.pop()
+                if ponder_pv[-1].endswith("."):
+                    ponder_pv.pop()
+                info["ponderpv"] = " ".join(ponder_pv)
+            except IndexError:
+                pass
+        else:
+            stats = ["depth", "nps", "nodes", "score", "ponderpv"]
+            info["ponderpv"] = board.variation_san(info["pv"])
         return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):

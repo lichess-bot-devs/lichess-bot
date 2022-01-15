@@ -269,7 +269,7 @@ The examples just implement `search`.
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.
 - Here's an example systemd service definition:
-```
+```ini
 [Unit]
 Description=lichess-bot
 After=network-online.target

@@ -1,6 +1,6 @@
 certifi==2021.10.8
 chardet==4.0.0
-idna==3.2
+idna==3.3
 chess==1.6.1
 PyYAML>=5.4.1
 requests>=2.25.1

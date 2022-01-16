@@ -47,7 +47,6 @@ class MinimalEngine(EngineWrapper):
     """
     def __init__(self, commands, options, stderr, draw_or_resign, name=None):
         super().__init__(commands, options, stderr, draw_or_resign)
-        self.go_commands = options.pop("go_commands", {}) or {}
 
         self.engine_name = self.__class__.__name__ if name is None else name
 

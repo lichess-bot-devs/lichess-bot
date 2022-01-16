@@ -50,7 +50,6 @@ class MinimalEngine(EngineWrapper):
 
         self.engine_name = self.__class__.__name__ if name is None else name
 
-        self.last_move_info = []
         self.engine = FillerEngine(self, name=self.name)
         self.engine.id = {
             "name": self.engine_name

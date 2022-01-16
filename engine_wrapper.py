@@ -65,7 +65,7 @@ MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
 
 
 class EngineWrapper:
-    def __init__(self, commands, options, stderr, draw_or_resign):
+    def __init__(self, options, draw_or_resign):
         self.scores = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = options.pop("go_commands", {}) or {}
@@ -160,7 +160,7 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
     def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
-        super().__init__(commands, options, stderr, draw_or_resign)
+        super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
         self.engine.configure(options)
 
@@ -181,7 +181,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
-        super().__init__(commands, options, stderr, draw_or_resign)
+        super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features

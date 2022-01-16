@@ -66,6 +66,7 @@ class EngineWrapper:
         self.scores = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = options.pop("go_commands", {}) or {}
+        self.last_move_info = {}
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -159,7 +160,6 @@ class UCIEngine(EngineWrapper):
         super().__init__(commands, options, stderr, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
         self.engine.configure(options)
-        self.last_move_info = {}
 
     def stop(self):
         self.engine.protocol.send_line("stop")
@@ -186,7 +186,6 @@ class XBoardEngine(EngineWrapper):
         for egt_type in egt_types_from_engine:
             options[f"egtpath {egt_type}"] = egt_paths[egt_type]
         self.engine.configure(options)
-        self.last_move_info = {}
 
     def report_game_result(self, game, board):
         # Send final moves, if any, to engine

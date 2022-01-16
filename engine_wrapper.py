@@ -14,7 +14,7 @@ def create_engine(config):
     engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
-    draw_or_resign = cfg.get("draw_or_resign", {})
+    draw_or_resign = cfg.get("draw_or_resign") or {}
     commands = [engine_path]
     if engine_options:
         for k, v in engine_options.items():
@@ -65,6 +65,7 @@ class EngineWrapper:
     def __init__(self, commands, options, stderr, draw_or_resign):
         self.scores = []
         self.draw_or_resign = draw_or_resign
+        self.go_commands = options.pop("go_commands", {}) or {}
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -156,7 +157,6 @@ class EngineWrapper:
 class UCIEngine(EngineWrapper):
     def __init__(self, commands, options, stderr, draw_or_resign):
         super().__init__(commands, options, stderr, draw_or_resign)
-        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
         self.engine.configure(options)
         self.last_move_info = {}
@@ -179,7 +179,6 @@ class UCIEngine(EngineWrapper):
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands, options, stderr, draw_or_resign):
         super().__init__(commands, options, stderr, draw_or_resign)
-        self.go_commands = options.pop("go_commands", {}) or {}
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features

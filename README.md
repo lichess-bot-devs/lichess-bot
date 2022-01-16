@@ -50,7 +50,7 @@ Within the file `config.yml`:
 - Enter the directory containing the engine executable in the `engine: dir` field.
 - Enter the executable name in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
 - If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field.
-  - If this field is blank or missing, the `engine: dir` directory will be used.
+  - If this field is blank or missing, the `lichess-bot/` directory will be used.
 - Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets
 
 As an optional convenience, there is a folder named `engines` within the lichess-bot folder where you can copy your engine and all the files it needs. This is the default executable location in the `config.yml.default` file.

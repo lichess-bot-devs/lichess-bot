@@ -14,7 +14,7 @@ def create_engine(config):
     engine_dir = cfg["dir"]
     engine_executable = cfg["name"]
     engine_path = os.path.join(engine_dir, engine_executable)
-    engine_working_dir = cfg.get("working_dir") or engine_dir
+    engine_working_dir = cfg.get("working_dir") or os.getcwd()
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
     commands = [engine_path]

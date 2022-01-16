@@ -156,9 +156,9 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr, draw_or_resign, **kwargs):
+    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
         super().__init__(commands, options, stderr, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **kwargs)
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
         self.engine.configure(options)
 
     def stop(self):
@@ -177,9 +177,9 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr, draw_or_resign, **kwargs):
+    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
         super().__init__(commands, options, stderr, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **kwargs)
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
         egt_types_from_engine = features["egt"].split(",") if "egt" in features else []

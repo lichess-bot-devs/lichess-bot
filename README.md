@@ -61,7 +61,7 @@ Besides the above, there are many possible options within `config.yml` for confi
 - `polyglot`: Tell lichess-bot whether your bot should use an opening book. Multiple books can be specified for each chess variant.
     - `enabled`: Whether to use the book at all.
     - `book`: A nested list of books. The next indented line should list a chess variant (`standard`, `3check`, `horde`, etc.) followed on succeeding indented lines with paths to the book files. See `config.yml.default` for examples.
-- `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine
+- `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine. XBoard engines can resign and offer/accept draw without this feature enabled.
     - `resign_enabled`: Whether the bot is allowed to resign based on the evaluation.
     - `resign_score`: The engine evaluation has to be less than or equal to `resign_score` for the bot to resign.
     - `resign_moves`: The evaluation has to be less than or equal to `resign_score` for `resign_moves` amount of moves for the bot to resign.

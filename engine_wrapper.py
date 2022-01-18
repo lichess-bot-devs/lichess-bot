@@ -110,14 +110,14 @@ class EngineWrapper:
         self.scores.append(self.last_move_info.get("score", float('nan')))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
-        self.print_stats(board)
+        self.print_stats()
         return result
 
-    def print_stats(self, board):
-        for line in self.get_stats(board):
+    def print_stats(self):
+        for line in self.get_stats():
             logger.info(f"{line}")
 
-    def get_stats(self, board, for_chat=False):
+    def get_stats(self, for_chat=False):
         info = self.last_move_info.copy()
         stats = ["depth", "nps", "nodes", "score", "ponderpv"]
         if for_chat:

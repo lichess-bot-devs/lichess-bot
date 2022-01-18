@@ -106,25 +106,24 @@ class EngineWrapper:
 
     def search(self, board, time_limit, ponder, draw_offered):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
-        self.last_move_info = result.info
+        self.last_move_info = result.info.copy()
         self.scores.append(self.last_move_info.get("score", float('nan')))
         result = self.offer_draw_or_resign(result, board)
-        self.print_stats(board)
+        self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
+        self.print_stats()
         return result
 
-    def print_stats(self, board):
-        for line in self.get_stats(board):
+    def print_stats(self):
+        for line in self.get_stats():
             logger.info(f"{line}")
 
-    def get_stats(self, board, for_chat=False):
+    def get_stats(self, for_chat=False):
         info = self.last_move_info.copy()
-        if "pv" not in info:
-            info["pv"] = []
+        stats = ["depth", "nps", "nodes", "score", "ponderpv"]
         if for_chat:
-            stats = ["depth", "nps", "nodes", "score", "ponderpv"]
-            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info]
+            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
-            ponder_pv = board.variation_san(info["pv"])
+            ponder_pv = info["ponderpv"]
             ponder_pv = ponder_pv.split()
             try:
                 while len(" ".join(ponder_pv)) + len_bot_stats > MAX_CHAT_MESSAGE_LEN:
@@ -134,9 +133,6 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-        else:
-            stats = ["depth", "nps", "nodes", "score", "ponderpv"]
-            info["ponderpv"] = board.variation_san(info["pv"])
         return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):

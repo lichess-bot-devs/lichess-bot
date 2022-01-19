@@ -11,9 +11,7 @@ logger = logging.getLogger(__name__)
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config):
     cfg = config["engine"]
-    engine_dir = cfg["dir"]
-    engine_executable = cfg["name"]
-    engine_path = os.path.join(engine_dir, engine_executable)
+    engine_path = os.path.join(cfg["dir"], cfg["name"])
     engine_working_dir = cfg.get("working_dir") or os.getcwd()
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")

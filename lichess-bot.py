@@ -244,6 +244,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     delay_seconds = config.get("rate_limiting_delay", 0)/1000
     polyglot_cfg = engine_cfg.get("polyglot", {})
     online_moves_cfg = engine_cfg.get("online_moves", {})
+    draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
 
     greeting_cfg = config.get("greeting", {}) or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
@@ -278,7 +279,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move.move is None:
-                        best_move = get_online_move(li, board, game, online_moves_cfg)
+                        best_move = get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg)
 
                     if best_move.move is None:
                         draw_offered = check_for_draw_offer(game)
@@ -289,7 +290,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
                             best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
-                    if best_move.resigned:
+                    if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)
                     else:
                         li.make_move(game.id, best_move)
@@ -471,7 +472,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
     wb = 'w' if board.turn == chess.WHITE else 'b'
     pieces = chess.popcount(board.occupied)
     if not online_egtb_cfg.get("enabled", False) or game.state[f"{wb}time"] < online_egtb_cfg.get("min_time", 20) * 1000 or board.uci_variant not in ["chess", "antichess", "atomic"] and online_egtb_cfg.get("source", "lichess") == "lichess" or board.uci_variant != "chess" and online_egtb_cfg.get("source", "lichess") == "chessdb" or pieces > online_egtb_cfg.get("max_pieces", 7) or board.castling_rights:
-        return None
+        return None, None
 
     quality = online_egtb_cfg.get("move_quality", "best")
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
@@ -501,7 +502,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                         dtm *= -1
                 if wdl is not None:
                     logger.info("Got move {} from tablebase.lichess.ovh (wdl: {}, dtz: {}, dtm: {})".format(move, wdl, dtz, dtm))
-                    return move
+                    return move, wdl
         elif online_egtb_cfg.get("source", "lichess") == "chessdb":
 
             def score_to_wdl(score):
@@ -522,7 +523,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     score = data["score"]
                     move = data["pv"][0]
                     logger.info("Got move {} from chessdb.cn (wdl: {})".format(move, score_to_wdl(score)))
-                    return move
+                    return move, score_to_wdl(score)
             else:
                 data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=queryall&board={board.fen()}&json=1")
                 if data["status"] == "ok":
@@ -532,24 +533,31 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     score = random_move["score"]
                     move = random_move["uci"]
                     logger.info("Got move {} from chessdb.cn (wdl: {})".format(move, score_to_wdl(score)))
-                    return move
+                    return move, score_to_wdl(score)
     except Exception:
         pass
 
-    return None
+    return None, None
 
 
-def get_online_move(li, board, game, online_moves_cfg):
+def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
     chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
-    best_move = get_online_egtb_move(li, board, game, online_egtb_cfg)
+    offer_draw = False
+    resign = False
+    best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is None:
         best_move = get_chessdb_move(li, board, game, chessdb_cfg)
+    else:
+        if draw_or_resign_cfg.get('offer_draw_enabled', False) and abs(wdl) <= draw_or_resign_cfg.get('offer_draw_egtb_score', 0):
+            offer_draw = True
+        if draw_or_resign_cfg.get('resign_enabled', False) and wdl == -2:
+            resign = True
     if best_move is None:
         best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
     if best_move:
-        return chess.engine.PlayResult(chess.Move.from_uci(best_move), None)
+        return chess.engine.PlayResult(chess.Move.from_uci(best_move), None, draw_offered=offer_draw, resigned=resign)
     return chess.engine.PlayResult(None, None)
 
 

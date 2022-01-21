@@ -22,7 +22,7 @@ class Conversation:
         if cmd == "commands" or cmd == "help":
             self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
         elif cmd == "wait" and game.is_abortable():
-            game.ping(60, 120)
+            game.ping(60, 120, 120)
             self.send_reply(line, "Waiting 60 seconds...")
         elif cmd == "name":
             name = game.me.name

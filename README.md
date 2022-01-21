@@ -67,8 +67,8 @@ Besides the above, there are many possible options within `config.yml` for confi
     - `resign_moves`: The evaluation has to be less than or equal to `resign_score` for `resign_moves` amount of moves for the bot to resign.
     - `offer_draw_enabled`: Whether the bot is allowed to offer/accept draw based on the evaluation.
     - `offer_draw_score`: The absolute value of the engine evaluation has to be less than or equal to `offer_draw_score` for the bot to offer/accept draw.
-    - `offer_draw_egtb_score`: The absolute value of the wdl score from the online egtb has to be less than or equal to `offer_draw_score` for the bot to offer/accept draw.
-    - `offer_draw_moves`: The absolute value of the evaluation has to be less than or equal to `offer_draw_score` for `offer_draw_egtb_score` amount of moves for the bot to offer/accept draw.
+    - `offer_draw_egtb_score`: The absolute value of the wdl score from the online egtb has to be less than or equal to `offer_draw_egtb_score` for the bot to offer/accept draw.
+    - `offer_draw_moves`: The absolute value of the evaluation has to be less than or equal to `offer_draw_score` for `offer_draw_moves` amount of moves for the bot to offer/accept draw.
     - `offer_draw_pieces`: The bot only offers/accepts draws if the position has less than or equal to `offer_draw_pieces` pieces.
 - `online_moves`: This section gives your bot access to various online resources for choosing moves like opening books and endgame tablebases. This can be a supplement or a replacement for chess databases stored on your computer. There are three sections that correspond to three different online databases:
     1. `chessdb_book`: Consults a [Chinese chess position database](https://www.chessdb.cn/), which also hosts a xiangqi database.

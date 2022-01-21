@@ -92,7 +92,7 @@ class EngineWrapper:
     def offer_draw_or_resign(self, result, board):
         if self.draw_or_resign.get('offer_draw_enabled', False) and len(self.scores) >= self.draw_or_resign.get('offer_draw_moves', 5):
             scores = self.scores[-self.draw_or_resign.get('offer_draw_moves', 5):]
-            pieces_on_board = len([board.piece_type_at(sq) for sq in chess.SQUARES if board.piece_type_at(sq)])
+            pieces_on_board = chess.popcount(board.occupied)
             scores_near_draw = lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get('offer_draw_score', 0)
             if len(scores) == len(list(filter(scores_near_draw, scores))) and pieces_on_board <= self.draw_or_resign.get('offer_draw_pieces', 10):
                 result.draw_offered = True

@@ -554,8 +554,10 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
             offer_draw = True
         if draw_or_resign_cfg.get('resign_enabled', False) and wdl == -2:
             resign = True
+
     if best_move is None:
         best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
+
     if best_move:
         return chess.engine.PlayResult(chess.Move.from_uci(best_move), None, draw_offered=offer_draw, resigned=resign)
     return chess.engine.PlayResult(None, None)

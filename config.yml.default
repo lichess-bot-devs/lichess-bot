@@ -26,7 +26,7 @@ engine:                      # Engine settings.
     resign_moves: 3          # How many moves in a row the score has to be below the resign value
     offer_draw_enabled: false
     offer_draw_score: 0      # If the absolute value of the score is less than or equal to this value, the bot offers/accepts draw (in cp)
-    offer_draw_egtb_score: 0 # If the absolute value of the wdl score is less than or equal to this value, the bot offers/accepts draw
+    offer_draw_egtb_count_wdl_1_as_draw: false # If true positions with wdl of 1 or -1 will also count as draws.
     offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value
     offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw
   online_moves:

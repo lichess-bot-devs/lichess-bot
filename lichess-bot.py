@@ -550,9 +550,9 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     if best_move is None:
         best_move = get_chessdb_move(li, board, game, chessdb_cfg)
     else:
-        if draw_or_resign_cfg.get('offer_draw_enabled', False) and abs(wdl) <= draw_or_resign_cfg.get('offer_draw_egtb_count_wdl_1_as_draw', False):
+        if draw_or_resign_cfg.get('offer_draw_enabled', False) and draw_or_resign_cfg.get('offer_draw_for_egtb_zero', True) and wdl == 0:
             offer_draw = True
-        if draw_or_resign_cfg.get('resign_enabled', False) and wdl == -2:
+        if draw_or_resign_cfg.get('resign_enabled', False) and draw_or_resign_cfg.get('resign_for_egtb_minus_two', True) and wdl == -2:
             resign = True
 
     if best_move is None:

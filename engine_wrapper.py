@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def create_engine(config):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
+    engine_working_dir = cfg.get("working_dir") or os.getcwd()
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
     draw_or_resign = cfg.get("draw_or_resign") or {}
@@ -32,7 +33,7 @@ def create_engine(config):
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
-    return Engine(commands, options, stderr, draw_or_resign)
+    return Engine(commands, options, stderr, draw_or_resign, cwd=engine_working_dir)
 
 
 def remove_managed_options(config):
@@ -62,7 +63,7 @@ MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
 
 
 class EngineWrapper:
-    def __init__(self, commands, options, stderr, draw_or_resign):
+    def __init__(self, options, draw_or_resign):
         self.scores = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = options.pop("go_commands", {}) or {}
@@ -152,9 +153,9 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr, draw_or_resign):
-        super().__init__(commands, options, stderr, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr)
+    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
+        super().__init__(options, draw_or_resign)
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
         self.engine.configure(options)
 
     def stop(self):
@@ -173,9 +174,9 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-    def __init__(self, commands, options, stderr, draw_or_resign):
-        super().__init__(commands, options, stderr, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr)
+    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
+        super().__init__(options, draw_or_resign)
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
         egt_types_from_engine = features["egt"].split(",") if "egt" in features else []

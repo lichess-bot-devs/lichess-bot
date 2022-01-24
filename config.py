@@ -42,6 +42,10 @@ def load_config(config_file):
         if not os.path.isdir(CONFIG["engine"]["dir"]):
             raise Exception("Your engine directory `{}` is not a directory.".format(CONFIG["engine"]["dir"]))
 
+        working_dir = CONFIG["engine"].get("working_dir")
+        if working_dir and not os.path.isdir(working_dir):
+            raise Exception(f"Your engine's working directory `{working_dir}` is not a directory.")
+
         engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
 
         if not os.path.isfile(engine) and CONFIG["engine"]["protocol"] != "homemade":

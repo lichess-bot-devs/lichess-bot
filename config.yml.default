@@ -22,23 +22,25 @@ engine:                      # Engine settings.
     max_depth: 8             # Half move max depth.
   draw_or_resign:
     resign_enabled: false
-    resign_score: -1000      # If the score is less than or equal to this value, the bot resigns (in cp)
-    resign_moves: 3          # How many moves in a row the score has to be below the resign value
+    resign_score: -1000      # If the score is less than or equal to this value, the bot resigns (in cp).
+    resign_for_egtb_minus_two: true # If true the bot will resign in positions where the online_egtb returns a wdl of -2.
+    resign_moves: 3          # How many moves in a row the score has to be below the resign value.
     offer_draw_enabled: false
-    offer_draw_score: 0      # If the absolute value of the score is less than or equal to this value, the bot offers/accepts draw (in cp)
-    offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value
-    offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw
+    offer_draw_score: 0      # If the absolute value of the score is less than or equal to this value, the bot offers/accepts draw (in cp).
+    offer_draw_for_egtb_zero: true # If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
+    offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value.
+    offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
   online_moves:
     chessdb_book:
       enabled: false
       min_time: 20
-      move_quality: "good"   # One of "all", "good", "best"
-      min_depth: 20          # Only for move_quality: "best"
+      move_quality: "good"   # One of "all", "good", "best".
+      min_depth: 20          # Only for move_quality: "best".
       contribute: true
     lichess_cloud_analysis:
       enabled: false
       min_time: 20
-      move_quality: "good"   # One of "good", "best"
+      move_quality: "good"   # One of "good", "best".
       max_score_difference: 50 # Only for move_quality: "good". The maximum score difference (in cp) between the best move and the other moves.
       min_depth: 20
       min_knodes: 0
@@ -46,8 +48,8 @@ engine:                      # Engine settings.
       enabled: false
       min_time: 20
       max_pieces: 7
-      source: "lichess"      # One of "lichess", "chessdb"
-      move_quality: "best"   # One of "good", "best"
+      source: "lichess"      # One of "lichess", "chessdb".
+      move_quality: "best"   # One of "good", "best".
 # engine_options:            # Any custom command line params to pass to the engine.
 #   cpuct: 3.1
   homemade_options:

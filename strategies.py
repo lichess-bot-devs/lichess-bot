@@ -46,7 +46,7 @@ class MinimalEngine(EngineWrapper):
     `notify`, `first_search`, `get_time_control`, etc.
     """
     def __init__(self, commands, options, stderr, draw_or_resign, name=None):
-        super().__init__(commands, options, stderr, draw_or_resign)
+        super().__init__(options, draw_or_resign)
 
         self.engine_name = self.__class__.__name__ if name is None else name
 

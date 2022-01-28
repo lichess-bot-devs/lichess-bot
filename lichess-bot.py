@@ -193,7 +193,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename)
                     game_id = correspondence_queue.get()
                     # stop checking in on games if we have checked in on all games since the last correspondence_ping
                     if not game_id:
-                        if is_correspondence_ping and correspondence_queue:
+                        if is_correspondence_ping and not correspondence_queue.empty():
                             correspondence_queue.put("")
                         else:
                             wait_for_correspondence_ping = True

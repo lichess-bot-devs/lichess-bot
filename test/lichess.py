@@ -34,11 +34,11 @@ class GameStream:
         time.sleep(1)
         while True:
             time.sleep(0.001)
-            with open('events.txt') as events:
+            with open('./logs/events.txt') as events:
                 event = events.read()
             while True:
                 try:
-                    with open('states.txt') as states:
+                    with open('./logs/states.txt') as states:
                         state = states.read().split('\n')
                     moves = state[0]
                     wtime, btime = state[1].split(',')
@@ -119,10 +119,10 @@ class Lichess:
 
     def make_move(self, game_id, move):
         self.moves.append(move)
-        with open('states.txt') as file:
+        with open('./logs/states.txt') as file:
             contents = file.read().split('\n')
         contents[0] += ' ' + move.move.uci()
-        with open('states.txt', 'w') as file:
+        with open('./logs/states.txt', 'w') as file:
             file.write('\n'.join(contents))
 
     def chat(self, game_id, room, text):

@@ -308,6 +308,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                     time.sleep(delay_seconds)
                 elif is_game_over(game):
                     engine.report_game_result(game, board)
+                    tell_user_game_result(game, board)
                     conversation.send_message("player", goodbye)
                 elif len(board.move_stack) == 0:
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
@@ -628,6 +629,39 @@ def is_engine_move(game, board):
 
 def is_game_over(game):
     return game.state["status"] != "started"
+
+
+def tell_user_game_result(game, board):
+    winner = game.state.get('winner')
+    termination = game.state.get('status')
+
+    winning_name = game.white if winner == 'white' else game.black
+    losing_name = game.white if winner == 'black' else game.black
+
+    if winner is not None:
+        logger.info(f'{winning_name} won!')
+    elif termination == engine_wrapper.Termination.DRAW:
+        logger.info("Game ended in draw.")
+    else:
+        logger.info("Game adjourned.")
+
+    if termination == engine_wrapper.Termination.MATE:
+        logger.info('Game won by checkmate.')
+    elif termination == engine_wrapper.Termination.TIMEOUT:
+        logger.info(f'{losing_name} forfeited on time.')
+    elif termination == engine_wrapper.Termination.RESIGN:
+        logger.info(f'{losing_name} resigned.')
+    elif termination == engine_wrapper.Termination.ABORT:
+        logger.info('Game aborted.')
+    elif termination == engine_wrapper.Termination.DRAW:
+        if board.is_fifty_moves():
+            logger.info('Game drawn by 50-move rule.')
+        elif board.is_repetition():
+            logger.info('Game drawn by threefold repetition.')
+        else:
+            logger.info('Game drawn by agreement.')
+    elif termination:
+        logger.info(f'Game ended by {termination}')
 
 
 def intro():

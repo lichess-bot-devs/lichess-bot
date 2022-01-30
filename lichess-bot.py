@@ -692,7 +692,7 @@ if __name__ == "__main__":
     enable_color_logging(debug_lvl=logging_level)
     logger.info(intro())
     CONFIG = load_config(args.config or "./config.yml")
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__, logging_level)
 
     user_profile = li.get_profile()
     username = user_profile["username"]

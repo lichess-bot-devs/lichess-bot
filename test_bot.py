@@ -154,6 +154,11 @@ def test_bot():
     CONFIG['engine']['uci_options']['Threads'] = 1
     run_bot(CONFIG, logging_level)
     shutil.rmtree('TEMP')
+    try:
+        shutil.copyfile('correct_lichess.py', 'lichess.py')
+        os.remove('correct_lichess.py')
+    except Exception:
+        pass
 
 
 if __name__ == '__main__':

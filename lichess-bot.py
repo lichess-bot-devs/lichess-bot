@@ -266,6 +266,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     first_move = True
     correspondence_disconnect_time = 0
     while not terminated:
+        move_attempted = False
         try:
             if first_move:
                 upd = game.state
@@ -301,6 +302,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
                             best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
+                    move_attempted = True
                     if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)
                     else:
@@ -328,6 +330,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
                         li.abort(game.id)
                     break
         except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError, ProtocolError):
+            if move_attempted:
+                continue
             if game.id not in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games()):
                 break
         except StopIteration:
@@ -688,7 +692,7 @@ if __name__ == "__main__":
     enable_color_logging(debug_lvl=logging_level)
     logger.info(intro())
     CONFIG = load_config(args.config or "./config.yml")
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__)
+    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__, logging_level)
 
     user_profile = li.get_profile()
     username = user_profile["username"]

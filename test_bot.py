@@ -122,10 +122,7 @@ def run_bot(CONFIG, logging_level):
             lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
             thr.join()
 
-        try:
-            run_test()
-        except TimeoutError:
-            assert False
+        run_test()
 
     else:
         lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))

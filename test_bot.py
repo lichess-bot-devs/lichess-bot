@@ -4,7 +4,6 @@ import zipfile
 import requests
 import time
 import yaml
-from wrapt_timeout_decorator import timeout
 import chess
 import chess.engine
 import threading
@@ -47,7 +46,6 @@ def run_bot(CONFIG, logging_level):
     if is_bot:
         engine_factory = lichess_bot.partial(lichess_bot.engine_wrapper.create_engine, CONFIG)
 
-        @timeout(120)
         def run_test():
 
             def thread_for_test():

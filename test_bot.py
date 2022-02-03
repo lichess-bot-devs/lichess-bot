@@ -9,6 +9,7 @@ import chess.engine
 import threading
 import os
 import sys
+import stat
 import shutil
 import importlib
 shutil.copyfile('lichess.py', 'correct_lichess.py')
@@ -29,6 +30,11 @@ def download_sf():
         zip_ref.extractall('./TEMP/')
     shutil.copyfile(f'./TEMP/stockfish_14.1_{windows_or_linux}_x64/stockfish_14.1_{windows_or_linux}_x64{file_extension}', f'./TEMP/sf{file_extension}')
     shutil.copyfile(f'./TEMP/sf{file_extension}', f'./TEMP/sf2{file_extension}')
+    if windows_or_linux == "linux":
+        st = os.stat(f'./TEMP/sf{file_extension}')
+        os.chmod(f'./TEMP/sf{file_extension}', st.st_mode | stat.S_IEXEC)
+        st = os.stat(f'./TEMP/sf2{file_extension}')
+        os.chmod(f'./TEMP/sf2{file_extension}', st.st_mode | stat.S_IEXEC)
 
 
 def run_bot(CONFIG, logging_level):

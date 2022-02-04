@@ -1,13 +1,9 @@
-import logging
 import requests
 from urllib.parse import urljoin
 from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
 from urllib3.exceptions import ProtocolError
 from http.client import RemoteDisconnected
 import backoff
-import time
-
-logger = logging.getLogger(__name__)
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -25,51 +21,6 @@ ENDPOINTS = {
 }
 
 
-class GameStream:
-    def __init__(self):
-        self.moves_sent = ''
-
-    def iter_lines(self):
-        yield b'{"id":"zzzzzzzz","variant":{"key":"standard","name":"Standard","short":"Std"},"clock":{"initial":60000,"increment":2000},"speed":"bullet","perf":{"name":"Bullet"},"rated":true,"createdAt":1600000000000,"white":{"id":"bo","name":"bo","title":"BOT","rating":3000},"black":{"id":"b","name":"b","title":"BOT","rating":3000,"provisional":true},"initialFen":"startpos","type":"gameFull","state":{"type":"gameState","moves":"","wtime":60000,"btime":60000,"winc":2000,"binc":2000,"status":"started"}}'
-        time.sleep(1)
-        while True:
-            time.sleep(0.001)
-            with open('./logs/events.txt') as events:
-                event = events.read()
-            while True:
-                try:
-                    with open('./logs/states.txt') as states:
-                        state = states.read().split('\n')
-                    moves = state[0]
-                    wtime, btime = state[1].split(',')
-                    if len(moves) <= len(self.moves_sent) and not event:
-                        time.sleep(0.001)
-                        continue
-                    self.moves_sent = moves
-                    break
-                except (IndexError, ValueError):
-                    pass
-            wtime, btime = float(wtime), float(btime)
-            time.sleep(0.1)
-            if event == 'end':
-                yield eval('b\'' + f'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}' + '\'')
-                break
-            if moves:
-                yield eval('b\'' + f'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"started"}}' + '\'')
-
-
-class EventStream:
-    def __init__(self, sent_game=False):
-        self.sent_game = sent_game
-
-    def iter_lines(self):
-        if self.sent_game:
-            yield b''
-            time.sleep(1)
-        else:
-            yield b'{"type":"gameStart","game":{"id":"zzzzzzzz","source":"friend","compat":{"bot":true,"board":true}}}'
-
-
 # docs: https://lichess.org/api
 class Lichess:
     def __init__(self, token, url, version):
@@ -81,9 +32,6 @@ class Lichess:
         self.session = requests.Session()
         self.session.headers.update(self.header)
         self.set_user_agent("?")
-        self.game_accepted = False
-        self.moves = []
-        self.sent_game = False
 
     def is_final(exception):
         return isinstance(exception, HTTPError) and exception.response.status_code < 500
@@ -112,49 +60,47 @@ class Lichess:
         return response.json()
 
     def get_game(self, game_id):
-        return
+        return self.api_get(ENDPOINTS["game"].format(game_id))
 
     def upgrade_to_bot_account(self):
-        return
+        return self.api_post(ENDPOINTS["upgrade"])
 
     def make_move(self, game_id, move):
-        self.moves.append(move)
-        with open('./logs/states.txt') as file:
-            contents = file.read().split('\n')
-        contents[0] += ' ' + move.move.uci()
-        with open('./logs/states.txt', 'w') as file:
-            file.write('\n'.join(contents))
+        return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
+                             params={'offeringDraw': str(move.draw_offered).lower()})
 
     def chat(self, game_id, room, text):
-        return
+        payload = {'room': room, 'text': text}
+        return self.api_post(ENDPOINTS["chat"].format(game_id), data=payload)
 
     def abort(self, game_id):
-        return
+        return self.api_post(ENDPOINTS["abort"].format(game_id))
 
     def get_event_stream(self):
-        events = EventStream(self.sent_game)
-        self.sent_game = True
-        return events
+        url = urljoin(self.baseUrl, ENDPOINTS["stream_event"])
+        return requests.get(url, headers=self.header, stream=True)
 
     def get_game_stream(self, game_id):
-        return GameStream()
+        url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
+        return requests.get(url, headers=self.header, stream=True)
 
     def accept_challenge(self, challenge_id):
-        self.game_accepted = True
+        return self.api_post(ENDPOINTS["accept"].format(challenge_id))
 
     def decline_challenge(self, challenge_id, reason="generic"):
-        return
+        return self.api_post(ENDPOINTS["decline"].format(challenge_id), data=f"reason={reason}", headers={"Content-Type": "application/x-www-form-urlencoded"})
 
     def get_profile(self):
-        profile = {'id': 'b', 'username': 'b', 'online': True, 'title': 'BOT', 'url': 'https://lichess.org/@/bo', 'followable': True, 'following': False, 'blocking': False, 'followsYou': False}
+        profile = self.api_get(ENDPOINTS["profile"])
         self.set_user_agent(profile["username"])
         return profile
 
     def get_ongoing_games(self):
-        return []
+        ongoing_games = self.api_get(ENDPOINTS["playing"])["nowPlaying"]
+        return ongoing_games
 
     def resign(self, game_id):
-        return
+        self.api_post(ENDPOINTS["resign"].format(game_id))
 
     def set_user_agent(self, username):
         self.header.update({"User-Agent": "lichess-bot/{} user:{}".format(self.version, username)})

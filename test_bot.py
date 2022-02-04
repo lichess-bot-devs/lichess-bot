@@ -12,17 +12,12 @@ import sys
 import stat
 import shutil
 import importlib
-shutil.copyfile('lichess.py', 'correct_lichess.py')
-shutil.copyfile('test/lichess.py', 'lichess.py')
+shutil.copyfile('../lichess.py', 'correct_lichess.py')
+shutil.copyfile('lichess.py', '../lichess.py')
 lichess_bot = importlib.import_module("lichess-bot")
 
 platform = sys.platform
 file_extension = '.exe' if platform == 'win32' else ''
-
-
-def pytest_sessionfinish(session, exitstatus):
-    shutil.copyfile('correct_lichess.py', 'lichess.py')
-    os.remove('correct_lichess.py')
 
 
 def download_sf():
@@ -129,7 +124,7 @@ def run_bot(CONFIG, logging_level, stockfish_path):
                 win = board.is_checkmate() and board.turn == chess.WHITE
                 with open('./logs/result.txt', 'w') as file:
                     file.write('1' if win else '0')
-            
+
             thr = threading.Thread(target=thread_for_test)
             thr.start()
             lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
@@ -161,7 +156,7 @@ def test_sf():
     lichess_bot.enable_color_logging(debug_lvl=logging_level)
     download_sf()
     lichess_bot.logger.info("Downloaded SF")
-    with open("./config.yml.default") as file:
+    with open("../config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG['token'] = ''
     CONFIG['engine']['dir'] = './TEMP/'

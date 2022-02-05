@@ -33,11 +33,11 @@ class GameStream:
         yield b'{"id":"zzzzzzzz","variant":{"key":"standard","name":"Standard","short":"Std"},"clock":{"initial":60000,"increment":2000},"speed":"bullet","perf":{"name":"Bullet"},"rated":true,"createdAt":1600000000000,"white":{"id":"bo","name":"bo","title":"BOT","rating":3000},"black":{"id":"b","name":"b","title":"BOT","rating":3000,"provisional":true},"initialFen":"startpos","type":"gameFull","state":{"type":"gameState","moves":"","wtime":60000,"btime":60000,"winc":2000,"binc":2000,"status":"started"}}'
         time.sleep(1)
         while True:
-            time.sleep(0.002)
+            time.sleep(0.001)
             with open('./logs/events.txt') as events:
                 event = events.read()
             if event:
-                time.sleep(0.002)
+                time.sleep(0.001)
                 with open('./logs/events.txt') as events:
                     event = events.read()
             while True:
@@ -46,7 +46,7 @@ class GameStream:
                         with open('./logs/states.txt') as states:
                             state = states.read().split('\n')
                         moves = state[0]
-                        time.sleep(0.002)
+                        time.sleep(0.001)
                         if moves != self.moves_sent:
                             break
                     with open('./logs/states.txt') as states:
@@ -54,14 +54,14 @@ class GameStream:
                     moves = state[0]
                     wtime, btime = state[1].split(',')
                     if len(moves) <= len(self.moves_sent) and not event:
-                        time.sleep(0.002)
+                        time.sleep(0.001)
                         continue
                     self.moves_sent = moves
                     break
                 except (IndexError, ValueError):
                     pass
             wtime, btime = float(wtime), float(btime)
-            time.sleep(0.01)
+            time.sleep(0.1)
             if event == 'end':
                 yield eval('b\'' + f'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}' + '\'')
                 break

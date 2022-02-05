@@ -53,6 +53,19 @@ def download_sjeng():
     shutil.copyfile(f'./TEMP/Release/Sjeng112.exe', f'./TEMP/sjeng.exe')
 
 
+if os.path.exists('TEMP'):
+    shutil.rmtree('TEMP')
+os.mkdir('TEMP')
+download_sf()
+if platform == 'win32':
+    download_lc0()
+    download_sjeng()
+logging_level = lichess_bot.logging.INFO
+lichess_bot.logging.basicConfig(level=logging_level, filename=None, format="%(asctime)-15s: %(message)s")
+lichess_bot.enable_color_logging(debug_lvl=logging_level)
+lichess_bot.logger.info("Downloaded engines")
+
+
 def run_bot(CONFIG, logging_level, stockfish_path):
     lichess_bot.logger.info(lichess_bot.intro())
     li = lichess_bot.lichess.Lichess(CONFIG["token"], CONFIG["url"], lichess_bot.__version__)
@@ -162,17 +175,9 @@ def test_sf():
     if platform != 'linux' and platform != 'win32':
         assert True
         return
-    if os.path.exists('TEMP'):
-        shutil.rmtree('TEMP')
-    os.mkdir('TEMP')
     if os.path.exists('logs'):
         shutil.rmtree('logs')
     os.mkdir('logs')
-    logging_level = lichess_bot.logging.INFO  # lichess_bot.logging_level.DEBUG
-    lichess_bot.logging.basicConfig(level=logging_level, filename=None, format="%(asctime)-15s: %(message)s")
-    lichess_bot.enable_color_logging(debug_lvl=logging_level)
-    download_sf()
-    lichess_bot.logger.info("Downloaded SF")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG['token'] = ''
@@ -181,7 +186,6 @@ def test_sf():
     CONFIG['engine']['uci_options']['Threads'] = 1
     stockfish_path = f'./TEMP/sf2{file_extension}'
     win = run_bot(CONFIG, logging_level, stockfish_path)
-    shutil.rmtree('TEMP')
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing SF")
     assert win
@@ -192,18 +196,9 @@ def test_lc0():
     if platform != 'win32':
         assert True
         return
-    if os.path.exists('TEMP'):
-        shutil.rmtree('TEMP')
-    os.mkdir('TEMP')
     if os.path.exists('logs'):
         shutil.rmtree('logs')
     os.mkdir('logs')
-    logging_level = lichess_bot.logging.INFO  # lichess_bot.logging_level.DEBUG
-    lichess_bot.logging.basicConfig(level=logging_level, filename=None, format="%(asctime)-15s: %(message)s")
-    lichess_bot.enable_color_logging(debug_lvl=logging_level)
-    download_sf()
-    download_lc0()
-    lichess_bot.logger.info("Downloaded Lc0 and SF")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG['token'] = ''
@@ -215,7 +210,6 @@ def test_lc0():
     CONFIG['engine']['uci_options'].pop('Move Overhead', None)
     stockfish_path = './TEMP/sf2.exe'
     win = run_bot(CONFIG, logging_level, stockfish_path)
-    shutil.rmtree('TEMP')
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing LC0")
     assert win
@@ -226,18 +220,9 @@ def test_sjeng():
     if platform != 'win32':
         assert True
         return
-    if os.path.exists('TEMP'):
-        shutil.rmtree('TEMP')
-    os.mkdir('TEMP')
     if os.path.exists('logs'):
         shutil.rmtree('logs')
     os.mkdir('logs')
-    logging_level = lichess_bot.logging.INFO  # lichess_bot.logging_level.DEBUG
-    lichess_bot.logging.basicConfig(level=logging_level, filename=None, format="%(asctime)-15s: %(message)s")
-    lichess_bot.enable_color_logging(debug_lvl=logging_level)
-    download_sjeng()
-    download_sf()
-    lichess_bot.logger.info("Downloaded Sjeng and SF")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG['token'] = ''
@@ -248,7 +233,6 @@ def test_sjeng():
     CONFIG['engine']['ponder'] = False
     stockfish_path = './TEMP/sf2.exe'
     win = run_bot(CONFIG, logging_level, stockfish_path)
-    shutil.rmtree('TEMP')
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win

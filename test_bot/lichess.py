@@ -61,7 +61,7 @@ class GameStream:
                 except (IndexError, ValueError):
                     pass
             wtime, btime = float(wtime), float(btime)
-            time.sleep(0.1)
+            time.sleep(0.01)
             if event == 'end':
                 yield eval('b\'' + f'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}' + '\'')
                 break
@@ -130,9 +130,10 @@ class Lichess:
 
     def make_move(self, game_id, move):
         self.moves.append(move)
+        uci_move = move.move.uci()
         with open('./logs/states.txt') as file:
             contents = file.read().split('\n')
-        contents[0] += ' ' + move.move.uci()
+        contents[0] += ' ' + uci_move
         with open('./logs/states.txt', 'w') as file:
             file.write('\n'.join(contents))
 

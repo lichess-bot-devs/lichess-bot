@@ -20,11 +20,6 @@ platform = sys.platform
 file_extension = '.exe' if platform == 'win32' else ''
 
 
-def pytest_sessionfinish(session, exitstatus):
-    shutil.copyfile('correct_lichess.py', 'lichess.py')
-    os.remove('correct_lichess.py')
-
-
 def download_sf():
     windows_or_linux = 'win' if platform == 'win32' else 'linux'
     response = requests.get(f'https://stockfishchess.org/files/stockfish_14.1_{windows_or_linux}_x64.zip', allow_redirects=True)

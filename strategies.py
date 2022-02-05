@@ -45,26 +45,17 @@ class MinimalEngine(EngineWrapper):
     however you can also change other methods like
     `notify`, `first_search`, `get_time_control`, etc.
     """
-    def __init__(self, *args, name=None):
-        super().__init__(*args)
+    def __init__(self, commands, options, stderr, draw_or_resign, name=None):
+        super().__init__(options, draw_or_resign)
 
         self.engine_name = self.__class__.__name__ if name is None else name
 
-        self.last_move_info = []
         self.engine = FillerEngine(self, name=self.name)
         self.engine.id = {
             "name": self.engine_name
         }
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
-        timeleft = 0
-        if board.turn:
-            timeleft = wtime
-        else:
-            timeleft = btime
-        return self.search(board, timeleft, ponder, draw_offered)
-
-    def search(self, board, timeleft, ponder, draw_offered):
+    def search(self, board, time_limit, ponder, draw_offered):
         """
         The method to be implemented in your homemade engine
 

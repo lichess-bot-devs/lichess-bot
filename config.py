@@ -40,7 +40,11 @@ def load_config(config_file):
             raise Exception("Your config.yml has the default Lichess API token. This is probably wrong.")
 
         if not os.path.isdir(CONFIG["engine"]["dir"]):
-            raise Exception("Your engine directory `{}` is not a directory.")
+            raise Exception("Your engine directory `{}` is not a directory.".format(CONFIG["engine"]["dir"]))
+
+        working_dir = CONFIG["engine"].get("working_dir")
+        if working_dir and not os.path.isdir(working_dir):
+            raise Exception(f"Your engine's working directory `{working_dir}` is not a directory.")
 
         engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
 

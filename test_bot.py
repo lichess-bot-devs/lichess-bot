@@ -132,7 +132,15 @@ def run_bot(CONFIG, logging_level, stockfish_path):
                             with open('./logs/states.txt') as states:
                                 state2 = states.read()
                             time.sleep(0.001)
-                            if state != state2:
+                            moves = state2.split('\n')[0]
+                            temp_board = chess.Board()
+                            moves_are_correct = True
+                            for move in moves.split():
+                                try:
+                                    temp_board.push_uci(move)
+                                except ValueError:
+                                    moves_are_correct = False
+                            if state != state2 and moves_are_correct:
                                 break
                         with open('./logs/states.txt') as states:
                             state2 = states.read()

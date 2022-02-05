@@ -36,6 +36,10 @@ class GameStream:
             time.sleep(0.002)
             with open('./logs/events.txt') as events:
                 event = events.read()
+            if event:
+                time.sleep(0.002)
+                with open('./logs/events.txt') as events:
+                    event = events.read()
             while True:
                 try:
                     while True:

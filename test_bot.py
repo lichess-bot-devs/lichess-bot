@@ -13,7 +13,7 @@ import stat
 import shutil
 import importlib
 shutil.copyfile('lichess.py', 'correct_lichess.py')
-shutil.copyfile('test/lichess.py', 'lichess.py')
+shutil.copyfile('test_bot/lichess.py', 'lichess.py')
 lichess_bot = importlib.import_module("lichess-bot")
 
 platform = sys.platform

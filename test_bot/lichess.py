@@ -114,6 +114,12 @@ class Lichess:
         response = self.session.post(url, data=data, headers=headers, params=params, timeout=2)
         response.raise_for_status()
         return response.json()
+    
+    def get_game(self, game_id):
+        return
+
+    def upgrade_to_bot_account(self):
+        return
 
     def make_move(self, game_id, move):
         self.moves.append(move)
@@ -123,6 +129,12 @@ class Lichess:
         contents[0] += ' ' + uci_move
         with open('./logs/states.txt', 'w') as file:
             file.write('\n'.join(contents))
+    
+    def chat(self, game_id, room, text):
+        return
+
+    def abort(self, game_id):
+        return
 
     def get_event_stream(self):
         events = EventStream(self.sent_game)
@@ -134,6 +146,9 @@ class Lichess:
 
     def accept_challenge(self, challenge_id):
         self.game_accepted = True
+    
+    def decline_challenge(self, challenge_id, reason="generic"):
+        return
 
     def get_profile(self):
         profile = {'id': 'b', 'username': 'b', 'online': True, 'title': 'BOT', 'url': 'https://lichess.org/@/bo', 'followable': True, 'following': False, 'blocking': False, 'followsYou': False}
@@ -142,6 +157,9 @@ class Lichess:
 
     def get_ongoing_games(self):
         return []
+    
+    def resign(self, game_id):
+        return
 
     def set_user_agent(self, username):
         self.header.update({"User-Agent": "lichess-bot/{} user:{}".format(self.version, username)})

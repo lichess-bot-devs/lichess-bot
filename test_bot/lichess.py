@@ -6,6 +6,7 @@ from urllib3.exceptions import ProtocolError
 from http.client import RemoteDisconnected
 import backoff
 import time
+import chess
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +39,12 @@ class GameStream:
                 event = events.read()
             while True:
                 try:
-                    while True:
-                        with open('./logs/states.txt') as states:
-                            state = states.read().split('\n')
-                        moves = state[0]
-                        if moves != self.moves_sent:
-                            break
-                    time.sleep(0.001)
                     with open('./logs/states.txt') as states:
                         state = states.read().split('\n')
                     moves = state[0]
+                    board = chess.Board()
+                    for move in moves.split():
+                        board.push_uci(move)
                     wtime, btime = state[1].split(',')
                     if len(moves) <= len(self.moves_sent) and not event:
                         time.sleep(0.001)

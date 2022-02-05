@@ -26,13 +26,13 @@ python3 -m pip install -r requirements.txt
 - **NOTE: Only Python 3.7 or later is supported!**
 - If you don't have Python, you may [download it here](https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\".
 - To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell" (you may use "cmd" too, but sometimes it may not work).
-- Then you may need to upgrade pip. Execute `python -m pip install --upgrade pip` in PowerShell.
+- Then you may need to upgrade pip. Execute `python3 -m pip install --upgrade pip` in PowerShell.
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in PowerShell: `cd [folder's adress]` (example, `cd C:\chess\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
 ```python
-python -m venv .venv # If this fails you probably need to add Python to your PATH.
+python3 -m venv .venv # If this fails you probably need to add Python3 to your PATH.
 ./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
 pip install -r requirements.txt
 ```
@@ -47,9 +47,14 @@ pip install -r requirements.txt
 - **NOTE: You won't see this token again on Lichess, so do save it.**
 
 ## Setup Engine
-- Place your engine(s) in the `engine: dir` directory
-- In `config.yml`, enter the binary name as the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
+Within the file `config.yml`:
+- Enter the directory containing the engine executable in the `engine: dir` field.
+- Enter the executable name in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
+- If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field.
+  - If this field is blank or missing, the current directory will be used.
 - Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets
+
+As an optional convenience, there is a folder named `engines` within the lichess-bot folder where you can copy your engine and all the files it needs. This is the default executable location in the `config.yml.default` file.
 
 ### Engine Configuration
 Besides the above, there are many possible options within `config.yml` for configuring the engine for use with lichess-bot.
@@ -62,6 +67,16 @@ Besides the above, there are many possible options within `config.yml` for confi
 - `polyglot`: Tell lichess-bot whether your bot should use an opening book. Multiple books can be specified for each chess variant.
     - `enabled`: Whether to use the book at all.
     - `book`: A nested list of books. The next indented line should list a chess variant (`standard`, `3check`, `horde`, etc.) followed on succeeding indented lines with paths to the book files. See `config.yml.default` for examples.
+- `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine. XBoard engines can resign and offer/accept draw without this feature enabled.
+    - `resign_enabled`: Whether the bot is allowed to resign based on the evaluation.
+    - `resign_score`: The engine evaluation has to be less than or equal to `resign_score` for the bot to resign.
+    - `resign_for_egtb_minus_two`: If true the bot will resign in positions where the online_egtb returns a wdl of -2.
+    - `resign_moves`: The evaluation has to be less than or equal to `resign_score` for `resign_moves` amount of moves for the bot to resign.
+    - `offer_draw_enabled`: Whether the bot is allowed to offer/accept draw based on the evaluation.
+    - `offer_draw_score`: The absolute value of the engine evaluation has to be less than or equal to `offer_draw_score` for the bot to offer/accept draw.
+    - `offer_draw_for_egtb_zero`: If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
+    - `offer_draw_moves`: The absolute value of the evaluation has to be less than or equal to `offer_draw_score` for `offer_draw_moves` amount of moves for the bot to offer/accept draw.
+    - `offer_draw_pieces`: The bot only offers/accepts draws if the position has less than or equal to `offer_draw_pieces` pieces.
 - `online_moves`: This section gives your bot access to various online resources for choosing moves like opening books and endgame tablebases. This can be a supplement or a replacement for chess databases stored on your computer. There are three sections that correspond to three different online databases:
     1. `chessdb_book`: Consults a [Chinese chess position database](https://www.chessdb.cn/), which also hosts a xiangqi database.
     2. `lichess_cloud_analysis`: Consults [Lichess' own position analysis database](https://lichess.org/api#operation/apiCloudEval).
@@ -212,18 +227,18 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 
 ## Lichess Upgrade to Bot Account
 **WARNING: This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).**
-- run `python lichess-bot.py -u`.
+- run `python3 lichess-bot.py -u`.
 
 ## To Run
 After activating the virtual environment created in the installation steps (the `source` line for Linux and Macs or the `activate` script for Windows), run
 ```
-python lichess-bot.py
+python3 lichess-bot.py
 ```
 The working directory for the engine execution will be the lichess-bot directory. If your engine requires files located elsewhere, make sure they are specified by absolute path or copy the files to an appropriate location inside the lichess-bot directory.
 
 To output more information (including your engine's thinking output and debugging information), the `-v` option can be passed to lichess-bot:
 ```
-python lichess-bot.py -v
+python3 lichess-bot.py -v
 ```
 
 ## To Quit
@@ -237,7 +252,7 @@ python lichess-bot.py -v
 - Copy both the files into the `engine.dir` directory.
 - Change the `engine.name` and `engine.engine_options.weights` keys in `config.yml` file to `lczero` and `weights.pb.gz`.
 - You can specify the number of `engine.uci_options.threads` in the `config.yml` file as well.
-- To start: `python lichess-bot.py`.
+- To start: `python3 lichess-bot.py`.
 
 ## LeelaChessZero: Windows CPU 2021
 - For Windows modern CPUs, download the lczero binary from the [latest Lc0 release](https://github.com/LeelaChessZero/lc0/releases) (e.g. `lc0-v0.27.0-windows-cpu-dnnl.zip`).
@@ -245,7 +260,7 @@ python lichess-bot.py -v
 - All three main files need to be copied to the engines directory.
 - The `lc0.exe` should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file).
 - Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the engines directory).
-- To start: `python lichess-bot.py`.
+- To start: `python3 lichess-bot.py`.
 
 ## LeelaChessZero: Docker container
 Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot inside a Docker container.
@@ -270,7 +285,7 @@ The examples just implement `search`.
 ## Tips & Tricks
 - You can specify a different config file with the `--config` argument.
 - Here's an example systemd service definition:
-```
+```ini
 [Unit]
 Description=lichess-bot
 After=network-online.target

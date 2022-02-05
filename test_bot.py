@@ -118,9 +118,10 @@ def run_bot(CONFIG, logging_level, stockfish_path):
                             wtime += increment
                         board.push(move.move)
 
+                        uci_move = move.move.uci()
                         with open('./logs/states.txt') as states:
                             state = states.read().split('\n')
-                        state[0] += ' ' + move.move.uci()
+                        state[0] += ' ' + uci_move
                         state = '\n'.join(state)
                         with open('./logs/states.txt', 'w') as file:
                             file.write(state)

@@ -465,7 +465,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        data = li.api_get(f"https://lichess.org/api/cloud-eval?fen={board.fen()}&multiPv={multipv}&variant={variant}", raise_for_status=False)
+        data = li.api_get(f"https://lichess.org/api/cloud-eval?fen={board.fen()}&multiPv={multipv}&variant=\"{variant}\"", raise_for_status=False)
         if "error" not in data:
             if quality == "best":
                 depth = data["depth"]

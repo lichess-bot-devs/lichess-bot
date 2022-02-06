@@ -181,7 +181,7 @@ def run_bot(CONFIG, logging_level, stockfish_path):
         lichess_bot.logger.error("{} is not a bot account. Please upgrade it to a bot account!".format(user_profile["username"]))
 
 
-@pytest.mark.timeout(150)
+@pytest.mark.timeout(150, method="thread")
 def test_sf():
     if platform != 'linux' and platform != 'win32':
         assert True
@@ -202,7 +202,7 @@ def test_sf():
     assert win
 
 
-@pytest.mark.timeout(150)
+@pytest.mark.timeout(150, method="thread")
 def test_lc0():
     if platform != 'win32':
         assert True
@@ -226,7 +226,7 @@ def test_lc0():
     assert win
 
 
-@pytest.mark.timeout(150)
+@pytest.mark.timeout(150, method="thread")
 def test_sjeng():
     if platform != 'win32':
         assert True

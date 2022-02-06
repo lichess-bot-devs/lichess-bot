@@ -12,6 +12,8 @@ import sys
 import stat
 import shutil
 import importlib
+if __name__ == '__main__':
+    sys.exit(f'The script {os.path.basename(__file__)} should only be run by pytest.')
 shutil.copyfile('lichess.py', 'correct_lichess.py')
 shutil.copyfile('test_bot/lichess.py', 'lichess.py')
 lichess_bot = importlib.import_module("lichess-bot")
@@ -245,9 +247,3 @@ def test_sjeng():
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win
-
-
-if __name__ == '__main__':
-    test_sf()
-    test_lc0()
-    test_sjeng()

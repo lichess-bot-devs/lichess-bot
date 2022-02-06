@@ -6,3 +6,7 @@ PyYAML>=5.4.1
 requests>=2.25.1
 urllib3==1.26.8
 backoff==1.11.1
+
+# Requirements for tests
+pytest==6.2.5
+pytest-timeout==2.1.0

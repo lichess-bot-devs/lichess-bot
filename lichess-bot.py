@@ -128,6 +128,8 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename,
         while not terminated:
             try:
                 event = control_queue.get()
+                if event.get("type") != "ping":
+                    logger.debug(f"Event: {event}")
             except InterruptedError:
                 continue
 
@@ -238,6 +240,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     # Initial response of stream will be the full game info. Store it
     initial_state = json.loads(next(lines).decode('utf-8'))
+    logger.debug(f"Initial state: {initial_state}")
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
 
     engine = engine_factory()
@@ -276,6 +279,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
             else:
                 binary_chunk = next(lines)
                 upd = json.loads(binary_chunk.decode('utf-8')) if binary_chunk else None
+            logger.debug(f"Game state: {upd}")
 
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":

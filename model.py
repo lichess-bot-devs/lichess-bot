@@ -1,6 +1,7 @@
 import time
 from urllib.parse import urljoin
 
+
 class Challenge:
     def __init__(self, c_info):
         self.id = c_info["id"]
@@ -52,10 +53,10 @@ class Challenge:
         return "rated" if self.rated else "casual"
 
     def challenger_full_name(self):
-        return "{}{}".format(self.challenger_title + " " if self.challenger_title else "", self.challenger_name)
+        return f'{self.challenger_title + " " if self.challenger_title else ""}{self.challenger_name}'
 
     def __str__(self):
-        return "{} {} challenge from {}({})".format(self.perf_name, self.mode(), self.challenger_full_name(), self.challenger_rating)
+        return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating})"
 
     def __repr__(self):
         return self.__str__()
@@ -87,7 +88,7 @@ class Game:
         self.disconnect_at = time.time()
 
     def url(self):
-        return urljoin(self.base_url, "{}/{}".format(self.id, self.my_color))
+        return urljoin(self.base_url, f"{self.id}/{self.my_color}")
 
     def is_abortable(self):
         return len(self.state["moves"]) < 6
@@ -111,7 +112,7 @@ class Game:
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000
 
     def __str__(self):
-        return "{} {} vs {}".format(self.url(), self.perf_name, self.opponent.__str__())
+        return f"{self.url()} {self.perf_name} vs {self.opponent.__str__()}"
 
     def __repr__(self):
         return self.__str__()
@@ -128,10 +129,10 @@ class Player:
 
     def __str__(self):
         if self.aiLevel:
-            return "AI level {}".format(self.aiLevel)
+            return f"AI level {self.aiLevel}"
         else:
-            rating = "{}{}".format(self.rating, "?" if self.provisional else "")
-            return "{}{}({})".format(self.title + " " if self.title else "", self.name, rating)
+            rating = f'{self.rating}{"?" if self.provisional else ""}'
+            return f'{self.title + " " if self.title else ""}{self.name}({rating})'
 
     def __repr__(self):
         return self.__str__()

@@ -19,7 +19,7 @@ def create_engine(config):
     commands = [engine_path]
     if engine_options:
         for k, v in engine_options.items():
-            commands.append("--{}={}".format(k, v))
+            commands.append(f"--{k}={v}")
 
     stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
 
@@ -32,7 +32,7 @@ def create_engine(config):
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
-    options = remove_managed_options(cfg.get(engine_type + "_options", {}) or {})
+    options = remove_managed_options(cfg.get(f"{engine_type}_options", {}) or {})
     return Engine(commands, options, stderr, draw_or_resign, cwd=engine_working_dir)
 
 
@@ -44,21 +44,21 @@ def remove_managed_options(config):
 
 
 class Termination(str, Enum):
-    MATE = 'mate'
-    TIMEOUT = 'outoftime'
-    RESIGN = 'resign'
-    ABORT = 'aborted'
-    DRAW = 'draw'
+    MATE = "mate"
+    TIMEOUT = "outoftime"
+    RESIGN = "resign"
+    ABORT = "aborted"
+    DRAW = "draw"
 
 
 class GameEnding(str, Enum):
-    WHITE_WINS = '1-0'
-    BLACK_WINS = '0-1'
-    DRAW = '1/2-1/2'
-    INCOMPLETE = '*'
+    WHITE_WINS = "1-0"
+    BLACK_WINS = "0-1"
+    DRAW = "1/2-1/2"
+    INCOMPLETE = "*"
 
 
-PONDERPV_CHARACTERS = 12  # the length of ', ponderpv: '
+PONDERPV_CHARACTERS = 12  # the length of ", ponderpv: "
 MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
 
 
@@ -91,16 +91,16 @@ class EngineWrapper:
         return self.search(board, time_limit, ponder, draw_offered)
 
     def offer_draw_or_resign(self, result, board):
-        if self.draw_or_resign.get('offer_draw_enabled', False) and len(self.scores) >= self.draw_or_resign.get('offer_draw_moves', 5):
-            scores = self.scores[-self.draw_or_resign.get('offer_draw_moves', 5):]
+        if self.draw_or_resign.get("offer_draw_enabled", False) and len(self.scores) >= self.draw_or_resign.get("offer_draw_moves", 5):
+            scores = self.scores[-self.draw_or_resign.get("offer_draw_moves", 5):]
             pieces_on_board = chess.popcount(board.occupied)
-            scores_near_draw = lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get('offer_draw_score', 0)
-            if len(scores) == len(list(filter(scores_near_draw, scores))) and pieces_on_board <= self.draw_or_resign.get('offer_draw_pieces', 10):
+            scores_near_draw = lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get("offer_draw_score", 0)
+            if len(scores) == len(list(filter(scores_near_draw, scores))) and pieces_on_board <= self.draw_or_resign.get("offer_draw_pieces", 10):
                 result.draw_offered = True
 
-        if self.draw_or_resign.get('resign_enabled', False) and len(self.scores) >= self.draw_or_resign.get('resign_moves', 3):
-            scores = self.scores[-self.draw_or_resign.get('resign_moves', 3):]
-            scores_near_loss = lambda score: score.relative.score(mate_score=40000) <= self.draw_or_resign.get('resign_score', -1000)
+        if self.draw_or_resign.get("resign_enabled", False) and len(self.scores) >= self.draw_or_resign.get("resign_moves", 3):
+            scores = self.scores[-self.draw_or_resign.get("resign_moves", 3):]
+            scores_near_loss = lambda score: score.relative.score(mate_score=40000) <= self.draw_or_resign.get("resign_score", -1000)
             if len(scores) == len(list(filter(scores_near_loss, scores))):
                 result.resigned = True
         return result
@@ -188,12 +188,12 @@ class XBoardEngine(EngineWrapper):
         # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
 
-        winner = game.state.get('winner')
-        termination = game.state.get('status')
+        winner = game.state.get("winner")
+        termination = game.state.get("status")
 
-        if winner == 'white':
+        if winner == "white":
             game_result = GameEnding.WHITE_WINS
-        elif winner == 'black':
+        elif winner == "black":
             game_result = GameEnding.BLACK_WINS
         elif termination == Termination.DRAW:
             game_result = GameEnding.DRAW
@@ -201,37 +201,37 @@ class XBoardEngine(EngineWrapper):
             game_result = GameEnding.INCOMPLETE
 
         if termination == Termination.MATE:
-            endgame_message = winner.title() + ' mates'
+            endgame_message = f"{winner.title()} mates"
         elif termination == Termination.TIMEOUT:
-            endgame_message = 'Time forfeiture'
+            endgame_message = "Time forfeiture"
         elif termination == Termination.RESIGN:
-            resigner = 'black' if winner == 'white' else 'white'
-            endgame_message = resigner.title() + ' resigns'
+            resigner = "black" if winner == "white" else "white"
+            endgame_message = f"{resigner.title()} resigns"
         elif termination == Termination.ABORT:
-            endgame_message = 'Game aborted'
+            endgame_message = "Game aborted"
         elif termination == Termination.DRAW:
             if board.is_fifty_moves():
-                endgame_message = '50-move rule'
+                endgame_message = "50-move rule"
             elif board.is_repetition():
-                endgame_message = 'Threefold repetition'
+                endgame_message = "Threefold repetition"
             else:
-                endgame_message = 'Draw by agreement'
+                endgame_message = "Draw by agreement"
         elif termination:
             endgame_message = termination
         else:
-            endgame_message = ''
+            endgame_message = ""
 
         if endgame_message:
-            endgame_message = ' {' + endgame_message + '}'
+            endgame_message = " {" + endgame_message + "}"
 
-        self.engine.protocol.send_line('result ' + game_result + endgame_message)
+        self.engine.protocol.send_line(f"result {game_result}{endgame_message}")
 
     def stop(self):
         self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
-            title = game.opponent.title + " " if game.opponent.title else ""
+            title = f'{game.opponent.title}{" " if game.opponent.title else ""}'
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
         if game.me.rating is not None and game.opponent.rating is not None:
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")

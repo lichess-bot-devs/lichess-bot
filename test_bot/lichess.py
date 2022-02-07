@@ -28,24 +28,24 @@ ENDPOINTS = {
 
 class GameStream:
     def __init__(self):
-        self.moves_sent = ''
+        self.moves_sent = ""
 
     def iter_lines(self):
         yield b'{"id":"zzzzzzzz","variant":{"key":"standard","name":"Standard","short":"Std"},"clock":{"initial":60000,"increment":2000},"speed":"bullet","perf":{"name":"Bullet"},"rated":true,"createdAt":1600000000000,"white":{"id":"bo","name":"bo","title":"BOT","rating":3000},"black":{"id":"b","name":"b","title":"BOT","rating":3000,"provisional":true},"initialFen":"startpos","type":"gameFull","state":{"type":"gameState","moves":"","wtime":60000,"btime":60000,"winc":2000,"binc":2000,"status":"started"}}'
         time.sleep(1)
         while True:
             time.sleep(0.001)
-            with open('./logs/events.txt') as events:
+            with open("./logs/events.txt") as events:
                 event = events.read()
             while True:
                 try:
-                    with open('./logs/states.txt') as states:
-                        state = states.read().split('\n')
+                    with open("./logs/states.txt") as states:
+                        state = states.read().split("\n")
                     moves = state[0]
                     board = chess.Board()
                     for move in moves.split():
                         board.push_uci(move)
-                    wtime, btime = state[1].split(',')
+                    wtime, btime = state[1].split(",")
                     if len(moves) <= len(self.moves_sent) and not event:
                         time.sleep(0.001)
                         continue
@@ -55,11 +55,11 @@ class GameStream:
                     pass
             wtime, btime = float(wtime), float(btime)
             time.sleep(0.1)
-            if event == 'end':
-                yield eval('b\'' + f'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}' + '\'')
+            if event == "end":
+                yield eval(f'b\'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}\'')
                 break
             if moves:
-                yield eval('b\'' + f'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"started"}}' + '\'')
+                yield eval(f'b\'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"started"}}\'')
 
 
 class EventStream:
@@ -79,7 +79,7 @@ class Lichess:
     def __init__(self, token, url, version):
         self.version = version
         self.header = {
-            "Authorization": "Bearer {}".format(token)
+            "Authorization": f"Bearer {token}"
         }
         self.baseUrl = url
         self.session = requests.Session()
@@ -124,11 +124,11 @@ class Lichess:
     def make_move(self, game_id, move):
         self.moves.append(move)
         uci_move = move.move.uci()
-        with open('./logs/states.txt') as file:
-            contents = file.read().split('\n')
-        contents[0] += ' ' + uci_move
-        with open('./logs/states.txt', 'w') as file:
-            file.write('\n'.join(contents))
+        with open("./logs/states.txt") as file:
+            contents = file.read().split("\n")
+        contents[0] += f" {uci_move}"
+        with open("./logs/states.txt", "w") as file:
+            file.write("\n".join(contents))
     
     def chat(self, game_id, room, text):
         return
@@ -151,7 +151,7 @@ class Lichess:
         return
 
     def get_profile(self):
-        profile = {'id': 'b', 'username': 'b', 'online': True, 'title': 'BOT', 'url': 'https://lichess.org/@/bo', 'followable': True, 'following': False, 'blocking': False, 'followsYou': False}
+        profile = {"id": "b", "username": "b", "online": True, "title": "BOT", "url": "https://lichess.org/@/bo", "followable": True, "following": False, "blocking": False, "followsYou": False}
         self.set_user_agent(profile["username"])
         return profile
 
@@ -162,5 +162,5 @@ class Lichess:
         return
 
     def set_user_agent(self, username):
-        self.header.update({"User-Agent": "lichess-bot/{} user:{}".format(self.version, username)})
+        self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
         self.session.headers.update(self.header)

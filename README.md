@@ -104,7 +104,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     cpuct: 3.1
 ```
 This would create the command-line option `--cpuct=3.1` to be used when starting the engine, like this for the engine lc0: `lc0 --cpuct=3.1`. Any number of options can be listed here, each getting their own command-line option.
-- `uci_options`: A list of options to pass to a UCI engine after startup. Different engines have different options, so treat the options in `config.yml.default` as templates and not suggestions. When UCI engines start, they print a list of configurations that can modify their behavior. For example, Stockfish 13 prints the following when run at the command line:
+- `uci_options`: A list of options to pass to a UCI engine after startup. Different engines have different options, so treat the options in `config.yml.default` as templates and not suggestions. When UCI engines start, they print a list of configurations that can modify their behavior after receiving the string "uci". For example, to find out what options Stockfish 13 supports, run the executable in a terminal, type `uci`, and press Enter. The engine will print the following when run at the command line:
 ```
 id name Stockfish 13
 id author the Stockfish developers (see AUTHORS file)
@@ -151,7 +151,7 @@ One last option is `go_commands`. Beneath this option, arguments to the UCI `go`
 ```
 will append `nodes 1 depth 5 movetime 1000` to the command to start thinking of a move: `go startpos e2e4 e7e5 ...`.
 
-- `xboard_options`: A list of options to pass to an XBoard engine after startup. Different engines have different options, so treat the options in `config.yml.default` as templates and not suggestions. When XBoard engines start, they print a list of configurations that can modify their behavior. The configurable options will be prefixed with `feature option`. Some examples may include
+- `xboard_options`: A list of options to pass to an XBoard engine after startup. Different engines have different options, so treat the options in `config.yml.default` as templates and not suggestions. When XBoard engines start, they print a list of configurations that can modify their behavior. To see these configurations, run the engine in a terminal, type `xboard`, press Enter, type `protover 2`, and press Enter. The configurable options will be prefixed with `feature option`. Some examples may include
 ```
 feature option="Add Noise -check VALUE"
 feature option="PGN File -string VALUE"

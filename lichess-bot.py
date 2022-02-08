@@ -101,7 +101,7 @@ def game_logging_configurer(queue, level):
 def start(li, user_profile, engine_factory, config, logging_level, log_filename, one_game=False):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
-    logger.info(f'You\'re now connected to {config["url"]} and awaiting challenges.')
+    logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
     control_queue = manager.Queue()

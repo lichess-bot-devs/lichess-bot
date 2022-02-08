@@ -199,7 +199,7 @@ def test_sf():
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing SF")
-    assert win
+    assert win == "1"
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -223,7 +223,7 @@ def test_lc0():
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing LC0")
-    assert win
+    assert win == "1"
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -246,4 +246,4 @@ def test_sjeng():
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing Sjeng")
-    assert win
+    assert win == "1"

@@ -197,10 +197,9 @@ def test_sf():
     CONFIG['engine']['uci_options']['Threads'] = 1
     stockfish_path = f'./TEMP/sf2{file_extension}'
     win = run_bot(CONFIG, logging_level, stockfish_path)
-    win = win == "1"
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing SF")
-    assert win
+    assert win == "1"
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -222,10 +221,9 @@ def test_lc0():
     CONFIG['engine']['uci_options'].pop('Move Overhead', None)
     stockfish_path = './TEMP/sf2.exe'
     win = run_bot(CONFIG, logging_level, stockfish_path)
-    win = win == "1"
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing LC0")
-    assert win
+    assert win == "1"
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -246,7 +244,6 @@ def test_sjeng():
     CONFIG['engine']['ponder'] = False
     stockfish_path = './TEMP/sf2.exe'
     win = run_bot(CONFIG, logging_level, stockfish_path)
-    win = win == "1"
     shutil.rmtree('logs')
     lichess_bot.logger.info("Finished Testing Sjeng")
-    assert win
+    assert win == "1"

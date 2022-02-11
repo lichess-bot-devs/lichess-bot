@@ -15,6 +15,7 @@ import time
 import backoff
 import sys
 import random
+import os
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial

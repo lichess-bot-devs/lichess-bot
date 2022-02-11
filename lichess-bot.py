@@ -246,6 +246,36 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     engine = engine_factory()
     engine.get_opponent_info(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
+    
+    variant=game.perf_name
+
+    if variant=="atomic":
+        engine_path = os.path.join(cfg["dir"], cfg["atomicname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+        
+  elif variant=="crazyhouse":
+        engine_path = os.path.join(cfg["dir"], cfg["crazyname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+        
+  elif variant=="kingofthehill":
+        engine_path = os.path.join(cfg["dir"], cfg["kothname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+        
+  elif variant=="3check":
+        engine_path = os.path.join(cfg["dir"], cfg["3name"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+        
+  elif variant=="giveaway":
+        engine_path = os.path.join(cfg["dir"], cfg["antiname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+        
+  elif variant=="racingkings":
+        engine_path = os.path.join(cfg["dir"], cfg["rkname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+        
+  else   variant=="horde":
+        engine_path = os.path.join(cfg["dir"], cfg["hordename"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)    
 
     logger.info("+++ {}".format(game))
 

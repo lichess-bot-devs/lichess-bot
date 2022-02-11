@@ -273,7 +273,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         engine_path = os.path.join(cfg["dir"], cfg["rkname"])
         engineeng = engine.SimpleEngine.popen_uci(engine_path)
         
-  else   variant=="horde":
+   if variant=="horde":
         engine_path = os.path.join(cfg["dir"], cfg["hordename"])
         engineeng = engine.SimpleEngine.popen_uci(engine_path)    
 

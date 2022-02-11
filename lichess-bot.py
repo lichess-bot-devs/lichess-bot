@@ -267,16 +267,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         
     if variant=="giveaway":
         engine_path = os.path.join(cfg["dir"], cfg["antiname"])
-        engineeng = engine.SimpleEngine.popen_uci(engine_path)
-        
-   if variant=="racingkings":
-        engine_path = os.path.join(cfg["dir"], cfg["rkname"])
-        engineeng = engine.SimpleEngine.popen_uci(engine_path)
-        
-   if variant=="horde":
-        engine_path = os.path.join(cfg["dir"], cfg["hordename"])
         engineeng = engine.SimpleEngine.popen_uci(engine_path)    
-
+  
     logger.info("+++ {}".format(game))
 
     is_correspondence = game.perf_name == "Correspondence"

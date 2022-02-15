@@ -107,7 +107,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename,
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
-    correspondence_cfg = config.get("correspondence", {}) or {}
+    correspondence_cfg = config.get("correspondence") or {}
     correspondence_checkin_period = correspondence_cfg.get("checkin_period", 600)
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping, args=[control_queue, correspondence_checkin_period])
     correspondence_pinger.start()
@@ -249,7 +249,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     logger.info(f"+++ {game}")
 
     is_correspondence = game.perf_name == "Correspondence"
-    correspondence_cfg = config.get("correspondence", {}) or {}
+    correspondence_cfg = config.get("correspondence") or {}
     correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
 
     engine_cfg = config["engine"]
@@ -261,7 +261,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     online_moves_cfg = engine_cfg.get("online_moves", {})
     draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
 
-    greeting_cfg = config.get("greeting", {}) or {}
+    greeting_cfg = config.get("greeting") or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
     get_greeting = lambda greeting: str(greeting_cfg.get(greeting, "") or "").format_map(keyword_map)
     hello = get_greeting("hello")

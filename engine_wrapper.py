@@ -68,6 +68,7 @@ class EngineWrapper:
         self.draw_or_resign = draw_or_resign
         self.go_commands = options.pop("go_commands", {}) or {}
         self.last_move_info = {}
+        self.move_commentary = []
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -108,6 +109,7 @@ class EngineWrapper:
     def search(self, board, time_limit, ponder, draw_offered):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
+        self.move_commentary.append(self.last_move_info.copy())
         self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))

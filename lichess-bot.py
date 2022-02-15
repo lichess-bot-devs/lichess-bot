@@ -1,5 +1,6 @@
 import argparse
 import chess
+import chess.pgn
 from chess.variant import find_variant
 import chess.polyglot
 import engine_wrapper
@@ -15,6 +16,7 @@ import time
 import backoff
 import sys
 import random
+import os
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -269,6 +271,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     first_move = True
     correspondence_disconnect_time = 0
+    start_datetime = time.localtime()
     while not terminated:
         move_attempted = False
         try:
@@ -342,6 +345,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         except StopIteration:
             break
 
+    print_pgn_game_record(config, game, board, engine, start_datetime)
     engine.stop()
     engine.quit()
 
@@ -671,6 +675,91 @@ def tell_user_game_result(game, board):
             logger.info("Game drawn by agreement.")
     elif termination:
         logger.info(f"Game ended by {termination}")
+
+
+def print_pgn_game_record(config, game, board, engine, start_datetime):
+    game_directory = config.get('pgn_directory')
+    if not game_directory:
+        return
+
+    try:
+        os.mkdir(game_directory)
+    except FileExistsError:
+        pass
+
+    game_file_name = f"{game.white} vs {game.black} - {game.id}.pgn"
+    game_path = os.path.join(game_directory, game_file_name)
+    game_record = None
+    try:
+        with open(game_path) as game_data:
+            game_record = chess.pgn.read_game(game_data)
+    except FileNotFoundError:
+        pass
+
+    if not game_record:
+        game_record = chess.pgn.Game()
+        game_record.headers["Event"] = f"Lichess {game.perf_name} Game"
+        game_record.headers["Site"] = game.url()
+        game_record.headers["Date"] = time.strftime("%Y.%m.%d", start_datetime)
+        game_record.headers["Time"] = time.strftime("%H:%M:%S", start_datetime)
+        game_record.headers["Round"] = "1"
+        game_record.headers["White"] = game.white
+        game_record.headers["Black"] = game.black
+        game_record.headers["TimeControl"] = f"{game.clock_initial // 1000}+{game.clock_increment // 1000}"
+        if game.initial_fen != "startpos":
+            game_record.headers["Setup"] = "1"
+            game_record.headers["FEN"] = game.initial_fen
+
+    winner = game.state.get("winner")
+    termination = game.state.get("status")
+    ending = engine_wrapper.GameEnding
+    if winner is not None:
+        result = ending.WHITE_WINS if winner == "white" else ending.BLACK_WINS
+    elif termination == engine_wrapper.Termination.DRAW:
+        result = ending.DRAW
+    else:
+        result = ending.INCOMPLETE
+    game_record.headers["Result"] = result
+
+    index_of_first_board_move_with_commentary = 0
+    commentary_moves = [c["pv"][0] for c in engine.move_commentary]
+    while True:
+        commented_board_moves = board.move_stack[index_of_first_board_move_with_commentary::2]
+        if commented_board_moves == commentary_moves:
+            break
+        else:
+            index_of_first_board_move_with_commentary += 1
+
+    current_node = game_record.game()
+    moves_from_file = 0
+    while current_node is not None and current_node.next() is not None:
+        current_node = current_node.next()
+        moves_from_file += 1
+
+    while moves_from_file + len(engine.move_commentary) > len(board.move_stack):
+        current_node = current_node.parent
+        moves_from_file -= 1
+
+    for move in board.move_stack[moves_from_file:index_of_first_board_move_with_commentary]:
+        current_node = current_node.add_main_variation(move)
+
+    for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
+        current_node = current_node.add_main_variation(move)
+        if index % 2 != 0:
+            continue
+        commentary = engine.move_commentary[index // 2]
+        score = commentary.get("score")
+        if score is not None:
+            pov_score = score.pov(chess.WHITE if game.is_white else chess.BLACK)
+            numeric_score = pov_score.score()
+            comment = f"score: {numeric_score if numeric_score is not None else pov_score}"
+        else:
+            comment = ""
+        current_node.parent.add_line(commentary.get("pv", []), comment=comment)
+
+    with open(game_path, "w") as game_record_destination:
+        pgn_writer = chess.pgn.FileExporter(game_record_destination)
+        game_record.accept(pgn_writer)
 
 
 def intro():

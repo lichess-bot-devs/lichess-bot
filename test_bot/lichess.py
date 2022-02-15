@@ -114,7 +114,7 @@ class Lichess:
         response = self.session.post(url, data=data, headers=headers, params=params, timeout=2)
         response.raise_for_status()
         return response.json()
-    
+
     def get_game(self, game_id):
         return
 
@@ -129,7 +129,7 @@ class Lichess:
         contents[0] += f" {uci_move}"
         with open("./logs/states.txt", "w") as file:
             file.write("\n".join(contents))
-    
+
     def chat(self, game_id, room, text):
         return
 
@@ -146,7 +146,7 @@ class Lichess:
 
     def accept_challenge(self, challenge_id):
         self.game_accepted = True
-    
+
     def decline_challenge(self, challenge_id, reason="generic"):
         return
 
@@ -157,7 +157,7 @@ class Lichess:
 
     def get_ongoing_games(self):
         return []
-    
+
     def resign(self, game_id):
         return
 

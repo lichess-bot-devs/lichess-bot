@@ -16,7 +16,7 @@ def load_config(config_file):
 
         if "LICHESS_BOT_TOKEN" in os.environ:
             CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
-            
+
         # [section, type, error message]
         sections = [["token", str, "Section `token` must be a string wrapped in quotes."],
                     ["url", str, "Section `url` must be a string wrapped in quotes."],

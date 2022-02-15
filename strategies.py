@@ -66,7 +66,7 @@ class MinimalEngine(EngineWrapper):
     def notify(self, method_name, *args, **kwargs):
         """
         The EngineWrapper class sometimes calls methods on "self.engine".
-        "self.engine" is a filler property that notifies <self> 
+        "self.engine" is a filler property that notifies <self>
         whenever an attribute is called.
 
         Nothing happens unless the main engine does something.

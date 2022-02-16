@@ -15,6 +15,7 @@ import time
 import backoff
 import sys
 import random
+import os
 from config import load_config
 from conversation import Conversation, ChatLine
 from functools import partial
@@ -245,6 +246,28 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     engine = engine_factory()
     engine.get_opponent_info(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
+    
+    variant=game.perf_name
+
+    if variant=="atomic":
+        engine_path = os.path.join(cfg["dir"], cfg["atomicname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+
+    if variant=="crazyhouse":
+        engine_path = os.path.join(cfg["dir"], cfg["crazyname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+
+    if variant=="kingofthehill":
+        engine_path = os.path.join(cfg["dir"], cfg["kothname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+
+    if variant=="3check":
+        engine_path = os.path.join(cfg["dir"], cfg["3name"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)
+
+    if variant=="giveaway":
+        engine_path = os.path.join(cfg["dir"], cfg["antiname"])
+        engineeng = engine.SimpleEngine.popen_uci(engine_path)    
 
     logger.info(f"+++ {game}")
 

@@ -706,6 +706,8 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         game_record.headers["White"] = game.white
         game_record.headers["Black"] = game.black
         game_record.headers["TimeControl"] = f"{game.clock_initial // 1000}+{game.clock_increment // 1000}"
+        if game.variant_name != "Standard":
+            game_record.headers["Variant"] = game.variant_name
         if game.initial_fen != "startpos":
             game_record.headers["Setup"] = "1"
             game_record.headers["FEN"] = game.initial_fen

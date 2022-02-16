@@ -110,6 +110,8 @@ class EngineWrapper:
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
         self.move_commentary.append(self.last_move_info.copy())
+        if not self.move_commentary[-1].get("pv"):
+            self.move_commentary[-1]["pv"] = [result.move]
         self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))

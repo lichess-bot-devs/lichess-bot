@@ -724,7 +724,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     game_record.headers["Result"] = result
 
     index_of_first_board_move_with_commentary = 0
-    commentary_moves = [c["pv"][0] for c in engine.move_commentary]
+    commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
     while True:
         commented_board_moves = board.move_stack[index_of_first_board_move_with_commentary::2]
         if commented_board_moves == commentary_moves:

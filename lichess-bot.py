@@ -733,6 +733,13 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         result = ending.INCOMPLETE
     game_record.headers["Result"] = result
 
+    terminate_message = engine_wrapper.translate_termination(termination,
+                                                            board,
+                                                            game.white if winner == "white" else game.black,
+                                                            winner)
+    if "mates" not in terminate_message:
+        game_record.headers["Termination"] = terminate_message
+
     commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
     for index in range(len(board.move_stack)):
         player_moves = board.move_stack[index::2]

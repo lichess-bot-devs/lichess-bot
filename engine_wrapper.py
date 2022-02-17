@@ -58,6 +58,29 @@ class GameEnding(str, Enum):
     INCOMPLETE = "*"
 
 
+def translate_termination(termination, board, winner_name, winner_color):
+    if termination == Termination.MATE:
+        return f"{winner_name} mates"
+    elif termination == Termination.TIMEOUT:
+        return "Time forfeiture"
+    elif termination == Termination.RESIGN:
+        resigner = "black" if winner_color == "white" else "white"
+        return f"{resigner.title()} resigns"
+    elif termination == Termination.ABORT:
+        return "Game aborted"
+    elif termination == Termination.DRAW:
+        if board.is_fifty_moves():
+            return "50-move rule"
+        elif board.is_repetition():
+            return "Threefold repetition"
+        else:
+            return "Draw by agreement"
+    elif termination:
+        return termination
+    else:
+        return ""
+
+
 PONDERPV_CHARACTERS = 12  # the length of ", ponderpv: "
 MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
 
@@ -204,27 +227,10 @@ class XBoardEngine(EngineWrapper):
         else:
             game_result = GameEnding.INCOMPLETE
 
-        if termination == Termination.MATE:
-            endgame_message = f"{winner.title()} mates"
-        elif termination == Termination.TIMEOUT:
-            endgame_message = "Time forfeiture"
-        elif termination == Termination.RESIGN:
-            resigner = "black" if winner == "white" else "white"
-            endgame_message = f"{resigner.title()} resigns"
-        elif termination == Termination.ABORT:
-            endgame_message = "Game aborted"
-        elif termination == Termination.DRAW:
-            if board.is_fifty_moves():
-                endgame_message = "50-move rule"
-            elif board.is_repetition():
-                endgame_message = "Threefold repetition"
-            else:
-                endgame_message = "Draw by agreement"
-        elif termination:
-            endgame_message = termination
-        else:
-            endgame_message = ""
-
+        endgame_message = translate_termination(termination,
+                                                board,
+                                                game.white if winner == "white" else game.black,
+                                                winner)
         if endgame_message:
             endgame_message = " {" + endgame_message + "}"
 

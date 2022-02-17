@@ -730,11 +730,14 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     game_record.headers["Result"] = result
 
     index_of_first_board_move_with_commentary = 0
-    commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
+    commentary_moves = [comment["pv"][0] for comment in engine.move_commentary][:-1]
     while True:
         commented_board_moves = board.move_stack[index_of_first_board_move_with_commentary::2]
         if commented_board_moves == commentary_moves:
             break
+        elif index_of_first_board_move_with_commentary >= len(board.move_stack):
+            logger.warning("Could not write game record.")
+            return
         else:
             index_of_first_board_move_with_commentary += 1
 

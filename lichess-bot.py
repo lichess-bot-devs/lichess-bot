@@ -345,9 +345,13 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
         except StopIteration:
             break
 
-    print_pgn_game_record(config, game, board, engine, start_datetime)
     engine.stop()
     engine.quit()
+
+    try:
+        print_pgn_game_record(config, game, board, engine, start_datetime)
+    except Exception:
+        pass
 
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")

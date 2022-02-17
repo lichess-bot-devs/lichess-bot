@@ -756,10 +756,6 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         current_node = current_node.next()
         moves_from_file += 1
 
-    while moves_from_file + len(engine.move_commentary) > len(board.move_stack):
-        current_node = current_node.parent
-        moves_from_file -= 1
-
     for move in board.move_stack[moves_from_file:index_of_first_board_move_with_commentary]:
         current_node = current_node.add_main_variation(move)
 

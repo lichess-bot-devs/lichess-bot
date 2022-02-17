@@ -693,6 +693,9 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
 
     game_file_name = f"{game.white} vs {game.black} - {game.id}.pgn"
     game_path = os.path.join(game_directory, game_file_name)
+
+    # If the bot got disconnected in the middle of the game, read the previously
+    # written game record to preserve bot's commentary from last play.
     game_record = None
     try:
         with open(game_path) as game_data:
@@ -740,6 +743,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     if "mates" not in terminate_message:
         game_record.headers["Termination"] = terminate_message
 
+    # Match the engine commentary with the moves on the board
     commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
     for index in range(len(board.move_stack)):
         player_moves = board.move_stack[index::2]
@@ -750,15 +754,18 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         logger.warning("Could not write game record.")
         return
 
+    # Move game record position to last move in file
     current_node = game_record.game()
     moves_from_file = 0
     while current_node is not None and current_node.next() is not None:
         current_node = current_node.next()
         moves_from_file += 1
 
+    # Write new uncommented moves to game_record.
     for move in board.move_stack[moves_from_file:index_of_first_board_move_with_commentary]:
         current_node = current_node.add_main_variation(move)
 
+    # Write new commented moves to game_record.
     for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
         current_node = current_node.add_main_variation(move)
         if index % 2 != 0:
@@ -773,6 +780,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
             comment = ""
         current_node.parent.add_line(commentary.get("pv", []), comment=comment)
 
+    # Write game_record to file.
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)
         game_record.accept(pgn_writer)

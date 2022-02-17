@@ -733,17 +733,15 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         result = ending.INCOMPLETE
     game_record.headers["Result"] = result
 
-    index_of_first_board_move_with_commentary = 0
-    commentary_moves = [comment["pv"][0] for comment in engine.move_commentary][:-1]
-    while True:
-        commented_board_moves = board.move_stack[index_of_first_board_move_with_commentary::2]
-        if commented_board_moves == commentary_moves:
+    commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
+    for index in range(len(board.move_stack)):
+        player_moves = board.move_stack[index::2]
+        if all(played == commented for played, commented in zip(player_moves, commentary_moves)):
+            index_of_first_board_move_with_commentary = index
             break
-        elif index_of_first_board_move_with_commentary >= len(board.move_stack):
-            logger.warning("Could not write game record.")
-            return
-        else:
-            index_of_first_board_move_with_commentary += 1
+    else:
+        logger.warning("Could not write game record.")
+        return
 
     current_node = game_record.game()
     moves_from_file = 0

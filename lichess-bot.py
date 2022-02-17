@@ -249,26 +249,10 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     
     variant=game.perf_name
 
-    if variant=="atomic":
-        engine_path = os.path.join(cfg["dir"], cfg["atomicname"])
+        if variant=="chess":
+        engine_path = os.path.join(cfg["dir"], cfg["name"])
         engineeng = engine.SimpleEngine.popen_uci(engine_path)
-
-    if variant=="crazyhouse":
-        engine_path = os.path.join(cfg["dir"], cfg["crazyname"])
-        engineeng = engine.SimpleEngine.popen_uci(engine_path)
-
-    if variant=="kingofthehill":
-        engine_path = os.path.join(cfg["dir"], cfg["kothname"])
-        engineeng = engine.SimpleEngine.popen_uci(engine_path)
-
-    if variant=="3check":
-        engine_path = os.path.join(cfg["dir"], cfg["3name"])
-        engineeng = engine.SimpleEngine.popen_uci(engine_path)
-
-    if variant=="giveaway":
-        engine_path = os.path.join(cfg["dir"], cfg["antiname"])
-        engineeng = engine.SimpleEngine.popen_uci(engine_path)    
-
+    
     logger.info(f"+++ {game}")
 
     is_correspondence = game.perf_name == "Correspondence"

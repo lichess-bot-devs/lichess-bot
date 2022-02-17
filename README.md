@@ -224,6 +224,10 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     hello: Hi, {opponent}! I'm {me}. Good luck!
     goodbye: Good game!
 ```
+  - `pgn_directory`: Write a record of every game played in PGN format to files in this directory. Each bot move will be annotated with the bot's calculated score and principal variation. Each game will be written to a uniquely named file.
+```yml
+  pgn_directory: "game_records"
+```
 
 ## Lichess Upgrade to Bot Account
 **WARNING: This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).**

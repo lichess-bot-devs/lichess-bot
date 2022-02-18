@@ -744,15 +744,16 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         game_record.headers["Termination"] = terminate_message
 
     # Match the engine commentary with the moves on the board
-    commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
-    for index in range(len(board.move_stack)):
-        player_moves = board.move_stack[index::2]
-        if all(played == commented for played, commented in zip(player_moves, commentary_moves)):
-            index_of_first_board_move_with_commentary = index
-            break
-    else:
-        logger.warning("Could not write game record.")
-        return
+    index_of_first_board_move_with_commentary = len(board.move_stack)
+    try:
+        commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
+        for index in range(len(board.move_stack)):
+            player_moves = board.move_stack[index::2]
+            if all(played == commented for played, commented in zip(player_moves, commentary_moves)):
+                index_of_first_board_move_with_commentary = index
+                break
+    except Exception:
+        pass
 
     # Move game record position to last move in file
     current_node = game_record.game()

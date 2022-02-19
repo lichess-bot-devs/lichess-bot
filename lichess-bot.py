@@ -692,6 +692,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         pass
 
     game_file_name = f"{game.white} vs {game.black} - {game.id}.pgn"
+    game_file_name = "".join(c for c in game_file_name if c != "?")
     game_path = os.path.join(game_directory, game_file_name)
 
     # If the bot got disconnected in the middle of the game, read the previously

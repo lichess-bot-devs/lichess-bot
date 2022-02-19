@@ -777,6 +777,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     # Write new commented moves to game_record.
     for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
         current_node = current_node.add_main_variation(move)
+
         if index % 2 != 0:
             continue
         commentary = engine.move_commentary[index // 2]

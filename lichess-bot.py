@@ -780,7 +780,12 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
 
         if index % 2 != 0:
             continue
-        commentary = engine.move_commentary[index // 2]
+
+        try:
+            commentary = engine.move_commentary[index // 2]
+        except IndexError:
+            continue
+
         score = commentary.get("score")
         if score is not None:
             pov_score = score.pov(chess.WHITE if game.is_white else chess.BLACK)

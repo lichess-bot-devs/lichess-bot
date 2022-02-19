@@ -747,10 +747,17 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     # Match the engine commentary with the moves on the board
     index_of_first_board_move_with_commentary = len(board.move_stack)
     try:
-        commentary_moves = [comment["pv"][0] for comment in engine.move_commentary]
+        commentary_moves = []
+        for comment in engine.move_commentary:
+            if "pv" in comment:
+                commentary_moves.append(comment["pv"][0])
+            elif "currmove" in comment:
+                commentary_moves.append(comment["currmove"])
+            else:
+                commentary_moves.append(None)
         for index in range(len(board.move_stack)):
             player_moves = board.move_stack[index::2]
-            if all(played == commented for played, commented in zip(player_moves, commentary_moves)):
+            if all(played == commented or commented is None for played, commented in zip(player_moves, commentary_moves)):
                 index_of_first_board_move_with_commentary = index
                 break
     except Exception:

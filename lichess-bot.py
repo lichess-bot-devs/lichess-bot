@@ -682,7 +682,7 @@ def tell_user_game_result(game, board):
 
 
 def print_pgn_game_record(config, game, board, engine, start_datetime):
-    game_directory = config.get('pgn_directory')
+    game_directory = config.get("pgn_directory")
     if not game_directory:
         return
 

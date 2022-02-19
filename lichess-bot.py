@@ -350,8 +350,8 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
 
     try:
         print_pgn_game_record(config, game, board, engine, start_datetime)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(repr(e))
 
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")

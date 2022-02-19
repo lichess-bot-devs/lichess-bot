@@ -247,3 +247,32 @@ def test_sjeng():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win == "1"
+
+
+@pytest.mark.timeout(150, method="thread")
+def test_homemade():
+    if platform != "linux" and platform != "win32":
+        assert True
+        return
+    with open("strategies.py") as file:
+        strategies = file.read()
+        original_strategies = strategies
+        strategies = strategies.split("\n")
+    strategies += ["class Stockfish(ExampleEngine):", "    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):", "        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)", f"        self.engine = chess.engine.SimpleEngine.popen_uci('./TEMP/sf2{file_extension}')", "    def search(self, board, time_limit, *args):", "        return self.engine.play(board, time_limit)"]
+    with open("strategies.py", "w") as file:
+        file.write("\n".join(strategies))
+    if os.path.exists("logs"):
+        shutil.rmtree("logs")
+    os.mkdir("logs")
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+    CONFIG["token"] = ""
+    CONFIG["engine"]["name"] = "Stockfish"
+    CONFIG["engine"]["protocol"] = "homemade"
+    stockfish_path = f"./TEMP/sf2{file_extension}"
+    win = run_bot(CONFIG, logging_level, stockfish_path)
+    shutil.rmtree("logs")
+    with open("strategies.py", "w") as file:
+        file.write(original_strategies)
+    lichess_bot.logger.info("Finished Testing Homemade")
+    assert win == "1"

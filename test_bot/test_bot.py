@@ -52,7 +52,7 @@ def download_sjeng():
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/sjeng_zip.zip", "r") as zip_ref:
         zip_ref.extractall("./TEMP/")
-    shutil.copyfile(f"./TEMP/Release/Sjeng112.exe", f"./TEMP/sjeng.exe")
+    shutil.copyfile("./TEMP/Release/Sjeng112.exe", "./TEMP/sjeng.exe")
 
 
 if os.path.exists("TEMP"):

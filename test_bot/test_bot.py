@@ -201,6 +201,7 @@ def test_sf():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing SF")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -226,6 +227,7 @@ def test_lc0():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing LC0")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -250,6 +252,7 @@ def test_sjeng():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -280,3 +283,4 @@ def test_homemade():
         file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))

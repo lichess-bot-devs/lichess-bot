@@ -697,14 +697,10 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
 
     # If the bot got disconnected in the middle of the game, read the previously
     # written game record to preserve bot's commentary from last play.
-    game_record = None
-    try:
+    if os.path.isfile(game_path):
         with open(game_path) as game_data:
             game_record = chess.pgn.read_game(game_data)
-    except FileNotFoundError:
-        pass
-
-    if not game_record:
+    else:
         game_record = chess.pgn.Game()
         game_record.headers["Event"] = f"Lichess {game.perf_name} Game"
         game_record.headers["Site"] = game.url()

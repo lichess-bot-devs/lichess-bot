@@ -786,14 +786,8 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         except IndexError:
             continue
 
-        score = commentary.get("score")
-        if score is not None:
-            pov_score = score.pov(chess.WHITE if game.is_white else chess.BLACK)
-            numeric_score = pov_score.score()
-            comment = f"score: {numeric_score if numeric_score is not None else pov_score}"
-        else:
-            comment = ""
-        current_node.parent.add_line(commentary.get("pv", []), comment=comment)
+        pv_node = current_node.parent.add_line(commentary.get("pv", []))
+        pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
     # Write game_record to file.
     with open(game_path, "w") as game_record_destination:

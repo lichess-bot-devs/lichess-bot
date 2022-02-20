@@ -17,7 +17,6 @@ import sys
 import random
 from config import load_config
 from conversation import Conversation, ChatLine
-from functools import partial
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from urllib3.exceptions import ProtocolError
 from ColorLogger import enable_color_logging
@@ -98,7 +97,7 @@ def game_logging_configurer(queue, level):
         root.setLevel(level)
 
 
-def start(li, user_profile, engine_factory, config, logging_level, log_filename, one_game=False):
+def start(li, user_profile, config, logging_level, log_filename, one_game=False):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
     logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
@@ -183,7 +182,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename,
                         queued_processes -= 1
                     busy_processes += 1
                     logger.info(f"--- Process Used. Total Queued: {queued_processes}. Total Used: {busy_processes}")
-                    pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
+                    pool.apply_async(play_game, [li, game_id, control_queue, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
             is_correspondence_ping = event["type"] == "correspondence_ping"
             is_local_game_done = event["type"] == "local_game_done"
@@ -204,7 +203,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename,
                     else:
                         busy_processes += 1
                         logger.info(f"--- Process Used. Total Queued: {queued_processes}. Total Used: {busy_processes}")
-                        pool.apply_async(play_game, [li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
+                        pool.apply_async(play_game, [li, game_id, control_queue, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
             while (queued_processes + busy_processes) < max_games and challenge_queue:  # keep processing the queue until empty or max_games is reached
                 chlng = challenge_queue.pop(0)
@@ -230,7 +229,7 @@ def start(li, user_profile, engine_factory, config, logging_level, log_filename,
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, engine_factory, user_profile, config, challenge_queue, correspondence_queue, logging_queue, logging_configurer, logging_level):
+def play_game(li, game_id, control_queue, user_profile, config, challenge_queue, correspondence_queue, logging_queue, logging_configurer, logging_level):
     logging_configurer(logging_queue, logging_level)
     logger = logging.getLogger(__name__)
 
@@ -242,7 +241,7 @@ def play_game(li, game_id, control_queue, engine_factory, user_profile, config, 
     logger.debug(f"Initial state: {initial_state}")
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
 
-    engine = engine_factory()
+    engine = engine_wrapper.create_engine(config)
     engine.get_opponent_info(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
@@ -708,7 +707,6 @@ if __name__ == "__main__":
         is_bot = upgrade_account(li)
 
     if is_bot:
-        engine_factory = partial(engine_wrapper.create_engine, CONFIG)
-        start(li, user_profile, engine_factory, CONFIG, logging_level, args.logfile)
+        start(li, user_profile, CONFIG, logging_level, args.logfile)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")

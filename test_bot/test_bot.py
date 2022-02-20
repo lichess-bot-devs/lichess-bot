@@ -81,8 +81,6 @@ def run_bot(CONFIG, logging_level, stockfish_path):
         is_bot = lichess_bot.upgrade_account(li)
 
     if is_bot:
-        engine_factory = lichess_bot.partial(lichess_bot.engine_wrapper.create_engine, CONFIG)
-
         def run_test():
 
             def thread_for_test():
@@ -168,7 +166,7 @@ def run_bot(CONFIG, logging_level, stockfish_path):
 
             thr = threading.Thread(target=thread_for_test)
             thr.start()
-            lichess_bot.start(li, user_profile, engine_factory, CONFIG, logging_level, None, one_game=True)
+            lichess_bot.start(li, user_profile, CONFIG, logging_level, None, one_game=True)
             thr.join()
 
         run_test()

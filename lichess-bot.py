@@ -735,9 +735,9 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     game_record.headers["Result"] = result
 
     terminate_message = engine_wrapper.translate_termination(termination,
-                                                            board,
-                                                            game.white if winner == "white" else game.black,
-                                                            winner)
+                                                             board,
+                                                             game.white if winner == "white" else game.black,
+                                                             winner)
     if "mates" not in terminate_message and termination != engine_wrapper.Termination.IN_PROGRESS:
         game_record.headers["Termination"] = terminate_message
 

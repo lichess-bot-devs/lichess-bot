@@ -741,34 +741,29 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         game_record.headers["Termination"] = terminate_message
 
     # Match the engine commentary with the moves on the board
-    index_of_first_board_move_with_commentary = len(board.move_stack)
-    try:
-        commentary_moves = []
-        for comment in engine.move_commentary:
-            if "pv" in comment:
-                commentary_moves.append(comment["pv"][0])
-            elif "currmove" in comment:
-                commentary_moves.append(comment["currmove"])
-            else:
-                commentary_moves.append(None)
-        for index in range(len(board.move_stack)):
-            player_moves = board.move_stack[index::2]
-            if all(played == commented or commented is None for played, commented in zip(player_moves, commentary_moves)):
-                index_of_first_board_move_with_commentary = index
-                break
-    except Exception:
-        pass
+    commentary_moves = []
+    for comment in engine.move_commentary:
+        if "pv" in comment and len(comment["pv"]) > 0:
+            commentary_moves.append(comment["pv"][0])
+        elif "currmove" in comment:
+            commentary_moves.append(comment["currmove"])
+        else:
+            commentary_moves.append(None)
 
-    # Move game record position to last move in file
-    current_node = game_record.game()
-    moves_from_file = 0
-    while current_node is not None and current_node.next() is not None:
-        current_node = current_node.next()
-        moves_from_file += 1
+    index_of_first_board_move_with_commentary = len(board.move_stack)
+    for index in range(len(board.move_stack)):
+        player_moves = board.move_stack[index::2]
+        if all(played == commented or commented is None for played, commented in zip(player_moves, commentary_moves)):
+            index_of_first_board_move_with_commentary = index
+            break
 
     # Write new uncommented moves to game_record.
-    for move in board.move_stack[moves_from_file:index_of_first_board_move_with_commentary]:
-        current_node = current_node.add_main_variation(move)
+    current_node = game_record.game()
+    for move in board.move_stack[:index_of_first_board_move_with_commentary]:
+        if not current_node.is_end() and current_node.next().move == move:
+            current_node = current_node.next()
+        else:
+            current_node = current_node.add_main_variation(move)
 
     # Write new commented moves to game_record.
     for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):

@@ -700,6 +700,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     if os.path.isfile(game_path):
         with open(game_path) as game_data:
             game_record = chess.pgn.read_game(game_data)
+        game_record.headers.pop("Termination", "")
     else:
         game_record = chess.pgn.Game()
         game_record.headers["Event"] = f"Lichess {game.perf_name} Game"
@@ -737,7 +738,7 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
                                                             board,
                                                             game.white if winner == "white" else game.black,
                                                             winner)
-    if "mates" not in terminate_message:
+    if "mates" not in terminate_message and termination != engine_wrapper.Termination.IN_PROGRESS:
         game_record.headers["Termination"] = terminate_message
 
     # Match the engine commentary with the moves on the board

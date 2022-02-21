@@ -49,6 +49,7 @@ class Termination(str, Enum):
     RESIGN = "resign"
     ABORT = "aborted"
     DRAW = "draw"
+    IN_PROGRESS = "started"
 
 
 class GameEnding(str, Enum):

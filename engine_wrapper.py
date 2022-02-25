@@ -20,6 +20,15 @@ def create_engine(config):
     if engine_options:
         for k, v in engine_options.items():
             commands.append(f"--{k}={v}")
+            
+         variant=game.perf_name
+
+  if variant=="chess":
+     engine_path = os.path.join(cfg["dir"], cfg["sfname"])
+     engineeng = engine.SimpleEngine.popen_uci(engine_path)
+  else
+     engine_path = os.path.join(cfg["dir"], cfg["name"])
+     engineeng = engine.SimpleEngine.popen_uci(engine_path)        
 
     stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
 

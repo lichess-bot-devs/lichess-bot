@@ -49,6 +49,7 @@ class Termination(str, Enum):
     RESIGN = "resign"
     ABORT = "aborted"
     DRAW = "draw"
+    IN_PROGRESS = "started"
 
 
 class GameEnding(str, Enum):
@@ -56,6 +57,29 @@ class GameEnding(str, Enum):
     BLACK_WINS = "0-1"
     DRAW = "1/2-1/2"
     INCOMPLETE = "*"
+
+
+def translate_termination(termination, board, winner_name, winner_color):
+    if termination == Termination.MATE:
+        return f"{winner_name} mates"
+    elif termination == Termination.TIMEOUT:
+        return "Time forfeiture"
+    elif termination == Termination.RESIGN:
+        resigner = "black" if winner_color == "white" else "white"
+        return f"{resigner.title()} resigns"
+    elif termination == Termination.ABORT:
+        return "Game aborted"
+    elif termination == Termination.DRAW:
+        if board.is_fifty_moves():
+            return "50-move rule"
+        elif board.is_repetition():
+            return "Threefold repetition"
+        else:
+            return "Draw by agreement"
+    elif termination:
+        return termination
+    else:
+        return ""
 
 
 PONDERPV_CHARACTERS = 12  # the length of ", ponderpv: "
@@ -68,6 +92,7 @@ class EngineWrapper:
         self.draw_or_resign = draw_or_resign
         self.go_commands = options.pop("go_commands", {}) or {}
         self.last_move_info = {}
+        self.move_commentary = []
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -108,6 +133,7 @@ class EngineWrapper:
     def search(self, board, time_limit, ponder, draw_offered):
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
+        self.move_commentary.append(self.last_move_info.copy())
         self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
@@ -200,27 +226,10 @@ class XBoardEngine(EngineWrapper):
         else:
             game_result = GameEnding.INCOMPLETE
 
-        if termination == Termination.MATE:
-            endgame_message = f"{winner.title()} mates"
-        elif termination == Termination.TIMEOUT:
-            endgame_message = "Time forfeiture"
-        elif termination == Termination.RESIGN:
-            resigner = "black" if winner == "white" else "white"
-            endgame_message = f"{resigner.title()} resigns"
-        elif termination == Termination.ABORT:
-            endgame_message = "Game aborted"
-        elif termination == Termination.DRAW:
-            if board.is_fifty_moves():
-                endgame_message = "50-move rule"
-            elif board.is_repetition():
-                endgame_message = "Threefold repetition"
-            else:
-                endgame_message = "Draw by agreement"
-        elif termination:
-            endgame_message = termination
-        else:
-            endgame_message = ""
-
+        endgame_message = translate_termination(termination,
+                                                board,
+                                                game.white if winner == "white" else game.black,
+                                                winner)
         if endgame_message:
             endgame_message = " {" + endgame_message + "}"
 

@@ -193,11 +193,13 @@ def test_sf():
     CONFIG["engine"]["dir"] = "./TEMP/"
     CONFIG["engine"]["name"] = f"sf{file_extension}"
     CONFIG["engine"]["uci_options"]["Threads"] = 1
+    CONFIG["pgn_directory"] = "TEMP/sf_game_record"
     stockfish_path = f"./TEMP/sf2{file_extension}"
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing SF")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -217,11 +219,13 @@ def test_lc0():
     CONFIG["engine"]["uci_options"]["Threads"] = 1
     CONFIG["engine"]["uci_options"].pop("Hash", None)
     CONFIG["engine"]["uci_options"].pop("Move Overhead", None)
+    CONFIG["pgn_directory"] = "TEMP/lc0_game_record"
     stockfish_path = "./TEMP/sf2.exe"
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing LC0")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -240,11 +244,13 @@ def test_sjeng():
     CONFIG["engine"]["protocol"] = "xboard"
     CONFIG["engine"]["name"] = "sjeng.exe"
     CONFIG["engine"]["ponder"] = False
+    CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
     stockfish_path = "./TEMP/sf2.exe"
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -267,6 +273,7 @@ def test_homemade():
     CONFIG["token"] = ""
     CONFIG["engine"]["name"] = "Stockfish"
     CONFIG["engine"]["protocol"] = "homemade"
+    CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     stockfish_path = f"./TEMP/sf2{file_extension}"
     win = run_bot(CONFIG, logging_level, stockfish_path)
     shutil.rmtree("logs")
@@ -274,3 +281,4 @@ def test_homemade():
         file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "BOT bo(3000) vs BOT b(3000) - zzzzzzzz.pgn"))

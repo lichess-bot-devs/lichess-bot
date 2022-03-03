@@ -9,9 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
-def create_engine(config):
+def create_engine(config, variant):
     cfg = config["engine"]
-    engine_path = os.path.join(cfg["dir"], cfg["name"])
+    if variant == "standard" or variant == "from position":
+        engine_path = os.path.join(cfg["dir"], cfg["name"])
+    else:    
+        engine_path = os.path.join(cfg["dir"], cfg["variantname"])
     engine_working_dir = cfg.get("working_dir") or os.getcwd()
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")

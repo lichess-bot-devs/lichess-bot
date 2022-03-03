@@ -243,7 +243,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     logger.debug(f"Initial state: {initial_state}")
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
 
-    engine = engine_wrapper.create_engine(config)
+    engine = engine_wrapper.create_engine(config, game.variant_name.lower())
     engine.get_opponent_info(game)
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 

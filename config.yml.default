@@ -125,3 +125,5 @@ greeting:
     # Any other words in curly braces will be removed.
     hello: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to chat at the start of a game
     goodbye: "Good game!" # Message to send to chat at the end of a game
+
+# pgn_directory: "game_records" # A directory where PGN-format records of the bot's games are kept

@@ -4,13 +4,13 @@ url: "https://lichess.org/"  # Lichess base URL.
 engine:                      # Engine settings.
   dir: "./engines/"          # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
   name: "engine_name"        # Binary name of the engine to use.
-  atomicname: "engine_name"
-  giveawayname: "engine_name"
-  crazyhousename: "engine_name"
-  hordename: "engine_name"
-  kingofthehillname: "engine_name"
-  racingkingsname: "engine_name"
-  3checkname: "engine_name"
+  Atomicname: "engine_name"  # Binary name of the engine for atomic variant to use.
+  Antichessname: "engine_name"  # Binary name of the engine for antichess variant to use.
+  Crazyhousename: "engine_name"  # Binary name of the engine for crazyhouse variant to use.
+  Hordename: "engine_name"   # Binary name of the engine for horde variant to use.
+  King of the Hillname: "engine_name"   # Binary name of the engine for koth variant to use.
+  Racing Kingsname: "engine_name"  # Binary name of the engine for racing kings variant to use.
+  Three-checkname: "engine_name"   # Binary name of the engine for three check variant to use.
   working_dir: ""            # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
   protocol: "uci"            # "uci" or "xboard"
   ponder: true               # Think on opponent's time.

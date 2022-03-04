@@ -49,7 +49,15 @@ pip install -r requirements.txt
 ## Setup Engine
 Within the file `config.yml`:
 - Enter the directory containing the engine executable in the `engine: dir` field.
-- Enter the executable name in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
+- Enter the executable name  for normal chess in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
+- Enter the executable name  for atomic variant in the `engine: Atomicname` field
+- Enter the executable name  for antichess variant in the `engine: Antichessname` field
+- Enter the executable name  for crazyhouse variant in the `engine: Crazyhousename` field
+- Enter the executable name  for horde variant in the `engine: Hordename` field
+- Enter the executable name  for koth variant in the `engine: King of the Hillname` field
+- Enter the executable name  for RK variant in the `engine: Racing Kingsname` field
+- Enter the executable name  for Three-check variant in the `engine: Three-checkname` field
+- If you won't to play variants with bot leave empty variants engines fields 
 - If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field.
   - If this field is blank or missing, the current directory will be used.
 - Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets

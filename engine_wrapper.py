@@ -8,6 +8,7 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 
+@backoff.on_exception(backoff.expo, BaseException, max_time=120)
 def create_engine(config, variant):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"] if variant == "chess" else cfg.get(f"{variant}name") or cfg["name"])

@@ -9,10 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=120)
-def create_engine(config):
+def create_engine(config, variant):
     cfg = config["engine"]
-    engine_path = os.path.join(cfg["dir"], cfg["name"])
-    engine_working_dir = cfg.get("working_dir") or os.getcwd()
+    name_cfg = cfg.get("name", {})
+    engine_path = os.path.join(cfg["dir"], name_cfg.get[f"{variant.lower()}"] )
+    engine_working_dir_cfg = cfg.get("working_dir", {})
+    engine_working_dir = engine_working_dir_cfg.get(f"{variant.lower()}") or os.getcwd()
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
     draw_or_resign = cfg.get("draw_or_resign") or {}
@@ -32,7 +34,13 @@ def create_engine(config):
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
-    options = remove_managed_options(cfg.get(f"{engine_type}_options") or {})
+
+    if engine_type == "uci":
+        uci_options_cfg = remove_managed_options(cfg.get("uci_options", {}) or {})
+        options = uci_options_cfg.get(f"{variant.lower()}")
+    else:
+        options = remove_managed_options(cfg.get(f"{engine_type}_options") or {})
+
     return Engine(commands, options, stderr, draw_or_resign, cwd=engine_working_dir)
 
 

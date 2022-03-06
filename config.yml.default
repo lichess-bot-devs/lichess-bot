@@ -3,8 +3,26 @@ url: "https://lichess.org/"  # Lichess base URL.
 
 engine:                      # Engine settings.
   dir: "./engines/"          # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
-  name: "engine_name"        # Binary name of the engine to use.
-  working_dir: ""            # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
+  name:                      # Binary name of the engine to use in each variant.
+    standard: "standard_engine"
+#   chess960: "chess960_engine"
+#   antichess: "antichess_engine"
+#   atomic: "atomic_engine"
+#   crazyhouse: "crazyhouse_engine"
+#   horde: "horde_engine"
+#   kingofthehill: "kingofthehill_engine"
+#   racingkings: "racingkings_engine"
+#   threecheck: "threecheck_engine"
+  working_dir:               # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
+    standard: ""
+#   chess960: ""
+#   antichess: ""
+#   atomic: ""
+#   crazyhouse: ""
+#   horde: ""
+#   kingofthehill: ""
+#   racingkings: ""
+#   threecheck: ""
   protocol: "uci"            # "uci" or "xboard"
   ponder: true               # Think on opponent's time.
   polyglot:
@@ -55,10 +73,17 @@ engine:                      # Engine settings.
 #   cpuct: 3.1
   homemade_options:
 #   Hash: 256
-  uci_options:               # Arbitrary UCI options passed to the engine.
-    Move Overhead: 100       # Increase if your bot flags games too often.
-    Threads: 2               # Max CPU threads the engine can use.
-    Hash: 256                # Max memory (in megabytes) the engine can allocate.
+  uci_options:               # Arbitrary UCI options passed to the engine in each variant.
+    standard:
+      Move Overhead: 100     # Increase if your bot flags games too often.
+      Threads: 2             # Max CPU threads the engine can use.
+      Hash: 256              # Max memory (in megabytes) the engine can allocate.
+#   atomic:
+#     Move Overhead: 100
+#     Threads: 2
+#     Hash: 256
+#   etc.
+#   Use the same pattern for 'chess960', 'antichess', 'crazyhouse', 'horde', 'kingofthehill', 'racingkings' and 'threecheck' as well.
 #   go_commands:             # Additional options to pass to the UCI go command.
 #     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.

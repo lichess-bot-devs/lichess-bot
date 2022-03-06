@@ -49,8 +49,8 @@ pip install -r requirements.txt
 ## Setup Engine
 Within the file `config.yml`:
 - Enter the directory containing the engine executable in the `engine: dir` field.
-- Enter the executable name in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
-- If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field.
+- Enter the executable name in the `engine: name` field, under the respective variant name (In Windows you may need to type a name with ".exe", like "lczero.exe")
+- If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field, under the respective variant name.
   - If this field is blank or missing, the current directory will be used.
 - Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets
 
@@ -137,13 +137,14 @@ option name Use NNUE type check default true
 option name EvalFile type string default nn-62ef826d1a6d.nnue
 uciok
 ```
-Any of the names following `option name` can be listed in `uci_options` in order to configure the Stockfish engine.
+Any of the names following `option name` can be listed in `uci_options` under the respective variant name (`standard` in this case) in order to configure the Stockfish engine.
 ```yml
   uci_options:
-    Move Overhead: 100
-    Skill Level: 10
+    standard:
+      Move Overhead: 100
+      Skill Level: 10
 ```
-The exception to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
+The exception to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options`, under a particular variant name, that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value. Also do make sure to set UCI options under the correct variant name.
 
 One last option is `go_commands`. Beneath this option, arguments to the UCI `go` command can be passed. For example,
 ```yml

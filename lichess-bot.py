@@ -709,12 +709,9 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
         game_record.headers["Round"] = "1"
         game_record.headers["White"] = game.white
         game_record.headers["Black"] = game.black
-        game_time_seconds = game.clock_initial // 1000
-        game_time_min = str(game_time_seconds // 60)
-        seconds = game_time_seconds % 60
-        game_time_sec = f":{seconds}" if seconds else ""
+        game_time_sec = str(game.clock_initial // 1000)
         game_time_inc = f"+{game.clock_increment // 1000}" if game.clock_increment else ""
-        time_control = game_time_min + game_time_sec + game_time_inc
+        time_control = game_time_sec + game_time_inc
         game_record.headers["TimeControl"] = time_control
         if game.variant_name != "Standard":
             game_record.headers["Variant"] = game.variant_name

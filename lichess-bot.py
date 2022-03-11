@@ -270,7 +270,6 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
 
     first_move = True
     correspondence_disconnect_time = 0
-    start_datetime = time.localtime()
     while not terminated:
         move_attempted = False
         try:
@@ -348,7 +347,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     engine.quit()
 
     try:
-        print_pgn_game_record(config, game, board, engine, start_datetime)
+        print_pgn_game_record(li, config, game, board, engine)
     except Exception as e:
         logger.warning(f"Error writing game record: {repr(e)}")
 
@@ -680,7 +679,7 @@ def tell_user_game_result(game, board):
         logger.info(f"Game ended by {termination}")
 
 
-def print_pgn_game_record(config, game, board, engine, start_datetime):
+def print_pgn_game_record(li, config, game, board, engine):
     game_directory = config.get("pgn_directory")
     if not game_directory:
         return
@@ -696,28 +695,13 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
 
     # If the bot got disconnected in the middle of the game, read the previously
     # written game record to preserve bot's commentary from last play.
-    if os.path.isfile(game_path):
-        with open(game_path) as game_data:
-            game_record = chess.pgn.read_game(game_data)
-        game_record.headers.pop("Termination", "")
-    else:
-        game_record = chess.pgn.Game()
-        game_record.headers["Event"] = f"Lichess {game.perf_name} Game"
-        game_record.headers["Site"] = game.url()
-        game_record.headers["Date"] = time.strftime("%Y.%m.%d", start_datetime)
-        game_record.headers["Time"] = time.strftime("%H:%M:%S", start_datetime)
-        game_record.headers["Round"] = "1"
-        game_record.headers["White"] = game.white
-        game_record.headers["Black"] = game.black
-        game_time_sec = str(game.clock_initial // 1000)
-        game_time_inc = f"+{game.clock_increment // 1000}" if game.clock_increment else ""
-        time_control = game_time_sec + game_time_inc
-        game_record.headers["TimeControl"] = time_control
-        if game.variant_name != "Standard":
-            game_record.headers["Variant"] = game.variant_name
-        if game.initial_fen != "startpos":
-            game_record.headers["Setup"] = "1"
-            game_record.headers["FEN"] = game.initial_fen
+    if not os.path.isfile(game_path):
+        with open(game_path, "w") as game_data:
+            game_data.write(li.get_game_pgn(game.id))
+
+    with open(game_path) as game_data:
+        game_record = chess.pgn.read_game(game_data)
+    game_record.headers.pop("Termination", "")
 
     winner = game.state.get("winner")
     termination = game.state.get("status")

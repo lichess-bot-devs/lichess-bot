@@ -694,11 +694,10 @@ def print_pgn_game_record(li, config, game, board, engine):
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(game_directory, game_file_name)
 
-    # If the bot got disconnected in the middle of the game, read the previously
-    # written game record to preserve bot's commentary from last play.
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
     try:
         with open(game_path) as game_data:
+            # Recall previously written PGN file to retain engine evaluations
             game_record = chess.pgn.read_game(game_data)
         game_record.headers = lichess_game_record.headers
     except FileNotFoundError:

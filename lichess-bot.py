@@ -718,9 +718,10 @@ def print_pgn_game_record(li, config, game, board, engine):
     if commentary_moves:
         for index in range(len(board.move_stack)):
             player_moves = board.move_stack[index::2]
+            if len(commentary_moves) > len(player_moves):
+                break
             if all(played == commented or commented is None for played, commented in zip(player_moves, commentary_moves)):
                 index_of_first_board_move_with_commentary = index
-                break
 
     # Write new uncommented moves to game_record.
     current_node = game_record.game()

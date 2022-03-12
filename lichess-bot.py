@@ -704,9 +704,6 @@ def print_pgn_game_record(li, config, game, board, engine):
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    if game_record.headers.get("Termination") == "Normal":
-            game_record.headers.pop("Termination", "")
-
     # Create a list of moves with engine commentary from this session
     commentary_moves = []
     for comment in engine.move_commentary:

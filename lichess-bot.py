@@ -721,7 +721,7 @@ def print_pgn_game_record(li, config, game, board, engine):
     if "mates" not in terminate_message and termination != engine_wrapper.Termination.IN_PROGRESS:
         game_record.headers["Termination"] = terminate_message
 
-    # Match the engine commentary with the moves on the board
+    # Create a list of moves with engine commentary from this session
     commentary_moves = []
     for comment in engine.move_commentary:
         if "pv" in comment and len(comment["pv"]) > 0:
@@ -731,6 +731,7 @@ def print_pgn_game_record(li, config, game, board, engine):
         else:
             commentary_moves.append(None)
 
+    # Match the engine commentary with the moves on the board
     index_of_first_board_move_with_commentary = len(board.move_stack)
     if commentary_moves:
         for index in range(len(board.move_stack)):

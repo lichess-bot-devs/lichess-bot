@@ -17,6 +17,7 @@ import backoff
 import sys
 import random
 import os
+import io
 from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
@@ -695,31 +696,16 @@ def print_pgn_game_record(li, config, game, board, engine):
 
     # If the bot got disconnected in the middle of the game, read the previously
     # written game record to preserve bot's commentary from last play.
-    if not os.path.isfile(game_path):
-        with open(game_path, "w") as game_data:
-            game_data.write(li.get_game_pgn(game.id))
+    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
+    try:
+        with open(game_path) as game_data:
+            game_record = chess.pgn.read_game(game_data)
+        game_record.headers = lichess_game_record.headers
+    except FileNotFoundError:
+        game_record = lichess_game_record
 
-    with open(game_path) as game_data:
-        game_record = chess.pgn.read_game(game_data)
-    game_record.headers.pop("Termination", "")
-
-    winner = game.state.get("winner")
-    termination = game.state.get("status")
-    ending = engine_wrapper.GameEnding
-    if winner is not None:
-        result = ending.WHITE_WINS if winner == "white" else ending.BLACK_WINS
-    elif termination == engine_wrapper.Termination.DRAW:
-        result = ending.DRAW
-    else:
-        result = ending.INCOMPLETE
-    game_record.headers["Result"] = result
-
-    terminate_message = engine_wrapper.translate_termination(termination,
-                                                             board,
-                                                             game.white if winner == "white" else game.black,
-                                                             winner)
-    if "mates" not in terminate_message and termination != engine_wrapper.Termination.IN_PROGRESS:
-        game_record.headers["Termination"] = terminate_message
+    if game_record.headers.get("Termination") == "Normal":
+            game_record.headers.pop("Termination", "")
 
     # Create a list of moves with engine commentary from this session
     commentary_moves = []

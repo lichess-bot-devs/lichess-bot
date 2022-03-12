@@ -689,7 +689,7 @@ def print_pgn_game_record(li, config, game, board, engine):
     except FileExistsError:
         pass
 
-    game_file_name = f"{game.white} vs {game.black} - {game.id}.pgn"
+    game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(game_directory, game_file_name)
 

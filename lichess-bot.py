@@ -703,7 +703,10 @@ def print_pgn_game_record(li, config, game, board, engine):
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    def update_game_node(current_node, lichess_node, move):
+    index_of_first_board_move_with_commentary = engine.first_comment_index(board)
+    current_node = game_record.game()
+    lichess_node = lichess_game_record.game()
+    for index, move in enumerate(board.move_stack):
         if current_node.is_end() or current_node.next().move != move:
             current_node = current_node.add_main_variation(move)
         else:
@@ -712,13 +715,6 @@ def print_pgn_game_record(li, config, game, board, engine):
         if not lichess_node.is_end():
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
-        return current_node, lichess_node
-
-    index_of_first_board_move_with_commentary = engine.first_comment_index(board)
-    current_node = game_record.game()
-    lichess_node = lichess_game_record.game()
-    for index, move in enumerate(board.move_stack):
-        current_node, lichess_node = update_game_node(current_node, lichess_node, move)
 
         comment_index = index - index_of_first_board_move_with_commentary
         if comment_index < 0 or comment_index % 2 != 0:

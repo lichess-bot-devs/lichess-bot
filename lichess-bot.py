@@ -696,8 +696,8 @@ def print_pgn_game_record(li, config, game, board, engine):
 
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
     try:
+        # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            # Recall previously written PGN file to retain engine evaluations
             game_record = chess.pgn.read_game(game_data)
         game_record.headers = lichess_game_record.headers
     except FileNotFoundError:
@@ -727,7 +727,6 @@ def print_pgn_game_record(li, config, game, board, engine):
         pv_node = current_node.parent.add_line(commentary.get("pv", []))
         pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
-    # Write game_record to file.
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)
         game_record.accept(pgn_writer)

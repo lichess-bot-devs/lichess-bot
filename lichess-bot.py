@@ -715,7 +715,7 @@ def print_pgn_game_record(li, config, game, board, engine):
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
 
-        comment_index = index - engine.first_comment_index(board)
+        comment_index = engine.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:
             continue
 

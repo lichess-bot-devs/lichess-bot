@@ -142,11 +142,11 @@ class EngineWrapper:
         self.print_stats()
         return result
 
-    def first_comment_index(self, board):
+    def comment_index(self, move_stack_index):
         if self.comment_start_index is None:
-            return len(board.move_stack)
+            return -1
         else:
-            return self.comment_start_index
+            return move_stack_index - self.comment_start_index
 
     def print_stats(self):
         for line in self.get_stats():

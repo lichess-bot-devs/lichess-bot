@@ -717,18 +717,15 @@ def print_pgn_game_record(li, config, game, board, engine):
     index_of_first_board_move_with_commentary = engine.first_comment_index(board)
     current_node = game_record.game()
     lichess_node = lichess_game_record.game()
-    for move in board.move_stack[:index_of_first_board_move_with_commentary]:
+    for index, move in enumerate(board.move_stack):
         current_node, lichess_node = update_game_node(current_node, lichess_node, move)
 
-    # Write new commented moves to game_record.
-    for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
-        current_node, lichess_node = update_game_node(current_node, lichess_node, move)
-
-        if index % 2 != 0:
+        comment_index = index - index_of_first_board_move_with_commentary
+        if comment_index < 0 or comment_index % 2 != 0:
             continue
 
         try:
-            commentary = engine.move_commentary[index // 2]
+            commentary = engine.move_commentary[comment_index // 2]
         except IndexError:
             continue
 

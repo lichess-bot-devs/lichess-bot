@@ -706,11 +706,16 @@ def print_pgn_game_record(li, config, game, board, engine):
     index_of_first_board_move_with_commentary = engine.first_comment_index(board)
     logger.info(f"first comment index: {index_of_first_board_move_with_commentary}")
     current_node = game_record.game()
+    lichess_node = lichess_game_record.game()
     for move in board.move_stack[:index_of_first_board_move_with_commentary]:
         if current_node.is_end() or current_node.next().move != move:
             current_node = current_node.add_main_variation(move)
         else:
-            current_node = current_node.next()            
+            current_node = current_node.next()
+
+        if not lichess_node.is_end():
+            lichess_node = lichess_node.next()
+            current_node.set_clock(lichess_node.clock())
 
     # Write new commented moves to game_record.
     for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
@@ -718,6 +723,10 @@ def print_pgn_game_record(li, config, game, board, engine):
             current_node = current_node.add_main_variation(move)
         else:
             current_node = current_node.next()
+
+        if not lichess_node.is_end():
+            lichess_node = lichess_node.next()
+            current_node.set_clock(lichess_node.clock())
 
         if index % 2 != 0:
             continue

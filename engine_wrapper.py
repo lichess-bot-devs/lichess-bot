@@ -92,6 +92,7 @@ class EngineWrapper:
         self.go_commands = options.pop("go_commands", {}) or {}
         self.last_move_info = {}
         self.move_commentary = []
+        self.comment_start_index = None
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -133,11 +134,19 @@ class EngineWrapper:
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
         self.move_commentary.append(self.last_move_info.copy())
+        if self.comment_start_index is None:
+            self.comment_start_index = len(board.move_stack)
         self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
         self.print_stats()
         return result
+
+    def first_comment_index(self, board):
+        if self.comment_start_index is None:
+            return len(board.move_stack)
+        else:
+            return self.comment_start_index
 
     def print_stats(self):
         for line in self.get_stats():

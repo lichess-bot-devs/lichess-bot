@@ -703,27 +703,8 @@ def print_pgn_game_record(li, config, game, board, engine):
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    # Create a list of moves with engine commentary from this session
-    commentary_moves = []
-    for comment in engine.move_commentary:
-        if "pv" in comment and len(comment["pv"]) > 0:
-            commentary_moves.append(comment["pv"][0])
-        elif "currmove" in comment:
-            commentary_moves.append(comment["currmove"])
-        else:
-            commentary_moves.append(None)
-
-    # Match the engine commentary with the moves on the board
-    index_of_first_board_move_with_commentary = len(board.move_stack)
-    if commentary_moves:
-        for index in range(len(board.move_stack)):
-            player_moves = board.move_stack[index::2]
-            if len(commentary_moves) > len(player_moves):
-                break
-            if all(played == commented or commented is None for played, commented in zip(player_moves, commentary_moves)):
-                index_of_first_board_move_with_commentary = index
-
-    # Write new uncommented moves to game_record.
+    index_of_first_board_move_with_commentary = engine.first_comment_index(board)
+    logger.info(f"first comment index: {index_of_first_board_move_with_commentary}")
     current_node = game_record.game()
     for move in board.move_stack[:index_of_first_board_move_with_commentary]:
         if not current_node.is_end() and current_node.next().move == move:

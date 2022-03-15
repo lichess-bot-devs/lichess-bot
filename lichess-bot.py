@@ -703,7 +703,6 @@ def print_pgn_game_record(li, config, game, board, engine):
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    index_of_first_board_move_with_commentary = engine.first_comment_index(board)
     current_node = game_record.game()
     lichess_node = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
@@ -716,7 +715,7 @@ def print_pgn_game_record(li, config, game, board, engine):
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
 
-        comment_index = index - index_of_first_board_move_with_commentary
+        comment_index = index - engine.first_comment_index(board)
         if comment_index < 0 or comment_index % 2 != 0:
             continue
 

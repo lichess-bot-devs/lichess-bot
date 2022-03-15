@@ -707,14 +707,17 @@ def print_pgn_game_record(li, config, game, board, engine):
     logger.info(f"first comment index: {index_of_first_board_move_with_commentary}")
     current_node = game_record.game()
     for move in board.move_stack[:index_of_first_board_move_with_commentary]:
-        if not current_node.is_end() and current_node.next().move == move:
-            current_node = current_node.next()
-        else:
+        if current_node.is_end() or current_node.next().move != move:
             current_node = current_node.add_main_variation(move)
+        else:
+            current_node = current_node.next()            
 
     # Write new commented moves to game_record.
     for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
-        current_node = current_node.add_main_variation(move)
+        if current_node.is_end() or current_node.next().move != move:
+            current_node = current_node.add_main_variation(move)
+        else:
+            current_node = current_node.next()
 
         if index % 2 != 0:
             continue

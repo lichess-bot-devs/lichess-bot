@@ -727,6 +727,16 @@ def print_pgn_game_record(li, config, game, board, engine):
         pv_node = current_node.parent.add_line(commentary.get("pv", []))
         pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
+    termination = game.state.get("status")
+    winning_color = game.state.get("winner")
+    winning_name = game.white.name if winning_color == "white" else game.black.name
+    termination_message = engine_wrapper.translate_termination(termination,
+                                                               board,
+                                                               winning_name,
+                                                               winning_color)
+    if termination_message and "mates" not in termination_message and termination != "started":
+        game_record.end().comment = termination_message
+
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)
         game_record.accept(pgn_writer)

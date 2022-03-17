@@ -699,7 +699,7 @@ def print_pgn_game_record(li, config, game, board, engine):
         # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
             game_record = chess.pgn.read_game(game_data)
-        game_record.headers = lichess_game_record.headers
+        game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
         game_record = lichess_game_record
 

@@ -59,13 +59,13 @@ class GameEnding(str, Enum):
 
 
 def translate_termination(termination, board, winner_name, winner_color):
-    loser_color = ("black" if winner_color == "white" else "white").title()
     if termination == Termination.MATE:
         return f"{winner_name} mates"
     elif termination == Termination.TIMEOUT:
-        return f"{loser_color} forfeits on time"
+        return "Time forfeiture"
     elif termination == Termination.RESIGN:
-        return f"{loser_color} resigns"
+        resigner = "black" if winner_color == "white" else "white"
+        return f"{resigner.title()} resigns"
     elif termination == Termination.ABORT:
         return "Game aborted"
     elif termination == Termination.DRAW:

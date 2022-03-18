@@ -714,6 +714,12 @@ def print_pgn_game_record(li, config, game, board, engine):
         if not lichess_node.is_end():
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
+            if lichess_node.comment:
+                if current_node.comment:
+                    if current_node.comment != lichess_node.comment:
+                        current_node.comment = current_node.comment + " / " + lichess_node.comment
+                else:
+                    current_node.comment = lichess_node.comment
 
         comment_index = engine.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:

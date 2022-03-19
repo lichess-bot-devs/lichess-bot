@@ -735,7 +735,7 @@ def print_pgn_game_record(li, config, game, board, engine):
             if lichess_node.comment:
                 if current_node.comment:
                     if current_node.comment != lichess_node.comment:
-                        current_node.comment = current_node.comment + " / " + lichess_node.comment
+                        current_node.comment = f"{current_node.comment} {lichess_node.comment}"
                 else:
                     current_node.comment = lichess_node.comment
 

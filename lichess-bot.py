@@ -694,11 +694,29 @@ def print_pgn_game_record(li, config, game, board, engine):
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(game_directory, game_file_name)
 
-    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
+    # When lichess sends a move with two comments (say a clock comment and an opening label),
+    # these comments are separately brace-delimited--e.g., { [%clk 0:01:00] } { A40 Australian Defense }.
+    # When chess.pgn.read_game() parses these comments, a newline joins them into a single comment.
+    # This class overrides chess.pgn.GameBuilder.visit_comment() in order to replace the newline
+    # joiner with a space.
+    class Lichess_Game_Builder(chess.pgn.GameBuilder):
+        def visit_comment(self, comment):
+            if self.in_variation or (self.variation_stack[-1].parent is None and self.variation_stack[-1].is_end()):
+                # Add as a comment for the current node if in the middle of
+                # a variation. Add as a comment for the game if the comment
+                # starts before any move.
+                new_comment = [self.variation_stack[-1].comment, comment]
+                self.variation_stack[-1].comment = " ".join(new_comment).strip()
+            else:
+                # Otherwise, it is a starting comment.
+                new_comment = [self.starting_comment, comment]
+                self.starting_comment = " ".join(new_comment).strip()
+
+    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)), Visitor=Lichess_Game_Builder)
     try:
         # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            game_record = chess.pgn.read_game(game_data)
+            game_record = chess.pgn.read_game(game_data, Visitor=Lichess_Game_Builder)
         game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
         game_record = lichess_game_record

@@ -309,6 +309,8 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
                             best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
+                    else:
+                        engine.add_null_comment()
                     move_attempted = True
                     if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)
@@ -739,17 +741,10 @@ def print_pgn_game_record(li, config, game, board, engine):
                 else:
                     current_node.comment = lichess_node.comment
 
-        comment_index = engine.comment_index(index)
-        if comment_index < 0 or comment_index % 2 != 0:
-            continue
-
-        try:
-            commentary = engine.move_commentary[comment_index // 2]
-        except IndexError:
-            continue
-
-        pv_node = current_node.parent.add_line(commentary.get("pv", []))
-        pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
+        commentary = engine.comment_for_board_index(index)
+        if commentary is not None:
+            pv_node = current_node.parent.add_line(commentary.get("pv", []))
+            pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)

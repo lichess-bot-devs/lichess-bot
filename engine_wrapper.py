@@ -148,6 +148,20 @@ class EngineWrapper:
         else:
             return move_stack_index - self.comment_start_index
 
+    def comment_for_board_index(self, index):
+        comment_index = self.comment_index(index)
+        if comment_index < 0 or comment_index % 2 != 0:
+            return None
+
+        try:
+            return self.move_commentary[comment_index // 2]
+        except IndexError:
+            return None
+
+    def add_null_comment(self):
+        if self.comment_start_index is not None:
+            self.move_commentary.append(None)
+
     def print_stats(self):
         for line in self.get_stats():
             logger.info(f"{line}")

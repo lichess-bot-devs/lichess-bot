@@ -18,7 +18,8 @@ ENDPOINTS = {
     "accept": "/api/challenge/{}/accept",
     "decline": "/api/challenge/{}/decline",
     "upgrade": "/api/bot/account/upgrade",
-    "resign": "/api/bot/game/{}/resign"
+    "resign": "/api/bot/game/{}/resign",
+    "export": "/game/export/{}"
 }
 
 
@@ -45,13 +46,13 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, path, raise_for_status=True):
+    def api_get(self, path, raise_for_status=True, get_raw_text=False, params=None):
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
-        response = self.session.get(url, timeout=2)
+        response = self.session.get(url, timeout=2, params=params)
         if raise_for_status:
             response.raise_for_status()
-        return response.json()
+        return response.text if get_raw_text else response.json()
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError, ReadTimeout),
@@ -113,3 +114,8 @@ class Lichess:
     def set_user_agent(self, username):
         self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
         self.session.headers.update(self.header)
+
+    def get_game_pgn(self, game_id):
+        return self.api_get(ENDPOINTS["export"].format(game_id),
+                            get_raw_text=True,
+                            params={"literate": "true"})

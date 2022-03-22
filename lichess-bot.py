@@ -17,6 +17,7 @@ import backoff
 import sys
 import random
 import os
+import io
 from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
@@ -270,7 +271,6 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
 
     first_move = True
     correspondence_disconnect_time = 0
-    start_datetime = time.localtime()
     while not terminated:
         move_attempted = False
         try:
@@ -309,6 +309,8 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
                             best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
                         else:
                             best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
+                    else:
+                        engine.add_null_comment()
                     move_attempted = True
                     if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)
@@ -348,7 +350,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     engine.quit()
 
     try:
-        print_pgn_game_record(config, game, board, engine, start_datetime)
+        print_pgn_game_record(li, config, game, board, engine)
     except Exception as e:
         logger.warning(f"Error writing game record: {repr(e)}")
 
@@ -680,7 +682,7 @@ def tell_user_game_result(game, board):
         logger.info(f"Game ended by {termination}")
 
 
-def print_pgn_game_record(config, game, board, engine, start_datetime):
+def print_pgn_game_record(li, config, game, board, engine):
     game_directory = config.get("pgn_directory")
     if not game_directory:
         return
@@ -690,95 +692,60 @@ def print_pgn_game_record(config, game, board, engine, start_datetime):
     except FileExistsError:
         pass
 
-    game_file_name = f"{game.white} vs {game.black} - {game.id}.pgn"
+    game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(game_directory, game_file_name)
 
-    # If the bot got disconnected in the middle of the game, read the previously
-    # written game record to preserve bot's commentary from last play.
-    if os.path.isfile(game_path):
+    # When lichess sends a move with two comments (say a clock comment and an opening label),
+    # these comments are separately brace-delimited--e.g., { [%clk 0:01:00] } { A40 Australian Defense }.
+    # When chess.pgn.read_game() parses these comments, a newline joins them into a single comment.
+    # This class overrides chess.pgn.GameBuilder.visit_comment() in order to replace the newline
+    # joiner with a space.
+    class Lichess_Game_Builder(chess.pgn.GameBuilder):
+        def visit_comment(self, comment):
+            if self.in_variation or (self.variation_stack[-1].parent is None and self.variation_stack[-1].is_end()):
+                # Add as a comment for the current node if in the middle of
+                # a variation. Add as a comment for the game if the comment
+                # starts before any move.
+                new_comment = [self.variation_stack[-1].comment, comment]
+                self.variation_stack[-1].comment = " ".join(new_comment).strip()
+            else:
+                # Otherwise, it is a starting comment.
+                new_comment = [self.starting_comment, comment]
+                self.starting_comment = " ".join(new_comment).strip()
+
+    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)), Visitor=Lichess_Game_Builder)
+    try:
+        # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            game_record = chess.pgn.read_game(game_data)
-        game_record.headers.pop("Termination", "")
-    else:
-        game_record = chess.pgn.Game()
-        game_record.headers["Event"] = f"Lichess {game.perf_name} Game"
-        game_record.headers["Site"] = game.url()
-        game_record.headers["Date"] = time.strftime("%Y.%m.%d", start_datetime)
-        game_record.headers["Time"] = time.strftime("%H:%M:%S", start_datetime)
-        game_record.headers["Round"] = "1"
-        game_record.headers["White"] = game.white
-        game_record.headers["Black"] = game.black
-        game_time_sec = str(game.clock_initial // 1000)
-        game_time_inc = f"+{game.clock_increment // 1000}" if game.clock_increment else ""
-        time_control = game_time_sec + game_time_inc
-        game_record.headers["TimeControl"] = time_control
-        if game.variant_name != "Standard":
-            game_record.headers["Variant"] = game.variant_name
-        if game.initial_fen != "startpos":
-            game_record.headers["Setup"] = "1"
-            game_record.headers["FEN"] = game.initial_fen
+            game_record = chess.pgn.read_game(game_data, Visitor=Lichess_Game_Builder)
+        game_record.headers.update(lichess_game_record.headers)
+    except FileNotFoundError:
+        game_record = lichess_game_record
 
-    winner = game.state.get("winner")
-    termination = game.state.get("status")
-    ending = engine_wrapper.GameEnding
-    if winner is not None:
-        result = ending.WHITE_WINS if winner == "white" else ending.BLACK_WINS
-    elif termination == engine_wrapper.Termination.DRAW:
-        result = ending.DRAW
-    else:
-        result = ending.INCOMPLETE
-    game_record.headers["Result"] = result
-
-    terminate_message = engine_wrapper.translate_termination(termination,
-                                                             board,
-                                                             game.white if winner == "white" else game.black,
-                                                             winner)
-    if "mates" not in terminate_message and termination != engine_wrapper.Termination.IN_PROGRESS:
-        game_record.headers["Termination"] = terminate_message
-
-    # Match the engine commentary with the moves on the board
-    commentary_moves = []
-    for comment in engine.move_commentary:
-        if "pv" in comment and len(comment["pv"]) > 0:
-            commentary_moves.append(comment["pv"][0])
-        elif "currmove" in comment:
-            commentary_moves.append(comment["currmove"])
-        else:
-            commentary_moves.append(None)
-
-    index_of_first_board_move_with_commentary = len(board.move_stack)
-    if commentary_moves:
-        for index in range(len(board.move_stack)):
-            player_moves = board.move_stack[index::2]
-            if all(played == commented or commented is None for played, commented in zip(player_moves, commentary_moves)):
-                index_of_first_board_move_with_commentary = index
-                break
-
-    # Write new uncommented moves to game_record.
     current_node = game_record.game()
-    for move in board.move_stack[:index_of_first_board_move_with_commentary]:
-        if not current_node.is_end() and current_node.next().move == move:
-            current_node = current_node.next()
-        else:
+    lichess_node = lichess_game_record.game()
+    for index, move in enumerate(board.move_stack):
+        if current_node.is_end() or current_node.next().move != move:
             current_node = current_node.add_main_variation(move)
+        else:
+            current_node = current_node.next()
 
-    # Write new commented moves to game_record.
-    for index, move in enumerate(board.move_stack[index_of_first_board_move_with_commentary:]):
-        current_node = current_node.add_main_variation(move)
+        if not lichess_node.is_end():
+            lichess_node = lichess_node.next()
+            current_node.set_clock(lichess_node.clock())
+            if lichess_node.comment:
+                if current_node.comment:
+                    if current_node.comment != lichess_node.comment:
+                        current_node.comment = f"{current_node.comment} {lichess_node.comment}"
+                else:
+                    current_node.comment = lichess_node.comment
 
-        if index % 2 != 0:
-            continue
+        commentary = engine.comment_for_board_index(index)
+        if commentary is not None:
+            pv_node = current_node.parent.add_line(commentary.get("pv", []))
+            pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
-        try:
-            commentary = engine.move_commentary[index // 2]
-        except IndexError:
-            continue
-
-        pv_node = current_node.parent.add_line(commentary.get("pv", []))
-        pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
-
-    # Write game_record to file.
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)
         game_record.accept(pgn_writer)

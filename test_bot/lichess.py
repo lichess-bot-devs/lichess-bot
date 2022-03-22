@@ -164,3 +164,16 @@ class Lichess:
     def set_user_agent(self, username):
         self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
         self.session.headers.update(self.header)
+
+    def get_game_pgn(self, game_id):
+        return """
+[Event "Test game"]
+[Site "pytest"]
+[Date "2022.03.11"]
+[Round "1"]
+[White "Engine"]
+[Black "Engine"]
+[Result "0-1"]
+
+*
+"""                  

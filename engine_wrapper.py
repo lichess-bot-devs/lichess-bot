@@ -49,7 +49,6 @@ class Termination(str, Enum):
     RESIGN = "resign"
     ABORT = "aborted"
     DRAW = "draw"
-    IN_PROGRESS = "started"
 
 
 class GameEnding(str, Enum):
@@ -93,6 +92,7 @@ class EngineWrapper:
         self.go_commands = options.pop("go_commands", {}) or {}
         self.last_move_info = {}
         self.move_commentary = []
+        self.comment_start_index = None
 
     def search_for(self, board, movetime, ponder, draw_offered):
         return self.search(board, chess.engine.Limit(time=movetime // 1000), ponder, draw_offered)
@@ -134,11 +134,33 @@ class EngineWrapper:
         result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
         self.move_commentary.append(self.last_move_info.copy())
+        if self.comment_start_index is None:
+            self.comment_start_index = len(board.move_stack)
         self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
         self.print_stats()
         return result
+
+    def comment_index(self, move_stack_index):
+        if self.comment_start_index is None:
+            return -1
+        else:
+            return move_stack_index - self.comment_start_index
+
+    def comment_for_board_index(self, index):
+        comment_index = self.comment_index(index)
+        if comment_index < 0 or comment_index % 2 != 0:
+            return None
+
+        try:
+            return self.move_commentary[comment_index // 2]
+        except IndexError:
+            return None
+
+    def add_null_comment(self):
+        if self.comment_start_index is not None:
+            self.move_commentary.append(None)
 
     def print_stats(self):
         for line in self.get_stats():

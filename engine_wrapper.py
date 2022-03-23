@@ -58,9 +58,9 @@ class GameEnding(str, Enum):
     INCOMPLETE = "*"
 
 
-def translate_termination(termination, board, winner_name, winner_color):
+def translate_termination(termination, board, winner_color):
     if termination == Termination.MATE:
-        return f"{winner_name} mates"
+        return f"{winner_color.title()} mates"
     elif termination == Termination.TIMEOUT:
         return "Time forfeiture"
     elif termination == Termination.RESIGN:
@@ -248,10 +248,7 @@ class XBoardEngine(EngineWrapper):
         else:
             game_result = GameEnding.INCOMPLETE
 
-        endgame_message = translate_termination(termination,
-                                                board,
-                                                game.white if winner == "white" else game.black,
-                                                winner)
+        endgame_message = translate_termination(termination, board, winner)
         if endgame_message:
             endgame_message = " {" + endgame_message + "}"
 
@@ -262,7 +259,7 @@ class XBoardEngine(EngineWrapper):
 
     def get_opponent_info(self, game):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
-            title = f'{game.opponent.title}{" " if game.opponent.title else ""}'
+            title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
         if game.me.rating is not None and game.opponent.rating is not None:
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")

@@ -653,8 +653,8 @@ def tell_user_game_result(game, board):
     winner = game.state.get("winner")
     termination = game.state.get("status")
 
-    winning_name = game.white if winner == "white" else game.black
-    losing_name = game.white if winner == "black" else game.black
+    winning_name = game.white.name if winner == "white" else game.black.name
+    losing_name = game.white.name if winner == "black" else game.black.name
 
     if winner is not None:
         logger.info(f"{winning_name} won!")

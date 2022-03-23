@@ -262,7 +262,7 @@ class XBoardEngine(EngineWrapper):
 
     def get_opponent_info(self, game):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
-            title = f'{game.opponent.title}{" " if game.opponent.title else ""}'
+            title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
         if game.me.rating is not None and game.opponent.rating is not None:
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")

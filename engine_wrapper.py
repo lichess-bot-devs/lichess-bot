@@ -229,7 +229,10 @@ class XBoardEngine(EngineWrapper):
         features = self.engine.protocol.features
         egt_types_from_engine = features["egt"].split(",") if "egt" in features else []
         for egt_type in egt_types_from_engine:
-            options[f"egtpath {egt_type}"] = egt_paths[egt_type]
+            if egt_type in egt_paths:
+                options[f"egtpath {egt_type}"] = egt_paths[egt_type]
+            else:
+                logger.debug(f"No paths found for egt type: {egt_type}.")
         self.engine.configure(options)
 
     def report_game_result(self, game, board):

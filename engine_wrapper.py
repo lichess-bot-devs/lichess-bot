@@ -33,6 +33,7 @@ def create_engine(config):
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.get(f"{engine_type}_options") or {})
+    logger.debug(f"Starting engine: {' '.join(commands)}")
     return Engine(commands, options, stderr, draw_or_resign, cwd=engine_working_dir)
 
 

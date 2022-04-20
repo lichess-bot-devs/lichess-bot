@@ -110,8 +110,10 @@ class EngineWrapper:
 
     def add_go_commands(self, time_limit):
         movetime = self.go_commands.get("movetime")
-        if movetime is not None and (time_limit.time is None or time_limit.time < movetime):
-            time_limit.time = float(movetime) / 1000
+        if movetime is not None:
+            movetime_sec = float(movetime) / 1000
+            if time_limit.time is None or time_limit.time > movetime_sec:
+                time_limit.time = movetime_sec
         time_limit.depth = self.go_commands.get("depth")
         time_limit.nodes = self.go_commands.get("nodes")
         return time_limit

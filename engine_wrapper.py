@@ -113,7 +113,7 @@ class EngineWrapper:
         if movetime is not None and (time_limit.movetime is None or time_limit.movetime > movetime):
             time_limit.time = float(movetime) / 1000
         time_limit.depth = self.go_commands.get("depth")
-        time_limit.nodes = self.go_commands.get("nodes")       
+        time_limit.nodes = self.go_commands.get("nodes")
 
     def offer_draw_or_resign(self, result, board):
         if self.draw_or_resign.get("offer_draw_enabled", False) and len(self.scores) >= self.draw_or_resign.get("offer_draw_moves", 5):

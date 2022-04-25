@@ -8,5 +8,5 @@ urllib3==1.26.9
 backoff==1.11.1
 
 # Requirements for tests
-pytest==7.1.1
+pytest==7.1.2
 pytest-timeout==2.1.0

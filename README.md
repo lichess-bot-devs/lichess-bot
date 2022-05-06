@@ -250,7 +250,6 @@ matchmaking:
   opponent_min_rating: 2000
   opponent_max_rating: 3000
   challenge_mode: "random"
-
 ```
 
 ## Lichess Upgrade to Bot Account

@@ -246,7 +246,7 @@ matchmaking:
   challenge_interval: 30
   challenge_initial_time: 60
   challenge_increment: 3
-#  challenge_days: 2
+# challenge_days: 2
   opponent_min_rating: 2000
   opponent_max_rating: 3000
   challenge_mode: "random"

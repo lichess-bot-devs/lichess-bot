@@ -5,6 +5,7 @@ from chess.variant import find_variant
 import chess.polyglot
 import engine_wrapper
 import model
+import matchmaking
 import json
 import lichess
 import logging
@@ -117,6 +118,10 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     correspondence_queue.put("")
     startup_correspondence_games = [game["gameId"] for game in li.get_ongoing_games() if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
+    matchmaker = matchmaking.Matchmaking(li, config)
+    last_challenge_created = time.time()
+    challenge_id = None
+    challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
 
     busy_processes = 0
     queued_processes = 0
@@ -156,7 +161,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         list_c = list(challenge_queue)
                         list_c.sort(key=lambda c: -c.score())
                         challenge_queue = list_c
-                else:
+                elif chlng.id != challenge_id:
                     try:
                         reason = "generic"
                         challenge = config["challenge"]
@@ -214,11 +219,19 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     logger.info(f"Accept {chlng}")
                     queued_processes += 1
                     li.accept_challenge(chlng.id)
+                    if challenge_id == chlng.id:
+                        challenge_id = None
                     logger.info(f"--- Process Queue. Total Queued: {queued_processes}. Total Used: {busy_processes}")
                 except (HTTPError, ReadTimeout) as exception:
                     if isinstance(exception, HTTPError) and exception.response.status_code == 404:  # ignore missing challenge
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
+
+            if queued_processes + busy_processes < max_games and not challenge_queue and (config.get("matchmaking") or {}).get("allow_matchmaking") and ((last_challenge_created + ((config.get("matchmaking") or {}).get("challenge_interval") or 30) * 60) < time.time() or last_challenge_created + challenge_expire_time < time.time() and challenge_id):
+                logger.debug("Challenging a random bot")
+                challenge_id = matchmaker.challenge()
+                if challenge_id:
+                    last_challenge_created = time.time()
 
             control_queue.task_done()
 
@@ -280,9 +293,10 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
             else:
                 binary_chunk = next(lines)
                 upd = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else None
-            logger.debug(f"Game state: {upd}")
 
             u_type = upd["type"] if upd else "ping"
+            if u_type != "ping":
+                logger.debug(f"Game state: {upd}")
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":

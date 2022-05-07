@@ -1,16 +1,26 @@
 import random
+import time
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class Matchmaking:
-    def __init__(self, li, config):
+    def __init__(self, li, config, username):
         self.li = li
         self.variants = config["challenge"]["variants"].copy()
         if "fromPosition" in self.variants:
             self.variants.pop(self.variants.index("fromPosition"))
         self.matchmaking_cfg = config.get("matchmaking") or {}
+        self.username = username
+        self.last_challenge_created = time.time()
+        self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
+
+    def should_create_challenge(self, challenge_id):
+        matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
+        time_has_passed = self.last_challenge_created + ((self.matchmaking_cfg.get("challenge_interval") or 30) * 60) < time.time()
+        challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and challenge_id
+        return matchmaking_enabled and (time_has_passed or challenge_expired)
 
     def create_challenge(self, username, base_time, increment, days, variant):
         mode = self.matchmaking_cfg.get("challenge_mode") or "random"
@@ -49,7 +59,7 @@ class Matchmaking:
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 3000
 
         online_bots = self.li.get_online_bots()
-        online_bots = list(filter(lambda bot: min_rating <= ((bot["perfs"].get(game_type) or {}).get("rating") or 0) <= max_rating, online_bots))
+        online_bots = list(filter(lambda bot: bot["username"] != self.username and min_rating <= ((bot["perfs"].get(game_type) or {}).get("rating") or 0) <= max_rating, online_bots))
         bot_username = random.choice(online_bots)["username"] if online_bots else None
         return bot_username, base_time, increment, days, variant
 
@@ -58,4 +68,6 @@ class Matchmaking:
         logger.debug(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None
         logger.debug(f"Challenge id is {challenge_id}.")
+        if challenge_id:
+            self.last_challenge_created = time.time()
         return challenge_id

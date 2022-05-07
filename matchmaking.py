@@ -15,11 +15,12 @@ class Matchmaking:
         self.username = username
         self.last_challenge_created = time.time()
         self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
+        self.challenge_id = None
 
-    def should_create_challenge(self, challenge_id):
+    def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
         time_has_passed = self.last_challenge_created + ((self.matchmaking_cfg.get("challenge_interval") or 30) * 60) < time.time()
-        challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and challenge_id
+        challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
         return matchmaking_enabled and (time_has_passed or challenge_expired)
 
     def create_challenge(self, username, base_time, increment, days, variant):
@@ -70,4 +71,4 @@ class Matchmaking:
         logger.debug(f"Challenge id is {challenge_id}.")
         if challenge_id:
             self.last_challenge_created = time.time()
-        return challenge_id
+        self.challenge_id = challenge_id

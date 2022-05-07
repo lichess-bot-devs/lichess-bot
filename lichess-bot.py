@@ -119,7 +119,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     startup_correspondence_games = [game["gameId"] for game in li.get_ongoing_games() if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
     matchmaker = matchmaking.Matchmaking(li, config, user_profile["username"])
-    challenge_id = None
 
     busy_processes = 0
     queued_processes = 0
@@ -159,7 +158,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         list_c = list(challenge_queue)
                         list_c.sort(key=lambda c: -c.score())
                         challenge_queue = list_c
-                elif chlng.id != challenge_id:
+                elif chlng.id != matchmaker.challenge_id:
                     try:
                         reason = "generic"
                         challenge = config["challenge"]
@@ -179,8 +178,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         pass
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
-                if challenge_id == game_id:
-                    challenge_id = None
+                if matchmaker.challenge_id == game_id:
+                    matchmaker.challenge_id = None
                 if game_id in startup_correspondence_games:
                     logger.info(f'--- Enqueue {config["url"] + game_id}')
                     correspondence_queue.put(game_id)
@@ -225,9 +224,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
 
-            if queued_processes + busy_processes < max_games and not challenge_queue and matchmaker.should_create_challenge(challenge_id):
+            if queued_processes + busy_processes < max_games and not challenge_queue and matchmaker.should_create_challenge():
                 logger.debug("Challenging a random bot")
-                challenge_id = matchmaker.challenge()
+                matchmaker.challenge()
 
             control_queue.task_done()
 

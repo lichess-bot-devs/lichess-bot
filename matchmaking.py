@@ -10,7 +10,7 @@ class Matchmaking:
         self.variants = config["challenge"]["variants"].copy()
         if "fromPosition" in self.variants:
             self.variants.pop(self.variants.index("fromPosition"))
-        self.matchmaking_cfg = config["matchmaking"]
+        self.matchmaking_cfg = config.get("matchmaking") or {}
 
     def create_challenge(self, username, base_time, increment, days, variant):
         mode = self.matchmaking_cfg.get("challenge_mode") or "random"

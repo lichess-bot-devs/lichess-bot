@@ -233,7 +233,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 ```
 - `matchmaking`: Challenge a random bot.
   - `allow_matchmaking`: Whether to challenge other bots.
-  - `challenge_interval`: How often to challenge a bot.
+  - `challenge_interval`: How often to challenge a bot (in minutes).
   - `challenge_initial_time`: The initial time (in seconds) for the challenges.
   - `challenge_increment`: The increment (in seconds) for the challenges.
   - `challenge_days`: The days for a correspondence challenge. If this option is enabled, a correspondence challenge will be created even if `challenge_initial_time` is enabled.

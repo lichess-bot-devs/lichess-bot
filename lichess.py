@@ -55,6 +55,7 @@ class Lichess:
         response = self.session.get(url, timeout=2, params=params)
         if raise_for_status:
             response.raise_for_status()
+        response.encoding = "utf-8"
         return response.text if get_raw_text else response.json()
 
     @backoff.on_exception(backoff.constant,

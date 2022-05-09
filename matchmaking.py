@@ -8,9 +8,7 @@ logger = logging.getLogger(__name__)
 class Matchmaking:
     def __init__(self, li, config, username):
         self.li = li
-        self.variants = config["challenge"]["variants"].copy()
-        if "fromPosition" in self.variants:
-            self.variants.pop(self.variants.index("fromPosition"))
+        self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
         self.matchmaking_cfg = config.get("matchmaking") or {}
         self.username = username
         self.last_challenge_created = time.time()

@@ -225,7 +225,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     queued_processes -= 1
 
             if queued_processes + busy_processes < max_games and not challenge_queue and matchmaker.should_create_challenge():
-                logger.debug("Challenging a random bot")
+                logger.info("Challenging a random bot")
                 matchmaker.challenge()
 
             control_queue.task_done()

@@ -58,7 +58,9 @@ class Matchmaking:
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 3000
 
         online_bots = self.li.get_online_bots()
-        online_bots = list(filter(lambda bot: bot["username"] != self.username and not bot.get("disabled") and min_rating <= ((bot["perfs"].get(game_type) or {}).get("rating") or 0) <= max_rating, online_bots))
+        online_bots = list(filter(lambda bot: bot["username"] != self.username and not bot.get("disabled") and
+                                  min_rating <= ((bot["perfs"].get(game_type) or {}).get("rating") or 0) <= max_rating,
+                                  online_bots))
         bot_username = random.choice(online_bots)["username"] if online_bots else None
         return bot_username, base_time, increment, days, variant
 

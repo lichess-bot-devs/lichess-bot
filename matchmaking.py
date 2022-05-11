@@ -37,8 +37,8 @@ class Matchmaking:
 
     def choose_opponent(self):
         variant = random.choice(self.variants)
-        base_time = self.matchmaking_cfg.get("challenge_initial_time") or 60
-        increment = self.matchmaking_cfg.get("challenge_increment") or 2
+        base_time = self.matchmaking_cfg.get("challenge_initial_time", 60)
+        increment = self.matchmaking_cfg.get("challenge_increment", 2)
         days = self.matchmaking_cfg.get("challenge_days")
         game_duration = base_time + increment * 40
         if variant != "standard":

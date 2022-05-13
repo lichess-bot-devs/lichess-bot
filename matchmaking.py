@@ -54,7 +54,7 @@ class Matchmaking:
         else:
             game_type = "classical"
 
-        min_rating = self.matchmaking_cfg.get("opponent_min_rating", 600)
+        min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
 
         online_bots = self.li.get_online_bots()

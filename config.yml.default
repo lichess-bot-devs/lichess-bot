@@ -133,6 +133,6 @@ matchmaking:
   challenge_initial_time: 60  # Initial time in seconds of the challenge.
   challenge_increment: 3      # Increment in seconds of the challenge.
 # challenge_days: 2           # Days for correspondence challenge. If this option is enabled, a correspondence challenge will be created even if 'challenge_initial_time' is enabled.
-  opponent_min_rating: 2000   # Opponents rating should be above this value
-  opponent_max_rating: 3000   # Opponents rating should be below this value
+  opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).
+  opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.

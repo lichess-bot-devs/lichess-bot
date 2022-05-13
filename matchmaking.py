@@ -54,8 +54,8 @@ class Matchmaking:
         else:
             game_type = "classical"
 
-        min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 2000
-        max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 3000
+        min_rating = self.matchmaking_cfg.get("opponent_min_rating", 600)
+        max_rating = self.matchmaking_cfg.get("opponent_max_rating", 4000)
 
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(lambda bot: bot["username"] != self.username and not bot.get("disabled") and

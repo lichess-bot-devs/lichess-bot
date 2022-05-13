@@ -237,8 +237,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `challenge_initial_time`: The initial time (in seconds) for the challenges.
   - `challenge_increment`: The increment (in seconds) for the challenges.
   - `challenge_days`: The days for a correspondence challenge. If this option is enabled, a correspondence challenge will be created even if `challenge_initial_time` is enabled.
-  - `opponent_min_rating`: The minimum rating of the opponent bot.
-  - `opponent_max_rating`: The maximum rating of the opponent bot.
+  - `opponent_min_rating`: The minimum rating of the opponent bot. The minimum rating in lichess is 600.
+  - `opponent_max_rating`: The maximum rating of the opponent bot. The maximum rating in lichess is 4000.
   - `challenge_mode`: Possible options are `casual`, `rated` and `random`.
 ```yml
 matchmaking:
@@ -247,8 +247,8 @@ matchmaking:
   challenge_initial_time: 60
   challenge_increment: 3
 # challenge_days: 2
-  opponent_min_rating: 2000
-  opponent_max_rating: 3000
+  opponent_min_rating: 600
+  opponent_max_rating: 4000
   challenge_mode: "random"
 ```
 

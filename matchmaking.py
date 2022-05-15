@@ -23,6 +23,7 @@ class Matchmaking:
         ten_seconds_passed = self.last_challenge_created + 10 < time.time()
         if challenge_expired:
             self.li.cancel(self.challenge_id)
+            logger.debug(f"Challenge id {self.challenge_id} cancelled.")
         return matchmaking_enabled and (time_has_passed or challenge_expired) and ten_seconds_passed
 
     def create_challenge(self, username, base_time, increment, days, variant):
@@ -40,7 +41,9 @@ class Matchmaking:
         return challenge_id
 
     def choose_opponent(self):
-        variant = random.choice(self.variants)
+        variant = self.matchmaking_cfg.get("challenge_variant") or "random"
+        if variant == "random":
+            variant = random.choice(self.variants)
         base_time = self.matchmaking_cfg.get("challenge_initial_time", 60)
         increment = self.matchmaking_cfg.get("challenge_increment", 2)
         days = self.matchmaking_cfg.get("challenge_days")
@@ -70,9 +73,9 @@ class Matchmaking:
 
     def challenge(self):
         bot_username, base_time, increment, days, variant = self.choose_opponent()
-        logger.debug(f"Will challenge {bot_username} for a {variant} game.")
+        logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None
-        logger.debug(f"Challenge id is {challenge_id}.")
+        logger.info(f"Challenge id is {challenge_id}.")
         if challenge_id:
             self.last_challenge_created = time.time()
         self.challenge_id = challenge_id

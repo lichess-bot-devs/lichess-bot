@@ -19,6 +19,8 @@ class Matchmaking:
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
         time_has_passed = self.last_challenge_created + ((self.matchmaking_cfg.get("challenge_interval") or 30) * 60) < time.time()
         challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
+        if challenge_expired:
+            self.li.cancel(self.challenge_id)
         return matchmaking_enabled and (time_has_passed or challenge_expired)
 
     def create_challenge(self, username, base_time, increment, days, variant):

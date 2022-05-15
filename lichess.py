@@ -22,7 +22,8 @@ ENDPOINTS = {
     "resign": "/api/bot/game/{}/resign",
     "export": "/game/export/{}",
     "online_bots": "/api/bot/online",
-    "challenge": "/api/challenge/{}"
+    "challenge": "/api/challenge/{}",
+    "cancel": "/api/challenge/{}/cancel"
 }
 
 
@@ -132,3 +133,6 @@ class Lichess:
 
     def challenge(self, username, params):
         return self.api_post(ENDPOINTS["challenge"].format(username), payload=params, raise_for_status=False)
+
+    def cancel(self, challenge_id):
+        return self.api_post(ENDPOINTS["cancel"].format(challenge_id), raise_for_status=False)

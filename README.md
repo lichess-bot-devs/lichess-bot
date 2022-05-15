@@ -233,6 +233,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 ```
 - `matchmaking`: Challenge a random bot.
   - `allow_matchmaking`: Whether to challenge other bots.
+  - `challenge_variant`: The variant for the challenges. If set to `random` a variant from the ones enabled in `challenge.variants` will be chosen on random.
   - `challenge_interval`: How often to challenge a bot (in minutes).
   - `challenge_initial_time`: The initial time (in seconds) for the challenges.
   - `challenge_increment`: The increment (in seconds) for the challenges.
@@ -243,6 +244,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 ```yml
 matchmaking:
   allow_matchmaking: false
+  challenge_variant: "random"
   challenge_interval: 30
   challenge_initial_time: 60
   challenge_increment: 3

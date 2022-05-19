@@ -76,6 +76,5 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None
         logger.info(f"Challenge id is {challenge_id}.")
-        if challenge_id:
-            self.last_challenge_created = time.time()
+        self.last_challenge_created = time.time()
         self.challenge_id = challenge_id

@@ -1,4 +1,4 @@
-certifi==2021.10.8
+certifi==2022.5.18
 chardet==4.0.0
 idna==3.3
 chess==1.9.0

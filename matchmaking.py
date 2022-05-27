@@ -12,12 +12,13 @@ class Matchmaking:
         self.matchmaking_cfg = config.get("matchmaking") or {}
         self.username = username
         self.last_challenge_created = time.time()
+        self.last_game_ended = time.time()
         self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
         self.challenge_id = None
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
-        time_has_passed = self.last_challenge_created + ((self.matchmaking_cfg.get("challenge_interval") or 30) * 60) < time.time()
+        time_has_passed = self.last_game_ended + ((self.matchmaking_cfg.get("challenge_timeout") or 30) * 60) < time.time()
         challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
         # Wait 20 seconds before creating a new challenge to avoid hitting the api rate limits.
         twenty_seconds_passed = self.last_challenge_created + 20 < time.time()

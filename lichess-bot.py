@@ -147,6 +147,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 break
             elif event["type"] == "local_game_done":
                 busy_processes -= 1
+                matchmaking.last_game_ended = time.time()
                 logger.info(f"+++ Process Free. Total Queued: {queued_processes}. Total Used: {busy_processes}")
                 if one_game:
                     break
@@ -224,7 +225,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
 
-            if queued_processes + busy_processes < max_games and not challenge_queue and matchmaker.should_create_challenge():
+            if queued_processes + busy_processes < min(max_games, 1) and not challenge_queue and matchmaker.should_create_challenge():
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
 

@@ -16,10 +16,9 @@ class FillerEngine:
     This is only used to provide the property "self.engine"
     in "MinimalEngine" which extends "EngineWrapper"
     """
+
     def __init__(self, main_engine, name=None):
-        self.id = {
-            "name": name
-        }
+        self.id = {"name": name}
         self.name = name
         self.main_engine = main_engine
 
@@ -45,15 +44,16 @@ class MinimalEngine(EngineWrapper):
     however you can also change other methods like
     `notify`, `first_search`, `get_time_control`, etc.
     """
-    def __init__(self, commands, options, stderr, draw_or_resign, name=None, **popen_args):
+
+    def __init__(
+        self, commands, options, stderr, draw_or_resign, name=None, **popen_args
+    ):
         super().__init__(options, draw_or_resign)
 
         self.engine_name = self.__class__.__name__ if name is None else name
 
         self.engine = FillerEngine(self, name=self.name)
-        self.engine.id = {
-            "name": self.engine_name
-        }
+        self.engine.id = {"name": self.engine_name}
 
     def search(self, board, time_limit, ponder, draw_offered):
         """
@@ -84,6 +84,7 @@ class ExampleEngine(MinimalEngine):
 
 # Strategy names and ideas from tom7's excellent eloWorld video
 
+
 class RandomMove(ExampleEngine):
     def search(self, board, *args):
         return PlayResult(random.choice(list(board.legal_moves)), None)
@@ -98,6 +99,7 @@ class Alphabetical(ExampleEngine):
 
 class FirstMove(ExampleEngine):
     """Gets the first move when sorted by uci representation"""
+
     def search(self, board, *args):
         moves = list(board.legal_moves)
         moves.sort(key=str)

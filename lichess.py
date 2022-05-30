@@ -19,7 +19,7 @@ ENDPOINTS = {
     "decline": "/api/challenge/{}/decline",
     "upgrade": "/api/bot/account/upgrade",
     "resign": "/api/bot/game/{}/resign",
-    "export": "/game/export/{}"
+    "export": "/game/export/{}",
 }
 
 
@@ -27,9 +27,7 @@ ENDPOINTS = {
 class Lichess:
     def __init__(self, token, url, version, logging_level):
         self.version = version
-        self.header = {
-            "Authorization": f"Bearer {token}"
-        }
+        self.header = {"Authorization": f"Bearer {token}"}
         self.baseUrl = url
         self.session = requests.Session()
         self.session.headers.update(self.header)
@@ -39,13 +37,15 @@ class Lichess:
     def is_final(exception):
         return isinstance(exception, HTTPError) and exception.response.status_code < 500
 
-    @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError, ReadTimeout),
-                          max_time=60,
-                          interval=0.1,
-                          giveup=is_final,
-                          backoff_log_level=logging.DEBUG,
-                          giveup_log_level=logging.DEBUG)
+    @backoff.on_exception(
+        backoff.constant,
+        (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError, ReadTimeout),
+        max_time=60,
+        interval=0.1,
+        giveup=is_final,
+        backoff_log_level=logging.DEBUG,
+        giveup_log_level=logging.DEBUG,
+    )
     def api_get(self, path, raise_for_status=True, get_raw_text=False, params=None):
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
@@ -54,17 +54,21 @@ class Lichess:
             response.raise_for_status()
         return response.text if get_raw_text else response.json()
 
-    @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError, ReadTimeout),
-                          max_time=60,
-                          interval=0.1,
-                          giveup=is_final,
-                          backoff_log_level=logging.DEBUG,
-                          giveup_log_level=logging.DEBUG)
+    @backoff.on_exception(
+        backoff.constant,
+        (RemoteDisconnected, ConnectionError, ProtocolError, HTTPError, ReadTimeout),
+        max_time=60,
+        interval=0.1,
+        giveup=is_final,
+        backoff_log_level=logging.DEBUG,
+        giveup_log_level=logging.DEBUG,
+    )
     def api_post(self, path, data=None, headers=None, params=None):
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
-        response = self.session.post(url, data=data, headers=headers, params=params, timeout=2)
+        response = self.session.post(
+            url, data=data, headers=headers, params=params, timeout=2
+        )
         response.raise_for_status()
         return response.json()
 
@@ -75,8 +79,10 @@ class Lichess:
         return self.api_post(ENDPOINTS["upgrade"])
 
     def make_move(self, game_id, move):
-        return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
-                             params={"offeringDraw": str(move.draw_offered).lower()})
+        return self.api_post(
+            ENDPOINTS["move"].format(game_id, move.move),
+            params={"offeringDraw": str(move.draw_offered).lower()},
+        )
 
     def chat(self, game_id, room, text):
         payload = {"room": room, "text": text}
@@ -97,7 +103,11 @@ class Lichess:
         return self.api_post(ENDPOINTS["accept"].format(challenge_id))
 
     def decline_challenge(self, challenge_id, reason="generic"):
-        return self.api_post(ENDPOINTS["decline"].format(challenge_id), data=f"reason={reason}", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        return self.api_post(
+            ENDPOINTS["decline"].format(challenge_id),
+            data=f"reason={reason}",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
 
     def get_profile(self):
         profile = self.api_get(ENDPOINTS["profile"])
@@ -112,10 +122,14 @@ class Lichess:
         self.api_post(ENDPOINTS["resign"].format(game_id))
 
     def set_user_agent(self, username):
-        self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
+        self.header.update(
+            {"User-Agent": f"lichess-bot/{self.version} user:{username}"}
+        )
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id):
-        return self.api_get(ENDPOINTS["export"].format(game_id),
-                            get_raw_text=True,
-                            params={"literate": "true"})
+        return self.api_get(
+            ENDPOINTS["export"].format(game_id),
+            get_raw_text=True,
+            params={"literate": "true"},
+        )

@@ -5,6 +5,7 @@ from chess.variant import find_variant
 import chess.polyglot
 import engine_wrapper
 import model
+import matchmaking
 import json
 import lichess
 import logging
@@ -117,6 +118,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     correspondence_queue.put("")
     startup_correspondence_games = [game["gameId"] for game in li.get_ongoing_games() if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
+    matchmaker = matchmaking.Matchmaking(li, config, user_profile["username"])
 
     busy_processes = 0
     queued_processes = 0
@@ -145,6 +147,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 break
             elif event["type"] == "local_game_done":
                 busy_processes -= 1
+                matchmaker.last_game_ended = time.time()
                 logger.info(f"+++ Process Free. Total Queued: {queued_processes}. Total Used: {busy_processes}")
                 if one_game:
                     break
@@ -156,7 +159,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         list_c = list(challenge_queue)
                         list_c.sort(key=lambda c: -c.score())
                         challenge_queue = list_c
-                else:
+                elif chlng.id != matchmaker.challenge_id:
                     try:
                         reason = "generic"
                         challenge = config["challenge"]
@@ -176,6 +179,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         pass
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
+                if matchmaker.challenge_id == game_id:
+                    matchmaker.challenge_id = None
                 if game_id in startup_correspondence_games:
                     logger.info(f'--- Enqueue {config["url"] + game_id}')
                     correspondence_queue.put(game_id)
@@ -219,6 +224,10 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     if isinstance(exception, HTTPError) and exception.response.status_code == 404:  # ignore missing challenge
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
+
+            if queued_processes + busy_processes < min(max_games, 1) and not challenge_queue and matchmaker.should_create_challenge():
+                logger.info("Challenging a random bot")
+                matchmaker.challenge()
 
             control_queue.task_done()
 
@@ -280,9 +289,10 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
             else:
                 binary_chunk = next(lines)
                 upd = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else None
-            logger.debug(f"Game state: {upd}")
 
             u_type = upd["type"] if upd else "ping"
+            if u_type != "ping":
+                logger.debug(f"Game state: {upd}")
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":

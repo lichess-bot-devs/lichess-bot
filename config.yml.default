@@ -126,3 +126,14 @@ greeting:
     goodbye: "Good game!" # Message to send to chat at the end of a game
 
 # pgn_directory: "game_records" # A directory where PGN-format records of the bot's games are kept
+
+matchmaking:
+  allow_matchmaking: false    # Set it to 'true' to challenge other bots.
+  challenge_variant: "random" # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
+  challenge_timeout: 30       # Create a challenge after being idle for 'challenge_timeout' minutes.
+  challenge_initial_time: 60  # Initial time in seconds of the challenge.
+  challenge_increment: 3      # Increment in seconds of the challenge.
+# challenge_days: 2           # Days for correspondence challenge. If this option is enabled, a correspondence challenge will be created even if 'challenge_initial_time' is enabled.
+  opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).
+  opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
+  challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.

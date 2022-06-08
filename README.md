@@ -25,15 +25,15 @@ python3 -m pip install -r requirements.txt
 - [Here is a video on how to install the bot](https://youtu.be/w-aJFk00POQ). Or you may proceed to the following steps.
 - **NOTE: Only Python 3.7 or later is supported!**
 - If you don't have Python, you may [download it here](https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\".
-- To type commands it's better to use PowerShell. Go to Start menu and type "PowerShell" (you may use "cmd" too, but sometimes it may not work).
+- To type commands it's better to use PowerShell. Go to the Start menu and type "PowerShell" (you may use "cmd" too, but sometimes it may not work).
 - Then you may need to upgrade pip. Execute `python3 -m pip install --upgrade pip` in PowerShell.
 - Download the repo into lichess-bot directory.
-- Navigate to the directory in PowerShell: `cd [folder's adress]` (example, `cd C:\chess\lichess-bot`).
+- Navigate to the directory in PowerShell: `cd [folder's address]` (example, `cd C:\chess\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
 ```python
 python3 -m venv .venv # If this fails you probably need to add Python3 to your PATH.
-./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you executed the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
+./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administrator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
 pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`.
@@ -68,7 +68,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     - `enabled`: Whether to use the book at all.
     - `book`: A nested list of books. The next indented line should list a chess variant (`standard`, `3check`, `horde`, etc.) followed on succeeding indented lines with paths to the book files. See `config.yml.default` for examples.
     - `min_weight`: The minimum weight or quality a move must have if it is to have a chance of being selected. If a move cannot be found that has at least this weight, no move will be selected.
-    - `selection`: The method for selecting a move. The choices are: `"weighted_random"` where moves with a higher weight/quality have a higher probability of being chosen, `"uniform_random"` where all moves of sufficient quality have an equal chance of being chosen, and `"best_move"` where the move with the hightest weight is always chosen.
+    - `selection`: The method for selecting a move. The choices are: `"weighted_random"` where moves with a higher weight/quality have a higher probability of being chosen, `"uniform_random"` where all moves of sufficient quality have an equal chance of being chosen, and `"best_move"` where the move with the highest weight is always chosen.
     - `max_depth`: The maximum number of moves a bot plays before it stops consulting the book. If `max_depth` is 3, then the bot will stop consulting the book after its third move.
 - `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine. XBoard engines can resign and offer/accept draw without this feature enabled.
     - `resign_enabled`: Whether the bot is allowed to resign based on the evaluation.
@@ -96,7 +96,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     - Configurations only in `chessdb_book`:
         - `contribute`: Send the current board position to chessdb for later analysis.
     - Configurations only in `lichess_cloud_analysis`:
-        - `max_score_difference`: When `move_quality` is set to `"good"`, this option specifices the maximum difference between the top scoring move and any other move that will make up the set from which a move will be chosen randomly. If this options is set to 25 and the top move in a position has a score of 100, no move with a score of less than 75 will be returned.
+        - `max_score_difference`: When `move_quality` is set to `"good"`, this option specifies the maximum difference between the top scoring move and any other move that will make up the set from which a move will be chosen randomly. If this option is set to 25 and the top move in a position has a score of 100, no move with a score of less than 75 will be returned.
         - `min_knodes`: The minimum number of kilonodes to search. The minimum number of nodes to search is this value times 1000.
     - Configurations only in `online_egtb`:
         -  `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
@@ -143,7 +143,7 @@ Any of the names following `option name` can be listed in `uci_options` in order
     Move Overhead: 100
     Skill Level: 10
 ```
-The exception to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
+The exceptions to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
 
 One last option is `go_commands`. Beneath this option, arguments to the UCI `go` command can be passed. For example,
 ```yml
@@ -178,7 +178,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 
 - `abort_time`: How many seconds to wait before aborting a game due to opponent inaction. This only applies during the first six moves of the game.
 - `fake_think_time`: Artificially slow down the engine to simulate a person thinking about a move. The amount of thinking time decreases as the game goes on.
-- `rate_limiting_delay`: For extremely fast games, the lichess.org servers may respond with an error if too many moves are played to quickly. This option avoids this problem by pausing for a specified number of milliseconds after submitting a move before making the next move.
+- `rate_limiting_delay`: For extremely fast games, the lichess.org servers may respond with an error if too many moves are played too quickly. This option avoids this problem by pausing for a specified number of milliseconds after submitting a move before making the next move.
 - `move_overhead`: To prevent losing on time due to network lag, subtract this many milliseconds from the time to think on each move.
 
 - `correspondence` These options control how the engine behaves during correspondence games.
@@ -211,7 +211,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - blitz
     - rapid
     - classical
-    - correpondence
+    - correspondence
 ```
   - `modes`: An indented list of acceptable game modes (`rated` and/or `casual`).
 ```yml
@@ -220,8 +220,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -casual
 ```
 - `greeting`: Send messages via chat to the bot's opponent. The string `{me}` will be replaced by the bot's lichess account name. The string `{opponent}` will be replaced by the opponent's lichess account name. Any other word between curly brackets will be removed. If you want to put a curly bracket in the message, use two: `{{` or `}}`.
-  - `hello`: Message to send to opponent before the bot makes its first move.
-  - `goodbye`: Message to send to opponent once the game is over.
+  - `hello`: Message to send to the opponent before the bot makes its first move.
+  - `goodbye`: Message to send to the opponent once the game is over.
 ```yml
   greeting:
     hello: Hi, {opponent}! I'm {me}. Good luck!
@@ -233,7 +233,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 ```
 - `matchmaking`: Challenge a random bot.
   - `allow_matchmaking`: Whether to challenge other bots.
-  - `challenge_variant`: The variant for the challenges. If set to `random` a variant from the ones enabled in `challenge.variants` will be chosen on random.
+  - `challenge_variant`: The variant for the challenges. If set to `random` a variant from the ones enabled in `challenge.variants` will be chosen at random.
   - `challenge_timeout`: The time (in minutes) the bot has to be idle before it creates a challenge.
   - `challenge_initial_time`: The initial time (in seconds) for the challenges.
   - `challenge_increment`: The increment (in seconds) for the challenges.
@@ -295,7 +295,7 @@ python3 lichess-bot.py -v
 Use https://github.com/vochicong/lc0-nvidia-docker to easily run lc0 and lichess-bot inside a Docker container.
 
 ## <a name="creating-a-homemade-bot"></a> Creating a homemade bot
-As an alternative to creating an entire chess engine and implementing one of the communiciation protocols (`UCI` or `XBoard`), a bot can also be created by writing a single class with a single method. The `search()` method in this new class takes the current board and the game clock as arguments and should return a move based on whatever criteria the coder desires.
+As an alternative to creating an entire chess engine and implementing one of the communication protocols (`UCI` or `XBoard`), a bot can also be created by writing a single class with a single method. The `search()` method in this new class takes the current board and the game clock as arguments and should return a move based on whatever criteria the coder desires.
 
 Steps to create a homemade bot:
 

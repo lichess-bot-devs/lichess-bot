@@ -23,7 +23,7 @@ from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from urllib3.exceptions import ProtocolError
-from ColorLogger import enable_color_logging
+from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
 
@@ -76,10 +76,18 @@ def do_correspondence_ping(control_queue, period):
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def listener_configurer(level, filename):
-    logging.basicConfig(level=level, filename=filename,
-                        format="%(asctime)-15s: %(message)s")
-    enable_color_logging(level)
+def logging_configurer(level, filename):
+    if filename:
+        FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
+        logging.basicConfig(level=level,
+                            format=FORMAT,
+                            filename=filename,
+                            force=True)
+    else:
+        logging.basicConfig(level=level,
+                            format="%(message)s",
+                            handlers=[RichHandler()],
+                            force=True)
 
 
 def logging_listener_proc(queue, configurer, level, log_filename):
@@ -124,7 +132,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     queued_processes = 0
 
     logging_queue = manager.Queue()
-    logging_listener = multiprocessing.Process(target=logging_listener_proc, args=(logging_queue, listener_configurer, logging_level, log_filename))
+    logging_listener = multiprocessing.Process(target=logging_listener_proc, args=(logging_queue, logging_configurer, logging_level, log_filename))
     logging_listener.start()
 
     with logging_pool.LoggingPool(max_games + 1) as pool:
@@ -762,10 +770,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
-    logging.basicConfig(level=logging_level, filename=args.logfile,
-                        format="%(asctime)-15s: %(message)s")
-    enable_color_logging(debug_lvl=logging_level)
-    logger.info(intro())
+    logging_configurer(logging_level, args.logfile)
+    logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__, logging_level)
 

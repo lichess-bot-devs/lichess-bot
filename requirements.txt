@@ -1,10 +1,6 @@
-certifi==2022.6.15
-chardet==4.0.0
-idna==3.3
 chess==1.9.2
 PyYAML>=5.4.1
 requests>=2.25.1
-urllib3==1.26.9
 backoff==2.1.2
 
 # Requirements for tests

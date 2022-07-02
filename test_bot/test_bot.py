@@ -63,7 +63,7 @@ if platform == "win32":
     download_lc0()
     download_sjeng()
 logging_level = lichess_bot.logging.INFO
-lichess_bot.logging_configurer(logging_level, None)
+lichess_bot.logging_configurer(lichess_bot.logger, logging_level, None)
 lichess_bot.logger.info("Downloaded engines")
 
 

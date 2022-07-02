@@ -1,10 +1,6 @@
-certifi==2022.5.18.1
-chardet==4.0.0
-idna==3.3
-chess==1.9.1
+chess==1.9.2
 PyYAML>=5.4.1
 requests>=2.25.1
-urllib3==1.26.9
 backoff==2.1.2
 rich==12.4.4
 

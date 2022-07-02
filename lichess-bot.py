@@ -248,8 +248,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
-def play_game(li, game_id, control_queue, user_profile, config, challenge_queue, correspondence_queue, logging_queue, logging_configurer, logging_level):
-    logging_configurer(logging_queue, logging_level)
+def play_game(li, game_id, control_queue, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level):
+    game_logging_configurer(logging_queue, logging_level)
     logger = logging.getLogger(__name__)
 
     response = li.get_game_stream(game_id)

@@ -75,23 +75,26 @@ def do_correspondence_ping(control_queue, period):
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def logging_configurer(level, filename):
+def logging_configurer(logger, level, filename):
+    logger.setLevel(level)
+    console_handler = RichHandler()
+    console_handler.setLevel(level)
+    console_formatter = logging.Formatter("%(message)s")
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
     if filename:
+        file_handler = logging.FileHandler(filename, delay=True)
+        file_handler.setLevel(level)
         FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
-        logging.basicConfig(level=level,
-                            format=FORMAT,
-                            filename=filename,
-                            force=True)
-    else:
-        logging.basicConfig(level=level,
-                            format="%(message)s",
-                            handlers=[RichHandler()],
-                            force=True)
+        file_formatter = logging.Formatter(FORMAT)
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
 
 
 def logging_listener_proc(queue, configurer, level, log_filename):
-    configurer(level, log_filename)
     logger = logging.getLogger()
+    configurer(logger, level, log_filename)
     while not terminated:
         try:
             logger.handle(queue.get())
@@ -769,7 +772,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
-    logging_configurer(logging_level, args.logfile)
+    logging_configurer(logger, logging_level, args.logfile)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__, logging_level)

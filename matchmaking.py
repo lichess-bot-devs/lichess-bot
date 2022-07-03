@@ -45,8 +45,8 @@ class Matchmaking:
         variant = self.matchmaking_cfg.get("challenge_variant") or "random"
         if variant == "random":
             variant = random.choice(self.variants)
-        base_time = self.matchmaking_cfg.get("challenge_initial_time", 60)
-        increment = self.matchmaking_cfg.get("challenge_increment", 2)
+        base_time = random.choice(self.matchmaking_cfg.get("challenge_initial_time") or [60])
+        increment = random.choice(self.matchmaking_cfg.get("challenge_increment") or [2])  # [0] evaluates to True
         days = self.matchmaking_cfg.get("challenge_days")
         game_duration = base_time + increment * 40
         if variant != "standard":

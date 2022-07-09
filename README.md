@@ -270,6 +270,11 @@ To output more information (including your engine's thinking output and debuggin
 python3 lichess-bot.py -v
 ```
 
+If you want to record the output to a log file, add the `-l` or `--logfile` along with a file name:
+```
+python3 lichess-bot.py --logfile log.txt
+```
+
 ## To Quit
 - Press `CTRL+C`.
 - It may take some time to quit.

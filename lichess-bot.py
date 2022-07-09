@@ -75,18 +75,22 @@ def do_correspondence_ping(control_queue, period):
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def logging_configurer(level, filename):
+def logging_configurer(level, filename):    
+    console_handler = RichHandler()
+    console_formatter = logging.Formatter("%(message)s")
+    console_handler.setFormatter(console_formatter)
+    all_handlers = [console_handler]
+
     if filename:
+        file_handler = logging.FileHandler(filename, delay=True)
         FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
-        logging.basicConfig(level=level,
-                            format=FORMAT,
-                            filename=filename,
-                            force=True)
-    else:
-        logging.basicConfig(level=level,
-                            format="%(message)s",
-                            handlers=[RichHandler()],
-                            force=True)
+        file_formatter = logging.Formatter(FORMAT)
+        file_handler.setFormatter(file_formatter)
+        all_handlers.append(file_handler)
+
+    logging.basicConfig(level=level,
+                        handlers=all_handlers,
+                        force=True)
 
 
 def logging_listener_proc(queue, configurer, level, log_filename):
@@ -762,10 +766,10 @@ def intro():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
-    parser.add_argument("-u", action="store_true", help="Add this flag to upgrade your account to a bot account.")
-    parser.add_argument("-v", action="store_true", help="Verbose output. Changes log level from INFO to DEBUG.")
+    parser.add_argument("-u", action="store_true", help="Upgrade your account to a bot account.")
+    parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.org.")
     parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml)")
-    parser.add_argument("-l", "--logfile", help="Log file to append logs to.", default=None)
+    parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO

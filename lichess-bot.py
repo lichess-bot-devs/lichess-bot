@@ -185,9 +185,13 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         if challenge.get("only_bot", False) and not chlng.challenger_is_bot:
                             reason = "onlyBot"
                         li.decline_challenge(chlng.id, reason=reason)
-                        logger.info(f"Decline {chlng} for reason '{reason}'")
                     except Exception:
                         pass
+            elif event["type"] == "challengeDeclined":
+                chlng = model.Challenge(event["challenge"])
+                opponent = event["challenge"]["destUser"]["name"]
+                reason = event["challenge"]["declineReason"]
+                logger.info(f"{opponent} declined {chlng}: {reason}")
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
                 if matchmaker.challenge_id == game_id:

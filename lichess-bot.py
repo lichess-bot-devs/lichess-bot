@@ -449,7 +449,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
 
     try:
         if quality == "best":
-            data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=querypv&board={board.fen()}&json=1")
+            data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "querypv", "board": board.fen(), "json": 1})
             if data["status"] == "ok":
                 depth = data["depth"]
                 if depth >= chessdb_cfg.get("min_depth", 20):
@@ -458,13 +458,13 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
                     logger.info(f"Got move {move} from chessdb.cn (depth: {depth}, score: {score})")
 
         elif quality == "good":
-            data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=querybest&board={board.fen()}&json=1")
+            data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "querybest", "board": board.fen(), "json": 1})
             if data["status"] == "ok":
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn")
 
         elif quality == "all":
-            data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=query&board={board.fen()}&json=1")
+            data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "query", "board": board.fen(), "json": 1})
             if data["status"] == "ok":
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn")
@@ -473,7 +473,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
 
     if chessdb_cfg.get("contribute", True):
         try:
-            li.api_get(f"http://www.chessdb.cn/cdb.php?action=queue&board={board.fen()}&json=1")
+            li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "queue", "board": board.fen(), "json": 1})
         except Exception:
             pass
 
@@ -492,7 +492,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        data = li.api_get(f"https://lichess.org/api/cloud-eval?fen={board.fen()}&multiPv={multipv}&variant={variant}", raise_for_status=False)
+        data = li.api_get(f"https://lichess.org/api/cloud-eval", params={"fen": board.fen(), "multiPv": multipv, "variant": variant}, raise_for_status=False)
         if "error" not in data:
             if quality == "best":
                 depth = data["depth"]
@@ -537,7 +537,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
             name_to_wld = {"loss": -2, "maybe-loss": -1, "blessed-loss": -1, "draw": 0, "cursed-win": 1, "maybe-win": 1, "win": 2}
             max_pieces = 7 if board.uci_variant == "chess" else 6
             if pieces <= max_pieces:
-                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}?fen={board.fen()}")
+                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}", params={"fen": board.fen()})
                 if quality == "best":
                     move = data["moves"][0]["uci"]
                     wdl = name_to_wld[data["moves"][0]["category"]] * -1
@@ -573,14 +573,14 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     return 2
 
             if quality == "best":
-                data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=querypv&board={board.fen()}&json=1")
+                data = li.api_get(f"https://www.chessdb.cn/cdb.php", params={"action": "querypv", "board": board.fen(), "json": 1})
                 if data["status"] == "ok":
                     score = data["score"]
                     move = data["pv"][0]
                     logger.info(f"Got move {move} from chessdb.cn (wdl: {score_to_wdl(score)})")
                     return move, score_to_wdl(score)
             else:
-                data = li.api_get(f"https://www.chessdb.cn/cdb.php?action=queryall&board={board.fen()}&json=1")
+                data = li.api_get(f"https://www.chessdb.cn/cdb.php", params={"action": "queryall", "board": board.fen(), "json": 1})
                 if data["status"] == "ok":
                     best_wdl = score_to_wdl(data["moves"][0]["score"])
                     possible_moves = list(filter(lambda possible_move: score_to_wdl(possible_move["score"]) == best_wdl, data["moves"]))

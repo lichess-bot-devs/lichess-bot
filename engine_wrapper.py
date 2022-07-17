@@ -233,8 +233,8 @@ class UCIEngine(EngineWrapper):
     def get_opponent_info(self, game):
         name = game.opponent.name
         if name and "UCI_Opponent" in self.engine.protocol.config:
-            rating = game.opponent.rating if game.opponent.rating is not None else "none"
-            title = game.opponent.title if game.opponent.title else "none"
+            rating = game.opponent.rating or "none"
+            title = game.opponent.title or "none"
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
@@ -285,7 +285,7 @@ class XBoardEngine(EngineWrapper):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
             title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
-        if game.me.rating is not None and game.opponent.rating is not None:
+        if game.me.rating and game.opponent.rating:
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")

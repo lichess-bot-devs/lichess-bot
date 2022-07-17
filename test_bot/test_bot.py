@@ -111,7 +111,10 @@ def run_bot(CONFIG, logging_level, stockfish_path):
                             move = engine.play(board, chess.engine.Limit(time=1), ponder=False)
                         else:
                             start_time = time.perf_counter_ns()
-                            move = engine.play(board, chess.engine.Limit(white_clock=wtime - 2, white_inc=increment), ponder=False)
+                            move = engine.play(board,
+                                               chess.engine.Limit(white_clock=wtime - 2,
+                                                                  white_inc=increment),
+                                               ponder=False)
                             end_time = time.perf_counter_ns()
                             wtime -= (end_time - start_time) / 1e9
                             wtime += increment

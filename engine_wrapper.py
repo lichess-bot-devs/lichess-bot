@@ -193,8 +193,7 @@ class EngineWrapper:
         if for_chat:
             bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
-            ponder_pv = info["ponderpv"]
-            ponder_pv = ponder_pv.split()
+            ponder_pv = info["ponderpv"].split()
             try:
                 while len(" ".join(ponder_pv)) + len_bot_stats > MAX_CHAT_MESSAGE_LEN:
                     ponder_pv.pop()

@@ -146,7 +146,11 @@ class EngineWrapper:
 
     def search(self, board, time_limit, ponder, draw_offered):
         time_limit = self.add_go_commands(time_limit)
-        result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
+        result = self.engine.play(board,
+                                  time_limit,
+                                  info=chess.engine.INFO_ALL,
+                                  ponder=ponder,
+                                  draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
         self.move_commentary.append(self.last_move_info.copy())
         if self.comment_start_index is None:

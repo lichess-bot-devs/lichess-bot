@@ -185,7 +185,7 @@ class EngineWrapper:
 
     def print_stats(self):
         for line in self.get_stats():
-            logger.info(f"{line}")
+            logger.info(line)
 
     def get_stats(self, for_chat=False):
         info = self.last_move_info.copy()

@@ -155,7 +155,9 @@ class EngineWrapper:
         self.move_commentary.append(self.last_move_info.copy())
         if self.comment_start_index is None:
             self.comment_start_index = len(board.move_stack)
-        self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
+        # Use null_score to have no effect on draw/resign decisions
+        null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
+        self.scores.append(self.last_move_info.get("score", null_score))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
         self.print_stats()

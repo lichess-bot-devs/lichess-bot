@@ -150,7 +150,15 @@ class Lichess:
         return
 
     def get_profile(self):
-        profile = {"id": "b", "username": "b", "online": True, "title": "BOT", "url": "https://lichess.org/@/bo", "followable": True, "following": False, "blocking": False, "followsYou": False}
+        profile = {"id": "b",
+                   "username": "b",
+                   "online": True,
+                   "title": "BOT",
+                   "url": "https://lichess.org/@/bo",
+                   "followable": True,
+                   "following": False,
+                   "blocking": False,
+                   "followsYou": False}
         self.set_user_agent(profile["username"])
         return profile
 

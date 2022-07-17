@@ -111,7 +111,13 @@ class EventStream:
             yield b''
             time.sleep(1)
         else:
-            yield b'{"type":"gameStart","game":{"id":"zzzzzzzz","source":"friend","compat":{"bot":true,"board":true}}}'
+            yield b'''{"type":"gameStart",
+                       "game":
+                         {"id":"zzzzzzzz",
+                          "source":"friend",
+                          "compat":
+                            {"bot":true,
+                             "board":true}}}'''
 
 
 # docs: https://lichess.org/api

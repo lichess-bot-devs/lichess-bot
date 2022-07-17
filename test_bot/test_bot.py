@@ -110,7 +110,9 @@ def run_bot(CONFIG, logging_level, stockfish_path):
 
                     if len(board.move_stack) % 2 == 0:
                         if not board.move_stack:
-                            move = engine.play(board, chess.engine.Limit(time=1), ponder=False)
+                            move = engine.play(board,
+                                               chess.engine.Limit(time=1),
+                                               ponder=False)
                         else:
                             start_time = time.perf_counter_ns()
                             move = engine.play(board,
@@ -203,7 +205,8 @@ def test_sf():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing SF")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -229,7 +232,8 @@ def test_lc0():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing LC0")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -254,7 +258,8 @@ def test_sjeng():
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -290,4 +295,5 @@ def test_homemade():
         file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))

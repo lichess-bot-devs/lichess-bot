@@ -86,11 +86,20 @@ class GameStream:
                     pass
             wtime, btime = float(wtime), float(btime)
             time.sleep(0.1)
+            new_game_state = {"type": "gameState",
+                              "moves": moves,
+                              "wtime": int(wtime * 1000),
+                              "btime": int(btime * 1000),
+                              "winc": 2000,
+                              "binc": 2000}
             if event == "end":
-                yield eval(f'b\'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}\'')
+                new_game_state["status"] = "outoftime"
+                new_game_state["winner"] = "black"
+                yield bytes(str(new_game_state).replace("'", '"'), 'utf-8')
                 break
             if moves:
-                yield eval(f'b\'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"started"}}\'')
+                new_game_state["status"] = "started"
+                yield bytes(str(new_game_state).replace("'", '"'), 'utf-8')
 
 
 class EventStream:

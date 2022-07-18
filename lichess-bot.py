@@ -468,7 +468,10 @@ def get_book_move(board, polyglot_cfg):
 
 def get_chessdb_move(li, board, game, chessdb_cfg):
     wb = "w" if board.turn == chess.WHITE else "b"
-    if not chessdb_cfg.get("enabled", False) or game.state[f"{wb}time"] < chessdb_cfg.get("min_time", 20) * 1000 or board.uci_variant != "chess":
+    use_chessdb = chessdb_cfg.get("enabled", False)
+    time_left = game.state[f"{wb}time"]
+    min_time = chessdb_cfg.get("min_time", 20) * 1000
+    if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
         return None
 
     move = None

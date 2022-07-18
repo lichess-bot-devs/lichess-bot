@@ -123,7 +123,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     control_stream.start()
     correspondence_cfg = config.get("correspondence") or {}
     correspondence_checkin_period = correspondence_cfg.get("checkin_period", 600)
-    correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping, args=[control_queue, correspondence_checkin_period])
+    correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
+                                                    args=[control_queue,
+                                                          correspondence_checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
     correspondence_queue.put("")
@@ -135,7 +137,11 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     queued_processes = 0
 
     logging_queue = manager.Queue()
-    logging_listener = multiprocessing.Process(target=logging_listener_proc, args=(logging_queue, logging_configurer, logging_level, log_filename))
+    logging_listener = multiprocessing.Process(target=logging_listener_proc,
+                                               args=(logging_queue,
+                                                     logging_configurer,
+                                                     logging_level,
+                                                     log_filename))
     logging_listener.start()
 
     with logging_pool.LoggingPool(max_games + 1) as pool:
@@ -323,17 +329,33 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move.move is None:
-                        best_move = get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg)
+                        best_move = get_online_move(li,
+                                                    board,
+                                                    game,
+                                                    online_moves_cfg,
+                                                    draw_or_resign_cfg)
 
                     if best_move.move is None:
                         draw_offered = check_for_draw_offer(game)
 
                         if len(board.move_stack) < 2:
-                            best_move = choose_first_move(engine, board, draw_offered)
+                            best_move = choose_first_move(engine,
+                                                          board,
+                                                          draw_offered)
                         elif is_correspondence:
-                            best_move = choose_move_time(engine, board, correspondence_move_time, can_ponder, draw_offered)
+                            best_move = choose_move_time(engine,
+                                                         board,
+                                                         correspondence_move_time,
+                                                         can_ponder,
+                                                         draw_offered)
                         else:
-                            best_move = choose_move(engine, board, game, can_ponder, draw_offered, start_time, move_overhead)
+                            best_move = choose_move(engine,
+                                                    board,
+                                                    game,
+                                                    can_ponder,
+                                                    draw_offered,
+                                                    start_time,
+                                                    move_overhead)
                     else:
                         engine.add_null_comment()
                     move_attempted = True
@@ -492,7 +514,11 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        data = li.api_get(f"https://lichess.org/api/cloud-eval", params={"fen": board.fen(), "multiPv": multipv, "variant": variant}, raise_for_status=False)
+        data = li.api_get("https://lichess.org/api/cloud-eval",
+                          params={"fen": board.fen(),
+                                  "multiPv": multipv,
+                                  "variant": variant},
+                          raise_for_status=False)
         if "error" not in data:
             if quality == "best":
                 depth = data["depth"]
@@ -614,7 +640,10 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
     if best_move:
-        return chess.engine.PlayResult(chess.Move.from_uci(best_move), None, draw_offered=offer_draw, resigned=resign)
+        return chess.engine.PlayResult(chess.Move.from_uci(best_move),
+                                       None,
+                                       draw_offered=offer_draw,
+                                       resigned=resign)
     return chess.engine.PlayResult(None, None)
 
 
@@ -628,7 +657,13 @@ def choose_move(engine, board, game, ponder, draw_offered, start_time, move_over
         btime = max(0, btime - move_overhead - pre_move_time)
 
     logger.info(f"Searching for wtime {wtime} btime {btime}")
-    return engine.search_with_ponder(board, wtime, btime, game.state["winc"], game.state["binc"], ponder, draw_offered)
+    return engine.search_with_ponder(board,
+                                     wtime,
+                                     btime,
+                                     game.state["winc"],
+                                     game.state["binc"],
+                                     ponder,
+                                     draw_offered)
 
 
 def check_for_draw_offer(game):

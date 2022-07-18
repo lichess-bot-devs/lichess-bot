@@ -633,9 +633,14 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     if best_move is None:
         best_move = get_chessdb_move(li, board, game, chessdb_cfg)
     else:
-        if draw_or_resign_cfg.get("offer_draw_enabled", False) and draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True) and wdl == 0:
+        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
+        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        if can_offer_draw and offer_draw_for_zero and wdl == 0:
             offer_draw = True
-        if draw_or_resign_cfg.get("resign_enabled", False) and draw_or_resign_cfg.get("resign_for_egtb_minus_two", True) and wdl == -2:
+
+        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
+        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
 
     if best_move is None:

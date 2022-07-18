@@ -243,7 +243,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 wait_for_correspondence_ping = False
                 while (busy_processes + queued_processes) < max_games:
                     game_id = correspondence_queue.get()
-                    # stop checking in on games if we have checked in on all games since the last correspondence_ping
+                    # Stop checking in on games if we have checked in on all
+                    # games since the last correspondence_ping.
                     if not game_id:
                         if is_correspondence_ping and not correspondence_queue.empty():
                             correspondence_queue.put("")
@@ -255,7 +256,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         log_proc_count(queued_processes, busy_processes)
                         pool.apply_async(play_game_async, game_id)
 
-            while (queued_processes + busy_processes) < max_games and challenge_queue:  # keep processing the queue until empty or max_games is reached
+            # Keep processing the queue until empty or max_games is reached.
+            while (queued_processes + busy_processes) < max_games and challenge_queue:
                 chlng = challenge_queue.pop(0)
                 try:
                     logger.info(f"Accept {chlng}")
@@ -263,7 +265,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     li.accept_challenge(chlng.id)
                     log_proc_count(queued_processes, busy_processes)
                 except (HTTPError, ReadTimeout) as exception:
-                    if isinstance(exception, HTTPError) and exception.response.status_code == 404:  # ignore missing challenge
+                    if isinstance(exception, HTTPError) and exception.response.status_code == 404:
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
 

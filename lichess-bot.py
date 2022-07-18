@@ -759,13 +759,13 @@ def print_pgn_game_record(li, config, game, board, engine):
 
 
 def intro():
-    return r"""
+    return fr"""
     .   _/|
     .  // o\
-    .  || ._)  lichess-bot %s
+    .  || ._)  lichess-bot {__version__}
     .  //__\
     .  )___(   Play on Lichess with a bot
-    """ % __version__
+    """
 
 
 if __name__ == "__main__":

@@ -129,7 +129,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
     correspondence_queue.put("")
-    startup_correspondence_games = [game["gameId"] for game in li.get_ongoing_games() if game["perf"] == "correspondence"]
+    startup_correspondence_games = [game["gameId"]
+                                    for game in li.get_ongoing_games()
+                                    if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
     matchmaker = matchmaking.Matchmaking(li, config, user_profile["username"])
 

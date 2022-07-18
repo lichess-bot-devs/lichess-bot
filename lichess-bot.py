@@ -552,20 +552,38 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
 
 
 def get_online_egtb_move(li, board, game, online_egtb_cfg):
+    use_online_egtb = online_egtb_cfg.get("enabled", False)
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
-    if not online_egtb_cfg.get("enabled", False) or game.state[f"{wb}time"] < online_egtb_cfg.get("min_time", 20) * 1000 or board.uci_variant not in ["chess", "antichess", "atomic"] and online_egtb_cfg.get("source", "lichess") == "lichess" or board.uci_variant != "chess" and online_egtb_cfg.get("source", "lichess") == "chessdb" or pieces > online_egtb_cfg.get("max_pieces", 7) or board.castling_rights:
+    source = online_egtb_cfg.get("source", "lichess")
+    minimum_time = online_egtb_cfg.get("min_time", 20) * 1000
+    if (not use_online_egtb
+            or game.state[f"{wb}time"] < minimum_time
+            or board.uci_variant not in ["chess", "antichess", "atomic"]
+            and source == "lichess"
+            or board.uci_variant != "chess"
+            and source == "chessdb"
+            or pieces > online_egtb_cfg.get("max_pieces", 7)
+            or board.castling_rights):
+
         return None, None
 
     quality = online_egtb_cfg.get("move_quality", "best")
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        if online_egtb_cfg.get("source", "lichess") == "lichess":
-            name_to_wld = {"loss": -2, "maybe-loss": -1, "blessed-loss": -1, "draw": 0, "cursed-win": 1, "maybe-win": 1, "win": 2}
+        if source == "lichess":
+            name_to_wld = {"loss": -2,
+                           "maybe-loss": -1,
+                           "blessed-loss": -1,
+                           "draw": 0,
+                           "cursed-win": 1,
+                           "maybe-win": 1,
+                           "win": 2}
             max_pieces = 7 if board.uci_variant == "chess" else 6
             if pieces <= max_pieces:
-                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}", params={"fen": board.fen()})
+                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}",
+                                  params={"fen": board.fen()})
                 if quality == "best":
                     move = data["moves"][0]["uci"]
                     wdl = name_to_wld[data["moves"][0]["category"]] * -1
@@ -575,7 +593,10 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                         dtm *= -1
                 else:
                     best_wdl = name_to_wld[data["moves"][0]["category"]]
-                    possible_moves = list(filter(lambda possible_move: name_to_wld[possible_move["category"]] == best_wdl, data["moves"]))
+
+                    def good_enough(possible_move):
+                        return name_to_wld[possible_move["category"]] == best_wdl
+                    possible_moves = list(filter(good_enough, data["moves"]))
                     random_move = random.choice(possible_moves)
                     move = random_move["uci"]
                     wdl = name_to_wld[random_move["category"]] * -1
@@ -583,10 +604,10 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     dtm = random_move["dtm"]
                     if dtm:
                         dtm *= -1
-                if wdl is not None:
-                    logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
-                    return move, wdl
-        elif online_egtb_cfg.get("source", "lichess") == "chessdb":
+
+                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
+                return move, wdl
+        elif source == "chessdb":
 
             def score_to_wdl(score):
                 if score < -20000:
@@ -600,23 +621,26 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                 else:
                     return 2
 
-            if quality == "best":
-                data = li.api_get(f"https://www.chessdb.cn/cdb.php", params={"action": "querypv", "board": board.fen(), "json": 1})
-                if data["status"] == "ok":
+            action = "querypv" if quality == "best" else "queryall"
+            data = li.api_get("https://www.chessdb.cn/cdb.php",
+                              params={"action": action, "board": board.fen(), "json": 1})
+            if data["status"] == "ok":
+                if quality == "best":
                     score = data["score"]
                     move = data["pv"][0]
-                    logger.info(f"Got move {move} from chessdb.cn (wdl: {score_to_wdl(score)})")
-                    return move, score_to_wdl(score)
-            else:
-                data = li.api_get(f"https://www.chessdb.cn/cdb.php", params={"action": "queryall", "board": board.fen(), "json": 1})
-                if data["status"] == "ok":
+                else:
                     best_wdl = score_to_wdl(data["moves"][0]["score"])
-                    possible_moves = list(filter(lambda possible_move: score_to_wdl(possible_move["score"]) == best_wdl, data["moves"]))
-                    random_move = random.choice(possible_moves)
+
+                    def good_enough(move):
+                        return score_to_wdl(move["score"]) == best_wdl
+                    possible_moves = filter(good_enough, data["moves"])
+                    random_move = random.choice(list(possible_moves))
                     score = random_move["score"]
                     move = random_move["uci"]
-                    logger.info(f"Got move {move} from chessdb.cn (wdl: {score_to_wdl(score)})")
-                    return move, score_to_wdl(score)
+
+                wdl = score_to_wdl(score)
+                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl})")
+                return move, score_to_wdl(score)
     except Exception:
         pass
 

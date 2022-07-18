@@ -475,37 +475,32 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
         return None
 
     move = None
+    site = "https://www.chessdb.cn/cdb.php"
     quality = chessdb_cfg.get("move_quality", "good")
-
+    action = {"best": "querypv",
+              "good": "querybest",
+              "all": "query"}
     try:
-        if quality == "best":
-            data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "querypv", "board": board.fen(), "json": 1})
-            if data["status"] == "ok":
+        params = {"action": action[quality],
+                  "board": board.fen(),
+                  "json": 1}
+        data = li.api_get(site, params=params)
+        if data["status"] == "ok":
+            if quality == "best":
                 depth = data["depth"]
                 if depth >= chessdb_cfg.get("min_depth", 20):
                     score = data["score"]
                     move = data["pv"][0]
                     logger.info(f"Got move {move} from chessdb.cn (depth: {depth}, score: {score})")
-
-        elif quality == "good":
-            data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "querybest", "board": board.fen(), "json": 1})
-            if data["status"] == "ok":
+            else:
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn")
 
-        elif quality == "all":
-            data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "query", "board": board.fen(), "json": 1})
-            if data["status"] == "ok":
-                move = data["move"]
-                logger.info(f"Got move {move} from chessdb.cn")
+        if chessdb_cfg.get("contribute", True):
+            params["action"] = "queue"
+            li.api_get(site, params=params)
     except Exception:
         pass
-
-    if chessdb_cfg.get("contribute", True):
-        try:
-            li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "queue", "board": board.fen(), "json": 1})
-        except Exception:
-            pass
 
     return move
 

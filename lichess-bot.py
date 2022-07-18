@@ -426,7 +426,9 @@ def choose_first_move(engine, board, draw_offered):
 
 def get_book_move(board, polyglot_cfg):
     no_book_move = chess.engine.PlayResult(None, None)
-    if not polyglot_cfg.get("enabled") or len(board.move_stack) > polyglot_cfg.get("max_depth", 8) * 2 - 1:
+    use_book = polyglot_cfg.get("enabled")
+    max_game_length = polyglot_cfg.get("max_depth", 8) * 2 - 1
+    if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
     book_config = polyglot_cfg.get("book", {})
@@ -446,12 +448,13 @@ def get_book_move(board, polyglot_cfg):
         with chess.polyglot.open_reader(book) as reader:
             try:
                 selection = polyglot_cfg.get("selection", "weighted_random")
+                min_weight = polyglot_cfg.get("min_weight", 1)
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=polyglot_cfg.get("min_weight", 1)).move
+                    move = reader.choice(board, minimum_weight=min_weight).move
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=polyglot_cfg.get("min_weight", 1)).move
+                    move = reader.find(board, minimum_weight=min_weight).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found
                 move = None

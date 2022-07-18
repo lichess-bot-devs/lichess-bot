@@ -376,7 +376,9 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
                 terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
                 game.ping(abort_time, terminate_time, disconnect_time)
             elif u_type == "ping":
-                if is_correspondence and not is_engine_move(game, board) and game.should_disconnect_now():
+                if (is_correspondence
+                        and not is_engine_move(game, board)
+                        and game.should_disconnect_now()):
                     break
                 elif game.should_abort_now():
                     logger.info(f"Aborting {game.url()} by lack of activity")

@@ -272,7 +272,8 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     # Initial response of stream will be the full game info. Store it
     initial_state = json.loads(next(lines).decode("utf-8"))
     logger.debug(f"Initial state: {initial_state}")
-    game = model.Game(initial_state, user_profile["username"], li.baseUrl, config.get("abort_time", 20))
+    abort_time = config.get("abort_time", 20)
+    game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
 
     engine = engine_wrapper.create_engine(config)
     engine.get_opponent_info(game)
@@ -283,6 +284,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     is_correspondence = game.perf_name == "Correspondence"
     correspondence_cfg = config.get("correspondence") or {}
     correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
+    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
     engine_cfg = config["engine"]
     ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
@@ -300,7 +302,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     goodbye = get_greeting("goodbye")
 
     first_move = True
-    correspondence_disconnect_time = 0
+    disconnect_time = 0
     while not terminated:
         move_attempted = False
         try:
@@ -319,13 +321,14 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
             elif u_type == "gameState":
                 game.state = upd
                 board = setup_board(game)
+                if is_engine_move(game, board) or len(board.move_stack) == 0:
+                    disconnect_time = correspondence_disconnect_time
                 if not is_game_over(game) and is_engine_move(game, board):
                     if len(board.move_stack) < 2:
                         conversation.send_message("player", hello)
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
-                    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move.move is None:
@@ -368,11 +371,10 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
                     engine.report_game_result(game, board)
                     tell_user_game_result(game, board)
                     conversation.send_message("player", goodbye)
-                elif len(board.move_stack) == 0:
-                    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
                 wb = "w" if board.turn == chess.WHITE else "b"
-                game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, correspondence_disconnect_time)
+                terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
+                game.ping(abort_time, terminate_time, disconnect_time)
             elif u_type == "ping":
                 if is_correspondence and not is_engine_move(game, board) and game.should_disconnect_now():
                     break

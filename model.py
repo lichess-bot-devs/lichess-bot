@@ -14,12 +14,12 @@ class Challenge:
         self.speed = c_info["speed"]
         self.increment = c_info.get("timeControl", {}).get("increment", -1)
         self.base = c_info.get("timeControl", {}).get("limit", -1)
-        self.challenger = c_info.get("challenger")
-        self.challenger_title = self.challenger.get("title") if self.challenger else None
+        self.challenger = c_info.get("challenger", {})
+        self.challenger_title = self.challenger.get("title")
         self.challenger_is_bot = self.challenger_title == "BOT"
         self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None
-        self.challenger_name = self.challenger["name"] if self.challenger else "Anonymous"
-        self.challenger_rating_int = self.challenger["rating"] if self.challenger else 0
+        self.challenger_name = self.challenger.get("name", "Anonymous")
+        self.challenger_rating_int = self.challenger.get("rating", 0)
         self.challenger_rating = self.challenger_rating_int or "?"
 
     def is_supported_variant(self, challenge_cfg):
@@ -91,7 +91,7 @@ class Game:
         clock = json.get("clock") or {}
         self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10)  # unlimited = 10 years
         self.clock_increment = clock.get("increment", 0)
-        self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
+        self.perf_name = json.get("perf", {}).get("name", "{perf?}")
         self.variant_name = json.get("variant")["name"]
         self.white = Player(json.get("white"))
         self.black = Player(json.get("black"))

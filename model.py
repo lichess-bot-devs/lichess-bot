@@ -89,7 +89,8 @@ class Game:
         self.id = json.get("id")
         self.speed = json.get("speed")
         clock = json.get("clock") or {}
-        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10)  # unlimited = 10 years
+        ten_years_in_ms = 1000 * 3600 * 24 * 365 * 10
+        self.clock_initial = clock.get("initial", ten_years_in_ms)
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = json.get("perf", {}).get("name", "{perf?}")
         self.variant_name = json.get("variant")["name"]

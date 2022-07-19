@@ -186,33 +186,15 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     break
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                if chlng.is_supported(challenge_config):
+                is_supported, decline_reason = chlng.is_supported(challenge_config)
+                if is_supported:
                     challenge_queue.append(chlng)
                     if challenge_config.get("sort_by", "best") == "best":
                         list_c = list(challenge_queue)
                         list_c.sort(key=lambda c: -c.score())
                         challenge_queue = list_c
                 elif chlng.id != matchmaker.challenge_id:
-                    try:
-                        reason = "generic"
-                        challenge = config["challenge"]
-                        if not chlng.is_supported_variant(challenge["variants"]):
-                            reason = "variant"
-                        if not chlng.is_supported_time_control(challenge["time_controls"],
-                                                               challenge.get("max_increment", 180),
-                                                               challenge.get("min_increment", 0),
-                                                               challenge.get("max_base", 315360000),
-                                                               challenge.get("min_base", 0)):
-                            reason = "timeControl"
-                        if not chlng.is_supported_mode(challenge["modes"]):
-                            reason = "casual" if chlng.rated else "rated"
-                        if not challenge.get("accept_bot", False) and chlng.challenger_is_bot:
-                            reason = "noBot"
-                        if challenge.get("only_bot", False) and not chlng.challenger_is_bot:
-                            reason = "onlyBot"
-                        li.decline_challenge(chlng.id, reason=reason)
-                    except Exception:
-                        pass
+                    li.decline_challenge(chlng.id, reason=decline_reason)
             elif event["type"] == "challengeDeclined":
                 chlng = model.Challenge(event["challenge"])
                 opponent = event["challenge"]["destUser"]["name"]

@@ -1,5 +1,8 @@
 import time
 from urllib.parse import urljoin
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Challenge:
@@ -19,30 +22,48 @@ class Challenge:
         self.challenger_rating_int = self.challenger["rating"] if self.challenger else 0
         self.challenger_rating = self.challenger_rating_int or "?"
 
-    def is_supported_variant(self, supported):
-        return self.variant in supported
+    def is_supported_variant(self, challenge_cfg):
+        return self.variant in challenge_cfg["variants"]
 
-    def is_supported_time_control(self, supported_speed, supported_increment_max, supported_increment_min, supported_base_max, supported_base_min):
+    def is_supported_time_control(self, challenge_cfg):
+        speeds = challenge_cfg["time_controls"]
+        increment_max = challenge_cfg.get("max_increment", 180)
+        increment_min = challenge_cfg.get("min_increment", 0)
+        base_max = challenge_cfg.get("max_base", 315360000)
+        base_min = challenge_cfg.get("min_base", 0)
+
         if self.increment < 0:
-            return self.speed in supported_speed
-        return self.speed in supported_speed and supported_increment_max >= self.increment >= supported_increment_min and supported_base_max >= self.base >= supported_base_min
+            return self.speed in speeds
 
-    def is_supported_mode(self, supported):
-        return "rated" in supported if self.rated else "casual" in supported
+        return (self.speed in speeds
+                and increment_min <= self.increment <= increment_max
+                and base_min <= self.base <= base_max)
+
+    def is_supported_mode(self, challenge_cfg):
+        return ("rated" if self.rated else "casual") in challenge_cfg["modes"]
 
     def is_supported(self, config):
-        if not config.get("accept_bot", False) and self.challenger_is_bot:
-            return False
-        if config.get("only_bot", False) and not self.challenger_is_bot:
-            return False
-        variants = config["variants"]
-        tc = config["time_controls"]
-        inc_max = config.get("max_increment", 180)
-        inc_min = config.get("min_increment", 0)
-        base_max = config.get("max_base", 315360000)
-        base_min = config.get("min_base", 0)
-        modes = config["modes"]
-        return self.is_supported_time_control(tc, inc_max, inc_min, base_max, base_min) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
+        try:
+            if not config.get("accept_bot", False) and self.challenger_is_bot:
+                return False, "noBot"
+
+            if config.get("only_bot", False) and not self.challenger_is_bot:
+                return False, "onlyBot"
+
+            if not self.is_supported_time_control(config):
+                return False, "timeControl"
+
+            if not self.is_supported_variant(config):
+                return False, "variant"
+
+            if not self.is_supported_mode(config):
+                return False, ("casual" if self.rated else "rated")
+
+            return True, None
+
+        except Exception as e:
+            logger.warn(f"Error while checking challenge: {e}")
+            return False, "generic"
 
     def score(self):
         rated_bonus = 200 if self.rated else 0

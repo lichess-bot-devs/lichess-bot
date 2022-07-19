@@ -146,20 +146,19 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                                      log_filename))
     logging_listener.start()
 
-    def play_game_async(game_id):
-        play_game(li,
-                  game_id,
-                  control_queue,
-                  user_profile,
-                  config,
-                  challenge_queue,
-                  correspondence_queue,
-                  logging_queue,
-                  game_logging_configurer,
-                  logging_level)
-
     def log_proc_count(queued, used):
         logger.info(f"--- Process Queue. Total Queued: {queued}. Total Used: {used}")
+
+    play_game_args = [li,
+                      None, # will hold the game id
+                      control_queue,
+                      user_profile,
+                      config,
+                      challenge_queue,
+                      correspondence_queue,
+                      logging_queue,
+                      game_logging_configurer,
+                      logging_level]
 
     with logging_pool.LoggingPool(max_games + 1) as pool:
         while not terminated:
@@ -232,7 +231,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         queued_processes -= 1
                     busy_processes += 1
                     log_proc_count(queued_processes, busy_processes)
-                    pool.apply_async(play_game_async, game_id)
+                    play_game_args[1] = game_id
+                    pool.apply_async(play_game, play_game_args)
 
             is_correspondence_ping = event["type"] == "correspondence_ping"
             is_local_game_done = event["type"] == "local_game_done"
@@ -254,7 +254,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     else:
                         busy_processes += 1
                         log_proc_count(queued_processes, busy_processes)
-                        pool.apply_async(play_game_async, game_id)
+                        play_game_args[1] = game_id
+                        pool.apply_async(play_game, play_game_args)
 
             # Keep processing the queue until empty or max_games is reached.
             while (queued_processes + busy_processes) < max_games and challenge_queue:

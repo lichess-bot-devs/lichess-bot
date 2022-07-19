@@ -74,7 +74,7 @@ class Challenge:
         return "rated" if self.rated else "casual"
 
     def challenger_full_name(self):
-        return f'{self.challenger_title + " " if self.challenger_title else ""}{self.challenger_name}'
+        return f'{self.challenger_title or ""} {self.challenger_name}'.strip()
 
     def __str__(self):
         return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating})"
@@ -97,7 +97,7 @@ class Game:
         self.black = Player(json.get("black"))
         self.initial_fen = json.get("initialFen")
         self.state = json.get("state")
-        self.is_white = bool(self.white.name and self.white.name.lower() == username.lower())
+        self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
         self.me = self.white if self.is_white else self.black
@@ -153,7 +153,7 @@ class Player:
             return f"AI level {self.aiLevel}"
         else:
             rating = f'{self.rating}{"?" if self.provisional else ""}'
-            return f'{self.title + " " if self.title else ""}{self.name}({rating})'
+            return f'{self.title or ""} {self.name}({rating})'.strip()
 
     def __repr__(self):
         return self.__str__()

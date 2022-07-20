@@ -113,7 +113,7 @@ def game_logging_configurer(queue, level):
 
 
 def game_error_handler(error):
-    logger.error(''.join(traceback.format_exception(error)))
+    logger.error("".join(traceback.format_exception(error)))
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):

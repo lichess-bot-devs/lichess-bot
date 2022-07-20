@@ -776,7 +776,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
     args = parser.parse_args()
 
-    logging_level = logging.DEBUG  # if args.v else logging.INFO
+    logging_level = logging.DEBUG if args.v else logging.INFO
     logging_configurer(logging_level, args.logfile)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")

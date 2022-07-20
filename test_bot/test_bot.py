@@ -1,5 +1,4 @@
 import pytest
-import pytest_timeout
 import zipfile
 import requests
 import time
@@ -261,7 +260,12 @@ def test_homemade():
         strategies = file.read()
         original_strategies = strategies
         strategies = strategies.split("\n")
-    strategies += ["class Stockfish(ExampleEngine):", "    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):", "        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)", f"        self.engine = chess.engine.SimpleEngine.popen_uci('./TEMP/sf2{file_extension}')", "    def search(self, board, time_limit, *args):", "        return self.engine.play(board, time_limit)"]
+    strategies += ["class Stockfish(ExampleEngine):",
+                   "    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):",
+                   "        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)",
+                   f"        self.engine = chess.engine.SimpleEngine.popen_uci('./TEMP/sf2{file_extension}')",
+                   "    def search(self, board, time_limit, *args):",
+                   "        return self.engine.play(board, time_limit)"]
     with open("strategies.py", "w") as file:
         file.write("\n".join(strategies))
     if os.path.exists("logs"):

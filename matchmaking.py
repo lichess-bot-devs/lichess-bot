@@ -14,18 +14,20 @@ class Matchmaking:
         self.last_challenge_created = time.time()
         self.last_game_ended = time.time()
         self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
+        self.challenge_timeout = max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1)
+        self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
-        time_has_passed = self.last_game_ended + ((self.matchmaking_cfg.get("challenge_timeout") or 30) * 60) < time.time()
+        time_has_passed = self.last_game_ended + (self.challenge_timeout * 60) < time.time()
         challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
-        # Wait 20 seconds before creating a new challenge to avoid hitting the api rate limits.
-        twenty_seconds_passed = self.last_challenge_created + 20 < time.time()
+        min_wait_time_passed = self.last_challenge_created + self.min_wait_time < time.time()
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
-        return matchmaking_enabled and (time_has_passed or challenge_expired) and twenty_seconds_passed
+            self.challenge_id = None
+        return matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed
 
     def create_challenge(self, username, base_time, increment, days, variant):
         mode = self.matchmaking_cfg.get("challenge_mode") or "random"

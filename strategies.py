@@ -3,6 +3,7 @@ Some example strategies for people who want to create a custom, homemade bot.
 And some handy classes to extend
 """
 
+import chess
 from chess.engine import PlayResult
 import random
 from engine_wrapper import EngineWrapper

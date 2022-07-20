@@ -158,7 +158,7 @@ def run_bot(CONFIG, logging_level, stockfish_path):
                         file.write(state)
 
                 engine.quit()
-                win = board.is_checkmate() and board.turn == chess.WHITE
+                win = board.outcome().winner() == chess.BLACK
                 with open("./logs/result.txt", "w") as file:
                     file.write("1" if win else "0")
 

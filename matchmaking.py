@@ -25,8 +25,8 @@ class Matchmaking:
         min_wait_time_passed = self.last_challenge_created + self.min_wait_time < time.time()
         if challenge_expired:
             self.li.cancel(self.challenge_id)
-            logger.debug(f"Challenge id {self.challenge_id} cancelled.")
             self.challenge_id = None
+            logger.debug(f"Challenge id {self.challenge_id} cancelled.")
         return matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed
 
     def create_challenge(self, username, base_time, increment, days, variant):

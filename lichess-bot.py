@@ -260,7 +260,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
 
-            if queued_processes + busy_processes < 1 and not challenge_queue and matchmaker.should_create_challenge():
+            if (queued_processes + busy_processes < 1
+                    and not challenge_queue
+                    and matchmaker.should_create_challenge()):
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
 

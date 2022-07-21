@@ -49,9 +49,9 @@ def load_config(config_file):
         engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
 
         if not os.path.isfile(engine) and CONFIG["engine"]["protocol"] != "homemade":
-            raise Exception("The engine %s file does not exist." % engine)
+            raise Exception(f"The engine {engine} file does not exist.")
 
         if not os.access(engine, os.X_OK) and CONFIG["engine"]["protocol"] != "homemade":
-            raise Exception("The engine %s doesn't have execute (x) permission. Try: chmod +x %s" % (engine, engine))
+            raise Exception(f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
 
     return CONFIG

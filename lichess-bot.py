@@ -11,7 +11,6 @@ import lichess
 import logging
 import logging.handlers
 import multiprocessing
-import logging_pool
 import signal
 import time
 import backoff
@@ -19,6 +18,7 @@ import sys
 import random
 import os
 import io
+import traceback
 from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
@@ -112,6 +112,10 @@ def game_logging_configurer(queue, level):
         root.setLevel(level)
 
 
+def game_error_handler(error):
+    logger.error("".join(traceback.format_exception(error)))
+
+
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
@@ -150,7 +154,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
         logger.info(f"--- Process Queue. Total Queued: {queued}. Total Used: {used}")
 
     play_game_args = [li,
-                      None, # will hold the game id
+                      None,  # will hold the game id
                       control_queue,
                       user_profile,
                       config,
@@ -160,7 +164,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                       game_logging_configurer,
                       logging_level]
 
-    with logging_pool.LoggingPool(max_games + 1) as pool:
+    with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not terminated:
             try:
                 event = control_queue.get()
@@ -214,7 +218,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     busy_processes += 1
                     log_proc_count(queued_processes, busy_processes)
                     play_game_args[1] = game_id
-                    pool.apply_async(play_game, play_game_args)
+                    pool.apply_async(play_game,
+                                     play_game_args,
+                                     error_callback=game_error_handler)
 
             is_correspondence_ping = event["type"] == "correspondence_ping"
             is_local_game_done = event["type"] == "local_game_done"
@@ -237,7 +243,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         busy_processes += 1
                         log_proc_count(queued_processes, busy_processes)
                         play_game_args[1] = game_id
-                        pool.apply_async(play_game, play_game_args)
+                        pool.apply_async(play_game,
+                                         play_game_args,
+                                         error_callback=game_error_handler)
 
             # Keep processing the queue until empty or max_games is reached.
             while (queued_processes + busy_processes) < max_games and challenge_queue:

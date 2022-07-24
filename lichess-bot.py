@@ -19,6 +19,7 @@ import random
 import os
 import io
 import traceback
+import copy
 from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
@@ -298,6 +299,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
     goodbye = get_greeting("goodbye")
 
     first_move = True
+    prior_game = None
     correspondence_disconnect_time = 0
     while not terminated:
         move_attempted = False
@@ -317,7 +319,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
             elif u_type == "gameState":
                 game.state = upd
                 board = setup_board(game)
-                if not is_game_over(game) and is_engine_move(game, board):
+                if not is_game_over(game) and is_engine_move(game, prior_game, board):
                     if len(board.move_stack) < 2:
                         conversation.send_message("player", hello)
                     start_time = time.perf_counter_ns()
@@ -352,9 +354,12 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
                     conversation.send_message("player", goodbye)
                 elif len(board.move_stack) == 0:
                     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
+                else:
+                    inform_engine_of_update(engine, game)
 
                 wb = "w" if board.turn == chess.WHITE else "b"
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, correspondence_disconnect_time)
+                prior_game = copy.deepcopy(game)
             elif u_type == "ping":
                 if is_correspondence and not is_engine_move(game, board) and game.should_disconnect_now():
                     break
@@ -670,13 +675,25 @@ def setup_board(game):
     return board
 
 
-def is_engine_move(game, board):
-    return game.is_white == (board.turn == chess.WHITE)
+def is_engine_move(game, prior_game, board):
+    return game_changed(game, prior_game) and game.is_white == (board.turn == chess.WHITE)
 
 
 def is_game_over(game):
     return game.state["status"] != "started"
 
+
+def game_changed(current_game, prior_game):
+    if prior_game is None:
+        return True
+
+    return current_game.state["moves"] != prior_game.state["moves"]
+
+
+def inform_engine_of_update(engine, game):
+    if check_for_draw_offer(game):
+        engine.inform_draw()
+    
 
 def tell_user_game_result(game, board):
     winner = game.state.get("winner")

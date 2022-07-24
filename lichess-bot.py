@@ -715,18 +715,14 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
 
 
 def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):
-    wtime = game.state["wtime"]
-    btime = game.state["btime"]
-    pre_move_time = int((time.perf_counter_ns() - start_time) / 1000000)
-    if board.turn == chess.WHITE:
-        wtime = max(0, wtime - move_overhead - pre_move_time)
-    else:
-        btime = max(0, btime - move_overhead - pre_move_time)
-
-    logger.info(f"Searching for wtime {wtime} btime {btime}")
+    pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
+    overhead = pre_move_time + move_overhead
+    wb = "w" if board.turn == chess.WHITE else "b"
+    game.state[f"{wb}time"] = max(0, game.state[f"{wb}time"] - overhead)
+    logger.info("Searching for wtime {wtime} btime {btime}".format_map(game.state))
     return engine.search_with_ponder(board,
-                                     wtime,
-                                     btime,
+                                     game.state["wtime"],
+                                     game.state["btime"],
                                      game.state["winc"],
                                      game.state["binc"],
                                      ponder,

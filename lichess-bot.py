@@ -693,7 +693,7 @@ def game_changed(current_game, prior_game):
 def inform_engine_of_update(engine, game):
     if check_for_draw_offer(game):
         engine.inform_draw()
-    
+
 
 def tell_user_game_result(game, board):
     winner = game.state.get("winner")

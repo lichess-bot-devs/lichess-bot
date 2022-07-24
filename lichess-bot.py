@@ -351,9 +351,10 @@ def play_game(li,
             elif u_type == "gameState":
                 game.state = upd
                 board = setup_board(game)
-                if is_engine_move(game, prior_game, board) or len(board.move_stack) == 0:
+                if len(board.move_stack) == 0:
                     disconnect_time = correspondence_disconnect_time
                 if not is_game_over(game) and is_engine_move(game, prior_game, board):
+                    disconnect_time = correspondence_disconnect_time
                     if len(board.move_stack) < 2:
                         conversation.send_message("player", hello)
                     start_time = time.perf_counter_ns()

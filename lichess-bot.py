@@ -76,7 +76,7 @@ def do_correspondence_ping(control_queue, period):
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def logging_configurer(level, filename):    
+def logging_configurer(level, filename):
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_formatter)
@@ -501,7 +501,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        data = li.api_get(f"https://lichess.org/api/cloud-eval", params={"fen": board.fen(), "multiPv": multipv, "variant": variant}, raise_for_status=False)
+        data = li.api_get("https://lichess.org/api/cloud-eval", params={"fen": board.fen(), "multiPv": multipv, "variant": variant}, raise_for_status=False)
         if "error" not in data:
             if quality == "best":
                 depth = data["depth"]
@@ -582,14 +582,14 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     return 2
 
             if quality == "best":
-                data = li.api_get(f"https://www.chessdb.cn/cdb.php", params={"action": "querypv", "board": board.fen(), "json": 1})
+                data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "querypv", "board": board.fen(), "json": 1})
                 if data["status"] == "ok":
                     score = data["score"]
                     move = data["pv"][0]
                     logger.info(f"Got move {move} from chessdb.cn (wdl: {score_to_wdl(score)})")
                     return move, score_to_wdl(score)
             else:
-                data = li.api_get(f"https://www.chessdb.cn/cdb.php", params={"action": "queryall", "board": board.fen(), "json": 1})
+                data = li.api_get("https://www.chessdb.cn/cdb.php", params={"action": "queryall", "board": board.fen(), "json": 1})
                 if data["status"] == "ok":
                     best_wdl = score_to_wdl(data["moves"][0]["score"])
                     possible_moves = list(filter(lambda possible_move: score_to_wdl(possible_move["score"]) == best_wdl, data["moves"]))
@@ -693,7 +693,7 @@ def game_changed(current_game, prior_game):
 def inform_engine_of_update(engine, game):
     if check_for_draw_offer(game):
         engine.inform_draw()
-    
+
 
 def tell_user_game_result(game, board):
     winner = game.state.get("winner")

@@ -1,5 +1,4 @@
 import pytest
-import pytest_timeout
 import zipfile
 import requests
 import time
@@ -164,7 +163,7 @@ def run_bot(CONFIG, logging_level):
                         file.write(state)
 
                 engine.quit()
-                win = board.is_checkmate() and board.turn == chess.WHITE
+                win = board.outcome().winner == chess.BLACK
                 with open("./logs/result.txt", "w") as file:
                     file.write("1" if win else "0")
 
@@ -263,10 +262,10 @@ def test_homemade():
         assert True
         return
     with open("strategies.py") as file:
-        strategies = file.read()
-        original_strategies = strategies
-        strategies = strategies.split("\n")
-    strategies.append(f"""
+        original_strategies = file.read()
+
+    with open("strategies.py", "a") as file:
+        file.write(f"""
 class Stockfish(ExampleEngine):
     def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
         super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
@@ -275,9 +274,6 @@ class Stockfish(ExampleEngine):
     def search(self, board, time_limit, *args):
         return self.engine.play(board, time_limit)
 """)
-
-    with open("strategies.py", "w") as file:
-        file.write("\n".join(strategies))
     if os.path.exists("logs"):
         shutil.rmtree("logs")
     os.mkdir("logs")

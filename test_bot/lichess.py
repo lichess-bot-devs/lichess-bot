@@ -6,6 +6,7 @@ from http.client import RemoteDisconnected
 import backoff
 import time
 import chess
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +96,11 @@ class GameStream:
             if event == "end":
                 new_game_state["status"] = "outoftime"
                 new_game_state["winner"] = "black"
-                yield bytes(str(new_game_state).replace("'", '"'), 'utf-8')
+                yield json.dumps(new_game_state).encode("utf-8")
                 break
             if moves:
                 new_game_state["status"] = "started"
-                yield bytes(str(new_game_state).replace("'", '"'), 'utf-8')
+                yield json.dumps(new_game_state).encode("utf-8")
 
 
 class EventStream:

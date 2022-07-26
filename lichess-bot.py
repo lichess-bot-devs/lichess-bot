@@ -411,7 +411,7 @@ def play_game(li,
                 prior_game = copy.deepcopy(game)
             elif u_type == "ping":
                 if (is_correspondence
-                        and not is_engine_move(game, board)
+                        and not is_engine_move(game, prior_game, board)
                         and game.should_disconnect_now()):
                     break
                 elif game.should_abort_now():

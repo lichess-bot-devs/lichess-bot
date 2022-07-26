@@ -361,7 +361,7 @@ def play_game(li, game_id, control_queue, user_profile, config, challenge_queue,
                 game.ping(config.get("abort_time", 20), (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60, correspondence_disconnect_time)
                 prior_game = copy.deepcopy(game)
             elif u_type == "ping":
-                if is_correspondence and not is_engine_move(game, board) and game.should_disconnect_now():
+                if is_correspondence and not is_engine_move(game, prior_game, board) and game.should_disconnect_now():
                     break
                 elif game.should_abort_now():
                     logger.info(f"Aborting {game.url()} by lack of activity")

@@ -201,7 +201,7 @@ class Lichess:
                    "username": "b",
                    "online": True,
                    "title": "BOT",
-                   "url": "https://lichess.org/@/bo",
+                   "url": "https://lichess.org/@/b",
                    "followable": True,
                    "following": False,
                    "blocking": False,

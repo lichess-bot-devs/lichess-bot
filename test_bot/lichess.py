@@ -31,39 +31,35 @@ class GameStream:
         self.moves_sent = ""
 
     def iter_lines(self):
-        yield b'''{"id":"zzzzzzzz",
-                   "variant":
-                     {"key":"standard",
-                      "name":"Standard",
-                      "short":"Std"},
-                   "clock":
-                   {"initial":60000,
-                    "increment":2000},
-                   "speed":"bullet",
-                   "perf":{"name":"Bullet"},
-                   "rated":true,
-                   "createdAt":1600000000000,
-                   "white":
-                     {"id":"bo",
-                      "name":"bo",
-                      "title":"BOT",
-                      "rating":3000},
-                   "black":
-                     {"id":"b",
-                      "name":"b",
-                      "title":"BOT",
-                      "rating":3000,
-                      "provisional":true},
-                   "initialFen":"startpos",
-                   "type":"gameFull",
-                   "state":
-                     {"type":"gameState",
-                      "moves":"",
-                      "wtime":60000,
-                      "btime":60000,
-                      "winc":2000,
-                      "binc":2000,
-                      "status":"started"}}'''
+        yield json.dumps(
+            {"id": "zzzzzzzz",
+             "variant": {"key": "standard",
+                         "name": "Standard",
+                         "short": "Std"},
+             "clock": {"initial": 60000,
+                       "increment": 2000},
+             "speed": "bullet",
+             "perf": {"name": "Bullet"},
+             "rated": True,
+             "createdAt": 1600000000000,
+             "white": {"id": "bo",
+                       "name": "bo",
+                       "title": "BOT",
+                       "rating": 3000},
+             "black": {"id": "b",
+                       "name": "b",
+                       "title": "BOT",
+                       "rating": 3000,
+                       "provisional": True},
+             "initialFen": "startpos",
+             "type": "gameFull",
+             "state": {"type": "gameState",
+                       "moves": "",
+                       "wtime": 60000,
+                       "btime": 60000,
+                       "winc": 2000,
+                       "binc": 2000,
+                       "status": "started"}}).encode("utf-8")
         time.sleep(1)
         while True:
             time.sleep(0.001)
@@ -112,13 +108,12 @@ class EventStream:
             yield b''
             time.sleep(1)
         else:
-            yield b'''{"type":"gameStart",
-                       "game":
-                         {"id":"zzzzzzzz",
-                          "source":"friend",
-                          "compat":
-                            {"bot":true,
-                             "board":true}}}'''
+            yield json.dumps(
+                {"type": "gameStart",
+                 "game": {"id": "zzzzzzzz",
+                          "source": "friend",
+                          "compat": {"bot": True,
+                                     "board": True}}}).encode("utf-8")
 
 
 # docs: https://lichess.org/api

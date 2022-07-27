@@ -153,7 +153,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
 
     def log_proc_count(change, queued, used):
         symbol = "+++" if change == "Freed" else "---"
-        logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+        return f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}"
 
     play_game_args = [li,
                       None,  # will hold the game id
@@ -187,7 +187,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
             elif event["type"] == "local_game_done":
                 busy_processes -= 1
                 matchmaker.last_game_ended = time.time()
-                log_proc_count("Freed", queued_processes, busy_processes)
+                logger.info(log_proc_count("Freed", queued_processes, busy_processes))
                 if one_game:
                     break
             elif event["type"] == "challenge":
@@ -218,7 +218,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     if queued_processes > 0:
                         queued_processes -= 1
                     busy_processes += 1
-                    log_proc_count("Used", queued_processes, busy_processes)
+                    logger.info(log_proc_count("Used", queued_processes, busy_processes))
                     play_game_args[1] = game_id
                     pool.apply_async(play_game,
                                      play_game_args,
@@ -243,7 +243,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                             break
                     else:
                         busy_processes += 1
-                        log_proc_count("Used", queued_processes, busy_processes)
+                        logger.info(log_proc_count("Used", queued_processes, busy_processes))
                         play_game_args[1] = game_id
                         pool.apply_async(play_game,
                                          play_game_args,
@@ -256,7 +256,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     logger.info(f"Accept {chlng}")
                     queued_processes += 1
                     li.accept_challenge(chlng.id)
-                    log_proc_count("Queued", queued_processes, busy_processes)
+                    logger.info(log_proc_count("Queued", queued_processes, busy_processes))
                 except (HTTPError, ReadTimeout) as exception:
                     if isinstance(exception, HTTPError) and exception.response.status_code == 404:
                         logger.info(f"Skip missing {chlng}")

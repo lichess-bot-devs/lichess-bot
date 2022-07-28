@@ -879,7 +879,7 @@ def intro():
     """
 
 
-if __name__ == "__main__":
+def start_lichess_bot():
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
     parser.add_argument("-u", action="store_true", help="Upgrade your account to a bot account.")
     parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.org.")
@@ -905,3 +905,11 @@ if __name__ == "__main__":
         start(li, user_profile, CONFIG, logging_level, args.logfile)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
+
+
+if __name__ == "__main__":
+    try:
+        start_lichess_bot()
+    except Exception as error:
+        logger.error(error)
+        logger.error(game_error_handler(error))

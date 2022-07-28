@@ -5,6 +5,7 @@ from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
 from http.client import RemoteDisconnected
 import backoff
 import logging
+import time
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -24,6 +25,17 @@ ENDPOINTS = {
     "challenge": "/api/challenge/{}",
     "cancel": "/api/challenge/{}/cancel"
 }
+
+
+logger = logging.getLogger(__name__)
+
+
+def rate_limit_check(response):
+    if response.status_code == 429:
+        logger.warning("Rate limited. Waiting 1 minute until next request.")
+        time.sleep(60)
+        return True
+    return False
 
 
 # docs: https://lichess.org/api
@@ -53,7 +65,7 @@ class Lichess:
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.get(url, timeout=2, params=params)
-        if raise_for_status:
+        if rate_limit_check(response) or raise_for_status:
             response.raise_for_status()
         response.encoding = "utf-8"
         return response.text if get_raw_text else response.json()
@@ -69,7 +81,7 @@ class Lichess:
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
-        if raise_for_status:
+        if rate_limit_check(response) or raise_for_status:
             response.raise_for_status()
         return response.json()
 

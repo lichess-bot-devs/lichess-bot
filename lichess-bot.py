@@ -910,6 +910,5 @@ def start_lichess_bot():
 if __name__ == "__main__":
     try:
         start_lichess_bot()
-    except Exception as error:
-        logger.error(error)
-        logger.error(game_error_handler(error))
+    except Exception:
+        logger.exception("Quitting lichess-bot due to an error:")

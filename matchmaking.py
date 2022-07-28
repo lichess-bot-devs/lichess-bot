@@ -40,8 +40,12 @@ class Matchmaking:
         else:
             params["clock.limit"] = base_time
             params["clock.increment"] = increment
-        challenge_id = self.li.challenge(username, params).get("challenge", {}).get("id")
-        return challenge_id
+
+        try:
+            challenge_id = self.li.challenge(username, params).get("challenge", {}).get("id")
+            return challenge_id
+        except Exception:
+            return None
 
     def choose_opponent(self):
         variant = self.matchmaking_cfg.get("challenge_variant") or "random"

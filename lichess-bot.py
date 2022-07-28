@@ -438,7 +438,7 @@ def play_game(li,
     try:
         print_pgn_game_record(li, config, game, board, engine)
     except Exception as e:
-        logger.warning(f"Error writing game record: {repr(e)}")
+        logger.exception("Error writing game record:")
 
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")

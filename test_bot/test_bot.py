@@ -19,22 +19,22 @@ lichess_bot = importlib.import_module("lichess-bot")
 
 platform = sys.platform
 file_extension = ".exe" if platform == "win32" else ""
+stockfish_path = f"./TEMP/sf{file_extension}"
 
 
 def download_sf():
     windows_or_linux = "win" if platform == "win32" else "linux"
-    response = requests.get(f"https://stockfishchess.org/files/stockfish_14.1_{windows_or_linux}_x64.zip", allow_redirects=True)
+    base_name = f"stockfish_14.1_{windows_or_linux}_x64"
+    zip_link = f"https://stockfishchess.org/files/{base_name}.zip"
+    response = requests.get(zip_link, allow_redirects=True)
     with open("./TEMP/sf_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/sf_zip.zip", "r") as zip_ref:
         zip_ref.extractall("./TEMP/")
-    shutil.copyfile(f"./TEMP/stockfish_14.1_{windows_or_linux}_x64/stockfish_14.1_{windows_or_linux}_x64{file_extension}", f"./TEMP/sf{file_extension}")
-    shutil.copyfile(f"./TEMP/sf{file_extension}", f"./TEMP/sf2{file_extension}")
+    shutil.copyfile(f"./TEMP/{base_name}/{base_name}{file_extension}", stockfish_path)
     if windows_or_linux == "linux":
-        st = os.stat(f"./TEMP/sf{file_extension}")
-        os.chmod(f"./TEMP/sf{file_extension}", st.st_mode | stat.S_IEXEC)
-        st = os.stat(f"./TEMP/sf2{file_extension}")
-        os.chmod(f"./TEMP/sf2{file_extension}", st.st_mode | stat.S_IEXEC)
+        st = os.stat(stockfish_path)
+        os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)
 
 
 def download_lc0():
@@ -66,7 +66,7 @@ lichess_bot.logging_configurer(logging_level, None)
 lichess_bot.logger.info("Downloaded engines")
 
 
-def run_bot(CONFIG, logging_level, stockfish_path):
+def run_bot(CONFIG, logging_level):
     lichess_bot.logger.info(lichess_bot.intro())
     li = lichess_bot.lichess.Lichess(CONFIG["token"], CONFIG["url"], lichess_bot.__version__)
 
@@ -107,10 +107,15 @@ def run_bot(CONFIG, logging_level, stockfish_path):
 
                     if len(board.move_stack) % 2 == 0:
                         if not board.move_stack:
-                            move = engine.play(board, chess.engine.Limit(time=1), ponder=False)
+                            move = engine.play(board,
+                                               chess.engine.Limit(time=1),
+                                               ponder=False)
                         else:
                             start_time = time.perf_counter_ns()
-                            move = engine.play(board, chess.engine.Limit(white_clock=wtime - 2, white_inc=increment), ponder=False)
+                            move = engine.play(board,
+                                               chess.engine.Limit(white_clock=wtime - 2,
+                                                                  white_inc=increment),
+                                               ponder=False)
                             end_time = time.perf_counter_ns()
                             wtime -= (end_time - start_time) / 1e9
                             wtime += increment
@@ -192,12 +197,12 @@ def test_sf():
     CONFIG["engine"]["name"] = f"sf{file_extension}"
     CONFIG["engine"]["uci_options"]["Threads"] = 1
     CONFIG["pgn_directory"] = "TEMP/sf_game_record"
-    stockfish_path = f"./TEMP/sf2{file_extension}"
-    win = run_bot(CONFIG, logging_level, stockfish_path)
+    win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing SF")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -218,12 +223,12 @@ def test_lc0():
     CONFIG["engine"]["uci_options"].pop("Hash", None)
     CONFIG["engine"]["uci_options"].pop("Move Overhead", None)
     CONFIG["pgn_directory"] = "TEMP/lc0_game_record"
-    stockfish_path = "./TEMP/sf2.exe"
-    win = run_bot(CONFIG, logging_level, stockfish_path)
+    win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing LC0")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -243,12 +248,12 @@ def test_sjeng():
     CONFIG["engine"]["name"] = "sjeng.exe"
     CONFIG["engine"]["ponder"] = False
     CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
-    stockfish_path = "./TEMP/sf2.exe"
-    win = run_bot(CONFIG, logging_level, stockfish_path)
+    win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
     lichess_bot.logger.info("Finished Testing Sjeng")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
 
 
 @pytest.mark.timeout(150, method="thread")
@@ -257,17 +262,18 @@ def test_homemade():
         assert True
         return
     with open("strategies.py") as file:
-        strategies = file.read()
-        original_strategies = strategies
-        strategies = strategies.split("\n")
-    strategies += ["class Stockfish(ExampleEngine):",
-                   "    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):",
-                   "        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)",
-                   f"        self.engine = chess.engine.SimpleEngine.popen_uci('./TEMP/sf2{file_extension}')",
-                   "    def search(self, board, time_limit, *args):",
-                   "        return self.engine.play(board, time_limit)"]
-    with open("strategies.py", "w") as file:
-        file.write("\n".join(strategies))
+        original_strategies = file.read()
+
+    with open("strategies.py", "a") as file:
+        file.write(f"""
+class Stockfish(ExampleEngine):
+    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
+        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
+        self.engine = chess.engine.SimpleEngine.popen_uci('{stockfish_path}')
+
+    def search(self, board, time_limit, *args):
+        return self.engine.play(board, time_limit)
+""")
     if os.path.exists("logs"):
         shutil.rmtree("logs")
     os.mkdir("logs")
@@ -277,11 +283,11 @@ def test_homemade():
     CONFIG["engine"]["name"] = "Stockfish"
     CONFIG["engine"]["protocol"] = "homemade"
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
-    stockfish_path = f"./TEMP/sf2{file_extension}"
-    win = run_bot(CONFIG, logging_level, stockfish_path)
+    win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
     with open("strategies.py", "w") as file:
         file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"
-    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"], "bo vs b - zzzzzzzz.pgn"))
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))

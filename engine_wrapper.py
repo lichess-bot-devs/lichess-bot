@@ -120,28 +120,44 @@ class EngineWrapper:
         return time_limit
 
     def offer_draw_or_resign(self, result, board):
-        if self.draw_or_resign.get("offer_draw_enabled", False) and len(self.scores) >= self.draw_or_resign.get("offer_draw_moves", 5):
-            scores = self.scores[-self.draw_or_resign.get("offer_draw_moves", 5):]
-            pieces_on_board = chess.popcount(board.occupied)
-            scores_near_draw = lambda score: abs(score.relative.score(mate_score=40000)) <= self.draw_or_resign.get("offer_draw_score", 0)
-            if len(scores) == len(list(filter(scores_near_draw, scores))) and pieces_on_board <= self.draw_or_resign.get("offer_draw_pieces", 10):
+        actual = lambda score: score.relative.score(mate_score=40000)
+
+        can_offer_draw = self.draw_or_resign.get("offer_draw_enabled", False)
+        draw_offer_moves = self.draw_or_resign.get("offer_draw_moves", 5)
+        draw_score_range = self.draw_or_resign.get("offer_draw_score", 0)
+        draw_max_piece_count = self.draw_or_resign.get("offer_draw_pieces", 10)
+        pieces_on_board = chess.popcount(board.occupied)
+        enough_pieces_captured = pieces_on_board <= draw_max_piece_count
+        if can_offer_draw and len(self.scores) >= draw_offer_moves and enough_pieces_captured:
+            scores = self.scores[-draw_offer_moves:]
+            scores_near_draw = lambda score: abs(actual(score)) <= draw_score_range
+            if len(scores) == len(list(filter(scores_near_draw, scores))):
                 result.draw_offered = True
 
-        if self.draw_or_resign.get("resign_enabled", False) and len(self.scores) >= self.draw_or_resign.get("resign_moves", 3):
-            scores = self.scores[-self.draw_or_resign.get("resign_moves", 3):]
-            scores_near_loss = lambda score: score.relative.score(mate_score=40000) <= self.draw_or_resign.get("resign_score", -1000)
+        resign_enabled = self.draw_or_resign.get("resign_enabled", False)
+        min_moves_for_resign = self.draw_or_resign.get("resign_moves", 3)
+        resign_score = self.draw_or_resign.get("resign_score", -1000)
+        if resign_enabled and len(self.scores) >= min_moves_for_resign:
+            scores = self.scores[-min_moves_for_resign:]
+            scores_near_loss = lambda score: actual(score) <= resign_score
             if len(scores) == len(list(filter(scores_near_loss, scores))):
                 result.resigned = True
         return result
 
     def search(self, board, time_limit, ponder, draw_offered):
         time_limit = self.add_go_commands(time_limit)
-        result = self.engine.play(board, time_limit, info=chess.engine.INFO_ALL, ponder=ponder, draw_offered=draw_offered)
+        result = self.engine.play(board,
+                                  time_limit,
+                                  info=chess.engine.INFO_ALL,
+                                  ponder=ponder,
+                                  draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
         self.move_commentary.append(self.last_move_info.copy())
         if self.comment_start_index is None:
             self.comment_start_index = len(board.move_stack)
-        self.scores.append(self.last_move_info.get("score", chess.engine.PovScore(chess.engine.Mate(1), board.turn)))
+        # Use null_score to have no effect on draw/resign decisions
+        null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
+        self.scores.append(self.last_move_info.get("score", null_score))
         result = self.offer_draw_or_resign(result, board)
         self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
         self.print_stats()
@@ -169,16 +185,16 @@ class EngineWrapper:
 
     def print_stats(self):
         for line in self.get_stats():
-            logger.info(f"{line}")
+            logger.info(line)
 
     def get_stats(self, for_chat=False):
         info = self.last_move_info.copy()
         stats = ["depth", "nps", "nodes", "score", "ponderpv"]
+        result = [f"{stat}: {info[stat]}" for stat in stats if stat in info]
         if for_chat:
-            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]
+            bot_stats = filter(lambda line: not line.startswith("ponderpv"), result)
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
-            ponder_pv = info["ponderpv"]
-            ponder_pv = ponder_pv.split()
+            ponder_pv = info["ponderpv"].split()
             try:
                 while len(" ".join(ponder_pv)) + len_bot_stats > MAX_CHAT_MESSAGE_LEN:
                     ponder_pv.pop()
@@ -187,7 +203,7 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-        return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
+        return result
 
     def get_opponent_info(self, game):
         pass
@@ -220,8 +236,8 @@ class UCIEngine(EngineWrapper):
     def get_opponent_info(self, game):
         name = game.opponent.name
         if name and "UCI_Opponent" in self.engine.protocol.config:
-            rating = game.opponent.rating if game.opponent.rating is not None else "none"
-            title = game.opponent.title if game.opponent.title else "none"
+            rating = game.opponent.rating or "none"
+            title = game.opponent.title or "none"
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
@@ -235,8 +251,8 @@ class XBoardEngine(EngineWrapper):
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features
-        egt_types_from_engine = features["egt"].split(",") if "egt" in features else []
-        for egt_type in egt_types_from_engine:
+        egt_types_from_engine = features.get("egt", "").split(",")
+        for egt_type in filter(None, egt_types_from_engine):
             if egt_type in egt_paths:
                 options[f"egtpath {egt_type}"] = egt_paths[egt_type]
             else:
@@ -272,7 +288,7 @@ class XBoardEngine(EngineWrapper):
         if game.opponent.name and self.engine.protocol.features.get("name", True):
             title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
-        if game.me.rating is not None and game.opponent.rating is not None:
+        if game.me.rating and game.opponent.rating:
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")

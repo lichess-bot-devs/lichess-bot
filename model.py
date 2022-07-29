@@ -1,5 +1,8 @@
 import time
 from urllib.parse import urljoin
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Challenge:
@@ -11,38 +14,56 @@ class Challenge:
         self.speed = c_info["speed"]
         self.increment = c_info.get("timeControl", {}).get("increment", -1)
         self.base = c_info.get("timeControl", {}).get("limit", -1)
-        self.challenger = c_info.get("challenger")
-        self.challenger_title = self.challenger.get("title") if self.challenger else None
+        self.challenger = c_info.get("challenger", {})
+        self.challenger_title = self.challenger.get("title")
         self.challenger_is_bot = self.challenger_title == "BOT"
         self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None
-        self.challenger_name = self.challenger["name"] if self.challenger else "Anonymous"
-        self.challenger_rating_int = self.challenger["rating"] if self.challenger else 0
+        self.challenger_name = self.challenger.get("name", "Anonymous")
+        self.challenger_rating_int = self.challenger.get("rating", 0)
         self.challenger_rating = self.challenger_rating_int or "?"
 
-    def is_supported_variant(self, supported):
-        return self.variant in supported
+    def is_supported_variant(self, challenge_cfg):
+        return self.variant in challenge_cfg["variants"]
 
-    def is_supported_time_control(self, supported_speed, supported_increment_max, supported_increment_min, supported_base_max, supported_base_min):
+    def is_supported_time_control(self, challenge_cfg):
+        speeds = challenge_cfg["time_controls"]
+        increment_max = challenge_cfg.get("max_increment", 180)
+        increment_min = challenge_cfg.get("min_increment", 0)
+        base_max = challenge_cfg.get("max_base", 315360000)
+        base_min = challenge_cfg.get("min_base", 0)
+
         if self.increment < 0:
-            return self.speed in supported_speed
-        return self.speed in supported_speed and supported_increment_max >= self.increment >= supported_increment_min and supported_base_max >= self.base >= supported_base_min
+            return self.speed in speeds
 
-    def is_supported_mode(self, supported):
-        return "rated" in supported if self.rated else "casual" in supported
+        return (self.speed in speeds
+                and increment_min <= self.increment <= increment_max
+                and base_min <= self.base <= base_max)
+
+    def is_supported_mode(self, challenge_cfg):
+        return ("rated" if self.rated else "casual") in challenge_cfg["modes"]
 
     def is_supported(self, config):
-        if not config.get("accept_bot", False) and self.challenger_is_bot:
-            return False
-        if config.get("only_bot", False) and not self.challenger_is_bot:
-            return False
-        variants = config["variants"]
-        tc = config["time_controls"]
-        inc_max = config.get("max_increment", 180)
-        inc_min = config.get("min_increment", 0)
-        base_max = config.get("max_base", 315360000)
-        base_min = config.get("min_base", 0)
-        modes = config["modes"]
-        return self.is_supported_time_control(tc, inc_max, inc_min, base_max, base_min) and self.is_supported_variant(variants) and self.is_supported_mode(modes)
+        try:
+            if not config.get("accept_bot", False) and self.challenger_is_bot:
+                return False, "noBot"
+
+            if config.get("only_bot", False) and not self.challenger_is_bot:
+                return False, "onlyBot"
+
+            if not self.is_supported_time_control(config):
+                return False, "timeControl"
+
+            if not self.is_supported_variant(config):
+                return False, "variant"
+
+            if not self.is_supported_mode(config):
+                return False, ("casual" if self.rated else "rated")
+
+            return True, None
+
+        except Exception:
+            logger.exception("Error while checking challenge:")
+            return False, "generic"
 
     def score(self):
         rated_bonus = 200 if self.rated else 0
@@ -53,7 +74,7 @@ class Challenge:
         return "rated" if self.rated else "casual"
 
     def challenger_full_name(self):
-        return f'{self.challenger_title + " " if self.challenger_title else ""}{self.challenger_name}'
+        return f'{self.challenger_title or ""} {self.challenger_name}'.strip()
 
     def __str__(self):
         return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating})"
@@ -68,15 +89,16 @@ class Game:
         self.id = json.get("id")
         self.speed = json.get("speed")
         clock = json.get("clock") or {}
-        self.clock_initial = clock.get("initial", 1000 * 3600 * 24 * 365 * 10)  # unlimited = 10 years
+        ten_years_in_ms = 1000 * 3600 * 24 * 365 * 10
+        self.clock_initial = clock.get("initial", ten_years_in_ms)
         self.clock_increment = clock.get("increment", 0)
-        self.perf_name = json.get("perf").get("name") if json.get("perf") else "{perf?}"
+        self.perf_name = json.get("perf", {}).get("name", "{perf?}")
         self.variant_name = json.get("variant")["name"]
         self.white = Player(json.get("white"))
         self.black = Player(json.get("black"))
         self.initial_fen = json.get("initialFen")
         self.state = json.get("state")
-        self.is_white = bool(self.white.name and self.white.name.lower() == username.lower())
+        self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
         self.me = self.white if self.is_white else self.black
@@ -132,7 +154,7 @@ class Player:
             return f"AI level {self.aiLevel}"
         else:
             rating = f'{self.rating}{"?" if self.provisional else ""}'
-            return f'{self.title + " " if self.title else ""}{self.name}({rating})'
+            return f'{self.title or ""} {self.name}({rating})'.strip()
 
     def __repr__(self):
         return self.__str__()

@@ -114,7 +114,10 @@ class Lichess:
         return self.api_post(ENDPOINTS["accept"].format(challenge_id))
 
     def decline_challenge(self, challenge_id, reason="generic"):
-        return self.api_post(ENDPOINTS["decline"].format(challenge_id), data=f"reason={reason}", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        return self.api_post(ENDPOINTS["decline"].format(challenge_id),
+                             data=f"reason={reason}",
+                             headers={"Content-Type":
+                                      "application/x-www-form-urlencoded"})
 
     def get_profile(self):
         profile = self.api_get(ENDPOINTS["profile"])
@@ -143,7 +146,10 @@ class Lichess:
         return list(map(lambda bot: json.loads(bot), online_bots))
 
     def challenge(self, username, params):
-        return self.api_post(ENDPOINTS["challenge"].format(username), payload=params, raise_for_status=False)
+        return self.api_post(ENDPOINTS["challenge"].format(username),
+                             payload=params,
+                             raise_for_status=False)
 
     def cancel(self, challenge_id):
-        return self.api_post(ENDPOINTS["cancel"].format(challenge_id), raise_for_status=False)
+        return self.api_post(ENDPOINTS["cancel"].format(challenge_id),
+                             raise_for_status=False)

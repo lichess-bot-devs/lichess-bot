@@ -6,6 +6,7 @@ from http.client import RemoteDisconnected
 import backoff
 import time
 import chess
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,35 @@ class GameStream:
         self.moves_sent = ""
 
     def iter_lines(self):
-        yield b'{"id":"zzzzzzzz","variant":{"key":"standard","name":"Standard","short":"Std"},"clock":{"initial":60000,"increment":2000},"speed":"bullet","perf":{"name":"Bullet"},"rated":true,"createdAt":1600000000000,"white":{"id":"bo","name":"bo","title":"BOT","rating":3000},"black":{"id":"b","name":"b","title":"BOT","rating":3000,"provisional":true},"initialFen":"startpos","type":"gameFull","state":{"type":"gameState","moves":"","wtime":60000,"btime":60000,"winc":2000,"binc":2000,"status":"started"}}'
+        yield json.dumps(
+            {"id": "zzzzzzzz",
+             "variant": {"key": "standard",
+                         "name": "Standard",
+                         "short": "Std"},
+             "clock": {"initial": 60000,
+                       "increment": 2000},
+             "speed": "bullet",
+             "perf": {"name": "Bullet"},
+             "rated": True,
+             "createdAt": 1600000000000,
+             "white": {"id": "bo",
+                       "name": "bo",
+                       "title": "BOT",
+                       "rating": 3000},
+             "black": {"id": "b",
+                       "name": "b",
+                       "title": "BOT",
+                       "rating": 3000,
+                       "provisional": True},
+             "initialFen": "startpos",
+             "type": "gameFull",
+             "state": {"type": "gameState",
+                       "moves": "",
+                       "wtime": 60000,
+                       "btime": 60000,
+                       "winc": 2000,
+                       "binc": 2000,
+                       "status": "started"}}).encode("utf-8")
         time.sleep(1)
         while True:
             time.sleep(0.001)
@@ -54,11 +83,20 @@ class GameStream:
                     pass
             wtime, btime = float(wtime), float(btime)
             time.sleep(0.1)
+            new_game_state = {"type": "gameState",
+                              "moves": moves,
+                              "wtime": int(wtime * 1000),
+                              "btime": int(btime * 1000),
+                              "winc": 2000,
+                              "binc": 2000}
             if event == "end":
-                yield eval(f'b\'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"outoftime","winner":"black"}}\'')
+                new_game_state["status"] = "outoftime"
+                new_game_state["winner"] = "black"
+                yield json.dumps(new_game_state).encode("utf-8")
                 break
             if moves:
-                yield eval(f'b\'{{"type":"gameState","moves":"{moves}","wtime":{int(wtime * 1000)},"btime":{int(btime * 1000)},"winc":2000,"binc":2000,"status":"started"}}\'')
+                new_game_state["status"] = "started"
+                yield json.dumps(new_game_state).encode("utf-8")
 
 
 class EventStream:
@@ -70,7 +108,12 @@ class EventStream:
             yield b''
             time.sleep(1)
         else:
-            yield b'{"type":"gameStart","game":{"id":"zzzzzzzz","source":"friend","compat":{"bot":true,"board":true}}}'
+            yield json.dumps(
+                {"type": "gameStart",
+                 "game": {"id": "zzzzzzzz",
+                          "source": "friend",
+                          "compat": {"bot": True,
+                                     "board": True}}}).encode("utf-8")
 
 
 # docs: https://lichess.org/api
@@ -150,7 +193,15 @@ class Lichess:
         return
 
     def get_profile(self):
-        profile = {"id": "b", "username": "b", "online": True, "title": "BOT", "url": "https://lichess.org/@/bo", "followable": True, "following": False, "blocking": False, "followsYou": False}
+        profile = {"id": "b",
+                   "username": "b",
+                   "online": True,
+                   "title": "BOT",
+                   "url": "https://lichess.org/@/b",
+                   "followable": True,
+                   "following": False,
+                   "blocking": False,
+                   "followsYou": False}
         self.set_user_agent(profile["username"])
         return profile
 

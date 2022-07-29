@@ -437,7 +437,7 @@ def play_game(li,
 
     try:
         print_pgn_game_record(li, config, game, board, engine)
-    except Exception as e:
+    except Exception:
         logger.exception("Error writing game record:")
 
     if is_correspondence and not is_game_over(game):

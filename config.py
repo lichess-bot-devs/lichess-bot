@@ -10,9 +10,9 @@ def load_config(config_file):
     with open(config_file) as stream:
         try:
             CONFIG = yaml.safe_load(stream)
-        except Exception as e:
-            logger.error("There appears to be a syntax problem with your config.yml")
-            raise e
+        except Exception:
+            logger.exception("There appears to be a syntax problem with your config.yml")
+            raise
 
         if "LICHESS_BOT_TOKEN" in os.environ:
             CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]

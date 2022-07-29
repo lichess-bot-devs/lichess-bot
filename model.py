@@ -61,8 +61,8 @@ class Challenge:
 
             return True, None
 
-        except Exception as e:
-            logger.warn(f"Error while checking challenge: {e}")
+        except Exception:
+            logger.exception("Error while checking challenge:")
             return False, "generic"
 
     def score(self):

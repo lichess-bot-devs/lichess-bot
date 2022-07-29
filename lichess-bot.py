@@ -759,8 +759,8 @@ def setup_board(game):
     for move in game.state["moves"].split():
         try:
             board.push_uci(move)
-        except ValueError as e:
-            logger.debug(f"Ignoring illegal move {move} on board {board.fen()} ({e})")
+        except ValueError:
+            logger.exception(f"Ignoring illegal move {move} on board {board.fen()}")
 
     return board
 

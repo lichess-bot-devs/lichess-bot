@@ -42,9 +42,13 @@ class Matchmaking:
             params["clock.increment"] = increment
 
         try:
-            challenge_id = self.li.challenge(username, params).get("challenge", {}).get("id")
+            response = self.li.challenge(username, params)
+            challenge_id = response.get("challenge", {}).get("id")
+            if not challenge_id:
+                logger.error(response)
             return challenge_id
         except Exception:
+            logger.exception("Could not create challenge")
             return None
 
     def choose_opponent(self):

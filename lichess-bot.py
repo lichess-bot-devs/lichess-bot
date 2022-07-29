@@ -403,8 +403,6 @@ def play_game(li,
                     engine.report_game_result(game, board)
                     tell_user_game_result(game, board)
                     conversation.send_message("player", goodbye)
-                else:
-                    inform_engine_of_update(engine, game)
 
                 wb = "w" if board.turn == chess.WHITE else "b"
                 terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
@@ -778,11 +776,6 @@ def game_changed(current_game, prior_game):
         return True
 
     return current_game.state["moves"] != prior_game.state["moves"]
-
-
-def inform_engine_of_update(engine, game):
-    if check_for_draw_offer(game):
-        engine.inform_draw()
 
 
 def tell_user_game_result(game, board):

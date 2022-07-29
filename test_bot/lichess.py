@@ -175,4 +175,4 @@ class Lichess:
 [Result "0-1"]
 
 *
-"""                  
+"""

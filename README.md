@@ -220,8 +220,10 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -casual
 ```
 - `greeting`: Send messages via chat to the bot's opponent. The string `{me}` will be replaced by the bot's lichess account name. The string `{opponent}` will be replaced by the opponent's lichess account name. Any other word between curly brackets will be removed. If you want to put a curly bracket in the message, use two: `{{` or `}}`.
-  - `hello`: Message to send to the opponent before the bot makes its first move.
+  - `hello`: Message to send to the opponent when the bot makes its first move.
   - `goodbye`: Message to send to the opponent once the game is over.
+  - `hello_spectators`: Message to send to the spectators when the bot makes its first move.
+  - `goodbye_spectators`: Message to send to the spectators once the game is over.
 ```yml
   greeting:
     hello: Hi, {opponent}! I'm {me}. Good luck!

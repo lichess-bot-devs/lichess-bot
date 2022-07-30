@@ -18,7 +18,6 @@ import sys
 import random
 import os
 import io
-import traceback
 import copy
 from config import load_config
 from conversation import Conversation, ChatLine

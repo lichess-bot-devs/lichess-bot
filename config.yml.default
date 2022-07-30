@@ -32,7 +32,7 @@ engine:                      # Engine settings.
     offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value.
     offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
   online_moves:
-    max_out_of_book_moves: 10 # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply for the online endgame tablebases.
+    max_out_of_book_moves: 10 # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.
     chessdb_book:
       enabled: false
       min_time: 20

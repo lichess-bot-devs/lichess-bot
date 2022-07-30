@@ -32,8 +32,6 @@ __version__ = "1.2.0"
 
 terminated = False
 
-out_of_online_opening_book_moves = 0
-
 
 def signal_handler(signal, frame):
     global terminated
@@ -334,6 +332,7 @@ def play_game(li,
 
     first_move = True
     disconnect_time = 0
+    out_of_online_opening_book_moves = 0
     prior_game = None
     while not terminated:
         move_attempted = False
@@ -365,11 +364,12 @@ def play_game(li,
 
                     best_move = get_book_move(board, polyglot_cfg)
                     if best_move.move is None:
-                        best_move = get_online_move(li,
-                                                    board,
-                                                    game,
-                                                    online_moves_cfg,
-                                                    draw_or_resign_cfg)
+                        best_move, out_of_online_opening_book_moves = get_online_move(li,
+                                                                                      board,
+                                                                                      game,
+                                                                                      online_moves_cfg,
+                                                                                      draw_or_resign_cfg,
+                                                                                      out_of_online_opening_book_moves)
 
                     if best_move.move is None:
                         draw_offered = check_for_draw_offer(game)
@@ -696,8 +696,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
     return None, None
 
 
-def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
-    global out_of_online_opening_book_moves
+def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg, out_of_online_opening_book_moves):
     online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
     chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
@@ -725,11 +724,11 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         return chess.engine.PlayResult(chess.Move.from_uci(best_move),
                                        None,
                                        draw_offered=offer_draw,
-                                       resigned=resign)
+                                       resigned=resign), out_of_online_opening_book_moves
     out_of_online_opening_book_moves += 1
     if out_of_online_opening_book_moves == max_out_of_book_moves:
         logger.info("Will stop using online opening books.")
-    return chess.engine.PlayResult(None, None)
+    return chess.engine.PlayResult(None, None), out_of_online_opening_book_moves
 
 
 def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):

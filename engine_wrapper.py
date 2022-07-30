@@ -214,9 +214,6 @@ class EngineWrapper:
     def report_game_result(self, game, board):
         pass
 
-    def inform_draw(self):
-        pass
-
     def stop(self):
         pass
 
@@ -292,10 +289,6 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
         if game.opponent.title == "BOT":
             self.engine.protocol.send_line("computer")
-
-    def inform_draw(self):
-        if self.engine.protocol.features.get("draw", 1):
-            self.engine.protocol.send_line("draw")
 
 
 def getHomemadeEngine(name):

@@ -61,12 +61,12 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, path, raise_for_status=True, get_raw_text=False, params=None):
+    def api_get(self, path, get_raw_text=False):
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
-        response = self.session.get(url, timeout=2, params=params)
-        if rate_limit_check(response) or raise_for_status:
-            response.raise_for_status()
+        response = self.session.get(url, timeout=2)
+        rate_limit_check(response)
+        response.raise_for_status()
         response.encoding = "utf-8"
         return response.text if get_raw_text else response.json()
 
@@ -136,9 +136,7 @@ class Lichess:
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id):
-        return self.api_get(ENDPOINTS["export"].format(game_id),
-                            get_raw_text=True,
-                            params={"literate": "true"})
+        return self.api_get(ENDPOINTS["export"].format(game_id), get_raw_text=True)
 
     def get_online_bots(self):
         online_bots = self.api_get(ENDPOINTS["online_bots"], get_raw_text=True)

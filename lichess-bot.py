@@ -23,7 +23,7 @@ from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from rich.logging import RichHandler
-from collections import defaultdict
+from collections import defaultdict, Counter
 from http.client import RemoteDisconnected
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 __version__ = "1.2.0"
 
 terminated = False
+
+out_of_online_opening_book_moves = Counter()
 
 
 def signal_handler(signal, frame):
@@ -577,7 +579,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                         pvs = list(filter(lambda pv: pv["cp"] <= best_eval + max_difference, pvs))
                     pv = random.choice(pvs)
                 move = pv["moves"].split()[0]
-                score = pv["cp"]
+                score = pv["cp"] if wb == "w" else -pv["cp"]
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})")
     except Exception:
         pass
@@ -655,6 +657,18 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                 else:
                     return 2
 
+            def score_to_dtz(score):
+                if score < -20000:
+                    return -30000 - score
+                elif score < 0:
+                    return -20000 - score
+                elif score == 0:
+                    return 0
+                elif score <= 20000:
+                    return 20000 - score
+                else:
+                    return 30000 - score
+
             action = "querypv" if quality == "best" else "queryall"
             data = li.api_get("https://www.chessdb.cn/cdb.php",
                               params={"action": action, "board": board.fen(), "json": 1})
@@ -673,7 +687,8 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     move = random_move["uci"]
 
                 wdl = score_to_wdl(score)
-                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl})")
+                dtz = score_to_dtz(score)
+                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
                 return move, score_to_wdl(score)
     except Exception:
         pass
@@ -685,12 +700,11 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
     chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
+    max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves", 10)
     offer_draw = False
     resign = False
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
-    if best_move is None:
-        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
-    else:
+    if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
         offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
         if can_offer_draw and offer_draw_for_zero and wdl == 0:
@@ -700,8 +714,10 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
         if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
+    elif out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
+        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
 
-    if best_move is None:
+    if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
     if best_move:
@@ -709,6 +725,9 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
                                        None,
                                        draw_offered=offer_draw,
                                        resigned=resign)
+    out_of_online_opening_book_moves[game.id] += 1
+    if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves:
+        logger.info("Will stop using online opening books.")
     return chess.engine.PlayResult(None, None)
 
 

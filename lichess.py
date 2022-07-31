@@ -155,6 +155,4 @@ class Lichess:
                              raise_for_status=False)
 
     def online_book_get(self, path, params=None):
-        response = self.session.get(path, timeout=2, params=params)
-        response.raise_for_status()
-        return response.json()
+        return self.session.get(path, timeout=2, params=params).json()

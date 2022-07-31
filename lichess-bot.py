@@ -520,7 +520,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
         params = {"action": action[quality],
                   "board": board.fen(),
                   "json": 1}
-        data = li.api_get(site, params=params)
+        data = li.online_book_get(site, params=params)
         if data["status"] == "ok":
             if quality == "best":
                 depth = data["depth"]
@@ -534,7 +534,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
 
         if chessdb_cfg.get("contribute", True):
             params["action"] = "queue"
-            li.api_get(site, params=params)
+            li.online_book_get(site, params=params)
     except Exception:
         pass
 
@@ -556,11 +556,10 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        data = li.api_get("https://lichess.org/api/cloud-eval",
-                          params={"fen": board.fen(),
-                                  "multiPv": multipv,
-                                  "variant": variant},
-                          raise_for_status=False)
+        data = li.online_book_get("https://lichess.org/api/cloud-eval",
+                                  params={"fen": board.fen(),
+                                          "multiPv": multipv,
+                                          "variant": variant})
         if "error" not in data:
             depth = data["depth"]
             knodes = data["knodes"]
@@ -618,8 +617,8 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                            "win": 2}
             max_pieces = 7 if board.uci_variant == "chess" else 6
             if pieces <= max_pieces:
-                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}",
-                                  params={"fen": board.fen()})
+                data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
+                                          params={"fen": board.fen()})
                 if quality == "best":
                     move = data["moves"][0]["uci"]
                     wdl = name_to_wld[data["moves"][0]["category"]] * -1
@@ -670,8 +669,8 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     return 30000 - score
 
             action = "querypv" if quality == "best" else "queryall"
-            data = li.api_get("https://www.chessdb.cn/cdb.php",
-                              params={"action": action, "board": board.fen(), "json": 1})
+            data = li.online_book_get("https://www.chessdb.cn/cdb.php",
+                                      params={"action": action, "board": board.fen(), "json": 1})
             if data["status"] == "ok":
                 if quality == "best":
                     score = data["score"]

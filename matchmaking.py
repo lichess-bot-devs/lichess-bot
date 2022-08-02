@@ -50,7 +50,7 @@ class Matchmaking:
     def get_time(self, name, default=None):
         match_time = self.matchmaking_cfg.get(name, default)
         if match_time is None:
-            return
+            return None
         if isinstance(match_time, int):
             match_time = [match_time]
         return random.choice(match_time)

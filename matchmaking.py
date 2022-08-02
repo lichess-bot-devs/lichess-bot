@@ -47,22 +47,23 @@ class Matchmaking:
         except Exception:
             return None
 
+    def get_time(self, name, default=None):
+        match_time = self.matchmaking_cfg.get(name, default)
+        if match_time is None:
+            return
+        if isinstance(match_time, int):
+            match_time = [match_time]
+        return random.choice(match_time)
+
     def choose_opponent(self):
         variant = self.matchmaking_cfg.get("challenge_variant") or "random"
         if variant == "random":
             variant = random.choice(self.variants)
 
-        challenge_base_times = self.matchmaking_cfg.get("challenge_initial_time", 60)
-        if isinstance(challenge_base_times, int):
-            challenge_base_times = [challenge_base_times]
+        base_time = self.get_time("challenge_initial_time", 60)
+        increment = self.get_time("challenge_increment", 2)
+        days = self.get_time("challenge_days")
 
-        challenge_increments = self.matchmaking_cfg.get("challenge_increment", 2)
-        if isinstance(challenge_increments, int):
-            challenge_increments = [challenge_increments]
-
-        base_time = random.choice(challenge_base_times)
-        increment = random.choice(challenge_increments)
-        days = self.matchmaking_cfg.get("challenge_days")
         game_duration = base_time + increment * 40
         if variant != "standard":
             game_type = variant

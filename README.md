@@ -236,9 +236,9 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `allow_matchmaking`: Whether to challenge other bots.
   - `challenge_variant`: The variant for the challenges. If set to `random` a variant from the ones enabled in `challenge.variants` will be chosen at random.
   - `challenge_timeout`: The time (in minutes) the bot has to be idle before it creates a challenge.
-  - `challenge_initial_time`: The initial time (in seconds) for the challenges.
-  - `challenge_increment`: The increment (in seconds) for the challenges.
-  - `challenge_days`: The days for a correspondence challenge. If this option is enabled, a correspondence challenge will be created even if `challenge_initial_time` is enabled.
+  - `challenge_initial_time`: A list of initial times (in seconds and to be chosen at random) for the challenges.
+  - `challenge_increment`: A list of increments (in seconds and to be chosen at random) for the challenges.
+  - `challenge_days`: A list of number of days for a correspondence challenge (to be chosen at random). If this option is enabled, a correspondence challenge will be created even if `challenge_initial_time` is enabled.
   - `opponent_min_rating`: The minimum rating of the opponent bot. The minimum rating in lichess is 600.
   - `opponent_max_rating`: The maximum rating of the opponent bot. The maximum rating in lichess is 4000.
   - `challenge_mode`: Possible options are `casual`, `rated` and `random`.
@@ -247,9 +247,15 @@ matchmaking:
   allow_matchmaking: false
   challenge_variant: "random"
   challenge_timeout: 30
-  challenge_initial_time: 60
-  challenge_increment: 3
-# challenge_days: 2
+  challenge_initial_time: 
+    - 60
+    - 120
+  challenge_increment: 
+    - 1
+    - 2
+# challenge_days: 
+#    - 1
+#    - 2
   opponent_min_rating: 600
   opponent_max_rating: 4000
   challenge_mode: "random"

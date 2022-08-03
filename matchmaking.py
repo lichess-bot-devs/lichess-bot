@@ -51,13 +51,23 @@ class Matchmaking:
             logger.exception("Could not create challenge")
             return None
 
+    def get_time(self, name, default=None):
+        match_time = self.matchmaking_cfg.get(name, default)
+        if match_time is None:
+            return None
+        if isinstance(match_time, int):
+            match_time = [match_time]
+        return random.choice(match_time)
+
     def choose_opponent(self):
         variant = self.matchmaking_cfg.get("challenge_variant") or "random"
         if variant == "random":
             variant = random.choice(self.variants)
-        base_time = self.matchmaking_cfg.get("challenge_initial_time", 60)
-        increment = self.matchmaking_cfg.get("challenge_increment", 2)
-        days = self.matchmaking_cfg.get("challenge_days")
+
+        base_time = self.get_time("challenge_initial_time", 60)
+        increment = self.get_time("challenge_increment", 2)
+        days = self.get_time("challenge_days")
+
         game_duration = base_time + increment * 40
         if variant != "standard":
             game_type = variant

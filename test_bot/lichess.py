@@ -227,3 +227,6 @@ class Lichess:
 
 *
 """
+
+    def get_online_bots(self):
+        return [{"username": "b"}]

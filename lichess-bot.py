@@ -726,7 +726,8 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
                                        draw_offered=offer_draw,
                                        resigned=resign)
     out_of_online_opening_book_moves[game.id] += 1
-    if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves:
+    used_opening_books = chessdb_cfg.get("enabled") or lichess_cloud_cfg.get("enabled")
+    if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:
         logger.info("Will stop using online opening books.")
     return chess.engine.PlayResult(None, None)
 

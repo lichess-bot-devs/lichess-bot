@@ -5,7 +5,7 @@ engine:                      # Engine settings.
   dir: "./engines/"          # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
   name: "engine_name"        # Binary name of the engine to use.
   working_dir: ""            # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
-  protocol: "uci"            # "uci" or "xboard"
+  protocol: "uci"            # "uci", "xboard" or "homemade"
   ponder: true               # Think on opponent's time.
   polyglot:
     enabled: false           # Activate polyglot book.
@@ -32,6 +32,7 @@ engine:                      # Engine settings.
     offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value.
     offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
   online_moves:
+    max_out_of_book_moves: 10 # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.
     chessdb_book:
       enabled: false
       min_time: 20
@@ -133,9 +134,15 @@ matchmaking:
   allow_matchmaking: false    # Set it to 'true' to challenge other bots.
   challenge_variant: "random" # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
   challenge_timeout: 30       # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
-  challenge_initial_time: 60  # Initial time in seconds of the challenge.
-  challenge_increment: 3      # Increment in seconds of the challenge.
-# challenge_days: 2           # Days for correspondence challenge. If this option is enabled, a correspondence challenge will be created even if 'challenge_initial_time' is enabled.
+  challenge_initial_time:     # Initial time in seconds of the challenge (to be chosen at random).
+    - 60
+    - 120
+  challenge_increment:        # Increment in seconds of the challenge (to be chosen at random).
+    - 1
+    - 2
+#  challenge_days:            # Days for correspondence challenge. If this option is enabled, a correspondence challenge will be created even if 'challenge_initial_time' is enabled.
+#    - 1
+#    - 2
   opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).
   opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.

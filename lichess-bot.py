@@ -18,13 +18,12 @@ import sys
 import random
 import os
 import io
-import traceback
 import copy
 from config import load_config
 from conversation import Conversation, ChatLine
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from rich.logging import RichHandler
-from collections import defaultdict
+from collections import defaultdict, Counter
 from http.client import RemoteDisconnected
 
 logger = logging.getLogger(__name__)
@@ -32,6 +31,8 @@ logger = logging.getLogger(__name__)
 __version__ = "1.2.0"
 
 terminated = False
+
+out_of_online_opening_book_moves = Counter()
 
 
 def signal_handler(signal, frame):
@@ -179,7 +180,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 logger.warning("Unable to handle response from lichess.org:")
                 logger.warning(event)
                 if event.get("error") == "Missing scope":
-                    logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
+                    logger.warning('Please check that the API access token for your bot has the scope "Play games '
+                                   'with the bot API".')
                 continue
 
             if event["type"] == "terminated":
@@ -407,8 +409,6 @@ def play_game(li,
                     tell_user_game_result(game, board)
                     conversation.send_message("player", goodbye)
                     conversation.send_message("spectator", goodbye_spectators)
-                else:
-                    inform_engine_of_update(engine, game)
 
                 wb = "w" if board.turn == chess.WHITE else "b"
                 terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
@@ -525,7 +525,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
         params = {"action": action[quality],
                   "board": board.fen(),
                   "json": 1}
-        data = li.api_get(site, params=params)
+        data = li.online_book_get(site, params=params)
         if data["status"] == "ok":
             if quality == "best":
                 depth = data["depth"]
@@ -539,7 +539,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
 
         if chessdb_cfg.get("contribute", True):
             params["action"] = "queue"
-            li.api_get(site, params=params)
+            li.online_book_get(site, params=params)
     except Exception:
         pass
 
@@ -561,11 +561,10 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
-        data = li.api_get("https://lichess.org/api/cloud-eval",
-                          params={"fen": board.fen(),
-                                  "multiPv": multipv,
-                                  "variant": variant},
-                          raise_for_status=False)
+        data = li.online_book_get("https://lichess.org/api/cloud-eval",
+                                  params={"fen": board.fen(),
+                                          "multiPv": multipv,
+                                          "variant": variant})
         if "error" not in data:
             depth = data["depth"]
             knodes = data["knodes"]
@@ -584,7 +583,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                         pvs = list(filter(lambda pv: pv["cp"] <= best_eval + max_difference, pvs))
                     pv = random.choice(pvs)
                 move = pv["moves"].split()[0]
-                score = pv["cp"]
+                score = pv["cp"] if wb == "w" else -pv["cp"]
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})")
     except Exception:
         pass
@@ -623,8 +622,8 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                            "win": 2}
             max_pieces = 7 if board.uci_variant == "chess" else 6
             if pieces <= max_pieces:
-                data = li.api_get(f"http://tablebase.lichess.ovh/{variant}",
-                                  params={"fen": board.fen()})
+                data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
+                                          params={"fen": board.fen()})
                 if quality == "best":
                     move = data["moves"][0]["uci"]
                     wdl = name_to_wld[data["moves"][0]["category"]] * -1
@@ -662,9 +661,21 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                 else:
                     return 2
 
+            def score_to_dtz(score):
+                if score < -20000:
+                    return -30000 - score
+                elif score < 0:
+                    return -20000 - score
+                elif score == 0:
+                    return 0
+                elif score <= 20000:
+                    return 20000 - score
+                else:
+                    return 30000 - score
+
             action = "querypv" if quality == "best" else "queryall"
-            data = li.api_get("https://www.chessdb.cn/cdb.php",
-                              params={"action": action, "board": board.fen(), "json": 1})
+            data = li.online_book_get("https://www.chessdb.cn/cdb.php",
+                                      params={"action": action, "board": board.fen(), "json": 1})
             if data["status"] == "ok":
                 if quality == "best":
                     score = data["score"]
@@ -680,7 +691,8 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
                     move = random_move["uci"]
 
                 wdl = score_to_wdl(score)
-                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl})")
+                dtz = score_to_dtz(score)
+                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
                 return move, score_to_wdl(score)
     except Exception:
         pass
@@ -692,12 +704,11 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
     chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
+    max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves", 10)
     offer_draw = False
     resign = False
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
-    if best_move is None:
-        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
-    else:
+    if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
         offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
         if can_offer_draw and offer_draw_for_zero and wdl == 0:
@@ -707,8 +718,10 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
         if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
+    elif out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
+        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
 
-    if best_move is None:
+    if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
     if best_move:
@@ -716,6 +729,9 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
                                        None,
                                        draw_offered=offer_draw,
                                        resigned=resign)
+    out_of_online_opening_book_moves[game.id] += 1
+    if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves:
+        logger.info("Will stop using online opening books.")
     return chess.engine.PlayResult(None, None)
 
 
@@ -782,11 +798,6 @@ def game_changed(current_game, prior_game):
         return True
 
     return current_game.state["moves"] != prior_game.state["moves"]
-
-
-def inform_engine_of_update(engine, game):
-    if check_for_draw_offer(game):
-        engine.inform_draw()
 
 
 def tell_user_game_result(game, board):
@@ -886,8 +897,8 @@ def intro():
 def start_lichess_bot():
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
     parser.add_argument("-u", action="store_true", help="Upgrade your account to a bot account.")
-    parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.org.")
-    parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml)")
+    parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.")
+    parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml).")
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
     args = parser.parse_args()
 

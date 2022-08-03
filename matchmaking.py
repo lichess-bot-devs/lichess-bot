@@ -25,8 +25,8 @@ class Matchmaking:
         min_wait_time_passed = self.last_challenge_created + self.min_wait_time < time.time()
         if challenge_expired:
             self.li.cancel(self.challenge_id)
-            self.challenge_id = None
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
+            self.challenge_id = None
         return matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed
 
     def create_challenge(self, username, base_time, increment, days, variant):
@@ -42,18 +42,32 @@ class Matchmaking:
             params["clock.increment"] = increment
 
         try:
-            challenge_id = self.li.challenge(username, params).get("challenge", {}).get("id")
+            response = self.li.challenge(username, params)
+            challenge_id = response.get("challenge", {}).get("id")
+            if not challenge_id:
+                logger.error(response)
             return challenge_id
         except Exception:
+            logger.exception("Could not create challenge")
             return None
+
+    def get_time(self, name, default=None):
+        match_time = self.matchmaking_cfg.get(name, default)
+        if match_time is None:
+            return None
+        if isinstance(match_time, int):
+            match_time = [match_time]
+        return random.choice(match_time)
 
     def choose_opponent(self):
         variant = self.matchmaking_cfg.get("challenge_variant") or "random"
         if variant == "random":
             variant = random.choice(self.variants)
-        base_time = self.matchmaking_cfg.get("challenge_initial_time", 60)
-        increment = self.matchmaking_cfg.get("challenge_increment", 2)
-        days = self.matchmaking_cfg.get("challenge_days")
+
+        base_time = self.get_time("challenge_initial_time", 60)
+        increment = self.get_time("challenge_increment", 2)
+        days = self.get_time("challenge_days")
+
         game_duration = base_time + increment * 40
         if variant != "standard":
             game_type = variant

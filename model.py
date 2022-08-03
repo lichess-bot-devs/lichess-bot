@@ -14,7 +14,7 @@ class Challenge:
         self.speed = c_info["speed"]
         self.increment = c_info.get("timeControl", {}).get("increment", -1)
         self.base = c_info.get("timeControl", {}).get("limit", -1)
-        self.challenger = c_info.get("challenger", {})
+        self.challenger = c_info.get("challenger") or {}
         self.challenger_title = self.challenger.get("title")
         self.challenger_is_bot = self.challenger_title == "BOT"
         self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None

@@ -38,7 +38,8 @@ def download_sf():
 
 
 def download_lc0():
-    response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.28.2/lc0-v0.28.2-windows-cpu-dnnl.zip", allow_redirects=True)
+    response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.28.2/lc0-v0.28.2-windows-cpu-dnnl.zip",
+                            allow_redirects=True)
     with open("./TEMP/lc0_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/lc0_zip.zip", "r") as zip_ref:
@@ -269,6 +270,7 @@ def test_homemade():
 class Stockfish(ExampleEngine):
     def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
         super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
+        import chess
         self.engine = chess.engine.SimpleEngine.popen_uci('{stockfish_path}')
 
     def search(self, board, time_limit, *args):

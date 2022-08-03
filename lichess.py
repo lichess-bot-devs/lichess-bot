@@ -154,3 +154,8 @@ class Lichess:
 
     def online_book_get(self, path, params=None):
         return self.session.get(path, timeout=2, params=params).json()
+
+    def reset_connection(self):
+        self.session.close()
+        self.session = requests.Session()
+        self.session.headers.update(self.header)

@@ -14,9 +14,10 @@ class Conversation:
     command_prefix = "!"
 
     def react(self, line, game):
-        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")}')
-        if line.text[0] == self.command_prefix:
-            self.command(line, game, line.text[1:].lower())
+        if line.username != self.game.username:
+            logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")}')
+            if line.text[0] == self.command_prefix:
+                self.command(line, game, line.text[1:].lower())
 
     def command(self, line, game, cmd):
         if cmd == "commands" or cmd == "help":
@@ -42,6 +43,7 @@ class Conversation:
                 self.send_reply(line, "No challenges queued.")
 
     def send_reply(self, line, reply):
+        logger.info(f'*** {self.game.url()} [{line.room}] {self.game.username}: {reply}')
         self.xhr.chat(self.game.id, line.room, reply)
 
     def send_message(self, room, message):

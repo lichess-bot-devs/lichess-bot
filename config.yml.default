@@ -138,7 +138,7 @@ matchmaking:
   challenge_increment:        # Increment in seconds of the challenge (to be chosen at random).
     - 1
     - 2
-#  challenge_days:            # Days for correspondence challenge. If this option is enabled, a correspondence challenge will be created even if 'challenge_initial_time' is enabled.
+#  challenge_days:            # Days for correspondence challenge (to be chosen at random).
 #    - 1
 #    - 2
   opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).

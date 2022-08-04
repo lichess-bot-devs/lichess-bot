@@ -193,9 +193,8 @@ class EngineWrapper:
     def get_stats(self, for_chat=False):
         info = self.last_move_info.copy()
         stats = ["depth", "nps", "nodes", "score", "ponderpv"]
-        result = [f"{stat}: {info[stat]}" for stat in stats if stat in info]
-        if for_chat:
-            bot_stats = filter(lambda line: not line.startswith("ponderpv"), result)
+        if for_chat and "ponderpv" in stats:
+            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = info["ponderpv"].split()
             try:
@@ -206,7 +205,7 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-        return result
+        return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):
         pass

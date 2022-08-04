@@ -242,7 +242,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `opponent_min_rating`: The minimum rating of the opponent bot. The minimum rating in lichess is 600.
   - `opponent_max_rating`: The maximum rating of the opponent bot. The maximum rating in lichess is 4000.
   - `challenge_mode`: Possible options are `casual`, `rated` and `random`.
-  If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
+
+If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
 
 ```yml
 matchmaking:

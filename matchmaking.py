@@ -92,11 +92,13 @@ class Matchmaking:
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
+        allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
 
         def is_suitable_opponent(bot):
             perf = bot["perfs"].get(game_type, {})
             return (bot["username"] != self.username
                     and not bot.get("disabled")
+                    and (allow_tos_violation or not bot.get("tosViolation")) # Terms of Service
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 

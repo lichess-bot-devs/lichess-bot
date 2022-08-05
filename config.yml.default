@@ -83,10 +83,10 @@ rate_limiting_delay: 0       # Time (in ms) to delay after sending a move to pre
 move_overhead: 2000          # Increase if your bot flags games too often.
 
 correspondence:
-    move_time: 60            # Time in seconds to search in correspondence games.
-    checkin_period: 600      # How often to check for opponent moves in correspondence games after disconnecting.
-    disconnect_time: 300     # Time before disconnecting from a correspondence game.
-    ponder: false            # Ponder in correspondence games the bot is connected to.
+  move_time: 60            # Time in seconds to search in correspondence games.
+  checkin_period: 600      # How often to check for opponent moves in correspondence games after disconnecting.
+  disconnect_time: 300     # Time before disconnecting from a correspondence game.
+  ponder: false            # Ponder in correspondence games the bot is connected to.
 
 challenge:                   # Incoming challenges.
   concurrency: 1             # Number of games to play simultaneously.
@@ -119,14 +119,14 @@ challenge:                   # Incoming challenges.
     - rated                  # Rated games - must comment if the engine doesn't try to win.
 
 greeting:
-    # Optional substitution keywords (include curly braces):
-    #   {opponent} to insert opponent's name
-    #   {me} to insert bot's name
-    # Any other words in curly braces will be removed.
-    hello: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to opponent chat at the start of a game
-    goodbye: "Good game!" # Message to send to opponent chat at the end of a game
-    hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
-    goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
+  # Optional substitution keywords (include curly braces):
+  #   {opponent} to insert opponent's name
+  #   {me} to insert bot's name
+  # Any other words in curly braces will be removed.
+  hello: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to opponent chat at the start of a game
+  goodbye: "Good game!" # Message to send to opponent chat at the end of a game
+  hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
+  goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 
 # pgn_directory: "game_records" # A directory where PGN-format records of the bot's games are kept
 

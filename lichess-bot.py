@@ -120,8 +120,8 @@ def game_error_handler(error):
 
 def should_restart(li, username):
     online_bots = li.get_online_bots()
-    bot = list(filter(lambda bot: bot["username"] == username, online_bots))
-    return not (bot and bot[0].get("online", True))
+    is_bot_online = not list(filter(lambda bot: bot["username"] == username, online_bots))
+    return is_bot_online
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
@@ -277,7 +277,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
 
-            if time.time() > last_check_online_time + 300:
+            if time.time() > last_check_online_time + 60 * 60:  # 1 hour.
                 if should_restart(li, user_profile["username"]):
                     logger.info("Will reset connection with lichess")
                     li.reset_connection()

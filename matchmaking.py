@@ -1,6 +1,7 @@
 import random
 import time
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,15 @@ class Matchmaking:
             mode = random.choice(["casual", "rated"])
         rated = mode == "rated"
         params = {"rated": rated, "variant": variant}
+
+        play_correspondence = []
         if days:
+            play_correspondence.append(True)
+
+        if base_time or increment:
+            play_correspondence.append(False)
+
+        if random.choice(play_correspondence):
             params["days"] = days
         else:
             params["clock.limit"] = base_time

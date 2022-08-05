@@ -98,7 +98,7 @@ class Matchmaking:
             perf = bot["perfs"].get(game_type, {})
             return (bot["username"] != self.username
                     and not bot.get("disabled")
-                    and (allow_tos_violation or not bot.get("tosViolation")) # Terms of Service
+                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 

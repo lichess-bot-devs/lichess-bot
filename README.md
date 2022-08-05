@@ -229,7 +229,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   greeting:
     hello: Hi, {opponent}! I'm {me}. Good luck!
     goodbye: Good game!
-    hello_spectators: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
+    hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
     goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 ```
 - `pgn_directory`: Write a record of every game played in PGN format to files in this directory. Each bot move will be annotated with the bot's calculated score and principal variation. The score is written with a tag of the form `[%eval s,d]`, where `s` is the score in pawns (positive means white has the advantage), and `d` is the depth of the search. Each game will be written to a uniquely named file.

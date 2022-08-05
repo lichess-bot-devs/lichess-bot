@@ -125,7 +125,7 @@ greeting:
     # Any other words in curly braces will be removed.
     hello: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to opponent chat at the start of a game
     goodbye: "Good game!" # Message to send to opponent chat at the end of a game
-    hello_spectators: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
+    hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
     goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 
 # pgn_directory: "game_records" # A directory where PGN-format records of the bot's games are kept

@@ -277,8 +277,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
 
-            if time.time() > last_check_online_time + 300:
+            if time.time() > last_check_online_time + 10:
                 if should_restart(li, user_profile["username"]):
+                    logger.info("Will reset connection with lichess")
                     li.reset_connection()
                 last_check_online_time = time.time()
 

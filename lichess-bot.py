@@ -120,8 +120,8 @@ def game_error_handler(error):
 
 def should_restart(li, username):
     online_bots = li.get_online_bots()
-    is_bot_online = not list(filter(lambda bot: bot["username"] == username, online_bots))
-    return is_bot_online
+    is_bot_offline = not list(filter(lambda bot: bot["username"] == username, online_bots))
+    return is_bot_offline
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):

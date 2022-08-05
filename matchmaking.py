@@ -94,10 +94,16 @@ class Matchmaking:
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
 
+        def is_suitable_opponent(bot):
+            perf = bot["perfs"].get(game_type, {})
+            return (bot["username"] != self.username
+                    and not bot.get("disabled")
+                    and perf.get("games", 0) > 0
+                    and min_rating <= perf.get("rating", 0) <= max_rating)
+
         online_bots = self.li.get_online_bots()
-        online_bots = list(filter(lambda bot: bot["username"] != self.username and not bot.get("disabled") and
-                                  min_rating <= ((bot["perfs"].get(game_type) or {}).get("rating") or 0) <= max_rating,
-                                  online_bots))
+        online_bots = list(filter(is_suitable_opponent, online_bots))
+
         bot_username = random.choice(online_bots)["username"] if online_bots else None
         return bot_username, base_time, increment, days, variant
 

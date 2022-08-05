@@ -221,12 +221,16 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -casual
 ```
 - `greeting`: Send messages via chat to the bot's opponent. The string `{me}` will be replaced by the bot's lichess account name. The string `{opponent}` will be replaced by the opponent's lichess account name. Any other word between curly brackets will be removed. If you want to put a curly bracket in the message, use two: `{{` or `}}`.
-  - `hello`: Message to send to the opponent before the bot makes its first move.
+  - `hello`: Message to send to the opponent when the bot makes its first move.
   - `goodbye`: Message to send to the opponent once the game is over.
+  - `hello_spectators`: Message to send to the spectators when the bot makes its first move.
+  - `goodbye_spectators`: Message to send to the spectators once the game is over.
 ```yml
   greeting:
     hello: Hi, {opponent}! I'm {me}. Good luck!
     goodbye: Good game!
+    hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
+    goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 ```
 - `pgn_directory`: Write a record of every game played in PGN format to files in this directory. Each bot move will be annotated with the bot's calculated score and principal variation. The score is written with a tag of the form `[%eval s,d]`, where `s` is the score in pawns (positive means white has the advantage), and `d` is the depth of the search. Each game will be written to a uniquely named file.
 ```yml

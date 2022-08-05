@@ -332,6 +332,8 @@ def play_game(li,
         return str(greeting_cfg.get(greeting) or "").format_map(keyword_map)
     hello = get_greeting("hello")
     goodbye = get_greeting("goodbye")
+    hello_spectators = get_greeting("hello_spectators")
+    goodbye_spectators = get_greeting("goodbye_spectators")
 
     first_move = True
     disconnect_time = 0
@@ -360,6 +362,7 @@ def play_game(li,
                     disconnect_time = correspondence_disconnect_time
                     if len(board.move_stack) < 2:
                         conversation.send_message("player", hello)
+                        conversation.send_message("spectator", hello_spectators)
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
@@ -405,6 +408,7 @@ def play_game(li,
                     engine.report_game_result(game, board)
                     tell_user_game_result(game, board)
                     conversation.send_message("player", goodbye)
+                    conversation.send_message("spectator", goodbye_spectators)
 
                 wb = "w" if board.turn == chess.WHITE else "b"
                 terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60

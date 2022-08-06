@@ -19,6 +19,7 @@ class Conversation:
             self.command(line, game, line.text[1:].lower())
 
     def command(self, line, game, cmd):
+        from_self = line.username == self.game.username
         if cmd == "commands" or cmd == "help":
             self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
         elif cmd == "wait" and game.is_abortable():
@@ -29,7 +30,7 @@ class Conversation:
             self.send_reply(line, f"{name} running {self.engine.name()} (lichess-bot v{self.version})")
         elif cmd == "howto":
             self.send_reply(line, "How to run: Check out 'Lichess Bot API'")
-        elif cmd == "eval" and line.room == "spectator":
+        elif cmd == "eval" and (from_self or line.room == "spectator"):
             stats = self.engine.get_stats(for_chat=True)
             self.send_reply(line, ", ".join(stats))
         elif cmd == "eval":
@@ -42,6 +43,7 @@ class Conversation:
                 self.send_reply(line, "No challenges queued.")
 
     def send_reply(self, line, reply):
+        logger.info(f'*** {self.game.url()} [{line.room}] {self.game.username}: {reply}')
         self.xhr.chat(self.game.id, line.room, reply)
 
     def send_message(self, room, message):

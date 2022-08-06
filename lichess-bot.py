@@ -118,12 +118,6 @@ def game_error_handler(error):
     logger.exception("Game ended due to error:", exc_info=error)
 
 
-def should_restart(li, username):
-    online_bots = li.get_online_bots()
-    is_bot_offline = not list(filter(lambda bot: bot["username"] == username, online_bots))
-    return is_bot_offline
-
-
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
@@ -278,7 +272,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 matchmaker.challenge()
 
             if time.time() > last_check_online_time + 60 * 60:  # 1 hour.
-                if should_restart(li, user_profile["username"]):
+                if not li.is_online(user_profile["id"]):
                     logger.info("Will reset connection with lichess")
                     li.reset_connection()
                 last_check_online_time = time.time()

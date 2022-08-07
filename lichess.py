@@ -23,7 +23,8 @@ ENDPOINTS = {
     "export": "/game/export/{}",
     "online_bots": "/api/bot/online",
     "challenge": "/api/challenge/{}",
-    "cancel": "/api/challenge/{}/cancel"
+    "cancel": "/api/challenge/{}/cancel",
+    "status": "/api/users/status"
 }
 
 
@@ -61,10 +62,10 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, path, get_raw_text=False):
+    def api_get(self, path, params=None, get_raw_text=False):
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
-        response = self.session.get(url, timeout=2)
+        response = self.session.get(url, params=params, timeout=2)
         rate_limit_check(response)
         response.raise_for_status()
         response.encoding = "utf-8"
@@ -154,3 +155,12 @@ class Lichess:
 
     def online_book_get(self, path, params=None):
         return self.session.get(path, timeout=2, params=params).json()
+
+    def is_online(self, user_id):
+        user = self.api_get(ENDPOINTS["status"], params={"ids": user_id})
+        return user and user[0].get("online")
+
+    def reset_connection(self):
+        self.session.close()
+        self.session = requests.Session()
+        self.session.headers.update(self.header)

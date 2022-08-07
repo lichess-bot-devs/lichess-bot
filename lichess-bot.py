@@ -139,6 +139,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                     for game in li.get_ongoing_games()
                                     if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
+    last_check_online_time = time.time()
     matchmaker = matchmaking.Matchmaking(li, config, user_profile["username"])
 
     busy_processes = 0
@@ -269,6 +270,12 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     and matchmaker.should_create_challenge()):
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
+
+            if time.time() > last_check_online_time + 60 * 60:  # 1 hour.
+                if not li.is_online(user_profile["id"]):
+                    logger.info("Will reset connection with lichess")
+                    li.reset_connection()
+                last_check_online_time = time.time()
 
             control_queue.task_done()
 

@@ -26,6 +26,14 @@ ENDPOINTS = {
 }
 
 
+def rate_limit_check(response):
+    if response.status_code == 429:
+        logger.warning("Rate limited. Waiting 1 minute until next request.")
+        time.sleep(60)
+        return True
+    return False
+
+
 class GameStream:
     def __init__(self):
         self.moves_sent = ""
@@ -139,22 +147,26 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final)
-    def api_get(self, path, raise_for_status=True):
+    def api_get(self, path, get_raw_text=False):
+        logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.get(url, timeout=2)
-        if raise_for_status:
-            response.raise_for_status()
-        return response.json()
+        rate_limit_check(response)
+        response.raise_for_status()
+        response.encoding = "utf-8"
+        return response.text if get_raw_text else response.json()
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
                           max_time=60,
                           interval=0.1,
                           giveup=is_final)
-    def api_post(self, path, data=None, headers=None, params=None):
+    def api_post(self, path, data=None, headers=None, params=None, payload=None, raise_for_status=True):
+        logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
-        response = self.session.post(url, data=data, headers=headers, params=params, timeout=2)
-        response.raise_for_status()
+        response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
+        if rate_limit_check(response) or raise_for_status:
+            response.raise_for_status()
         return response.json()
 
     def get_game(self, game_id):
@@ -227,3 +239,18 @@ class Lichess:
 
 *
 """
+
+    def get_online_bots(self):
+        return [{"username": "b", "online": True}]
+
+    def challenge(self, username, params):
+        return
+
+    def cancel(self, challenge_id):
+        return
+
+    def online_book_get(self, path, params=None):
+        return self.session.get(path, timeout=2, params=params).json()
+
+    def reset_connection(self):
+        return

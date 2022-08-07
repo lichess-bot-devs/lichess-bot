@@ -1,38 +1,6 @@
-import logging
-import requests
-from urllib.parse import urljoin
-from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
-from http.client import RemoteDisconnected
-import backoff
 import time
 import chess
 import json
-
-logger = logging.getLogger(__name__)
-
-ENDPOINTS = {
-    "profile": "/api/account",
-    "playing": "/api/account/playing",
-    "stream": "/api/bot/game/stream/{}",
-    "stream_event": "/api/stream/event",
-    "game": "/api/bot/game/{}",
-    "move": "/api/bot/game/{}/move/{}",
-    "chat": "/api/bot/game/{}/chat",
-    "abort": "/api/bot/game/{}/abort",
-    "accept": "/api/challenge/{}/accept",
-    "decline": "/api/challenge/{}/decline",
-    "upgrade": "/api/bot/account/upgrade",
-    "resign": "/api/bot/game/{}/resign"
-}
-
-
-def rate_limit_check(response):
-    if response.status_code == 429:
-        logger.warning("Rate limited. Waiting 1 minute until next request.")
-        time.sleep(60)
-        return True
-    return False
-
 
 class GameStream:
     def __init__(self):
@@ -132,42 +100,10 @@ class Lichess:
             "Authorization": f"Bearer {token}"
         }
         self.baseUrl = url
-        self.session = requests.Session()
-        self.session.headers.update(self.header)
         self.set_user_agent("?")
         self.game_accepted = False
         self.moves = []
         self.sent_game = False
-
-    def is_final(exception):
-        return isinstance(exception, HTTPError) and exception.response.status_code < 500
-
-    @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
-                          max_time=60,
-                          interval=0.1,
-                          giveup=is_final)
-    def api_get(self, path, get_raw_text=False):
-        logging.getLogger("backoff").setLevel(self.logging_level)
-        url = urljoin(self.baseUrl, path)
-        response = self.session.get(url, timeout=2)
-        rate_limit_check(response)
-        response.raise_for_status()
-        response.encoding = "utf-8"
-        return response.text if get_raw_text else response.json()
-
-    @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
-                          max_time=60,
-                          interval=0.1,
-                          giveup=is_final)
-    def api_post(self, path, data=None, headers=None, params=None, payload=None, raise_for_status=True):
-        logging.getLogger("backoff").setLevel(self.logging_level)
-        url = urljoin(self.baseUrl, path)
-        response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
-        if rate_limit_check(response) or raise_for_status:
-            response.raise_for_status()
-        return response.json()
 
     def get_game(self, game_id):
         return
@@ -225,7 +161,6 @@ class Lichess:
 
     def set_user_agent(self, username):
         self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
-        self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id):
         return """
@@ -250,7 +185,7 @@ class Lichess:
         return
 
     def online_book_get(self, path, params=None):
-        return self.session.get(path, timeout=2, params=params).json()
+        return
 
     def reset_connection(self):
         return

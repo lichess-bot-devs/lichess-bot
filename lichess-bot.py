@@ -822,10 +822,10 @@ def get_gaviota(board, gaviota_cfg):
     move_quality = gaviota_cfg.get("move_quality", "best")
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
-    # second limit, because if a position has 5 pieces it may take 98 half-moves, to go down to 4 pieces and another 12
-    # to mate, so this position has a syzygy wdl=2/-2. To be safe, the first limit is 100 moves, which guarantees that
-    # all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it because dtm >= dtz,
-    # so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
+    # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and
+    # another 12 to mate, so this position has a syzygy wdl=2/-2. To be safe, the first limit is 100 moves, which
+    # guarantees that all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it
+    # because dtm >= dtz, so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
     min_dtm_to_consider_as_wdl_1 = gaviota_cfg.get("min_dtm_to_consider_as_wdl_1", 120)
     with chess.gaviota.open_tablebase(gaviota_cfg["paths"][0]) as tablebase:
         for path in gaviota_cfg["paths"][1:]:
@@ -872,7 +872,7 @@ def get_gaviota(board, gaviota_cfg):
                     # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
                     # dtz is still <100.
                     best_moves = [(move, dtm) for move, dtm in good_moves if dtm < 100]
-                if best_dtm < min_dtm_to_consider_as_wdl_1:
+                elif best_dtm < min_dtm_to_consider_as_wdl_1:
                     # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
                     # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
                     # dtz is still <100.
@@ -885,6 +885,8 @@ def get_gaviota(board, gaviota_cfg):
                     # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
                     # want to only choose between the moves where the real wdl=-1.
                     best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -100]
+                else:
+                    best_moves = good_moves
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]

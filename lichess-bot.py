@@ -378,12 +378,12 @@ def play_game(li,
                     print_move_number(board)
 
                     best_move = get_book_move(board, polyglot_cfg)
-                    
+
                     if best_move.move is None:
                         best_move = get_egtb_move(board,
                                                   lichess_bot_tbs,
                                                   draw_or_resign_cfg)
-                    
+
                     if best_move.move is None:
                         best_move = get_online_move(li,
                                                     board,

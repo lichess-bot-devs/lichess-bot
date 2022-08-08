@@ -391,7 +391,6 @@ def play_game(li,
                                                     online_moves_cfg,
                                                     draw_or_resign_cfg)
 
-
                     if best_move.move is None:
                         draw_offered = check_for_draw_offer(game)
 

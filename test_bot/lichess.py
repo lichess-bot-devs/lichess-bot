@@ -213,7 +213,8 @@ class Lichess:
                    "followable": True,
                    "following": False,
                    "blocking": False,
-                   "followsYou": False}
+                   "followsYou": False,
+                   "perfs": {}}
         self.set_user_agent(profile["username"])
         return profile
 

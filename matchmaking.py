@@ -6,11 +6,12 @@ logger = logging.getLogger(__name__)
 
 
 class Matchmaking:
-    def __init__(self, li, config, username):
+    def __init__(self, li, config, user_profile):
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
         self.matchmaking_cfg = config.get("matchmaking") or {}
-        self.username = username
+        self.username = user_profile["username"]
+        self.perf = user_profile["perfs"]
         self.last_challenge_created = time.time()
         self.last_game_ended = time.time()
         self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
@@ -92,6 +93,11 @@ class Matchmaking:
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
+        rating_diff = self.matchmaking_cfg.get("opponent_rating_difference")
+        if rating_diff is not None:
+            bot_rating = self.perf.get(game_type, {}).get("rating", 0)
+            min_rating = bot_rating - rating_diff
+            max_rating = bot_rating + rating_diff
         allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
 
         def is_suitable_opponent(bot):

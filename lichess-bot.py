@@ -140,7 +140,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                     if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
     last_check_online_time = time.time()
-    matchmaker = matchmaking.Matchmaking(li, config, user_profile["username"])
+    matchmaker = matchmaking.Matchmaking(li, config, user_profile)
 
     busy_processes = 0
     queued_processes = 0

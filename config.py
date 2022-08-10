@@ -6,6 +6,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def config_assert(assertion, error_message):
+    if not assertion:
+        raise Exception(error_message)
+
+
+def check_config_section(config, section, section_type, subsection=""):
+    config_part = config[subsection] if subsection else config
+    sub = f"`{subsection}` sub" if subsection else ""
+    section_level = "`{}` subsection in `{}`" if subsection else "Section `{}`"
+    type_error_message = {str: f"{section_level} must be a string wrapped in quotes.",
+                          dict: f"{section_level} must be a dictionary with indented keys followed by colons."}
+    config_assert(section in config_part, f"Your config.yml does not have required {sub}section `{section}`.")
+    config_assert(isinstance(config_part[section], section_type),
+                  type_error_message[section_type].format(section, subsection))
+
+
 def load_config(config_file):
     with open(config_file) as stream:
         try:
@@ -17,41 +33,26 @@ def load_config(config_file):
         if "LICHESS_BOT_TOKEN" in os.environ:
             CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
 
-        # [section, type, error message]
-        sections = [["token", str, "Section `token` must be a string wrapped in quotes."],
-                    ["url", str, "Section `url` must be a string wrapped in quotes."],
-                    ["engine", dict, "Section `engine` must be a dictionary with indented keys followed by colons."],
-                    ["challenge", dict, "Section `challenge` must be a dictionary with indented keys followed by colons."]]
-        for section in sections:
-            if section[0] not in CONFIG:
-                raise Exception(f"Your config.yml does not have required section `{section[0]}`.")
-            elif not isinstance(CONFIG[section[0]], section[1]):
-                raise Exception(section[2])
+        check_config_section(CONFIG, "token", str)
+        check_config_section(CONFIG, "url", str)
+        check_config_section(CONFIG, "engine", dict)
+        check_config_section(CONFIG, "challenge", dict)
+        check_config_section(CONFIG, "dir", str, "engine")
+        check_config_section(CONFIG, "name", str, "engine")
 
-        engine_sections = [["dir", str, "´dir´ must be a string wrapped in quotes."],
-                           ["name", str, "´name´ must be a string wrapped in quotes."]]
-        for subsection in engine_sections:
-            if subsection[0] not in CONFIG["engine"]:
-                raise Exception(f"Your config.yml does not have required `engine` subsection `{subsection}`.")
-            if not isinstance(CONFIG["engine"][subsection[0]], subsection[1]):
-                raise Exception(f"´engine´ subsection {subsection[2]}")
-
-        if CONFIG["token"] == "xxxxxxxxxxxxxxxx":
-            raise Exception("Your config.yml has the default Lichess API token. This is probably wrong.")
-
-        if not os.path.isdir(CONFIG["engine"]["dir"]):
-            raise Exception(f'Your engine directory `{CONFIG["engine"]["dir"]}` is not a directory.')
+        config_assert(CONFIG["token"] != "xxxxxxxxxxxxxxxx",
+                      "Your config.yml has the default Lichess API token. This is probably wrong.")
+        config_assert(os.path.isdir(CONFIG["engine"]["dir"]),
+                      f'Your engine directory `{CONFIG["engine"]["dir"]}` is not a directory.')
 
         working_dir = CONFIG["engine"].get("working_dir")
-        if working_dir and not os.path.isdir(working_dir):
-            raise Exception(f"Your engine's working directory `{working_dir}` is not a directory.")
+        config_assert(not working_dir or os.path.isdir(working_dir),
+                      f"Your engine's working directory `{working_dir}` is not a directory.")
 
         engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
-
-        if not os.path.isfile(engine) and CONFIG["engine"]["protocol"] != "homemade":
-            raise Exception(f"The engine {engine} file does not exist.")
-
-        if not os.access(engine, os.X_OK) and CONFIG["engine"]["protocol"] != "homemade":
-            raise Exception(f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
+        config_assert(os.path.isfile(engine) or CONFIG["engine"]["protocol"] == "homemade",
+                      f"The engine {engine} file does not exist.")
+        config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
+                      f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
 
     return CONFIG

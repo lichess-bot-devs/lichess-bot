@@ -269,7 +269,7 @@ matchmaking:
      - 2
 # opponent_min_rating: 600
 # opponent_max_rating: 4000
-  opponent_rating_difference: 500
+  opponent_rating_difference: 100
   opponent_allow_tos_violation: true
   challenge_mode: "random"
 ```

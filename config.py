@@ -11,15 +11,14 @@ def config_assert(assertion, error_message):
         raise Exception(error_message)
 
 
-def check_config_section(config, section, section_type, subsection=""):
+def check_config_section(config, data_name, data_type, subsection=""):
     config_part = config[subsection] if subsection else config
     sub = f"`{subsection}` sub" if subsection else ""
-    section_level = "`{}` subsection in `{}`" if subsection else "Section `{}`"
-    type_error_message = {str: f"{section_level} must be a string wrapped in quotes.",
-                          dict: f"{section_level} must be a dictionary with indented keys followed by colons."}
-    config_assert(section in config_part, f"Your config.yml does not have required {sub}section `{section}`.")
-    config_assert(isinstance(config_part[section], section_type),
-                  type_error_message[section_type].format(section, subsection))
+    data_location = f"`{data_name}` subsection in `{subsection}`" if subsection else f"Section `{data_name}`"
+    type_error_message = {str:  f"{data_location} must be a string wrapped in quotes.",
+                          dict: f"{data_location} must be a dictionary with indented keys followed by colons."}
+    config_assert(data_name in config_part, f"Your config.yml does not have required {sub}section `{data_name}`.")
+    config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 
 
 def load_config(config_file):

@@ -99,6 +99,7 @@ class Matchmaking:
             return (bot["username"] != self.username
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
+                    and not bot.get("blocking")
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 

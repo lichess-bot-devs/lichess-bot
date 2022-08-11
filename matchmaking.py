@@ -1,6 +1,7 @@
 import random
 import time
 import logging
+from timer import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +12,16 @@ class Matchmaking:
         self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
         self.matchmaking_cfg = config.get("matchmaking") or {}
         self.username = username
-        self.last_challenge_created = time.time()
-        self.last_game_ended = time.time()
-        self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
-        self.challenge_timeout = max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60
+        self.last_challenge_created = Timer(25)  # The challenge expires 20 seconds after creating it.
+        self.last_game_ended = Timer(max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60)
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
-        time_has_passed = self.last_game_ended + self.challenge_timeout < time.time()
-        challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
-        min_wait_time_passed = self.last_challenge_created + self.min_wait_time < time.time()
+        time_has_passed = self.last_game_ended.check()
+        challenge_expired = self.last_challenge_created.check() and self.challenge_id
+        min_wait_time_passed = self.last_challenge_created.time_since_reset() > min_wait_time
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
@@ -113,5 +112,5 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None
         logger.info(f"Challenge id is {challenge_id}.")
-        self.last_challenge_created = time.time()
+        self.last_challenge_created.reset()
         self.challenge_id = challenge_id

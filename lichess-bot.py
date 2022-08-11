@@ -21,6 +21,7 @@ import io
 import copy
 from config import load_config
 from conversation import Conversation, ChatLine
+from timer import Timer
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from rich.logging import RichHandler
 from collections import defaultdict, Counter
@@ -139,7 +140,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                     for game in li.get_ongoing_games()
                                     if game["perf"] == "correspondence"]
     wait_for_correspondence_ping = False
-    last_check_online_time = time.time()
+    last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile["username"])
 
     busy_processes = 0
@@ -189,7 +190,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 break
             elif event["type"] == "local_game_done":
                 busy_processes -= 1
-                matchmaker.last_game_ended = time.time()
+                matchmaker.last_game_ended.reset()
                 log_proc_count("Freed", queued_processes, busy_processes)
                 if one_game:
                     break
@@ -271,11 +272,11 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
 
-            if time.time() > last_check_online_time + 60 * 60:  # 1 hour.
+            if last_check_online_time.check():  # 1 hour.
                 if not li.is_online(user_profile["id"]):
                     logger.info("Will reset connection with lichess")
                     li.reset_connection()
-                last_check_online_time = time.time()
+                last_check_online_time.reset()
 
             control_queue.task_done()
 

@@ -245,10 +245,13 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `challenge_days`: A list of number of days for a correspondence challenge (to be chosen at random).
   - `opponent_min_rating`: The minimum rating of the opponent bot. The minimum rating in lichess is 600.
   - `opponent_max_rating`: The maximum rating of the opponent bot. The maximum rating in lichess is 4000.
+  - `opponent_rating_difference`: The maximum difference between the bot's rating and the opponent bot's rating.
   - `opponent_allow_tos_violation`: Whether to challenge bots that violated Lichess Terms of Service. Note that even rated games against them will not affect ratings.
   - `challenge_mode`: Possible options are `casual`, `rated` and `random`.
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
+
+If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precendence.
 
 ```yml
 matchmaking:
@@ -264,8 +267,9 @@ matchmaking:
   challenge_days: 
      - 1
      - 2
-  opponent_min_rating: 600
-  opponent_max_rating: 4000
+# opponent_min_rating: 600
+# opponent_max_rating: 4000
+  opponent_rating_difference: 100
   opponent_allow_tos_violation: true
   challenge_mode: "random"
 ```

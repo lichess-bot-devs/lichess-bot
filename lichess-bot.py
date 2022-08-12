@@ -119,8 +119,6 @@ def game_error_handler(error):
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
-    challenge_config = config["challenge"]
-    max_games = challenge_config.get("concurrency", 1)
     logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
@@ -135,15 +133,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
     correspondence_queue.put("")
-    startup_correspondence_games = [game["gameId"]
-                                    for game in li.get_ongoing_games()
-                                    if game["perf"] == "correspondence"]
-    wait_for_correspondence_ping = False
-    last_check_online_time = time.time()
-    matchmaker = matchmaking.Matchmaking(li, config, user_profile)
-
-    busy_processes = 0
-    queued_processes = 0
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
@@ -153,9 +142,53 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                                      log_filename))
     logging_listener.start()
 
+    try:
+        lichess_main(li,
+                     user_profile,
+                     config,
+                     logging_level,
+                     log_filename,
+                     challenge_queue,
+                     control_queue,
+                     correspondence_queue,
+                     logging_queue,
+                     one_game)
+    finally:
+        control_stream.terminate()
+        control_stream.join()
+        correspondence_pinger.terminate()
+        correspondence_pinger.join()
+        logging_listener.terminate()
+        logging_listener.join()
+
+
+def lichess_main(li,
+                 user_profile,
+                 config,
+                 logging_level,
+                 log_filename,
+                 challenge_queue,
+                 control_queue,
+                 correspondence_queue,
+                 logging_queue,
+                 one_game):
+    busy_processes = 0
+    queued_processes = 0
+
     def log_proc_count(change, queued, used):
         symbol = "+++" if change == "Freed" else "---"
         logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+
+    challenge_config = config["challenge"]
+    max_games = challenge_config.get("concurrency", 1)
+
+    wait_for_correspondence_ping = False
+    startup_correspondence_games = [game["gameId"]
+                                    for game in li.get_ongoing_games()
+                                    if game["perf"] == "correspondence"]
+
+    last_check_online_time = time.time()
+    matchmaker = matchmaking.Matchmaking(li, config, user_profile)
 
     play_game_args = [li,
                       None,  # will hold the game id
@@ -280,12 +313,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
             control_queue.task_done()
 
     logger.info("Terminated")
-    control_stream.terminate()
-    control_stream.join()
-    correspondence_pinger.terminate()
-    correspondence_pinger.join()
-    logging_listener.terminate()
-    logging_listener.join()
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

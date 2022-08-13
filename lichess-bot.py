@@ -143,16 +143,16 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     logging_listener.start()
 
     try:
-        lichess_main(li,
-                     user_profile,
-                     config,
-                     logging_level,
-                     log_filename,
-                     challenge_queue,
-                     control_queue,
-                     correspondence_queue,
-                     logging_queue,
-                     one_game)
+        lichess_bot_main(li,
+                         user_profile,
+                         config,
+                         logging_level,
+                         log_filename,
+                         challenge_queue,
+                         control_queue,
+                         correspondence_queue,
+                         logging_queue,
+                         one_game)
     finally:
         control_stream.terminate()
         control_stream.join()
@@ -162,16 +162,16 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
         logging_listener.join()
 
 
-def lichess_main(li,
-                 user_profile,
-                 config,
-                 logging_level,
-                 log_filename,
-                 challenge_queue,
-                 control_queue,
-                 correspondence_queue,
-                 logging_queue,
-                 one_game):
+def lichess_bot_main(li,
+                     user_profile,
+                     config,
+                     logging_level,
+                     log_filename,
+                     challenge_queue,
+                     control_queue,
+                     correspondence_queue,
+                     logging_queue,
+                     one_game):
     busy_processes = 0
     queued_processes = 0
 

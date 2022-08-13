@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 __version__ = "1.2.0"
 
 terminated = False
+restart = True
 
 out_of_online_opening_book_moves = Counter()
 
@@ -119,6 +120,7 @@ def game_error_handler(error):
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
+    global restart, terminated
     logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
@@ -306,8 +308,9 @@ def lichess_bot_main(li,
 
             if time.time() > last_check_online_time + 60 * 60:  # 1 hour.
                 if not li.is_online(user_profile["id"]):
-                    logger.info("Will reset connection with lichess")
-                    li.reset_connection()
+                    logger.info("Will restart lichess-bot")
+                    restart = True
+                    terminated = True
                 last_check_online_time = time.time()
 
             control_queue.task_done()
@@ -959,6 +962,10 @@ def start_lichess_bot():
 
 if __name__ == "__main__":
     try:
-        start_lichess_bot()
+        while restart:
+            restart = False
+            terminated = False
+            start_lichess_bot()
+            time.sleep(10)
     except Exception:
         logger.exception("Quitting lichess-bot due to an error:")

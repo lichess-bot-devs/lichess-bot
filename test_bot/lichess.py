@@ -2,6 +2,7 @@ import time
 import chess
 import json
 
+
 class GameStream:
     def __init__(self):
         self.moves_sent = ""
@@ -95,12 +96,7 @@ class EventStream:
 # docs: https://lichess.org/api
 class Lichess:
     def __init__(self, token, url, version):
-        self.version = version
-        self.header = {
-            "Authorization": f"Bearer {token}"
-        }
         self.baseUrl = url
-        self.set_user_agent("?")
         self.game_accepted = False
         self.moves = []
         self.sent_game = False
@@ -141,27 +137,22 @@ class Lichess:
         return
 
     def get_profile(self):
-        profile = {"id": "b",
-                   "username": "b",
-                   "online": True,
-                   "title": "BOT",
-                   "url": "https://lichess.org/@/b",
-                   "followable": True,
-                   "following": False,
-                   "blocking": False,
-                   "followsYou": False,
-                   "perfs": {}}
-        self.set_user_agent(profile["username"])
-        return profile
+        return {"id": "b",
+                "username": "b",
+                "online": True,
+                "title": "BOT",
+                "url": "https://lichess.org/@/b",
+                "followable": True,
+                "following": False,
+                "blocking": False,
+                "followsYou": False,
+                "perfs": {}}
 
     def get_ongoing_games(self):
         return []
 
     def resign(self, game_id):
         return
-
-    def set_user_agent(self, username):
-        self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
 
     def get_game_pgn(self, game_id):
         return """

@@ -97,12 +97,7 @@ def run_bot(CONFIG, logging_level):
             engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
             engine.configure({"Skill Level": 0, "Move Overhead": 1000})
 
-            while True:
-                if board.is_game_over():
-                    with open("./logs/events.txt", "w") as file:
-                        file.write("end")
-                    break
-
+            while not board.is_game_over():
                 if len(board.move_stack) % 2 == 0:
                     if not board.move_stack:
                         move = engine.play(board,
@@ -129,7 +124,9 @@ def run_bot(CONFIG, logging_level):
 
                 else:  # lichess-bot move
                     start_time = time.perf_counter_ns()
-                    while True:
+                    state2 = state
+                    moves_are_correct = False
+                    while state2 == state or not moves_are_correct:
                         with open("./logs/states.txt") as states:
                             state2 = states.read()
                         time.sleep(0.001)
@@ -141,8 +138,6 @@ def run_bot(CONFIG, logging_level):
                                 temp_board.push_uci(move)
                             except ValueError:
                                 moves_are_correct = False
-                        if state != state2 and moves_are_correct:
-                            break
                     with open("./logs/states.txt") as states:
                         state2 = states.read()
                     end_time = time.perf_counter_ns()
@@ -160,6 +155,8 @@ def run_bot(CONFIG, logging_level):
                 with open("./logs/states.txt", "w") as file:
                     file.write(state)
 
+            with open("./logs/events.txt", "w") as file:
+                file.write("end")
             engine.quit()
             win = board.outcome().winner == chess.BLACK
             with open("./logs/result.txt", "w") as file:

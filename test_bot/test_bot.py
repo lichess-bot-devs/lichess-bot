@@ -77,97 +77,93 @@ def run_bot(CONFIG, logging_level):
         return "0"
     lichess_bot.logger.info(f"Welcome {username}!")
 
-    def run_test():
+    def thread_for_test():
+        open("./logs/events.txt", "w").close()
+        open("./logs/states.txt", "w").close()
+        open("./logs/result.txt", "w").close()
 
-        def thread_for_test():
-            open("./logs/events.txt", "w").close()
-            open("./logs/states.txt", "w").close()
-            open("./logs/result.txt", "w").close()
+        start_time = 10
+        increment = 0.1
 
-            start_time = 10
-            increment = 0.1
+        board = chess.Board()
+        wtime = start_time
+        btime = start_time
 
-            board = chess.Board()
-            wtime = start_time
-            btime = start_time
+        with open("./logs/states.txt", "w") as file:
+            file.write(f"\n{wtime},{btime}")
 
-            with open("./logs/states.txt", "w") as file:
-                file.write(f"\n{wtime},{btime}")
+        engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
+        engine.configure({"Skill Level": 0, "Move Overhead": 1000})
 
-            engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
-            engine.configure({"Skill Level": 0, "Move Overhead": 1000})
-
-            while not board.is_game_over():
-                if len(board.move_stack) % 2 == 0:
-                    if not board.move_stack:
-                        move = engine.play(board,
-                                           chess.engine.Limit(time=1),
-                                           ponder=False)
-                    else:
-                        start_time = time.perf_counter_ns()
-                        move = engine.play(board,
-                                           chess.engine.Limit(white_clock=wtime - 2,
-                                                              white_inc=increment),
-                                           ponder=False)
-                        end_time = time.perf_counter_ns()
-                        wtime -= (end_time - start_time) / 1e9
-                        wtime += increment
-                    board.push(move.move)
-
-                    uci_move = move.move.uci()
-                    with open("./logs/states.txt") as states:
-                        state = states.read().split("\n")
-                    state[0] += f" {uci_move}"
-                    state = "\n".join(state)
-                    with open("./logs/states.txt", "w") as file:
-                        file.write(state)
-
-                else:  # lichess-bot move
+        while not board.is_game_over():
+            if len(board.move_stack) % 2 == 0:
+                if not board.move_stack:
+                    move = engine.play(board,
+                                       chess.engine.Limit(time=1),
+                                       ponder=False)
+                else:
                     start_time = time.perf_counter_ns()
-                    state2 = state
-                    moves_are_correct = False
-                    while state2 == state or not moves_are_correct:
-                        with open("./logs/states.txt") as states:
-                            state2 = states.read()
-                        time.sleep(0.001)
-                        moves = state2.split("\n")[0]
-                        temp_board = chess.Board()
-                        moves_are_correct = True
-                        for move in moves.split():
-                            try:
-                                temp_board.push_uci(move)
-                            except ValueError:
-                                moves_are_correct = False
-                    with open("./logs/states.txt") as states:
-                        state2 = states.read()
+                    move = engine.play(board,
+                                       chess.engine.Limit(white_clock=wtime - 2,
+                                                          white_inc=increment),
+                                       ponder=False)
                     end_time = time.perf_counter_ns()
-                    if len(board.move_stack) > 1:
-                        btime -= (end_time - start_time) / 1e9
-                        btime += increment
-                    move = state2.split("\n")[0].split(" ")[-1]
-                    board.push_uci(move)
+                    wtime -= (end_time - start_time) / 1e9
+                    wtime += increment
+                board.push(move.move)
 
-                time.sleep(0.001)
+                uci_move = move.move.uci()
                 with open("./logs/states.txt") as states:
                     state = states.read().split("\n")
-                state[1] = f"{wtime},{btime}"
+                state[0] += f" {uci_move}"
                 state = "\n".join(state)
                 with open("./logs/states.txt", "w") as file:
                     file.write(state)
 
-            with open("./logs/events.txt", "w") as file:
-                file.write("end")
-            engine.quit()
-            win = board.outcome().winner == chess.BLACK
-            with open("./logs/result.txt", "w") as file:
-                file.write("1" if win else "0")
+            else:  # lichess-bot move
+                start_time = time.perf_counter_ns()
+                state2 = state
+                moves_are_correct = False
+                while state2 == state or not moves_are_correct:
+                    with open("./logs/states.txt") as states:
+                        state2 = states.read()
+                    time.sleep(0.001)
+                    moves = state2.split("\n")[0]
+                    temp_board = chess.Board()
+                    moves_are_correct = True
+                    for move in moves.split():
+                        try:
+                            temp_board.push_uci(move)
+                        except ValueError:
+                            moves_are_correct = False
+                with open("./logs/states.txt") as states:
+                    state2 = states.read()
+                end_time = time.perf_counter_ns()
+                if len(board.move_stack) > 1:
+                    btime -= (end_time - start_time) / 1e9
+                    btime += increment
+                move = state2.split("\n")[0].split(" ")[-1]
+                board.push_uci(move)
 
-        thr = threading.Thread(target=thread_for_test)
-        thr.start()
-        lichess_bot.start(li, user_profile, CONFIG, logging_level, None, one_game=True)
-        thr.join()
+            time.sleep(0.001)
+            with open("./logs/states.txt") as states:
+                state = states.read().split("\n")
+            state[1] = f"{wtime},{btime}"
+            state = "\n".join(state)
+            with open("./logs/states.txt", "w") as file:
+                file.write(state)
 
-    run_test()
+        with open("./logs/events.txt", "w") as file:
+            file.write("end")
+        engine.quit()
+        win = board.outcome().winner == chess.BLACK
+        with open("./logs/result.txt", "w") as file:
+            file.write("1" if win else "0")
+
+    thr = threading.Thread(target=thread_for_test)
+    thr.start()
+    lichess_bot.start(li, user_profile, CONFIG, logging_level, None, one_game=True)
+    thr.join()
 
     with open("./logs/result.txt") as file:
         data = file.read()

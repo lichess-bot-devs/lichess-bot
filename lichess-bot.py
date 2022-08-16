@@ -227,7 +227,7 @@ def lichess_bot_main(li,
                 if one_game:
                     break
             elif event["type"] == "challenge":
-                chlng = model.Challenge(event["challenge"])
+                chlng = model.Challenge(event["challenge"], user_profile)
                 is_supported, decline_reason = chlng.is_supported(challenge_config)
                 if is_supported:
                     challenge_queue.append(chlng)
@@ -238,7 +238,7 @@ def lichess_bot_main(li,
                 elif chlng.id != matchmaker.challenge_id:
                     li.decline_challenge(chlng.id, reason=decline_reason)
             elif event["type"] == "challengeDeclined":
-                chlng = model.Challenge(event["challenge"])
+                chlng = model.Challenge(event["challenge"], user_profile)
                 opponent = event["challenge"]["destUser"]["name"]
                 reason = event["challenge"]["declineReason"]
                 logger.info(f"{opponent} declined {chlng}: {reason}")
@@ -288,6 +288,8 @@ def lichess_bot_main(li,
             # Keep processing the queue until empty or max_games is reached.
             while (queued_processes + busy_processes) < max_games and challenge_queue:
                 chlng = challenge_queue.pop(0)
+                if chlng.from_self:
+                    continue
                 try:
                     logger.info(f"Accept {chlng}")
                     queued_processes += 1

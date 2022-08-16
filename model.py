@@ -42,8 +42,11 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg):
         return ("rated" if self.rated else "casual") in challenge_cfg["modes"]
 
-    def is_supported(self, config):
+    def is_supported(self, config, user_profile):
         try:
+            if self.challenger_name == user_profile["username"]:
+                return True, None
+
             if not config.get("accept_bot", False) and self.challenger_is_bot:
                 return False, "noBot"
 

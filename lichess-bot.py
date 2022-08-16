@@ -228,7 +228,7 @@ def lichess_bot_main(li,
                     break
             elif event["type"] == "challenge":
                 chlng = model.Challenge(event["challenge"])
-                is_supported, decline_reason = chlng.is_supported(challenge_config)
+                is_supported, decline_reason = chlng.is_supported(challenge_config, user_profile)
                 if is_supported:
                     challenge_queue.append(chlng)
                     if challenge_config.get("sort_by", "best") == "best":

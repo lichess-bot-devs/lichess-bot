@@ -100,8 +100,20 @@ Besides the above, there are many possible options within `config.yml` for confi
         - `max_score_difference`: When `move_quality` is set to `"good"`, this option specifies the maximum difference between the top scoring move and any other move that will make up the set from which a move will be chosen randomly. If this option is set to 25 and the top move in a position has a score of 100, no move with a score of less than 75 will be returned.
         - `min_knodes`: The minimum number of kilonodes to search. The minimum number of nodes to search is this value times 1000.
     - Configurations only in `online_egtb`:
-        -  `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
+        - `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
         - `source`: One of `chessdb` or `lichess`. Lichess also has tablebases for atomic and antichess while chessdb only has those for standard.
+- `lichess_bot_tbs`: This section gives your bot access to various resources for choosing moves like syzygy and gaviota endgame tablebases. There are two sections that correspond to two different endgame tablebases:
+    1. `syzygy`: Get moves from syzygy tablebases. `.*tbw` have to be always provided. Syzygy TBs are generally smaller that gaviota TBs.
+    2. `gaviota`: Get moves from gaviota tablebases.
+    - Configurations common to all:
+        - `enabled`: Whether to use the tablebases at all.
+        - `paths`: The paths to the tablebases.
+        - `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
+        - `move_quality`: Choice of `"good"`, or `"best"`.
+            - `best`: Choose only the highest scoring move. When using `syzygy`, if `.*tbz` files are not provided, the bot will attempt to get a move using `move_quality` = `good`.
+            - `good`: Choose randomly from the top moves.
+    - Configurations only in `gaviota`:
+        - `min_dtm_to_consider_as_wdl_1`: The minimum DTM to consider as syzygy WDL=1/-1. Setting it to 100 will disable it.
 - `engine_options`: Command line options to pass to the engine on startup. For example, the `config.yml.default` has the configuration
 ```yml
   engine_options:

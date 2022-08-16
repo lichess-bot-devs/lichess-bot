@@ -1,6 +1,8 @@
 import argparse
 import chess
 import chess.pgn
+import chess.syzygy
+import chess.gaviota
 from chess.variant import find_variant
 import chess.polyglot
 import engine_wrapper
@@ -360,6 +362,7 @@ def play_game(li,
     polyglot_cfg = engine_cfg.get("polyglot", {})
     online_moves_cfg = engine_cfg.get("online_moves", {})
     draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
+    lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
 
     greeting_cfg = config.get("greeting") or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
@@ -404,6 +407,12 @@ def play_game(li,
                     print_move_number(board)
 
                     best_move = get_book_move(board, polyglot_cfg)
+
+                    if best_move.move is None:
+                        best_move = get_egtb_move(board,
+                                                  lichess_bot_tbs,
+                                                  draw_or_resign_cfg)
+
                     if best_move.move is None:
                         best_move = get_online_move(li,
                                                     board,
@@ -769,6 +778,166 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     used_opening_books = chessdb_cfg.get("enabled") or lichess_cloud_cfg.get("enabled")
     if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:
         logger.info("Will stop using online opening books.")
+    return chess.engine.PlayResult(None, None)
+
+
+def get_syzygy(board, syzygy_cfg):
+    if (not syzygy_cfg.get("enabled", False)
+            or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
+            or board.uci_variant not in ["chess", "antichess", "atomic"]):
+        return None, None
+    move_quality = syzygy_cfg.get("move_quality", "best")
+    with chess.syzygy.open_tablebase(syzygy_cfg["paths"][0]) as tablebase:
+        for path in syzygy_cfg["paths"][1:]:
+            tablebase.add_directory(path)
+
+        try:
+            moves = {}
+            for move in board.legal_moves:
+                board_copy = board.copy()
+                board_copy.push(move)
+                dtz = -tablebase.probe_dtz(board_copy)
+                moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock
+
+            def dtz_to_wdl(dtz):
+                if dtz <= -100:
+                    return -1
+                elif dtz < 0:
+                    return -2
+                elif dtz == 0:
+                    return 0
+                elif dtz < 100:
+                    return 2
+                else:
+                    return 1
+
+            best_wdl = max(map(dtz_to_wdl, moves.values()))
+            good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
+            if move_quality == "good":
+                move, dtz = random.choice(good_moves)
+                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {dtz})")
+                return move, best_wdl
+            else:
+                best_dtz = min([dtz for move, dtz in good_moves])
+                best_moves = [move for move, dtz in good_moves if dtz == best_dtz]
+                move = random.choice(best_moves)
+                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz})")
+                return move, best_wdl
+        except KeyError:
+            # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
+            try:
+                moves = {}
+                for move in board.legal_moves:
+                    board_copy = board.copy()
+                    board_copy.push(move)
+                    moves[move] = -tablebase.probe_wdl(board_copy)
+                best_wdl = max(moves.values())
+                good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
+                move = random.choice(good_moves)
+                if move_quality == "best":
+                    logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame.")
+                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl})")
+                return move, best_wdl
+            except KeyError:
+                return None, None
+
+
+def get_gaviota(board, gaviota_cfg):
+    if (not gaviota_cfg.get("enabled", False)
+            or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces", 5)
+            or board.uci_variant != "chess"):
+        return None, None
+    move_quality = gaviota_cfg.get("move_quality", "best")
+    # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
+    # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
+    # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and
+    # another 12 to mate, so this position has a syzygy wdl=2/-2. To be safe, the first limit is 100 moves, which
+    # guarantees that all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it
+    # because dtm >= dtz, so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
+    min_dtm_to_consider_as_wdl_1 = gaviota_cfg.get("min_dtm_to_consider_as_wdl_1", 120)
+    with chess.gaviota.open_tablebase(gaviota_cfg["paths"][0]) as tablebase:
+        for path in gaviota_cfg["paths"][1:]:
+            tablebase.add_directory(path)
+
+        try:
+            moves = {}
+            for move in board.legal_moves:
+                board_copy = board.copy()
+                board_copy.push(move)
+                dtm = -tablebase.probe_dtm(board_copy)
+                moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock
+
+            def dtm_to_gaviota_wdl(dtm):
+                if dtm < 0:
+                    return -1
+                elif dtm == 0:
+                    return 0
+                else:
+                    return 1
+
+            best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
+            good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
+            best_dtm = min([dtm for move, dtm in good_moves])
+
+            def dtm_to_wdl(dtm):
+                if dtm <= -100:
+                    # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
+                    # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
+                    return -1
+                elif dtm < 0:
+                    return -2
+                elif dtm == 0:
+                    return 0
+                elif dtm < min_dtm_to_consider_as_wdl_1:
+                    return 2
+                else:
+                    return 1
+
+            pseudo_wdl = dtm_to_wdl(best_dtm)
+            if move_quality == "good":
+                if best_dtm < 100:
+                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+                    # dtz is still <100.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < 100]
+                elif best_dtm < min_dtm_to_consider_as_wdl_1:
+                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+                    # dtz is still <100.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
+                elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
+                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+                    # want to only choose between the moves where the real wdl=-1.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
+                elif best_dtm <= -100:
+                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+                    # want to only choose between the moves where the real wdl=-1.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -100]
+                else:
+                    best_moves = good_moves
+            else:
+                # There can be multiple moves with the same dtm.
+                best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]
+            move, dtm = random.choice(best_moves)
+            logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})")
+            return move, pseudo_wdl
+        except KeyError:
+            return None, None
+
+
+def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
+    best_move, wdl = get_syzygy(board, lichess_bot_tbs.get("syzygy") or {})
+    if best_move is None:
+        best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
+    if best_move:
+        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
+        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
+
+        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
+        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
+        return chess.engine.PlayResult(best_move, None, draw_offered=offer_draw, resigned=resign)
     return chess.engine.PlayResult(None, None)
 
 

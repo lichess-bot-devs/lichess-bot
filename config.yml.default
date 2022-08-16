@@ -52,6 +52,20 @@ engine:                      # Engine settings.
       max_pieces: 7
       source: "lichess"      # One of "lichess", "chessdb".
       move_quality: "best"   # One of "good", "best".
+  lichess_bot_tbs:
+    syzygy:
+      enabled: false
+      paths:
+        - "engines/syzygy"
+      max_pieces: 7
+      move_quality: "best"   # One of "good", "best".
+    gaviota:
+      enabled: false
+      paths:
+        - "engines/gaviota"
+      max_pieces: 5
+      min_dtm_to_consider_as_wdl_1: 120  # The minimum dtm to consider as syzygy wdl=1/-1. Set to 100 to disable.
+      move_quality: "best"   # One of "good", "best".
 # engine_options:            # Any custom command line params to pass to the engine.
 #   cpuct: 3.1
   homemade_options:

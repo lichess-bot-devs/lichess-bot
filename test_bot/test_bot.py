@@ -126,8 +126,6 @@ def thread_for_test():
                         temp_board.push_uci(move)
                     except ValueError:
                         moves_are_correct = False
-            with open("./logs/states.txt") as states:
-                state2 = states.read()
             end_time = time.perf_counter_ns()
             if len(board.move_stack) > 1:
                 btime -= (end_time - start_time) / 1e9

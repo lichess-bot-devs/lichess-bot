@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class Challenge:
-    def __init__(self, c_info):
+    def __init__(self, c_info, user_profile):
         self.id = c_info["id"]
         self.rated = c_info["rated"]
         self.variant = c_info["variant"]["key"]
@@ -21,6 +21,7 @@ class Challenge:
         self.challenger_name = self.challenger.get("name", "Anonymous")
         self.challenger_rating_int = self.challenger.get("rating", 0)
         self.challenger_rating = self.challenger_rating_int or "?"
+        self.from_self = self.challenger_name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg):
         return self.variant in challenge_cfg["variants"]
@@ -42,9 +43,9 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg):
         return ("rated" if self.rated else "casual") in challenge_cfg["modes"]
 
-    def is_supported(self, config, user_profile):
+    def is_supported(self, config):
         try:
-            if self.challenger_name == user_profile["username"]:
+            if self.from_self:
                 return True, None
 
             if not config.get("accept_bot", False) and self.challenger_is_bot:

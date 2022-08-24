@@ -23,7 +23,7 @@ import io
 import copy
 from config import load_config
 from conversation import Conversation, ChatLine
-from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
+from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout, RequestException
 from rich.logging import RichHandler
 from collections import defaultdict, Counter
 from http.client import RemoteDisconnected
@@ -120,6 +120,7 @@ def game_error_handler(error):
     logger.exception("Game ended due to error:", exc_info=error)
 
 
+@backoff.on_exception(backoff.expo, RequestException, max_time=3600)
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
     logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
     manager = multiprocessing.Manager()

@@ -120,7 +120,7 @@ def game_error_handler(error):
     logger.exception("Game ended due to error:", exc_info=error)
 
 
-@backoff.on_exception(backoff.expo, RequestException, max_time=3600)
+@backoff.on_exception(backoff.constant, RequestException)
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
     logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
     manager = multiprocessing.Manager()

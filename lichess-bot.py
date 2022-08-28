@@ -519,14 +519,8 @@ def get_book_move(board, polyglot_cfg):
 
     book_config = polyglot_cfg.get("book", {})
 
-    if board.uci_variant == "chess":
-        books = book_config["standard"]
-    else:
-        if book_config.get(board.uci_variant):
-            books = book_config[board.uci_variant]
-        else:
-            return no_book_move
-
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    books = book_config.get(variant) or []
     if isinstance(books, str):
         books = [books]
 

@@ -105,9 +105,9 @@ class Game:
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
         self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
-        self.abort_at = Timer(abort_time)
-        self.terminate_at = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
-        self.disconnect_at = Timer(0)
+        self.abort_time = Timer(abort_time)
+        self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
+        self.disconnect_time = Timer(0)
 
     def url(self):
         return urljoin(self.base_url, f"{self.id}/{self.my_color}")
@@ -117,18 +117,18 @@ class Game:
 
     def ping(self, abort_in, terminate_in, disconnect_in):
         if self.is_abortable():
-            self.abort_at = Timer(abort_in)
-        self.terminate_at = Timer(terminate_in)
-        self.disconnect_at = Timer(disconnect_in)
+            self.abort_time = Timer(abort_in)
+        self.terminate_time = Timer(terminate_in)
+        self.disconnect_time = Timer(disconnect_in)
 
     def should_abort_now(self):
-        return self.is_abortable() and self.abort_at.check()
+        return self.is_abortable() and self.abort_time.is_expired()
 
     def should_terminate_now(self):
-        return self.terminate_at.check()
+        return self.terminate_time.is_expired()
 
     def should_disconnect_now(self):
-        return self.disconnect_at.check()
+        return self.disconnect_time.is_expired()
 
     def my_remaining_seconds(self):
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000

@@ -190,7 +190,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 break
             elif event["type"] == "local_game_done":
                 busy_processes -= 1
-                matchmaker.last_game_ended.reset()
+                matchmaker.last_game_ended_delay.reset()
                 log_proc_count("Freed", queued_processes, busy_processes)
                 if one_game:
                     break
@@ -272,7 +272,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 logger.info("Challenging a random bot")
                 matchmaker.challenge()
 
-            if last_check_online_time.check():
+            if last_check_online_time.is_expired():
                 if not li.is_online(user_profile["id"]):
                     logger.info("Will reset connection with lichess")
                     li.reset_connection()

@@ -5,7 +5,7 @@ class Timer:
         self.interval = update_interval
         self.reset()
 
-    def check(self):
+    def is_expired(self):
         return time.time() > self.last_update + self.interval
 
     def reset(self):

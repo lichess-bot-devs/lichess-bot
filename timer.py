@@ -1,15 +1,15 @@
 import time
 
 class Timer:
-    def __init__(self, update_interval):
-        self.interval = update_interval
+    def __init__(self, duration):
+        self.duration = duration
         self.reset()
 
     def is_expired(self):
-        return time.time() > self.last_update + self.interval
+        return self.time_since_reset() > self.duration
 
     def reset(self):
-        self.last_update = time.time()
+        self.starting_time = time.time()
 
     def time_since_reset(self):
-        return time.time() - self.last_update
+        return time.time() - self.starting_time

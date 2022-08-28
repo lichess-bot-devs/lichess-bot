@@ -1066,17 +1066,12 @@ def print_pgn_game_record(li, config, game, board, engine):
         if not lichess_node.is_end():
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
-            if lichess_node.comment:
-                if current_node.comment:
-                    if current_node.comment != lichess_node.comment:
-                        current_node.comment = f"{current_node.comment} {lichess_node.comment}"
-                else:
-                    current_node.comment = lichess_node.comment
+            if current_node.comment != lichess_node.comment:
+                current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()
 
-        commentary = engine.comment_for_board_index(index)
-        if commentary is not None:
-            pv_node = current_node.parent.add_line(commentary.get("pv", []))
-            pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
+        commentary = engine.comment_for_board_index(index) or {}
+        pv_node = current_node.parent.add_line(commentary.get("pv", []))
+        pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)

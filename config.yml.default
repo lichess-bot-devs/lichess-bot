@@ -52,6 +52,20 @@ engine:                      # Engine settings.
       max_pieces: 7
       source: "lichess"      # One of "lichess", "chessdb".
       move_quality: "best"   # One of "good", "best".
+  lichess_bot_tbs:
+    syzygy:
+      enabled: false
+      paths:
+        - "engines/syzygy"
+      max_pieces: 7
+      move_quality: "best"   # One of "good", "best".
+    gaviota:
+      enabled: false
+      paths:
+        - "engines/gaviota"
+      max_pieces: 5
+      min_dtm_to_consider_as_wdl_1: 120  # The minimum dtm to consider as syzygy wdl=1/-1. Set to 100 to disable.
+      move_quality: "best"   # One of "good", "best".
 # engine_options:            # Any custom command line params to pass to the engine.
 #   cpuct: 3.1
   homemade_options:
@@ -143,7 +157,8 @@ matchmaking:
 #  challenge_days:            # Days for correspondence challenge (to be chosen at random).
 #    - 1
 #    - 2
-  opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).
-  opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
+# opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).
+# opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
+  opponent_rating_difference: 100 # The maximum difference in rating between the bot's rating and opponent's rating.
   opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.

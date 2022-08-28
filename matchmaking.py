@@ -6,13 +6,14 @@ logger = logging.getLogger(__name__)
 
 
 class Matchmaking:
-    def __init__(self, li, config, username):
+    def __init__(self, li, config, user_profile):
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
         self.matchmaking_cfg = config.get("matchmaking") or {}
-        self.username = username
+        self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
         self.last_game_ended_delay = Timer(max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60)
+        self.last_user_profile_update_time = Timer(5 * 60) # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
 
@@ -65,6 +66,17 @@ class Matchmaking:
             match_time = [match_time]
         return random.choice(match_time)
 
+    def perf(self):
+        return self.user_profile["perfs"]
+
+    def username(self):
+        return self.user_profile["username"]
+
+    def update_user_profile(self):
+        if self.last_user_profile_update_time.is_expired():
+            self.last_user_profile_update_time.reset()
+            self.user_profile = self.li.get_profile()
+
     def choose_opponent(self):
         variant = self.matchmaking_cfg.get("challenge_variant") or "random"
         if variant == "random":
@@ -90,11 +102,17 @@ class Matchmaking:
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
+        rating_diff = self.matchmaking_cfg.get("opponent_rating_difference")
+        if rating_diff is not None:
+            bot_rating = self.perf().get(game_type, {}).get("rating", 0)
+            min_rating = bot_rating - rating_diff
+            max_rating = bot_rating + rating_diff
+        logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
 
         def is_suitable_opponent(bot):
-            perf = bot["perfs"].get(game_type, {})
-            return (bot["username"] != self.username
+            perf = bot.get("perfs", {}).get(game_type, {})
+            return (bot["username"] != self.username()
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
                     and perf.get("games", 0) > 0
@@ -107,6 +125,7 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant
 
     def challenge(self):
+        self.update_user_profile()
         bot_username, base_time, increment, days, variant = self.choose_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None

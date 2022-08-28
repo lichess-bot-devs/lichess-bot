@@ -1014,14 +1014,13 @@ def tell_user_game_result(game, board):
     else:
         logger.info("Game adjourned.")
 
-    if termination == engine_wrapper.Termination.MATE:
-        logger.info("Game won by checkmate.")
-    elif termination == engine_wrapper.Termination.TIMEOUT:
-        logger.info(f"{losing_name} forfeited on time.")
-    elif termination == engine_wrapper.Termination.RESIGN:
-        logger.info(f"{losing_name} resigned.")
-    elif termination == engine_wrapper.Termination.ABORT:
-        logger.info("Game aborted.")
+    simple_endings = {engine_wrapper.Termination.MATE: "Game won by checkmate.",
+                      engine_wrapper.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
+                      engine_wrapper.Termination.RESIGN: f"{losing_name} resigned.",
+                      engine_wrapper.Termination.ABORT: "Game aborted."}
+
+    if termination in simple_endings:
+        logger.info(simple_endings[termination])
     elif termination == engine_wrapper.Termination.DRAW:
         if board.is_fifty_moves():
             logger.info("Game drawn by 50-move rule.")

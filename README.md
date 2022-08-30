@@ -70,6 +70,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     - `min_weight`: The minimum weight or quality a move must have if it is to have a chance of being selected. If a move cannot be found that has at least this weight, no move will be selected.
     - `selection`: The method for selecting a move. The choices are: `"weighted_random"` where moves with a higher weight/quality have a higher probability of being chosen, `"uniform_random"` where all moves of sufficient quality have an equal chance of being chosen, and `"best_move"` where the move with the highest weight is always chosen.
     - `max_depth`: The maximum number of moves a bot plays before it stops consulting the book. If `max_depth` is 3, then the bot will stop consulting the book after its third move.
+- `instant_move_when_single_legal_move`: This option allows the bot to play instantly if there is only one move available.
 - `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine. XBoard engines can resign and offer/accept draw without this feature enabled.
     - `resign_enabled`: Whether the bot is allowed to resign based on the evaluation.
     - `resign_score`: The engine evaluation has to be less than or equal to `resign_score` for the bot to resign.

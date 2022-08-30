@@ -363,6 +363,7 @@ def play_game(li,
     online_moves_cfg = engine_cfg.get("online_moves", {})
     draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
     lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
+    instant_move = engine_cfg.get("instant_move_when_single_legal_move")
 
     greeting_cfg = config.get("greeting") or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
@@ -406,7 +407,10 @@ def play_game(li,
                     fake_thinking(config, board, game)
                     print_move_number(board)
 
-                    best_move = get_book_move(board, polyglot_cfg)
+                    if instant_move and len(list(board.legal_moves)) == 1:
+                        best_move = chess.engine.PlayResult(list(board.legal_moves)[0], None)
+                    else:
+                        best_move = get_book_move(board, polyglot_cfg)
 
                     if best_move.move is None:
                         best_move = get_egtb_move(board,

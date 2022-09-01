@@ -24,7 +24,8 @@ ENDPOINTS = {
     "online_bots": "/api/bot/online",
     "challenge": "/api/challenge/{}",
     "cancel": "/api/challenge/{}/cancel",
-    "status": "/api/users/status"
+    "status": "/api/users/status",
+    "public_data": "/api/user/{}"
 }
 
 
@@ -159,6 +160,9 @@ class Lichess:
     def is_online(self, user_id):
         user = self.api_get(ENDPOINTS["status"], params={"ids": user_id})
         return user and user[0].get("online")
+
+    def get_public_data(self, user_name):
+        return self.api_get(ENDPOINTS["public_data"].format(user_name))
 
     def reset_connection(self):
         self.session.close()

@@ -133,5 +133,5 @@ class Matchmaking:
         self.challenge_id = challenge_id
 
     def add_to_block_list(self, username):
-        logger.info(f"Adding {username} to block list.")
+        logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)

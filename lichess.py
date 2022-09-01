@@ -119,7 +119,8 @@ class Lichess:
         return self.api_post(ENDPOINTS["decline"].format(challenge_id),
                              data=f"reason={reason}",
                              headers={"Content-Type":
-                                      "application/x-www-form-urlencoded"})
+                                      "application/x-www-form-urlencoded"},
+                             raise_for_status=False)
 
     def get_profile(self):
         profile = self.api_get(ENDPOINTS["profile"])

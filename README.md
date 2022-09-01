@@ -100,8 +100,20 @@ Besides the above, there are many possible options within `config.yml` for confi
         - `max_score_difference`: When `move_quality` is set to `"good"`, this option specifies the maximum difference between the top scoring move and any other move that will make up the set from which a move will be chosen randomly. If this option is set to 25 and the top move in a position has a score of 100, no move with a score of less than 75 will be returned.
         - `min_knodes`: The minimum number of kilonodes to search. The minimum number of nodes to search is this value times 1000.
     - Configurations only in `online_egtb`:
-        -  `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
+        - `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
         - `source`: One of `chessdb` or `lichess`. Lichess also has tablebases for atomic and antichess while chessdb only has those for standard.
+- `lichess_bot_tbs`: This section gives your bot access to various resources for choosing moves like syzygy and gaviota endgame tablebases. There are two sections that correspond to two different endgame tablebases:
+    1. `syzygy`: Get moves from syzygy tablebases. `.*tbw` have to be always provided. Syzygy TBs are generally smaller that gaviota TBs.
+    2. `gaviota`: Get moves from gaviota tablebases.
+    - Configurations common to all:
+        - `enabled`: Whether to use the tablebases at all.
+        - `paths`: The paths to the tablebases.
+        - `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
+        - `move_quality`: Choice of `"good"`, or `"best"`.
+            - `best`: Choose only the highest scoring move. When using `syzygy`, if `.*tbz` files are not provided, the bot will attempt to get a move using `move_quality` = `good`.
+            - `good`: Choose randomly from the top moves.
+    - Configurations only in `gaviota`:
+        - `min_dtm_to_consider_as_wdl_1`: The minimum DTM to consider as syzygy WDL=1/-1. Setting it to 100 will disable it.
 - `engine_options`: Command line options to pass to the engine on startup. For example, the `config.yml.default` has the configuration
 ```yml
   engine_options:
@@ -245,10 +257,13 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `challenge_days`: A list of number of days for a correspondence challenge (to be chosen at random).
   - `opponent_min_rating`: The minimum rating of the opponent bot. The minimum rating in lichess is 600.
   - `opponent_max_rating`: The maximum rating of the opponent bot. The maximum rating in lichess is 4000.
+  - `opponent_rating_difference`: The maximum difference between the bot's rating and the opponent bot's rating.
   - `opponent_allow_tos_violation`: Whether to challenge bots that violated Lichess Terms of Service. Note that even rated games against them will not affect ratings.
   - `challenge_mode`: Possible options are `casual`, `rated` and `random`.
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
+
+If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precendence.
 
 ```yml
 matchmaking:
@@ -264,8 +279,9 @@ matchmaking:
   challenge_days: 
      - 1
      - 2
-  opponent_min_rating: 600
-  opponent_max_rating: 4000
+# opponent_min_rating: 600
+# opponent_max_rating: 4000
+  opponent_rating_difference: 100
   opponent_allow_tos_violation: true
   challenge_mode: "random"
 ```

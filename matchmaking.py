@@ -92,18 +92,7 @@ class Matchmaking:
         days = self.get_time("challenge_days")
 
         game_duration = base_time + increment * 40
-        if variant != "standard":
-            game_type = variant
-        elif days:
-            game_type = "correspondence"
-        elif game_duration < 179:
-            game_type = "bullet"
-        elif game_duration < 479:
-            game_type = "blitz"
-        elif game_duration < 1499:
-            game_type = "rapid"
-        else:
-            game_type = "classical"
+        game_type = game_category(variant, days, game_duration)
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
@@ -155,3 +144,18 @@ class Matchmaking:
     def add_to_block_list(self, username):
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
+
+
+def game_category(variant, days, game_duration):
+    if variant != "standard":
+        return variant
+    elif days:
+        return "correspondence"
+    elif game_duration < 179:
+        return "bullet"
+    elif game_duration < 479:
+        return "blitz"
+    elif game_duration < 1499:
+        return "rapid"
+    else:
+        return "classical"

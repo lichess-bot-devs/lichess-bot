@@ -122,7 +122,6 @@ def game_error_handler(error):
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
-    global restart, terminated
     logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
@@ -176,6 +175,7 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
+    global restart, terminated
     busy_processes = 0
     queued_processes = 0
 
@@ -1125,6 +1125,6 @@ if __name__ == "__main__":
             restart = False
             terminated = False
             start_lichess_bot()
-            time.sleep(10)
+            time.sleep(10 if restart else 0)
     except Exception:
         logger.exception("Quitting lichess-bot due to an error:")

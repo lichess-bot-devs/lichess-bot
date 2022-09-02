@@ -1,6 +1,6 @@
 chess==1.9.2
-PyYAML>=5.4.1
-requests>=2.25.1
+PyYAML==6.0
+requests==2.28.1
 backoff==2.1.2
 rich==12.5.1
 

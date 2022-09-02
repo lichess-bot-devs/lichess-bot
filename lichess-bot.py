@@ -1,6 +1,8 @@
 import argparse
 import chess
 import chess.pgn
+import chess.syzygy
+import chess.gaviota
 from chess.variant import find_variant
 import chess.polyglot
 import engine_wrapper
@@ -229,7 +231,7 @@ def lichess_bot_main(li,
                 if one_game:
                     break
             elif event["type"] == "challenge":
-                chlng = model.Challenge(event["challenge"])
+                chlng = model.Challenge(event["challenge"], user_profile)
                 is_supported, decline_reason = chlng.is_supported(challenge_config)
                 if is_supported:
                     challenge_queue.append(chlng)
@@ -240,7 +242,7 @@ def lichess_bot_main(li,
                 elif chlng.id != matchmaker.challenge_id:
                     li.decline_challenge(chlng.id, reason=decline_reason)
             elif event["type"] == "challengeDeclined":
-                chlng = model.Challenge(event["challenge"])
+                chlng = model.Challenge(event["challenge"], user_profile)
                 opponent = event["challenge"]["destUser"]["name"]
                 reason = event["challenge"]["declineReason"]
                 logger.info(f"{opponent} declined {chlng}: {reason}")
@@ -290,6 +292,8 @@ def lichess_bot_main(li,
             # Keep processing the queue until empty or max_games is reached.
             while (queued_processes + busy_processes) < max_games and challenge_queue:
                 chlng = challenge_queue.pop(0)
+                if chlng.from_self:
+                    continue
                 try:
                     logger.info(f"Accept {chlng}")
                     queued_processes += 1
@@ -361,6 +365,7 @@ def play_game(li,
     polyglot_cfg = engine_cfg.get("polyglot", {})
     online_moves_cfg = engine_cfg.get("online_moves", {})
     draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
+    lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
 
     greeting_cfg = config.get("greeting") or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
@@ -405,6 +410,12 @@ def play_game(li,
                     print_move_number(board)
 
                     best_move = get_book_move(board, polyglot_cfg)
+
+                    if best_move.move is None:
+                        best_move = get_egtb_move(board,
+                                                  lichess_bot_tbs,
+                                                  draw_or_resign_cfg)
+
                     if best_move.move is None:
                         best_move = get_online_move(li,
                                                     board,
@@ -511,14 +522,8 @@ def get_book_move(board, polyglot_cfg):
 
     book_config = polyglot_cfg.get("book", {})
 
-    if board.uci_variant == "chess":
-        books = book_config["standard"]
-    else:
-        if book_config.get(board.uci_variant):
-            books = book_config[board.uci_variant]
-        else:
-            return no_book_move
-
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    books = book_config.get(variant) or []
     if isinstance(books, str):
         books = [books]
 
@@ -773,6 +778,166 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     return chess.engine.PlayResult(None, None)
 
 
+def get_syzygy(board, syzygy_cfg):
+    if (not syzygy_cfg.get("enabled", False)
+            or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
+            or board.uci_variant not in ["chess", "antichess", "atomic"]):
+        return None, None
+    move_quality = syzygy_cfg.get("move_quality", "best")
+    with chess.syzygy.open_tablebase(syzygy_cfg["paths"][0]) as tablebase:
+        for path in syzygy_cfg["paths"][1:]:
+            tablebase.add_directory(path)
+
+        try:
+            moves = {}
+            for move in board.legal_moves:
+                board_copy = board.copy()
+                board_copy.push(move)
+                dtz = -tablebase.probe_dtz(board_copy)
+                moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock
+
+            def dtz_to_wdl(dtz):
+                if dtz <= -100:
+                    return -1
+                elif dtz < 0:
+                    return -2
+                elif dtz == 0:
+                    return 0
+                elif dtz < 100:
+                    return 2
+                else:
+                    return 1
+
+            best_wdl = max(map(dtz_to_wdl, moves.values()))
+            good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
+            if move_quality == "good":
+                move, dtz = random.choice(good_moves)
+                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {dtz})")
+                return move, best_wdl
+            else:
+                best_dtz = min([dtz for move, dtz in good_moves])
+                best_moves = [move for move, dtz in good_moves if dtz == best_dtz]
+                move = random.choice(best_moves)
+                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz})")
+                return move, best_wdl
+        except KeyError:
+            # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
+            try:
+                moves = {}
+                for move in board.legal_moves:
+                    board_copy = board.copy()
+                    board_copy.push(move)
+                    moves[move] = -tablebase.probe_wdl(board_copy)
+                best_wdl = max(moves.values())
+                good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
+                move = random.choice(good_moves)
+                if move_quality == "best":
+                    logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame.")
+                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl})")
+                return move, best_wdl
+            except KeyError:
+                return None, None
+
+
+def get_gaviota(board, gaviota_cfg):
+    if (not gaviota_cfg.get("enabled", False)
+            or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces", 5)
+            or board.uci_variant != "chess"):
+        return None, None
+    move_quality = gaviota_cfg.get("move_quality", "best")
+    # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
+    # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
+    # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and
+    # another 12 to mate, so this position has a syzygy wdl=2/-2. To be safe, the first limit is 100 moves, which
+    # guarantees that all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it
+    # because dtm >= dtz, so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
+    min_dtm_to_consider_as_wdl_1 = gaviota_cfg.get("min_dtm_to_consider_as_wdl_1", 120)
+    with chess.gaviota.open_tablebase(gaviota_cfg["paths"][0]) as tablebase:
+        for path in gaviota_cfg["paths"][1:]:
+            tablebase.add_directory(path)
+
+        try:
+            moves = {}
+            for move in board.legal_moves:
+                board_copy = board.copy()
+                board_copy.push(move)
+                dtm = -tablebase.probe_dtm(board_copy)
+                moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock
+
+            def dtm_to_gaviota_wdl(dtm):
+                if dtm < 0:
+                    return -1
+                elif dtm == 0:
+                    return 0
+                else:
+                    return 1
+
+            best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
+            good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
+            best_dtm = min([dtm for move, dtm in good_moves])
+
+            def dtm_to_wdl(dtm):
+                if dtm <= -100:
+                    # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
+                    # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
+                    return -1
+                elif dtm < 0:
+                    return -2
+                elif dtm == 0:
+                    return 0
+                elif dtm < min_dtm_to_consider_as_wdl_1:
+                    return 2
+                else:
+                    return 1
+
+            pseudo_wdl = dtm_to_wdl(best_dtm)
+            if move_quality == "good":
+                if best_dtm < 100:
+                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+                    # dtz is still <100.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < 100]
+                elif best_dtm < min_dtm_to_consider_as_wdl_1:
+                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+                    # dtz is still <100.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
+                elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
+                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+                    # want to only choose between the moves where the real wdl=-1.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
+                elif best_dtm <= -100:
+                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+                    # want to only choose between the moves where the real wdl=-1.
+                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -100]
+                else:
+                    best_moves = good_moves
+            else:
+                # There can be multiple moves with the same dtm.
+                best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]
+            move, dtm = random.choice(best_moves)
+            logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})")
+            return move, pseudo_wdl
+        except KeyError:
+            return None, None
+
+
+def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
+    best_move, wdl = get_syzygy(board, lichess_bot_tbs.get("syzygy") or {})
+    if best_move is None:
+        best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
+    if best_move:
+        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
+        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
+
+        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
+        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
+        return chess.engine.PlayResult(best_move, None, draw_offered=offer_draw, resigned=resign)
+    return chess.engine.PlayResult(None, None)
+
+
 def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
@@ -852,14 +1017,13 @@ def tell_user_game_result(game, board):
     else:
         logger.info("Game adjourned.")
 
-    if termination == engine_wrapper.Termination.MATE:
-        logger.info("Game won by checkmate.")
-    elif termination == engine_wrapper.Termination.TIMEOUT:
-        logger.info(f"{losing_name} forfeited on time.")
-    elif termination == engine_wrapper.Termination.RESIGN:
-        logger.info(f"{losing_name} resigned.")
-    elif termination == engine_wrapper.Termination.ABORT:
-        logger.info("Game aborted.")
+    simple_endings = {engine_wrapper.Termination.MATE: "Game won by checkmate.",
+                      engine_wrapper.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
+                      engine_wrapper.Termination.RESIGN: f"{losing_name} resigned.",
+                      engine_wrapper.Termination.ABORT: "Game aborted."}
+
+    if termination in simple_endings:
+        logger.info(simple_endings[termination])
     elif termination == engine_wrapper.Termination.DRAW:
         if board.is_fifty_moves():
             logger.info("Game drawn by 50-move rule.")
@@ -905,17 +1069,12 @@ def print_pgn_game_record(li, config, game, board, engine):
         if not lichess_node.is_end():
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
-            if lichess_node.comment:
-                if current_node.comment:
-                    if current_node.comment != lichess_node.comment:
-                        current_node.comment = f"{current_node.comment} {lichess_node.comment}"
-                else:
-                    current_node.comment = lichess_node.comment
+            if current_node.comment != lichess_node.comment:
+                current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()
 
-        commentary = engine.comment_for_board_index(index)
-        if commentary is not None:
-            pv_node = current_node.parent.add_line(commentary.get("pv", []))
-            pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
+        commentary = engine.comment_for_board_index(index) or {}
+        pv_node = current_node.parent.add_line(commentary.get("pv", []))
+        pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)

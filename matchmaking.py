@@ -114,7 +114,7 @@ class Matchmaking:
         allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
 
         def is_suitable_opponent(bot):
-            perf = bot["perfs"].get(game_type, {})
+            perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service

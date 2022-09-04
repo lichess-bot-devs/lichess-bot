@@ -90,9 +90,7 @@ class Matchmaking:
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
-
-        game_duration = base_time + increment * 40
-        game_type = game_category(variant, days, game_duration)
+        game_type = game_category(variant, base_time, increment, days)
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
@@ -146,7 +144,8 @@ class Matchmaking:
         self.block_list.append(username)
 
 
-def game_category(variant, days, game_duration):
+def game_category(variant, base_time, increment, days):
+    game_duration = base_time + increment * 40
     if variant != "standard":
         return variant
     elif days:

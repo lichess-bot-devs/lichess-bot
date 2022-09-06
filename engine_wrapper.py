@@ -221,6 +221,7 @@ class EngineWrapper:
 
     def quit(self):
         self.engine.quit()
+        self.engine.close()
 
 
 class UCIEngine(EngineWrapper):

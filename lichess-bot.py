@@ -520,14 +520,8 @@ def get_book_move(board, polyglot_cfg):
 
     book_config = polyglot_cfg.get("book", {})
 
-    if board.uci_variant == "chess":
-        books = book_config["standard"]
-    else:
-        if book_config.get(board.uci_variant):
-            books = book_config[board.uci_variant]
-        else:
-            return no_book_move
-
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    books = book_config.get(variant) or []
     if isinstance(books, str):
         books = [books]
 
@@ -1021,14 +1015,13 @@ def tell_user_game_result(game, board):
     else:
         logger.info("Game adjourned.")
 
-    if termination == engine_wrapper.Termination.MATE:
-        logger.info("Game won by checkmate.")
-    elif termination == engine_wrapper.Termination.TIMEOUT:
-        logger.info(f"{losing_name} forfeited on time.")
-    elif termination == engine_wrapper.Termination.RESIGN:
-        logger.info(f"{losing_name} resigned.")
-    elif termination == engine_wrapper.Termination.ABORT:
-        logger.info("Game aborted.")
+    simple_endings = {engine_wrapper.Termination.MATE: "Game won by checkmate.",
+                      engine_wrapper.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
+                      engine_wrapper.Termination.RESIGN: f"{losing_name} resigned.",
+                      engine_wrapper.Termination.ABORT: "Game aborted."}
+
+    if termination in simple_endings:
+        logger.info(simple_endings[termination])
     elif termination == engine_wrapper.Termination.DRAW:
         if board.is_fifty_moves():
             logger.info("Game drawn by 50-move rule.")
@@ -1074,17 +1067,12 @@ def print_pgn_game_record(li, config, game, board, engine):
         if not lichess_node.is_end():
             lichess_node = lichess_node.next()
             current_node.set_clock(lichess_node.clock())
-            if lichess_node.comment:
-                if current_node.comment:
-                    if current_node.comment != lichess_node.comment:
-                        current_node.comment = f"{current_node.comment} {lichess_node.comment}"
-                else:
-                    current_node.comment = lichess_node.comment
+            if current_node.comment != lichess_node.comment:
+                current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()
 
-        commentary = engine.comment_for_board_index(index)
-        if commentary is not None:
-            pv_node = current_node.parent.add_line(commentary.get("pv", []))
-            pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
+        commentary = engine.comment_for_board_index(index) or {}
+        pv_node = current_node.parent.add_line(commentary.get("pv", []))
+        pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)

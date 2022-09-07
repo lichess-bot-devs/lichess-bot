@@ -19,6 +19,7 @@ class Matchmaking:
         self.challenge_timeout = max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
+        self.block_list = []
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
@@ -56,6 +57,7 @@ class Matchmaking:
             challenge_id = response.get("challenge", {}).get("id")
             if not challenge_id:
                 logger.error(response)
+                self.add_to_block_list(username)
             return challenge_id
         except Exception:
             logger.exception("Could not create challenge")
@@ -88,20 +90,7 @@ class Matchmaking:
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
-
-        game_duration = base_time + increment * 40
-        if variant != "standard":
-            game_type = variant
-        elif days:
-            game_type = "correspondence"
-        elif game_duration < 179:
-            game_type = "bullet"
-        elif game_duration < 479:
-            game_type = "blitz"
-        elif game_duration < 1499:
-            game_type = "rapid"
-        else:
-            game_type = "classical"
+        game_type = game_category(variant, base_time, increment, days)
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
         max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
@@ -116,6 +105,7 @@ class Matchmaking:
         def is_suitable_opponent(bot):
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
+                    and bot["username"] not in self.block_list
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
                     and perf.get("games", 0) > 0
@@ -124,7 +114,20 @@ class Matchmaking:
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
-        bot_username = random.choice(online_bots)["username"] if online_bots else None
+        try:
+            bot_username = None
+            bot = random.choice(online_bots)
+            bot_profile = self.li.get_public_data(bot["username"])
+            if bot_profile.get("blocking"):
+                self.add_to_block_list(bot["username"])
+            else:
+                bot_username = bot["username"]
+        except Exception:
+            if online_bots:
+                logger.exception("Error:")
+            else:
+                logger.error("No suitable bots found to challenge.")
+
         return bot_username, base_time, increment, days, variant
 
     def challenge(self):
@@ -135,3 +138,23 @@ class Matchmaking:
         logger.info(f"Challenge id is {challenge_id}.")
         self.last_challenge_created = time.time()
         self.challenge_id = challenge_id
+
+    def add_to_block_list(self, username):
+        logger.info(f"Will not challenge {username} again during this session.")
+        self.block_list.append(username)
+
+
+def game_category(variant, base_time, increment, days):
+    game_duration = base_time + increment * 40
+    if variant != "standard":
+        return variant
+    elif days:
+        return "correspondence"
+    elif game_duration < 179:
+        return "bullet"
+    elif game_duration < 479:
+        return "blitz"
+    elif game_duration < 1499:
+        return "rapid"
+    else:
+        return "classical"

@@ -1,6 +1,6 @@
 import random
-import time
 import logging
+from timer import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -11,21 +11,18 @@ class Matchmaking:
         self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
         self.matchmaking_cfg = config.get("matchmaking") or {}
         self.user_profile = user_profile
-        self.user_profile_update_interval = 5 * 60  # 5 minutes
-        self.last_user_profile_update = time.time()
-        self.last_challenge_created = time.time()
-        self.last_game_ended = time.time()
-        self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
-        self.challenge_timeout = max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60
+        self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
+        self.last_game_ended_delay = Timer(max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60)
+        self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
         self.block_list = []
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
-        time_has_passed = self.last_game_ended + self.challenge_timeout < time.time()
-        challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
-        min_wait_time_passed = self.last_challenge_created + self.min_wait_time < time.time()
+        time_has_passed = self.last_game_ended_delay.is_expired()
+        challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
+        min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
@@ -78,8 +75,8 @@ class Matchmaking:
         return self.user_profile["username"]
 
     def update_user_profile(self):
-        if time.time() > self.last_user_profile_update + self.user_profile_update_interval:
-            self.last_user_profile_update = time.time()
+        if self.last_user_profile_update_time.is_expired():
+            self.last_user_profile_update_time.reset()
             self.user_profile = self.li.get_profile()
 
     def choose_opponent(self):
@@ -136,7 +133,7 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None
         logger.info(f"Challenge id is {challenge_id}.")
-        self.last_challenge_created = time.time()
+        self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
 
     def add_to_block_list(self, username):

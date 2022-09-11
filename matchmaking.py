@@ -1,6 +1,7 @@
 import random
 import logging
 from timer import Timer
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
         self.block_list = []
+        self.delay_challenge = defaultdict(lambda: Timer(0))
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
@@ -103,6 +105,7 @@ class Matchmaking:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and bot["username"] not in self.block_list
+                    and self.delay_challenge[bot["username"]].is_expired()
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
                     and perf.get("games", 0) > 0
@@ -139,6 +142,13 @@ class Matchmaking:
     def add_to_block_list(self, username):
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
+
+    def declined_challenge(self, username):
+        # add one hour to delay each time a challenge is declined
+        new_delay = self.delay_challenge[username].duration + 3600
+        self.delay_challenge[username] = Timer(new_delay)
+        hours = "hours" if new_delay > 3600 else "hour"
+        logger.info(f"Will not challenge {username} for {new_delay/3600} {hours}.")
 
 
 def game_category(variant, base_time, increment, days):

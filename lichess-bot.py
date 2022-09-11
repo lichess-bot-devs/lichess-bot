@@ -245,6 +245,7 @@ def lichess_bot_main(li,
                 opponent = event["challenge"]["destUser"]["name"]
                 reason = event["challenge"]["declineReason"]
                 logger.info(f"{opponent} declined {chlng}: {reason}")
+                matchmaker.declined_challenge(opponent)
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
                 if matchmaker.challenge_id == game_id:

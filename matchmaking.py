@@ -148,6 +148,8 @@ class Matchmaking:
         opponent = event["challenge"]["destUser"]["name"]
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
+        if not challenge.from_self:
+            return
 
         # add one hour to delay each time a challenge is declined
         mode = "rated" if challenge.rated else "casual"

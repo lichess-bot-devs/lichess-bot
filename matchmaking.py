@@ -1,5 +1,6 @@
 import random
 import logging
+import model
 from timer import Timer
 from collections import defaultdict
 
@@ -18,7 +19,7 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
         self.block_list = []
-        self.delay_challenge = defaultdict(lambda: Timer(0))
+        self.delay_timers = defaultdict(lambda: Timer(0))
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
@@ -31,12 +32,8 @@ class Matchmaking:
             self.challenge_id = None
         return matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed
 
-    def create_challenge(self, username, base_time, increment, days, variant):
-        mode = self.matchmaking_cfg.get("challenge_mode") or "random"
-        if mode == "random":
-            mode = random.choice(["casual", "rated"])
-        rated = mode == "rated"
-        params = {"rated": rated, "variant": variant}
+    def create_challenge(self, username, base_time, increment, days, variant, mode):
+        params = {"rated": mode == "rated", "variant": variant}
 
         play_correspondence = []
         if days:
@@ -86,6 +83,10 @@ class Matchmaking:
         if variant == "random":
             variant = random.choice(self.variants)
 
+        mode = self.matchmaking_cfg.get("challenge_mode") or "random"
+        if mode == "random":
+            mode = random.choice(["casual", "rated"])
+
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
@@ -105,7 +106,7 @@ class Matchmaking:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and bot["username"] not in self.block_list
-                    and self.delay_challenge[bot["username"]].is_expired()
+                    and self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
                     and perf.get("games", 0) > 0
@@ -128,13 +129,13 @@ class Matchmaking:
             else:
                 logger.error("No suitable bots found to challenge.")
 
-        return bot_username, base_time, increment, days, variant
+        return bot_username, base_time, increment, days, variant, mode
 
     def challenge(self):
         self.update_user_profile()
-        bot_username, base_time, increment, days, variant = self.choose_opponent()
+        bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
-        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant) if bot_username else None
+        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else None
         logger.info(f"Challenge id is {challenge_id}.")
         self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
@@ -143,12 +144,26 @@ class Matchmaking:
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
 
-    def declined_challenge(self, username):
+    def declined_challenge(self, event):
+        challenge = model.Challenge(event["challenge"], self.user_profile)
+        opponent = event["challenge"]["destUser"]["name"]
+        reason = event["challenge"]["declineReason"]
+        logger.info(f"{opponent} declined {challenge}: {reason}")
+
         # add one hour to delay each time a challenge is declined
-        new_delay = self.delay_challenge[username].duration + 3600
-        self.delay_challenge[username] = Timer(new_delay)
-        hours = "hours" if new_delay > 3600 else "hour"
-        logger.info(f"Will not challenge {username} for {new_delay/3600} {hours}.")
+        mode = "rated" if challenge.rated else "casual"
+        delay_timer = self.get_delay_timer(opponent,
+                                           challenge.variant,
+                                           challenge.speed,
+                                           mode)
+        delay_timer.duration += 3600
+        delay_timer.reset()
+        hours = "hours" if delay_timer.duration > 3600 else "hour"
+        logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
+                    f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
+
+    def get_delay_timer(self, opponent_name, variant, time_control, rated_mode):
+        return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
 
 
 def game_category(variant, base_time, increment, days):

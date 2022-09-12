@@ -79,13 +79,12 @@ class Matchmaking:
             self.user_profile = self.li.get_profile()
 
     def choose_opponent(self):
-        variant = self.matchmaking_cfg.get("challenge_variant") or "random"
-        if variant == "random":
-            variant = random.choice(self.variants)
+        def get_random_config_value(parameter, choices):
+            value = self.matchmaking_cfg.get(parameter) or "random"
+            return value if value != "random" else random.choice(choices)
 
-        mode = self.matchmaking_cfg.get("challenge_mode") or "random"
-        if mode == "random":
-            mode = random.choice(["casual", "rated"])
+        variant = get_random_config_value("challenge_variant", self.variants)
+        mode = get_random_config_value("challenge_mode", ["casual", "rated"])
 
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)

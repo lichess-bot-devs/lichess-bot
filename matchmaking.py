@@ -151,7 +151,7 @@ class Matchmaking:
         if not challenge.from_self:
             return
 
-        # add one hour to delay each time a challenge is declined
+        # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
         delay_timer = self.get_delay_timer(opponent,
                                            challenge.variant,

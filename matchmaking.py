@@ -105,7 +105,6 @@ class Matchmaking:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and bot["username"] not in self.block_list
-                    and self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
                     and perf.get("games", 0) > 0
@@ -113,6 +112,13 @@ class Matchmaking:
 
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
+
+        def ready_for_challenge(bot):
+            return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
+
+        ready_bots = list(filter(ready_for_challenge, online_bots))
+        if ready_bots:
+            online_bots = ready_bots
 
         try:
             bot_username = None

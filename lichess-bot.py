@@ -631,6 +631,13 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     return move
 
 
+def range_scan(range_definition, last_value, position):
+    for border, value in range_definition:
+        if position <= border:
+            return value
+    return last_value
+
+
 def get_online_egtb_move(li, board, game, online_egtb_cfg):
     use_online_egtb = online_egtb_cfg.get("enabled", False)
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -795,16 +802,10 @@ def get_syzygy(board, syzygy_cfg):
                 moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock
 
             def dtz_to_wdl(dtz):
-                if dtz <= -100:
-                    return -1
-                elif dtz < 0:
-                    return -2
-                elif dtz == 0:
-                    return 0
-                elif dtz < 100:
-                    return 2
-                else:
-                    return 1
+                return range_scan([(-100, -1),
+                                   (-1, -2),
+                                   (0, 0),
+                                   (99, 2)], 1, dtz)
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
@@ -863,53 +864,41 @@ def get_gaviota(board, gaviota_cfg):
                 moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock
 
             def dtm_to_gaviota_wdl(dtm):
-                if dtm < 0:
-                    return -1
-                elif dtm == 0:
-                    return 0
-                else:
-                    return 1
+                return range_scan([(-1, -1),
+                                   (0, 0)], 1, dtm)
 
             best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
             good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
             best_dtm = min([dtm for move, dtm in good_moves])
 
             def dtm_to_wdl(dtm):
-                if dtm <= -100:
-                    # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
-                    # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
-                    return -1
-                elif dtm < 0:
-                    return -2
-                elif dtm == 0:
-                    return 0
-                elif dtm < min_dtm_to_consider_as_wdl_1:
-                    return 2
-                else:
-                    return 1
+                # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
+                # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
+                return range_scan([(-100, -1),
+                                   (-1, -2),
+                                   (0, 0),
+                                   (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
 
             pseudo_wdl = dtm_to_wdl(best_dtm)
             if move_quality == "good":
-                if best_dtm < 100:
-                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
-                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
-                    # dtz is still <100.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < 100]
-                elif best_dtm < min_dtm_to_consider_as_wdl_1:
-                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
-                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
-                    # dtz is still <100.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
-                elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
-                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
-                    # want to only choose between the moves where the real wdl=-1.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
-                elif best_dtm <= -100:
-                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
-                    # want to only choose between the moves where the real wdl=-1.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -100]
-                else:
-                    best_moves = good_moves
+                best_moves = range_scan(
+                    [(99,
+                      [(move, dtm) for move, dtm in good_moves if dtm < 100]),  # [1]
+                     (min_dtm_to_consider_as_wdl_1 - 1,
+                      [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]),  # [1]
+                     (-min_dtm_to_consider_as_wdl_1,
+                      [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]),  # [2]
+                     (-100,
+                      [(move, dtm) for move, dtm in good_moves if dtm <= -100])],  # [2]
+                    good_moves,
+                    best_dtm)
+
+                # [1] If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+                #     want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+                #     dtz is still <100.
+                # [2] If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+                #     want to only choose between the moves where the real wdl=-1.
+
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]

@@ -638,6 +638,80 @@ def range_scan(range_definition, last_value, position):
     return last_value
 
 
+def get_lichess_egtb_move(li, board, quality, variant):
+    name_to_wld = {"loss": -2,
+                   "maybe-loss": -1,
+                   "blessed-loss": -1,
+                   "draw": 0,
+                   "cursed-win": 1,
+                   "maybe-win": 1,
+                   "win": 2}
+    pieces = chess.popcount(board.occupied)
+    max_pieces = 7 if board.uci_variant == "chess" else 6
+    if pieces <= max_pieces:
+        data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
+                                  params={"fen": board.fen()})
+        if quality == "best":
+            move = data["moves"][0]["uci"]
+            wdl = name_to_wld[data["moves"][0]["category"]] * -1
+            dtz = data["moves"][0]["dtz"] * -1
+            dtm = data["moves"][0]["dtm"]
+            if dtm:
+                dtm *= -1
+        else:
+            best_wdl = name_to_wld[data["moves"][0]["category"]]
+
+            def good_enough(possible_move):
+                return name_to_wld[possible_move["category"]] == best_wdl
+            possible_moves = list(filter(good_enough, data["moves"]))
+            random_move = random.choice(possible_moves)
+            move = random_move["uci"]
+            wdl = name_to_wld[random_move["category"]] * -1
+            dtz = random_move["dtz"] * -1
+            dtm = random_move["dtm"]
+            if dtm:
+                dtm *= -1
+
+        logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
+        return move, wdl
+
+
+def get_chessdb_egtb_move(li, board, quality, variant):
+    def score_to_wdl(score):
+        return range_scan([(-20001, 2),
+                           (-1, -1),
+                           (0, 0),
+                           (20000, 1)], 2, score)
+
+    def score_to_dtz(score):
+        return range_scan([(-20001, -30000 - score),
+                           (-1, -20000 - score),
+                           (0, 0),
+                           (20000, 20000 - score)], 30000 - score, score)
+
+    action = "querypv" if quality == "best" else "queryall"
+    data = li.online_book_get("https://www.chessdb.cn/cdb.php",
+                              params={"action": action, "board": board.fen(), "json": 1})
+    if data["status"] == "ok":
+        if quality == "best":
+            score = data["score"]
+            move = data["pv"][0]
+        else:
+            best_wdl = score_to_wdl(data["moves"][0]["score"])
+
+            def good_enough(move):
+                return score_to_wdl(move["score"]) == best_wdl
+            possible_moves = filter(good_enough, data["moves"])
+            random_move = random.choice(list(possible_moves))
+            score = random_move["score"]
+            move = random_move["uci"]
+
+        wdl = score_to_wdl(score)
+        dtz = score_to_dtz(score)
+        logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
+        return move, score_to_wdl(score)
+
+
 def get_online_egtb_move(li, board, game, online_egtb_cfg):
     use_online_egtb = online_egtb_cfg.get("enabled", False)
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -660,87 +734,9 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 
     try:
         if source == "lichess":
-            name_to_wld = {"loss": -2,
-                           "maybe-loss": -1,
-                           "blessed-loss": -1,
-                           "draw": 0,
-                           "cursed-win": 1,
-                           "maybe-win": 1,
-                           "win": 2}
-            max_pieces = 7 if board.uci_variant == "chess" else 6
-            if pieces <= max_pieces:
-                data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
-                                          params={"fen": board.fen()})
-                if quality == "best":
-                    move = data["moves"][0]["uci"]
-                    wdl = name_to_wld[data["moves"][0]["category"]] * -1
-                    dtz = data["moves"][0]["dtz"] * -1
-                    dtm = data["moves"][0]["dtm"]
-                    if dtm:
-                        dtm *= -1
-                else:
-                    best_wdl = name_to_wld[data["moves"][0]["category"]]
-
-                    def good_enough(possible_move):
-                        return name_to_wld[possible_move["category"]] == best_wdl
-                    possible_moves = list(filter(good_enough, data["moves"]))
-                    random_move = random.choice(possible_moves)
-                    move = random_move["uci"]
-                    wdl = name_to_wld[random_move["category"]] * -1
-                    dtz = random_move["dtz"] * -1
-                    dtm = random_move["dtm"]
-                    if dtm:
-                        dtm *= -1
-
-                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
-                return move, wdl
+            return get_lichess_egtb_move(li, board, quality, variant)
         elif source == "chessdb":
-
-            def score_to_wdl(score):
-                if score < -20000:
-                    return -2
-                elif score < 0:
-                    return -1
-                elif score == 0:
-                    return 0
-                elif score <= 20000:
-                    return 1
-                else:
-                    return 2
-
-            def score_to_dtz(score):
-                if score < -20000:
-                    return -30000 - score
-                elif score < 0:
-                    return -20000 - score
-                elif score == 0:
-                    return 0
-                elif score <= 20000:
-                    return 20000 - score
-                else:
-                    return 30000 - score
-
-            action = "querypv" if quality == "best" else "queryall"
-            data = li.online_book_get("https://www.chessdb.cn/cdb.php",
-                                      params={"action": action, "board": board.fen(), "json": 1})
-            if data["status"] == "ok":
-                if quality == "best":
-                    score = data["score"]
-                    move = data["pv"][0]
-                else:
-                    best_wdl = score_to_wdl(data["moves"][0]["score"])
-
-                    def good_enough(move):
-                        return score_to_wdl(move["score"]) == best_wdl
-                    possible_moves = filter(good_enough, data["moves"])
-                    random_move = random.choice(list(possible_moves))
-                    score = random_move["score"]
-                    move = random_move["uci"]
-
-                wdl = score_to_wdl(score)
-                dtz = score_to_dtz(score)
-                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
-                return move, score_to_wdl(score)
+            return get_chessdb_egtb_move(li, board, quality, variant)
     except Exception:
         pass
 

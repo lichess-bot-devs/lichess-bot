@@ -830,8 +830,8 @@ def get_syzygy(board, syzygy_cfg):
                 best_wdl = max(moves.values())
                 good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
                 move = random.choice(good_moves)
-                if move_quality == "best":
-                    logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame.")
+                logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
+                             if move_quality == "best" else "")
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl})")
                 return move, best_wdl
             except KeyError:

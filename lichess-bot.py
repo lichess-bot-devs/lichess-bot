@@ -779,6 +779,15 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     return chess.engine.PlayResult(None, None)
 
 
+def score_moves(board, scorer):
+    moves = {}
+    for move in board.legal_moves:
+        board_copy = board.copy()
+        board_copy.push(move)
+        moves[move] = scorer(board_copy)
+    return moves
+
+
 def get_syzygy(board, syzygy_cfg):
     if (not syzygy_cfg.get("enabled", False)
             or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
@@ -790,12 +799,11 @@ def get_syzygy(board, syzygy_cfg):
             tablebase.add_directory(path)
 
         try:
-            moves = {}
-            for move in board.legal_moves:
-                board_copy = board.copy()
-                board_copy.push(move)
-                dtz = -tablebase.probe_dtz(board_copy)
-                moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock
+            def dtz_scorer(board):
+                dtz = -tablebase.probe_dtz(board)
+                return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock
+
+            moves = score_moves(board, dtz_scorer)
 
             def dtz_to_wdl(dtz):
                 return range_scan([(-100, -1),
@@ -818,11 +826,7 @@ def get_syzygy(board, syzygy_cfg):
         except KeyError:
             # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
             try:
-                moves = {}
-                for move in board.legal_moves:
-                    board_copy = board.copy()
-                    board_copy.push(move)
-                    moves[move] = -tablebase.probe_wdl(board_copy)
+                moves = score_moves(board, lambda b: -tablebase.probe_wdl(b))
                 best_wdl = max(moves.values())
                 good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
                 move = random.choice(good_moves)
@@ -852,12 +856,11 @@ def get_gaviota(board, gaviota_cfg):
             tablebase.add_directory(path)
 
         try:
-            moves = {}
-            for move in board.legal_moves:
-                board_copy = board.copy()
-                board_copy.push(move)
-                dtm = -tablebase.probe_dtm(board_copy)
-                moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock
+            def dtm_scorer(board):
+                dtm = -tablebase.probe_dtm(board)
+                return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock
+
+            moves = score_moves(board, dtm_scorer)
 
             def dtm_to_gaviota_wdl(dtm):
                 return range_scan([(-1, -1),

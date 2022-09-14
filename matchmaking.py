@@ -114,7 +114,7 @@ class Matchmaking:
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot):
-            return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
+            return self.delay_timers[bot["username"]].is_expired()
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         if ready_bots:
@@ -158,19 +158,11 @@ class Matchmaking:
             return
 
         # Add one hour to delay each time a challenge is declined.
-        mode = "rated" if challenge.rated else "casual"
-        delay_timer = self.get_delay_timer(opponent,
-                                           challenge.variant,
-                                           challenge.speed,
-                                           mode)
+        delay_timer = self.delay_timers[opponent]
         delay_timer.duration += 3600
         delay_timer.reset()
         hours = "hours" if delay_timer.duration > 3600 else "hour"
-        logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
-                    f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
-
-    def get_delay_timer(self, opponent_name, variant, time_control, rated_mode):
-        return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
+        logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
 
 
 def game_category(variant, base_time, increment, days):

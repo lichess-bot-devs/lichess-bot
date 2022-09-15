@@ -266,6 +266,8 @@ If there are entries for both real-time (`challenge_initial_time` and/or `challe
 
 If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precendence.
 
+The `delay_after_decline` option can be useful if your matchmaking settings result in a lot of declined challenges. The bots that accept challenges will be challenged more often than those that have declined. The delay is only temporary, so bots that decline a challenge will eventually be challenged again.
+
 ```yml
 matchmaking:
   allow_matchmaking: false

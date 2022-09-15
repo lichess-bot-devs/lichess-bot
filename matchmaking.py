@@ -154,7 +154,7 @@ class Matchmaking:
         opponent = event["challenge"]["destUser"]["name"]
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
-        if not challenge.from_self:
+        if not challenge.from_self or not self.matchmaking_cfg.get("delay_after_decline"):
             return
 
         # Add one hour to delay each time a challenge is declined.

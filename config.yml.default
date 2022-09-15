@@ -162,3 +162,4 @@ matchmaking:
   opponent_rating_difference: 100 # The maximum difference in rating between the bot's rating and opponent's rating.
   opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
+  delay_after_decline: false  # If a bot declines a challenge, delay issuing another challenge to that bot.

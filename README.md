@@ -260,10 +260,10 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `opponent_rating_difference`: The maximum difference between the bot's rating and the opponent bot's rating.
   - `opponent_allow_tos_violation`: Whether to challenge bots that violated Lichess Terms of Service. Note that even rated games against them will not affect ratings.
   - `challenge_mode`: Possible options are `casual`, `rated` and `random`.
-  - `delay_after_decline`: Whether and how to delay challenging a bot after that bot declines a challenge. Options are "none", "coarse", and "fine".
-    - "none" does not delay challenging a bot that declined a challenge.
-    - "coarse" will delay challenging a bot to any type of game for a set time.
-    - "fine" will delay challenging a bot to the same kind of game that was declined for a set time.
+  - `delay_after_decline`: Whether and how to delay challenging a bot after that bot declines a challenge. Options are `none`, `coarse`, and `fine`.
+    - `none` does not delay challenging a bot that declined a challenge.
+    - `coarse` will delay challenging a bot to any type of game for a set time.
+    - `fine` will delay challenging a bot to the same kind of game that was declined for a set time.
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
 

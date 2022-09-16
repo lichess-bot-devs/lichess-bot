@@ -3,8 +3,15 @@ import logging
 import model
 from timer import Timer
 from collections import defaultdict
+from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+
+class DelayType(str, Enum):
+    NONE = "none"
+    COARSE = "coarse"
+    FINE = "fine"
 
 
 class Matchmaking:
@@ -20,6 +27,11 @@ class Matchmaking:
         self.challenge_id = None
         self.block_list = []
         self.delay_timers = defaultdict(lambda: Timer(0))
+        delay_option = "delay_after_decline"
+        self.delay_type = self.matchmaking_cfg.get(delay_option) or DelayType.NONE
+        if self.delay_type not in DelayType.__members__.values():
+            raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
+                             f" Choices are: {', '.join(DelayType)}.")
 
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
@@ -154,7 +166,7 @@ class Matchmaking:
         opponent = event["challenge"]["destUser"]["name"]
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
-        if not challenge.from_self or not self.matchmaking_cfg.get("delay_after_decline"):
+        if not challenge.from_self or self.delay_type == DelayType.NONE:
             return
 
         # Add one hour to delay each time a challenge is declined.
@@ -166,11 +178,17 @@ class Matchmaking:
         delay_timer.duration += 3600
         delay_timer.reset()
         hours = "hours" if delay_timer.duration > 3600 else "hour"
-        logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
-                    f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
+        if self.delay_type == DelayType.FINE:
+            logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
+                        f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
+        else:
+            logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
 
     def get_delay_timer(self, opponent_name, variant, time_control, rated_mode):
-        return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
+        if self.delay_type == DelayType.FINE:
+            return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
+        else:
+            return self.delay_timers[opponent_name]
 
 
 def game_category(variant, base_time, increment, days):

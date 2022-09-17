@@ -31,7 +31,7 @@ def load_config(config_file):
 
         logger_config = CONFIG.copy()
         logger_config["token"] = "logger"
-        logger.debug(f"Config: {logger_config}")
+        logger.debug(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
 
         if "LICHESS_BOT_TOKEN" in os.environ:
             CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]

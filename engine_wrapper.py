@@ -3,7 +3,6 @@ import chess.engine
 import subprocess
 import logging
 from enum import Enum
-from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -240,9 +239,7 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-        stats = [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
-
-        return stats
+        return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):
         pass

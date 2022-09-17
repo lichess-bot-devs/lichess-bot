@@ -789,7 +789,7 @@ def get_syzygy(board, syzygy_cfg):
                 board_copy = board.copy()
                 board_copy.push(move)
                 dtz = -tablebase.probe_dtz(board_copy)
-                moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock
+                moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock * (0 if dtz == 0 else 1)
 
             def dtz_to_wdl(dtz):
                 if dtz <= -100:
@@ -857,7 +857,7 @@ def get_gaviota(board, gaviota_cfg):
                 board_copy = board.copy()
                 board_copy.push(move)
                 dtm = -tablebase.probe_dtm(board_copy)
-                moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock
+                moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock * (0 if dtm == 0 else 1)
 
             def dtm_to_gaviota_wdl(dtm):
                 if dtm < 0:

@@ -3,6 +3,7 @@ import chess.engine
 import subprocess
 import logging
 from enum import Enum
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -190,11 +191,45 @@ class EngineWrapper:
         for line in self.get_stats():
             logger.info(line)
 
+    def readable_score(self, score):
+        score = score.white()
+        if score.mate():
+            str_score = f"#{score.mate()}"
+        else:
+            str_score = str(round(score.score() / 100, 2))
+        return str_score
+
+    def readable_wdl(self, wdl):
+        wdl = round(wdl.white().expectation() * 100, 1)
+        return f"{wdl}%"
+
+    def readable_number(self, number):
+        if number >= 1e9:
+            return f"{round(number / 1e9, 1)}B"
+        elif number >= 1e6:
+            return f"{round(number / 1e6, 1)}M"
+        elif number >= 1e3:
+            return f"{round(number / 1e3, 1)}K"
+        return str(number)
+
     def get_stats(self, for_chat=False):
         info = self.last_move_info.copy()
-        stats = ["depth", "nps", "nodes", "score", "ponderpv"]
+
+        def to_readable_value(stat, info):
+            readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
+                        "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
+                        "tbhits": self.readable_number, "time": lambda x: round(x / 1e3, 1)}
+            return str(readable.get(stat, lambda x: x)(info[stat]))
+
+        def to_readable_key(stat):
+            readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
+            stat = readable.get(stat, stat)
+            return stat[0].upper() + stat[1:]
+
+        stats = ["score", "wdl", "depth", "nodes", "nps", "ponderpv"]
         if for_chat and "ponderpv" in stats:
-            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]
+            bot_stats = [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}"
+                         for stat in stats if stat in info and stat != "ponderpv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = info["ponderpv"].split()
             try:
@@ -205,7 +240,9 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-        return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
+        stats = [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
+
+        return stats
 
     def get_opponent_info(self, game):
         pass

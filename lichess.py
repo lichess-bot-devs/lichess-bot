@@ -142,9 +142,12 @@ class Lichess:
         return self.api_get(ENDPOINTS["export"].format(game_id), get_raw_text=True)
 
     def get_online_bots(self):
-        online_bots = self.api_get(ENDPOINTS["online_bots"], get_raw_text=True)
-        online_bots = list(filter(bool, online_bots.split("\n")))
-        return list(map(lambda bot: json.loads(bot), online_bots))
+        try:
+            online_bots = self.api_get(ENDPOINTS["online_bots"], get_raw_text=True)
+            online_bots = list(filter(bool, online_bots.split("\n")))
+            return list(map(json.loads, online_bots))
+        except Exception:
+            return []
 
     def challenge(self, username, params):
         return self.api_post(ENDPOINTS["challenge"].format(username),

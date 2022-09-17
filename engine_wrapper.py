@@ -80,8 +80,8 @@ def translate_termination(termination, board, winner_color):
         return ""
 
 
-PONDERPV_CHARACTERS = 6  # the length of ", PV: "
-MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
+PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
+MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
 class EngineWrapper:

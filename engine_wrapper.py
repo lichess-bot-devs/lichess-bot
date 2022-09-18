@@ -191,7 +191,7 @@ class EngineWrapper:
             logger.info(line)
 
     def readable_score(self, score):
-        score = score.white()
+        score = score.relative
         if score.mate():
             str_score = f"#{score.mate()}"
         else:
@@ -199,7 +199,7 @@ class EngineWrapper:
         return str_score
 
     def readable_wdl(self, wdl):
-        wdl = round(wdl.white().expectation() * 100, 1)
+        wdl = round(wdl.relative.expectation() * 100, 1)
         return f"{wdl}%"
 
     def readable_number(self, number):

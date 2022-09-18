@@ -222,8 +222,7 @@ class EngineWrapper:
         def to_readable_value(stat, info):
             readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
                         "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
-                        "tbhits": self.readable_number, "time": lambda x: round(x / 1e3, 1),
-                        "cpuload": lambda x: f"{round(x / 10, 1)}%"}
+                        "tbhits": self.readable_number, "cpuload": lambda x: f"{round(x / 10, 1)}%"}
             return str(readable.get(stat, lambda x: x)(info[stat]))
 
         def to_readable_key(stat):

@@ -7,7 +7,7 @@ class Timer:
         self.reset()
 
     def is_expired(self):
-        return self.time_since_reset() > self.duration
+        return self.time_since_reset() >= self.duration
 
     def reset(self):
         self.starting_time = time.time()

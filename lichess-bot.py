@@ -241,10 +241,7 @@ def lichess_bot_main(li,
                 elif chlng.id != matchmaker.challenge_id:
                     li.decline_challenge(chlng.id, reason=decline_reason)
             elif event["type"] == "challengeDeclined":
-                chlng = model.Challenge(event["challenge"], user_profile)
-                opponent = event["challenge"]["destUser"]["name"]
-                reason = event["challenge"]["declineReason"]
-                logger.info(f"{opponent} declined {chlng}: {reason}")
+                matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
                 if matchmaker.challenge_id == game_id:
@@ -801,7 +798,7 @@ def get_syzygy(board, syzygy_cfg):
         try:
             def dtz_scorer(board):
                 dtz = -tablebase.probe_dtz(board)
-                return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock
+                return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
 
             moves = score_moves(board, dtz_scorer)
 
@@ -858,7 +855,7 @@ def get_gaviota(board, gaviota_cfg):
         try:
             def dtm_scorer(board):
                 dtm = -tablebase.probe_dtm(board)
-                return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock
+                return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock * (0 if dtm == 0 else 1)
 
             moves = score_moves(board, dtm_scorer)
 

@@ -80,8 +80,8 @@ def translate_termination(termination, board, winner_color):
         return ""
 
 
-PONDERPV_CHARACTERS = 12  # the length of ", ponderpv: "
-MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
+PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
+MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
 class EngineWrapper:
@@ -196,7 +196,7 @@ class EngineWrapper:
             logger.info(line)
 
     def readable_score(self, score):
-        score = score.white()
+        score = score.relative
         if score.mate():
             str_score = f"#{score.mate()}"
         else:
@@ -204,7 +204,7 @@ class EngineWrapper:
         return str_score
 
     def readable_wdl(self, wdl):
-        wdl = round(wdl.white().expectation() * 100, 1)
+        wdl = round(wdl.relative.expectation() * 100, 1)
         return f"{wdl}%"
 
     def readable_number(self, number):
@@ -223,7 +223,7 @@ class EngineWrapper:
             readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
                         "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
                         "tbhits": self.readable_number, "time": lambda x: round(x / 1e3, 1),
-                        "cpuload": lambda x: f"{round(x / 10, 1)}%", "currmove": lambda move: move.sa}
+                        "cpuload": lambda x: f"{round(x / 10, 1)}%"}
             return str(readable.get(stat, lambda x: x)(info[stat]))
 
         def to_readable_key(stat):

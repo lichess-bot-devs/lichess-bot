@@ -245,6 +245,8 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
+            if not info["ponderpv"]:
+                info.pop("ponderpv")
         return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):

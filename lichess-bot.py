@@ -628,8 +628,8 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     return move
 
 
-def range_scan(range_definition, last_value, position):
-    for border, value in range_definition:
+def piecewise_function(range_definitions, last_value, position):
+    for border, value in range_definitions:
         if position <= border:
             return value
     return last_value
@@ -675,16 +675,16 @@ def get_lichess_egtb_move(li, board, quality, variant):
 
 def get_chessdb_egtb_move(li, board, quality, variant):
     def score_to_wdl(score):
-        return range_scan([(-20001, 2),
-                           (-1, -1),
-                           (0, 0),
-                           (20000, 1)], 2, score)
+        return piecewise_function([(-20001, 2),
+                                   (-1, -1),
+                                   (0, 0),
+                                   (20000, 1)], 2, score)
 
     def score_to_dtz(score):
-        return range_scan([(-20001, -30000 - score),
-                           (-1, -20000 - score),
-                           (0, 0),
-                           (20000, 20000 - score)], 30000 - score, score)
+        return piecewise_function([(-20001, -30000 - score),
+                                   (-1, -20000 - score),
+                                   (0, 0),
+                                   (20000, 20000 - score)], 30000 - score, score)
 
     action = "querypv" if quality == "best" else "queryall"
     data = li.online_book_get("https://www.chessdb.cn/cdb.php",
@@ -803,10 +803,10 @@ def get_syzygy(board, syzygy_cfg):
             moves = score_moves(board, dtz_scorer)
 
             def dtz_to_wdl(dtz):
-                return range_scan([(-100, -1),
-                                   (-1, -2),
-                                   (0, 0),
-                                   (99, 2)], 1, dtz)
+                return piecewise_function([(-100, -1),
+                                           (-1, -2),
+                                           (0, 0),
+                                           (99, 2)], 1, dtz)
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
@@ -860,8 +860,8 @@ def get_gaviota(board, gaviota_cfg):
             moves = score_moves(board, dtm_scorer)
 
             def dtm_to_gaviota_wdl(dtm):
-                return range_scan([(-1, -1),
-                                   (0, 0)], 1, dtm)
+                return piecewise_function([(-1, -1),
+                                           (0, 0)], 1, dtm)
 
             best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
             good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
@@ -870,14 +870,14 @@ def get_gaviota(board, gaviota_cfg):
             def dtm_to_wdl(dtm):
                 # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
                 # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
-                return range_scan([(-100, -1),
-                                   (-1, -2),
-                                   (0, 0),
-                                   (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
+                return piecewise_function([(-100, -1),
+                                           (-1, -2),
+                                           (0, 0),
+                                           (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
 
             pseudo_wdl = dtm_to_wdl(best_dtm)
             if move_quality == "good":
-                best_moves = range_scan(
+                best_moves = piecewise_function(
                     [(99,
                       [(move, dtm) for move, dtm in good_moves if dtm < 100]),  # [1]
                      (min_dtm_to_consider_as_wdl_1 - 1,

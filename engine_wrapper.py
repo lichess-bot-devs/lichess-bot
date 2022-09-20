@@ -182,9 +182,10 @@ class EngineWrapper:
         except IndexError:
             return None
 
-    def add_null_comment(self):
-        if self.comment_start_index is not None:
-            self.move_commentary.append(None)
+    def add_comment(self, comment, board):
+        if self.comment_start_index is None:
+            self.comment_start_index = len(board.move_stack)
+        self.move_commentary.append(comment.copy() if comment else None)
 
     def print_stats(self):
         for line in self.get_stats():

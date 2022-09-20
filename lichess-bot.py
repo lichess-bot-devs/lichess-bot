@@ -1070,7 +1070,6 @@ def print_pgn_game_record(li, config, game, board, engine):
         game_record = lichess_game_record
 
     current_node = game_record.game()
-    logger.info(engine.move_commentary)
     lichess_node = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
         if current_node.is_end() or current_node.next().move != move:
@@ -1085,7 +1084,6 @@ def print_pgn_game_record(li, config, game, board, engine):
                 current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()
 
         commentary = engine.comment_for_board_index(index) or {}
-        logger.info(commentary)
         pv_node = current_node.parent.add_line(commentary.get("pv", []))
         pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 

@@ -912,24 +912,7 @@ def get_gaviota(board, gaviota_cfg):
 
             pseudo_wdl = dtm_to_wdl(best_dtm)
             if move_quality == "good":
-                best_moves = piecewise_function(
-                    [(99,
-                      [(move, dtm) for move, dtm in good_moves if dtm < 100]),  # [1]
-                     (min_dtm_to_consider_as_wdl_1 - 1,
-                      [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]),  # [1]
-                     (-min_dtm_to_consider_as_wdl_1,
-                      [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]),  # [2]
-                     (-100,
-                      [(move, dtm) for move, dtm in good_moves if dtm <= -100])],  # [2]
-                    good_moves,
-                    best_dtm)
-
-                # [1] If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
-                #     want to avoid these positions, if there is a move where even when we add the halfmove_clock the
-                #     dtz is still <100.
-                # [2] If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
-                #     want to only choose between the moves where the real wdl=-1.
-
+                best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]
@@ -938,6 +921,29 @@ def get_gaviota(board, gaviota_cfg):
             return move, pseudo_wdl
         except KeyError:
             return None, None
+
+
+def good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1):
+    if best_dtm < 100:
+        # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+        # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+        # dtz is still <100.
+        return [(move, dtm) for move, dtm in good_moves if dtm < 100]
+    elif best_dtm < min_dtm_to_consider_as_wdl_1:
+        # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+        # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+        # dtz is still <100.
+        return [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
+    elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
+        # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+        # want to only choose between the moves where the real wdl=-1.
+        return [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
+    elif best_dtm <= -100:
+        # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+        # want to only choose between the moves where the real wdl=-1.
+        return [(move, dtm) for move, dtm in good_moves if dtm <= -100]
+    else:
+        return good_moves
 
 
 def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):

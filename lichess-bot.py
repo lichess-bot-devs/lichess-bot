@@ -629,6 +629,41 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
 
 
 def piecewise_function(range_definitions, last_value, position):
+    """ Returns a value according to a position argument
+    This function is meant to replace if-elif-else blocks that turn ranges into discrete values. For
+    example,
+
+    piecewise_function([(-20001, 2), (-1, -1), (0, 0), (20000, 1)], 2, score)
+
+    is equivalent to:
+
+    if score < -20000:
+        return -2
+    elif score < 0:
+        return -1
+    elif score == 0:
+        return 0
+    elif score <= 20000:
+        return 1
+    else:
+        return 2
+
+    Note: We use -20001 and not -20000, because we use <= and not <.
+
+    Arguments:
+    range_definitions:
+        A list of tuples with the first element being the inclusive right border of region and the second
+        element being the associated value. An element of this list (a, b) corresponds to
+        if x <= a:
+            return b
+        where x is the value of the position argument. This argument should be sorted by the first element
+        for correct operation.
+    last_value:
+        If the position argument is greater than all of the borders in the range_definition argument,
+        return this value.
+    position:
+        The value that will be compared to the first element of the range_definitions tuples.
+    """
     for border, value in range_definitions:
         if position <= border:
             return value

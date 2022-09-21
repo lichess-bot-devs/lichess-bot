@@ -85,6 +85,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     2. `lichess_cloud_analysis`: Consults [Lichess' own position analysis database](https://lichess.org/api#operation/apiCloudEval).
     3. `online_egtb`: Consults either the online Syzygy 7-piece endgame tablebase [hosted by Lichess](https://lichess.org/blog/W3WeMyQAACQAdfAL/7-piece-syzygy-tablebases-are-complete) or the chessdb listed above.
     - `max_out_of_book_moves`: Stop using online opening books after they don't have a move for `max_out_of_book_moves` positions. Doesn't apply to the online endgame tablebases.
+    - `max_retries`: The maximum amount of retries when getting an online move.
     - Configurations common to all:
         - `enabled`: Whether to use the database at all.
         - `min_time`: The minimum time in seconds on the game clock necessary to allow the online database to be consulted.

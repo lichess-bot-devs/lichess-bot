@@ -155,9 +155,7 @@ class EngineWrapper:
                                   ponder=ponder,
                                   draw_offered=draw_offered)
         self.last_move_info = result.info.copy()
-        self.move_commentary.append(self.last_move_info.copy())
-        if self.comment_start_index is None:
-            self.comment_start_index = len(board.move_stack)
+        self.add_comment(self.last_move_info.copy(), board)
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(self.last_move_info.get("score", null_score))

@@ -1098,7 +1098,7 @@ def start_lichess_bot():
     logging_configurer(logging_level, args.logfile)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
-    max_retries = (CONFIG["engine"].get("online_moves") or {}).get("max_retries") or 1
+    max_retries = (CONFIG["engine"].get("online_moves") or {}).get("max_retries") or 2
     li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()

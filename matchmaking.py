@@ -47,14 +47,7 @@ class Matchmaking:
     def create_challenge(self, username, base_time, increment, days, variant, mode):
         params = {"rated": mode == "rated", "variant": variant}
 
-        play_correspondence = []
         if days:
-            play_correspondence.append(True)
-
-        if base_time or increment:
-            play_correspondence.append(False)
-
-        if random.choice(play_correspondence):
             params["days"] = days
         else:
             params["clock.limit"] = base_time
@@ -101,6 +94,20 @@ class Matchmaking:
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
+        
+        play_correspondence = []
+        if days:
+            play_correspondence.append(True)
+
+        if base_time or increment:
+            play_correspondence.append(False)
+
+        if random.choice(play_correspondence):
+            base_time = 0
+            increment = 0
+        else:
+            days = 0
+
         game_type = game_category(variant, base_time, increment, days)
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600

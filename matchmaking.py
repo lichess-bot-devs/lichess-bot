@@ -90,7 +90,7 @@ class Matchmaking:
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
-        
+
         play_correspondence = []
         if days:
             play_correspondence.append(True)

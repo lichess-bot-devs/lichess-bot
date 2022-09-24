@@ -136,8 +136,7 @@ class Matchmaking:
             return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
-        if ready_bots:
-            online_bots = ready_bots
+        online_bots = ready_bots or online_bots
 
         try:
             bot_username = None

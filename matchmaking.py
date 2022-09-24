@@ -84,12 +84,8 @@ class Matchmaking:
             self.user_profile = self.li.get_profile()
 
     def choose_opponent(self):
-        def get_random_config_value(parameter, choices):
-            value = self.matchmaking_cfg.get(parameter) or "random"
-            return value if value != "random" else random.choice(choices)
-
-        variant = get_random_config_value("challenge_variant", self.variants)
-        mode = get_random_config_value("challenge_mode", ["casual", "rated"])
+        variant = self.get_random_config_value("challenge_variant", self.variants)
+        mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
@@ -153,6 +149,10 @@ class Matchmaking:
                 logger.error("No suitable bots found to challenge.")
 
         return bot_username, base_time, increment, days, variant, mode
+
+    def get_random_config_value(self, parameter, choices):
+        value = self.matchmaking_cfg.get(parameter) or "random"
+        return value if value != "random" else random.choice(choices)
 
     def challenge(self):
         self.update_user_profile()

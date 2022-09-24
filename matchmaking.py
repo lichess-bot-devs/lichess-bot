@@ -49,9 +49,13 @@ class Matchmaking:
 
         if days:
             params["days"] = days
-        else:
+        elif base_time or increment:
             params["clock.limit"] = base_time
             params["clock.increment"] = increment
+        else:
+            logger.error("At least one of challenge_days, challenge_initial_time, or challenge_increment "
+                         "must be greater than zero in the matchmaking section of your config file.")
+            return None
 
         try:
             response = self.li.challenge(username, params)

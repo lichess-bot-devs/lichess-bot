@@ -91,13 +91,7 @@ class Matchmaking:
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
 
-        play_correspondence = []
-        if days:
-            play_correspondence.append(True)
-
-        if base_time or increment:
-            play_correspondence.append(False)
-
+        play_correspondence = [bool(days), not bool(base_time or increment)]
         if random.choice(play_correspondence):
             base_time = 0
             increment = 0

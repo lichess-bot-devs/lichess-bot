@@ -403,17 +403,16 @@ def play_game(li,
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
-                    comment = None
 
                     best_move = get_book_move(board, polyglot_cfg)
 
                     if best_move.move is None:
-                        best_move, comment = get_egtb_move(board,
+                        best_move = get_egtb_move(board,
                                                            lichess_bot_tbs,
                                                            draw_or_resign_cfg)
 
                     if best_move.move is None:
-                        best_move, comment = get_online_move(li,
+                        best_move = get_online_move(li,
                                                              board,
                                                              game,
                                                              online_moves_cfg,
@@ -440,8 +439,7 @@ def play_game(li,
                                                     draw_offered,
                                                     start_time,
                                                     move_overhead)
-                    else:
-                        engine.add_comment(comment, board)
+                    engine.add_comment(best_move, board)
                     move_attempted = True
                     if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)
@@ -778,13 +776,14 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     if best_move:
         return chess.engine.PlayResult(chess.Move.from_uci(best_move),
                                        None,
+                                       comment,
                                        draw_offered=offer_draw,
-                                       resigned=resign), comment
+                                       resigned=resign)
     out_of_online_opening_book_moves[game.id] += 1
     used_opening_books = chessdb_cfg.get("enabled") or lichess_cloud_cfg.get("enabled")
     if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:
         logger.info("Will stop using online opening books.")
-    return chess.engine.PlayResult(None, None), None
+    return chess.engine.PlayResult(None, None)
 
 
 def get_syzygy(board, syzygy_cfg):
@@ -945,8 +944,8 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
         comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
-        return chess.engine.PlayResult(best_move, None, draw_offered=offer_draw, resigned=resign), comment
-    return chess.engine.PlayResult(None, None), None
+        return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
+    return chess.engine.PlayResult(None, None)
 
 
 def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):

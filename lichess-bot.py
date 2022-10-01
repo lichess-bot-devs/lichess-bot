@@ -408,15 +408,15 @@ def play_game(li,
 
                     if best_move.move is None:
                         best_move = get_egtb_move(board,
-                                                           lichess_bot_tbs,
-                                                           draw_or_resign_cfg)
+                                                  lichess_bot_tbs,
+                                                  draw_or_resign_cfg)
 
                     if best_move.move is None:
                         best_move = get_online_move(li,
-                                                             board,
-                                                             game,
-                                                             online_moves_cfg,
-                                                             draw_or_resign_cfg)
+                                                    board,
+                                                    game,
+                                                    online_moves_cfg,
+                                                    draw_or_resign_cfg)
 
                     if best_move.move is None:
                         draw_offered = check_for_draw_offer(game)

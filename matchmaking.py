@@ -47,18 +47,15 @@ class Matchmaking:
     def create_challenge(self, username, base_time, increment, days, variant, mode):
         params = {"rated": mode == "rated", "variant": variant}
 
-        play_correspondence = []
         if days:
-            play_correspondence.append(True)
-
-        if base_time or increment:
-            play_correspondence.append(False)
-
-        if random.choice(play_correspondence):
             params["days"] = days
-        else:
+        elif base_time or increment:
             params["clock.limit"] = base_time
             params["clock.increment"] = increment
+        else:
+            logger.error("At least one of challenge_days, challenge_initial_time, or challenge_increment "
+                         "must be greater than zero in the matchmaking section of your config file.")
+            return None
 
         try:
             response = self.li.challenge(username, params)
@@ -91,16 +88,20 @@ class Matchmaking:
             self.user_profile = self.li.get_profile()
 
     def choose_opponent(self):
-        def get_random_config_value(parameter, choices):
-            value = self.matchmaking_cfg.get(parameter) or "random"
-            return value if value != "random" else random.choice(choices)
-
-        variant = get_random_config_value("challenge_variant", self.variants)
-        mode = get_random_config_value("challenge_mode", ["casual", "rated"])
+        variant = self.get_random_config_value("challenge_variant", self.variants)
+        mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
         base_time = self.get_time("challenge_initial_time", 60)
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
+
+        play_correspondence = [bool(days), not bool(base_time or increment)]
+        if random.choice(play_correspondence):
+            base_time = 0
+            increment = 0
+        else:
+            days = 0
+
         game_type = game_category(variant, base_time, increment, days)
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
@@ -129,8 +130,7 @@ class Matchmaking:
             return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
-        if ready_bots:
-            online_bots = ready_bots
+        online_bots = ready_bots or online_bots
 
         try:
             bot_username = None
@@ -147,6 +147,10 @@ class Matchmaking:
                 logger.error("No suitable bots found to challenge.")
 
         return bot_username, base_time, increment, days, variant, mode
+
+    def get_random_config_value(self, parameter, choices):
+        value = self.matchmaking_cfg.get(parameter) or "random"
+        return value if value != "random" else random.choice(choices)
 
     def challenge(self):
         self.update_user_profile()

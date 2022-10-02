@@ -636,6 +636,122 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     return move, comment
 
 
+def piecewise_function(range_definitions, last_value, position):
+    """ Returns a value according to a position argument
+    This function is meant to replace if-elif-else blocks that turn ranges into discrete values. For
+    example,
+
+    piecewise_function([(-20001, 2), (-1, -1), (0, 0), (20000, 1)], 2, score)
+
+    is equivalent to:
+
+    if score < -20000:
+        return -2
+    elif score < 0:
+        return -1
+    elif score == 0:
+        return 0
+    elif score <= 20000:
+        return 1
+    else:
+        return 2
+
+    Note: We use -20001 and not -20000, because we use <= and not <.
+
+    Arguments:
+    range_definitions:
+        A list of tuples with the first element being the inclusive right border of region and the second
+        element being the associated value. An element of this list (a, b) corresponds to
+        if x <= a:
+            return b
+        where x is the value of the position argument. This argument should be sorted by the first element
+        for correct operation.
+    last_value:
+        If the position argument is greater than all of the borders in the range_definition argument,
+        return this value.
+    position:
+        The value that will be compared to the first element of the range_definitions tuples.
+    """
+    for border, value in range_definitions:
+        if position <= border:
+            return value
+    return last_value
+
+
+def get_lichess_egtb_move(li, board, quality, variant):
+    name_to_wld = {"loss": -2,
+                   "maybe-loss": -1,
+                   "blessed-loss": -1,
+                   "draw": 0,
+                   "cursed-win": 1,
+                   "maybe-win": 1,
+                   "win": 2}
+    pieces = chess.popcount(board.occupied)
+    max_pieces = 7 if board.uci_variant == "chess" else 6
+    if pieces <= max_pieces:
+        data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
+                                  params={"fen": board.fen()})
+        if quality == "best":
+            move = data["moves"][0]["uci"]
+            wdl = name_to_wld[data["moves"][0]["category"]] * -1
+            dtz = data["moves"][0]["dtz"] * -1
+            dtm = data["moves"][0]["dtm"]
+            if dtm:
+                dtm *= -1
+        else:
+            best_wdl = name_to_wld[data["moves"][0]["category"]]
+
+            def good_enough(possible_move):
+                return name_to_wld[possible_move["category"]] == best_wdl
+            possible_moves = list(filter(good_enough, data["moves"]))
+            random_move = random.choice(possible_moves)
+            move = random_move["uci"]
+            wdl = name_to_wld[random_move["category"]] * -1
+            dtz = random_move["dtz"] * -1
+            dtm = random_move["dtm"]
+            if dtm:
+                dtm *= -1
+
+        logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
+        return move, wdl
+
+
+def get_chessdb_egtb_move(li, board, quality, variant):
+    def score_to_wdl(score):
+        return piecewise_function([(-20001, 2),
+                                   (-1, -1),
+                                   (0, 0),
+                                   (20000, 1)], 2, score)
+
+    def score_to_dtz(score):
+        return piecewise_function([(-20001, -30000 - score),
+                                   (-1, -20000 - score),
+                                   (0, 0),
+                                   (20000, 20000 - score)], 30000 - score, score)
+
+    action = "querypv" if quality == "best" else "queryall"
+    data = li.online_book_get("https://www.chessdb.cn/cdb.php",
+                              params={"action": action, "board": board.fen(), "json": 1})
+    if data["status"] == "ok":
+        if quality == "best":
+            score = data["score"]
+            move = data["pv"][0]
+        else:
+            best_wdl = score_to_wdl(data["moves"][0]["score"])
+
+            def good_enough(move):
+                return score_to_wdl(move["score"]) == best_wdl
+            possible_moves = filter(good_enough, data["moves"])
+            random_move = random.choice(list(possible_moves))
+            score = random_move["score"]
+            move = random_move["uci"]
+
+        wdl = score_to_wdl(score)
+        dtz = score_to_dtz(score)
+        logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
+        return move, score_to_wdl(score)
+
+
 def get_online_egtb_move(li, board, game, online_egtb_cfg):
     use_online_egtb = online_egtb_cfg.get("enabled", False)
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -658,87 +774,9 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 
     try:
         if source == "lichess":
-            name_to_wld = {"loss": -2,
-                           "maybe-loss": -1,
-                           "blessed-loss": -1,
-                           "draw": 0,
-                           "cursed-win": 1,
-                           "maybe-win": 1,
-                           "win": 2}
-            max_pieces = 7 if board.uci_variant == "chess" else 6
-            if pieces <= max_pieces:
-                data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
-                                          params={"fen": board.fen()})
-                if quality == "best":
-                    move = data["moves"][0]["uci"]
-                    wdl = name_to_wld[data["moves"][0]["category"]] * -1
-                    dtz = data["moves"][0]["dtz"] * -1
-                    dtm = data["moves"][0]["dtm"]
-                    if dtm:
-                        dtm *= -1
-                else:
-                    best_wdl = name_to_wld[data["moves"][0]["category"]]
-
-                    def good_enough(possible_move):
-                        return name_to_wld[possible_move["category"]] == best_wdl
-                    possible_moves = list(filter(good_enough, data["moves"]))
-                    random_move = random.choice(possible_moves)
-                    move = random_move["uci"]
-                    wdl = name_to_wld[random_move["category"]] * -1
-                    dtz = random_move["dtz"] * -1
-                    dtm = random_move["dtm"]
-                    if dtm:
-                        dtm *= -1
-
-                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
-                return move, wdl
+            return get_lichess_egtb_move(li, board, quality, variant)
         elif source == "chessdb":
-
-            def score_to_wdl(score):
-                if score < -20000:
-                    return -2
-                elif score < 0:
-                    return -1
-                elif score == 0:
-                    return 0
-                elif score <= 20000:
-                    return 1
-                else:
-                    return 2
-
-            def score_to_dtz(score):
-                if score < -20000:
-                    return -30000 - score
-                elif score < 0:
-                    return -20000 - score
-                elif score == 0:
-                    return 0
-                elif score <= 20000:
-                    return 20000 - score
-                else:
-                    return 30000 - score
-
-            action = "querypv" if quality == "best" else "queryall"
-            data = li.online_book_get("https://www.chessdb.cn/cdb.php",
-                                      params={"action": action, "board": board.fen(), "json": 1})
-            if data["status"] == "ok":
-                if quality == "best":
-                    score = data["score"]
-                    move = data["pv"][0]
-                else:
-                    best_wdl = score_to_wdl(data["moves"][0]["score"])
-
-                    def good_enough(move):
-                        return score_to_wdl(move["score"]) == best_wdl
-                    possible_moves = filter(good_enough, data["moves"])
-                    random_move = random.choice(list(possible_moves))
-                    score = random_move["score"]
-                    move = random_move["uci"]
-
-                wdl = score_to_wdl(score)
-                dtz = score_to_dtz(score)
-                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
-                return move, score_to_wdl(score)
+            return get_chessdb_egtb_move(li, board, quality, variant)
     except Exception:
         pass
 
@@ -786,6 +824,15 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     return chess.engine.PlayResult(None, None)
 
 
+def score_moves(board, scorer):
+    moves = {}
+    for move in board.legal_moves:
+        board_copy = board.copy()
+        board_copy.push(move)
+        moves[move] = scorer(board_copy)
+    return moves
+
+
 def get_syzygy(board, syzygy_cfg):
     if (not syzygy_cfg.get("enabled", False)
             or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
@@ -797,24 +844,17 @@ def get_syzygy(board, syzygy_cfg):
             tablebase.add_directory(path)
 
         try:
-            moves = {}
-            for move in board.legal_moves:
-                board_copy = board.copy()
-                board_copy.push(move)
-                dtz = -tablebase.probe_dtz(board_copy)
-                moves[move] = dtz + (1 if dtz > 0 else -1) * board_copy.halfmove_clock * (0 if dtz == 0 else 1)
+            def dtz_scorer(board):
+                dtz = -tablebase.probe_dtz(board)
+                return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
+
+            moves = score_moves(board, dtz_scorer)
 
             def dtz_to_wdl(dtz):
-                if dtz <= -100:
-                    return -1
-                elif dtz < 0:
-                    return -2
-                elif dtz == 0:
-                    return 0
-                elif dtz < 100:
-                    return 2
-                else:
-                    return 1
+                return piecewise_function([(-100, -1),
+                                           (-1, -2),
+                                           (0, 0),
+                                           (99, 2)], 1, dtz)
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
@@ -831,16 +871,12 @@ def get_syzygy(board, syzygy_cfg):
         except KeyError:
             # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
             try:
-                moves = {}
-                for move in board.legal_moves:
-                    board_copy = board.copy()
-                    board_copy.push(move)
-                    moves[move] = -tablebase.probe_wdl(board_copy)
+                moves = score_moves(board, lambda b: -tablebase.probe_wdl(b))
                 best_wdl = max(moves.values())
                 good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
                 move = random.choice(good_moves)
-                if move_quality == "best":
-                    logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame.")
+                logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
+                             if move_quality == "best" else "")
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl})")
                 return move, best_wdl
             except KeyError:
@@ -865,61 +901,31 @@ def get_gaviota(board, gaviota_cfg):
             tablebase.add_directory(path)
 
         try:
-            moves = {}
-            for move in board.legal_moves:
-                board_copy = board.copy()
-                board_copy.push(move)
-                dtm = -tablebase.probe_dtm(board_copy)
-                moves[move] = dtm + (1 if dtm > 0 else -1) * board_copy.halfmove_clock * (0 if dtm == 0 else 1)
+            def dtm_scorer(board):
+                dtm = -tablebase.probe_dtm(board)
+                return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock * (0 if dtm == 0 else 1)
+
+            moves = score_moves(board, dtm_scorer)
 
             def dtm_to_gaviota_wdl(dtm):
-                if dtm < 0:
-                    return -1
-                elif dtm == 0:
-                    return 0
-                else:
-                    return 1
+                return piecewise_function([(-1, -1),
+                                           (0, 0)], 1, dtm)
 
             best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
             good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
             best_dtm = min([dtm for move, dtm in good_moves])
 
             def dtm_to_wdl(dtm):
-                if dtm <= -100:
-                    # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
-                    # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
-                    return -1
-                elif dtm < 0:
-                    return -2
-                elif dtm == 0:
-                    return 0
-                elif dtm < min_dtm_to_consider_as_wdl_1:
-                    return 2
-                else:
-                    return 1
+                # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
+                # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
+                return piecewise_function([(-100, -1),
+                                           (-1, -2),
+                                           (0, 0),
+                                           (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
 
             pseudo_wdl = dtm_to_wdl(best_dtm)
             if move_quality == "good":
-                if best_dtm < 100:
-                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
-                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
-                    # dtz is still <100.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < 100]
-                elif best_dtm < min_dtm_to_consider_as_wdl_1:
-                    # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
-                    # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
-                    # dtz is still <100.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
-                elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
-                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
-                    # want to only choose between the moves where the real wdl=-1.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
-                elif best_dtm <= -100:
-                    # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
-                    # want to only choose between the moves where the real wdl=-1.
-                    best_moves = [(move, dtm) for move, dtm in good_moves if dtm <= -100]
-                else:
-                    best_moves = good_moves
+                best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]
@@ -928,6 +934,29 @@ def get_gaviota(board, gaviota_cfg):
             return move, pseudo_wdl
         except KeyError:
             return None, None
+
+
+def good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1):
+    if best_dtm < 100:
+        # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+        # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+        # dtz is still <100.
+        return [(move, dtm) for move, dtm in good_moves if dtm < 100]
+    elif best_dtm < min_dtm_to_consider_as_wdl_1:
+        # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
+        # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
+        # dtz is still <100.
+        return [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
+    elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
+        # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+        # want to only choose between the moves where the real wdl=-1.
+        return [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
+    elif best_dtm <= -100:
+        # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
+        # want to only choose between the moves where the real wdl=-1.
+        return [(move, dtm) for move, dtm in good_moves if dtm <= -100]
+    else:
+        return good_moves
 
 
 def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):

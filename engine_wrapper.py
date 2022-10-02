@@ -80,8 +80,8 @@ def translate_termination(termination, board, winner_color):
         return ""
 
 
-PONDERPV_CHARACTERS = 12  # the length of ", ponderpv: "
-MAX_CHAT_MESSAGE_LEN = 140  # maximum characters in a chat message
+PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
+MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
 class EngineWrapper:
@@ -159,7 +159,12 @@ class EngineWrapper:
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(self.last_move_info.get("score", null_score))
         result = self.offer_draw_or_resign(result, board)
-        self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info.get("pv", []))
+        if "pv" in self.last_move_info:
+            self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info["pv"])
+        if "refutation" in self.last_move_info:
+            self.last_move_info["refutation"] = board.variation_san(self.last_move_info["refutation"])
+        if "currmove" in self.last_move_info:
+            self.last_move_info["currmove"] = board.san(self.last_move_info["currmove"])
         self.print_stats()
         return result
 
@@ -188,11 +193,45 @@ class EngineWrapper:
         for line in self.get_stats():
             logger.info(line)
 
+    def readable_score(self, score):
+        score = score.relative
+        if score.mate():
+            str_score = f"#{score.mate()}"
+        else:
+            str_score = str(round(score.score() / 100, 2))
+        return str_score
+
+    def readable_wdl(self, wdl):
+        wdl = round(wdl.relative.expectation() * 100, 1)
+        return f"{wdl}%"
+
+    def readable_number(self, number):
+        if number >= 1e9:
+            return f"{round(number / 1e9, 1)}B"
+        elif number >= 1e6:
+            return f"{round(number / 1e6, 1)}M"
+        elif number >= 1e3:
+            return f"{round(number / 1e3, 1)}K"
+        return str(number)
+
     def get_stats(self, for_chat=False):
         info = self.move_commentary[-1].copy()
-        stats = ["depth", "nps", "nodes", "score", "ponderpv"]
-        if for_chat and "ponderpv" in stats:
-            bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]
+
+        def to_readable_value(stat, info):
+            readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
+                        "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
+                        "tbhits": self.readable_number, "cpuload": lambda x: f"{round(x / 10, 1)}%"}
+            return str(readable.get(stat, lambda x: x)(info[stat]))
+
+        def to_readable_key(stat):
+            readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
+            stat = readable.get(stat, stat)
+            return stat[0].upper() + stat[1:]
+
+        stats = ["score", "wdl", "depth", "nodes", "nps", "ponderpv"]
+        if for_chat and "ponderpv" in stats and "ponderpv" in info:
+            bot_stats = [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}"
+                         for stat in stats if stat in info and stat != "ponderpv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = info["ponderpv"].split()
             try:
@@ -203,7 +242,9 @@ class EngineWrapper:
                 info["ponderpv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-        return [f"{stat}: {info[stat]}" for stat in stats if stat in info]
+            if not info["ponderpv"]:
+                info.pop("ponderpv")
+        return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game):
         pass

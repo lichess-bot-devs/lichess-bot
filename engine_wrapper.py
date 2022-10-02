@@ -189,7 +189,7 @@ class EngineWrapper:
             logger.info(line)
 
     def get_stats(self, for_chat=False):
-        info = self.last_move_info.copy()
+        info = self.move_commentary[-1].copy()
         stats = ["depth", "nps", "nodes", "score", "ponderpv"]
         if for_chat and "ponderpv" in stats:
             bot_stats = [f"{stat}: {info[stat]}" for stat in stats if stat in info and stat != "ponderpv"]

@@ -628,7 +628,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                 comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
                 comment["depth"] = data["depth"]
                 comment["nodes"] = data["knodes"] * 1000
-                comment["pv"] = list(map(chess.Move.from_uci, pv.split()))
+                comment["pv"] = list(map(chess.Move.from_uci, pv["moves"].split()))
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})")
     except Exception:
         pass

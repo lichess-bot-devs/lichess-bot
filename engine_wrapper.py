@@ -215,7 +215,7 @@ class EngineWrapper:
         return str(number)
 
     def get_stats(self, for_chat=False):
-        info = self.move_commentary[-1].copy()
+        info = self.move_commentary[-1].copy() if self.move_commentary and self.move_commentary[-1] else {}
 
         def to_readable_value(stat, info):
             readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",

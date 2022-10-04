@@ -440,6 +440,7 @@ def play_game(li,
                                                     start_time,
                                                     move_overhead)
                     engine.add_comment(best_move, board)
+                    engine.print_stats()
                     move_attempted = True
                     if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)

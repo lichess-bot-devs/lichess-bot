@@ -89,7 +89,6 @@ class EngineWrapper:
         self.scores = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = options.pop("go_commands", {}) or {}
-        self.last_move_info = {}
         self.move_commentary = []
         self.comment_start_index = None
 
@@ -154,18 +153,16 @@ class EngineWrapper:
                                   info=chess.engine.INFO_ALL,
                                   ponder=ponder,
                                   draw_offered=draw_offered)
-        self.last_move_info = result.info.copy()
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
-        self.scores.append(self.last_move_info.get("score", null_score))
+        self.scores.append(result.info.get("score", null_score))
         result = self.offer_draw_or_resign(result, board)
-        if "pv" in self.last_move_info:
-            self.last_move_info["ponderpv"] = board.variation_san(self.last_move_info["pv"])
-        if "refutation" in self.last_move_info:
-            self.last_move_info["refutation"] = board.variation_san(self.last_move_info["refutation"])
-        if "currmove" in self.last_move_info:
-            self.last_move_info["currmove"] = board.san(self.last_move_info["currmove"])
-        self.print_stats()
+        if "pv" in result.info:
+            result.info["ponderpv"] = board.variation_san(result.info["pv"])
+        if "refutation" in result.info:
+            result.info["refutation"] = board.variation_san(result.info["refutation"])
+        if "currmove" in result.info:
+            result.info["currmove"] = board.san(result.info["currmove"])
         return result
 
     def comment_index(self, move_stack_index):

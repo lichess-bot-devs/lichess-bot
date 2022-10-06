@@ -439,8 +439,8 @@ def play_game(li,
                                                     draw_offered,
                                                     start_time,
                                                     move_overhead)
-                    else:
-                        engine.add_null_comment()
+                    engine.add_comment(best_move, board)
+                    engine.print_stats()
                     move_attempted = True
                     if best_move.resigned and len(board.move_stack) >= 2:
                         li.resign(game.id)
@@ -550,9 +550,10 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
     time_left = game.state[f"{wb}time"]
     min_time = chessdb_cfg.get("min_time", 20) * 1000
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
-        return None
+        return None, None
 
     move = None
+    comment = {}
     site = "https://www.chessdb.cn/cdb.php"
     quality = chessdb_cfg.get("move_quality", "good")
     action = {"best": "querypv",
@@ -569,6 +570,9 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
                 if depth >= chessdb_cfg.get("min_depth", 20):
                     score = data["score"]
                     move = data["pv"][0]
+                    comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
+                    comment["depth"] = data["depth"]
+                    comment["pv"] = list(map(chess.Move.from_uci, data["pv"]))
                     logger.info(f"Got move {move} from chessdb.cn (depth: {depth}, score: {score})")
             else:
                 move = data["move"]
@@ -580,7 +584,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
     except Exception:
         pass
 
-    return move
+    return move, comment
 
 
 def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
@@ -589,9 +593,10 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     min_time = lichess_cloud_cfg.get("min_time", 20) * 1000
     use_lichess_cloud = lichess_cloud_cfg.get("enabled", False)
     if not use_lichess_cloud or time_left < min_time:
-        return None
+        return None, None
 
     move = None
+    comment = {}
 
     quality = lichess_cloud_cfg.get("move_quality", "best")
     multipv = 1 if quality == "best" else 5
@@ -621,11 +626,15 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                     pv = random.choice(pvs)
                 move = pv["moves"].split()[0]
                 score = pv["cp"] if wb == "w" else -pv["cp"]
+                comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
+                comment["depth"] = data["depth"]
+                comment["nodes"] = data["knodes"] * 1000
+                comment["pv"] = list(map(chess.Move.from_uci, pv["moves"].split()))
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})")
     except Exception:
         pass
 
-    return move
+    return move, comment
 
 
 def piecewise_function(range_definitions, last_value, position):
@@ -782,6 +791,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves", 10)
     offer_draw = False
     resign = False
+    comment = None
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
@@ -793,15 +803,19 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
         if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
+
+        wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
+        comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
     elif out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
-        best_move = get_chessdb_move(li, board, game, chessdb_cfg)
+        best_move, comment = get_chessdb_move(li, board, game, chessdb_cfg)
 
     if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
-        best_move = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
+        best_move, comment = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
     if best_move:
         return chess.engine.PlayResult(chess.Move.from_uci(best_move),
                                        None,
+                                       comment,
                                        draw_offered=offer_draw,
                                        resigned=resign)
     out_of_online_opening_book_moves[game.id] += 1
@@ -958,7 +972,9 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
         can_resign = draw_or_resign_cfg.get("resign_enabled", False)
         resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
-        return chess.engine.PlayResult(best_move, None, draw_offered=offer_draw, resigned=resign)
+        wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
+        comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
+        return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
     return chess.engine.PlayResult(None, None)
 
 

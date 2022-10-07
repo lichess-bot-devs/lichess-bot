@@ -362,18 +362,13 @@ def play_game(li,
     hello_spectators = get_greeting("hello_spectators", greeting_cfg, keyword_map)
     goodbye_spectators = get_greeting("goodbye_spectators", greeting_cfg, keyword_map)
 
-    first_move = True
     disconnect_time = 0
     prior_game = None
+    upd = game.state
     while not terminated:
         move_attempted = False
         try:
-            if first_move:
-                upd = game.state
-                first_move = False
-            else:
-                upd = next_update(lines)
-
+            upd = upd or next_update(lines)
             u_type = upd["type"] if upd else "ping"
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)
@@ -413,6 +408,8 @@ def play_game(li,
                 prior_game = copy.deepcopy(game)
             elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
                 break
+
+            upd = None
         except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError):
             if move_attempted:
                 continue

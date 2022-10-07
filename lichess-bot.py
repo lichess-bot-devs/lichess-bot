@@ -357,13 +357,10 @@ def play_game(li,
 
     greeting_cfg = config.get("greeting") or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
-
-    def get_greeting(greeting):
-        return str(greeting_cfg.get(greeting) or "").format_map(keyword_map)
-    hello = get_greeting("hello")
-    goodbye = get_greeting("goodbye")
-    hello_spectators = get_greeting("hello_spectators")
-    goodbye_spectators = get_greeting("goodbye_spectators")
+    hello = get_greeting("hello", greeting_cfg, keyword_map)
+    goodbye = get_greeting("goodbye", greeting_cfg, keyword_map)
+    hello_spectators = get_greeting("hello_spectators", greeting_cfg, keyword_map)
+    goodbye_spectators = get_greeting("goodbye_spectators", greeting_cfg, keyword_map)
 
     first_move = True
     disconnect_time = 0
@@ -454,6 +451,10 @@ def play_game(li,
         logger.info(f"--- {game.url()} Game over")
 
     control_queue.put_nowait({"type": "local_game_done"})
+
+
+def get_greeting(greeting, greeting_cfg, keyword_map):
+    return str(greeting_cfg.get(greeting) or "").format_map(keyword_map)
 
 
 def fake_thinking(config, board, game):

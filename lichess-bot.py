@@ -421,10 +421,7 @@ def play_game(li,
     engine.stop()
     engine.quit()
 
-    try:
-        print_pgn_game_record(li, config, game, board, engine)
-    except Exception:
-        logger.exception("Error writing game record:")
+    try_print_pgn_game_record(li, config, game, board, engine)
 
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
@@ -541,6 +538,13 @@ def tell_user_game_result(game, board):
             logger.info("Game drawn by agreement.")
     elif termination:
         logger.info(f"Game ended by {termination}")
+
+
+def try_print_pgn_game_record(li, config, game, board, engine):
+    try:
+        print_pgn_game_record(li, config, game, board, engine)
+    except Exception:
+        logger.exception("Error writing game record:")
 
 
 def print_pgn_game_record(li, config, game, board, engine):

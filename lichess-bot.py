@@ -372,12 +372,9 @@ def play_game(li,
                 upd = game.state
                 first_move = False
             else:
-                binary_chunk = next(lines)
-                upd = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else None
+                upd = next_update(lines)
 
             u_type = upd["type"] if upd else "ping"
-            if u_type != "ping":
-                logger.debug(f"Game state: {upd}")
             if u_type == "chatLine":
                 conversation.react(ChatLine(upd), game)
             elif u_type == "gameState":
@@ -456,6 +453,14 @@ def fake_thinking(config, board, game):
 def print_move_number(board):
     logger.info("")
     logger.info(f"move: {len(board.move_stack) // 2 + 1}")
+
+
+def next_update(lines):
+    binary_chunk = next(lines)
+    upd = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else None
+    if upd:
+        logger.debug(f"Game state: {upd}")
+    return upd
 
 
 def setup_board(game):

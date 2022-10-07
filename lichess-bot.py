@@ -414,20 +414,8 @@ def play_game(li,
                 terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
                 game.ping(abort_time, terminate_time, disconnect_time)
                 prior_game = copy.deepcopy(game)
-            elif u_type == "ping":
-                if (is_correspondence
-                        and not is_engine_move(game, prior_game, board)
-                        and game.should_disconnect_now()):
-                    break
-                elif game.should_abort_now():
-                    logger.info(f"Aborting {game.url()} by lack of activity")
-                    li.abort(game.id)
-                    break
-                elif game.should_terminate_now():
-                    logger.info(f"Terminating {game.url()} by lack of activity")
-                    if game.is_abortable():
-                        li.abort(game.id)
-                    break
+            elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
+                break
         except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError):
             if move_attempted:
                 continue
@@ -494,6 +482,24 @@ def is_engine_move(game, prior_game, board):
 
 def is_game_over(game):
     return game.state["status"] != "started"
+
+
+def should_exit_game(board, game, prior_game, li, is_correspondence):
+    if (is_correspondence
+            and not is_engine_move(game, prior_game, board)
+            and game.should_disconnect_now()):
+        return True
+    elif game.should_abort_now():
+        logger.info(f"Aborting {game.url()} by lack of activity")
+        li.abort(game.id)
+        return True
+    elif game.should_terminate_now():
+        logger.info(f"Terminating {game.url()} by lack of activity")
+        if game.is_abortable():
+            li.abort(game.id)
+        return True
+    else:
+        return False
 
 
 def game_changed(current_game, prior_game):

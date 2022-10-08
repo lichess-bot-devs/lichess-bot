@@ -377,9 +377,7 @@ def play_game(li,
                 board = setup_board(game)
                 if not is_game_over(game) and is_engine_move(game, prior_game, board):
                     disconnect_time = correspondence_disconnect_time
-                    if len(board.move_stack) < 2:
-                        conversation.send_message("player", hello)
-                        conversation.send_message("spectator", hello_spectators)
+                    say_hello(conversation, hello, hello_spectators, board)
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
@@ -432,6 +430,12 @@ def play_game(li,
 
 def get_greeting(greeting, greeting_cfg, keyword_map):
     return str(greeting_cfg.get(greeting) or "").format_map(keyword_map)
+
+
+def say_hello(conversation, hello, hello_spectators, board):
+    if len(board.move_stack) < 2:
+        conversation.send_message("player", hello)
+        conversation.send_message("spectator", hello_spectators)
 
 
 def fake_thinking(config, board, game):

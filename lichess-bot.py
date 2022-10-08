@@ -418,14 +418,7 @@ def play_game(li,
     engine.quit()
 
     try_print_pgn_game_record(li, config, game, board, engine)
-
-    if is_correspondence and not is_game_over(game):
-        logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put(game_id)
-    else:
-        logger.info(f"--- {game.url()} Game over")
-
-    control_queue.put_nowait({"type": "local_game_done"})
+    final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
 
 
 def get_greeting(greeting, greeting_cfg, keyword_map):
@@ -501,6 +494,16 @@ def should_exit_game(board, game, prior_game, li, is_correspondence):
         return True
     else:
         return False
+
+
+def final_queue_entries(control_queue, correspondence_queue, game, is_correspondence):
+    if is_correspondence and not is_game_over(game):
+        logger.info(f"--- Disconnecting from {game.url()}")
+        correspondence_queue.put(game.id)
+    else:
+        logger.info(f"--- {game.url()} Game over")
+
+    control_queue.put_nowait({"type": "local_game_done"})
 
 
 def game_changed(current_game, prior_game):

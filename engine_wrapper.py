@@ -237,17 +237,17 @@ class EngineWrapper:
     def comment_for_board_index(self, index):
         comment_index = self.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:
-            return None
+            return {}
 
         try:
             return self.move_commentary[comment_index // 2]
         except IndexError:
-            return None
+            return {}
 
     def add_comment(self, move, board):
         if self.comment_start_index is None:
             self.comment_start_index = len(board.move_stack)
-        self.move_commentary.append(move.info.copy() if move.info else None)
+        self.move_commentary.append(move.info.copy() if move.info else {})
 
     def print_stats(self):
         for line in self.get_stats():

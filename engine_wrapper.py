@@ -289,7 +289,7 @@ class EngineWrapper:
             return stat[0].upper() + stat[1:]
 
         stats = ["score", "wdl", "depth", "nodes", "nps", "ponderpv"]
-        if for_chat and "ponderpv" in stats and "ponderpv" in info:
+        if for_chat and "ponderpv" in info:
             bot_stats = [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}"
                          for stat in stats if stat in info and stat != "ponderpv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS

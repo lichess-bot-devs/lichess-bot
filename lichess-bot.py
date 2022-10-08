@@ -362,7 +362,7 @@ def play_game(li,
     hello_spectators = get_greeting("hello_spectators", greeting_cfg, keyword_map)
     goodbye_spectators = get_greeting("goodbye_spectators", greeting_cfg, keyword_map)
 
-    disconnect_time = 0
+    disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
     prior_game = None
     upd = game.state
     while not terminated:
@@ -375,8 +375,6 @@ def play_game(li,
             elif u_type == "gameState":
                 game.state = upd
                 board = setup_board(game)
-                if len(board.move_stack) == 0:
-                    disconnect_time = correspondence_disconnect_time
                 if not is_game_over(game) and is_engine_move(game, prior_game, board):
                     disconnect_time = correspondence_disconnect_time
                     if len(board.move_stack) < 2:

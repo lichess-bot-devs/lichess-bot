@@ -108,7 +108,6 @@ class Game:
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
-        self.white_starts = self.initial_fen == "startpos" or self.initial_fen.split()[1] == "w"
         self.abort_time = Timer(abort_time)
         self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
         self.disconnect_time = Timer(0)
@@ -146,7 +145,6 @@ class Game:
 
 class Player:
     def __init__(self, json):
-        self.id = json.get("id")
         self.name = json.get("name")
         self.title = json.get("title")
         self.rating = json.get("rating")

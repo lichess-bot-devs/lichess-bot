@@ -381,6 +381,7 @@ def play_game(li,
                     start_time = time.perf_counter_ns()
                     fake_thinking(config, board, game)
                     print_move_number(board)
+                    move_attempted = True
                     engine.play_move(board,
                                      game,
                                      li,
@@ -390,7 +391,6 @@ def play_game(li,
                                      is_correspondence,
                                      correspondence_move_time,
                                      engine_cfg)
-                    move_attempted = True
                     time.sleep(delay_seconds)
                 elif is_game_over(game):
                     engine.report_game_result(game, board)

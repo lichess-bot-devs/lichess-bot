@@ -404,13 +404,13 @@ def play_game(li,
                 prior_game = copy.deepcopy(game)
             elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
                 break
-
-            upd = None
         except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError, StopIteration) as e:
             stopped = isinstance(e, StopIteration)
             is_ongoing = game.id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
             if stopped or (not move_attempted and not is_ongoing):
                 break
+        finally:
+            upd = None
 
     engine.stop()
     engine.quit()

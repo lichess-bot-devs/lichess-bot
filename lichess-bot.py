@@ -242,21 +242,7 @@ def lichess_bot_main(li,
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
-                game_id = event["game"]["id"]
-                if matchmaker.challenge_id == game_id:
-                    matchmaker.challenge_id = None
-                if game_id in startup_correspondence_games:
-                    logger.info(f'--- Enqueue {config["url"] + game_id}')
-                    correspondence_queue.put(game_id)
-                    startup_correspondence_games.remove(game_id)
-                else:
-                    queued_processes = max(0, queued_processes - 1)
-                    busy_processes += 1
-                    log_proc_count("Used", queued_processes, busy_processes)
-                    play_game_args[1] = game_id
-                    pool.apply_async(play_game,
-                                     play_game_args,
-                                     error_callback=game_error_handler)
+                start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue)
 
             check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
             accept_challenges(li, challenge_queue, max_games)
@@ -333,6 +319,27 @@ def sort_challenges(challenge_queue, challenge_config):
         return list_c
     else:
         return challenge_queue
+
+
+def start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue):
+    global queued_processes
+    global busy_processes
+
+    game_id = event["game"]["id"]
+    if matchmaker.challenge_id == game_id:
+        matchmaker.challenge_id = None
+    if game_id in startup_correspondence_games:
+        logger.info(f'--- Enqueue {config["url"] + game_id}')
+        correspondence_queue.put(game_id)
+        startup_correspondence_games.remove(game_id)
+    else:
+        queued_processes = max(0, queued_processes - 1)
+        busy_processes += 1
+        log_proc_count("Used", queued_processes, busy_processes)
+        play_game_args[1] = game_id
+        pool.apply_async(play_game,
+                         play_game_args,
+                         error_callback=game_error_handler)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

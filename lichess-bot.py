@@ -215,7 +215,7 @@ def lichess_bot_main(li,
             except InterruptedError:
                 continue
 
-            if event.get("type") is None:
+            if "type" not in event:
                 logger.warning("Unable to handle response from lichess.org:")
                 logger.warning(event)
                 if event.get("error") == "Missing scope":

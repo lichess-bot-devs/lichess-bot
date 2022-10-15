@@ -211,8 +211,7 @@ def lichess_bot_main(li,
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed)):
             try:
-                event = control_queue.get()
-                logger.debug(f"Event: {event}" if event.get("type") != "ping" else "")
+                event = next_event(control_queue)
             except InterruptedError:
                 continue
 
@@ -243,6 +242,13 @@ def lichess_bot_main(li,
             control_queue.task_done()
 
     logger.info("Terminated")
+
+
+def next_event(control_queue):
+    event = control_queue.get()
+    if event.get("type") != "ping":
+        logger.debug(f"Event: {event}")
+    return event
 
 
 def check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games):

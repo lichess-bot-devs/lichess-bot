@@ -263,21 +263,7 @@ def lichess_bot_main(li,
                                      error_callback=game_error_handler)
 
             check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
-
-            # Keep processing the queue until empty or max_games is reached.
-            while (queued_processes + busy_processes) < max_games and challenge_queue:
-                chlng = challenge_queue.pop(0)
-                if chlng.from_self:
-                    continue
-                try:
-                    logger.info(f"Accept {chlng}")
-                    queued_processes += 1
-                    li.accept_challenge(chlng.id)
-                    log_proc_count("Queued", queued_processes, busy_processes)
-                except (HTTPError, ReadTimeout) as exception:
-                    if isinstance(exception, HTTPError) and exception.response.status_code == 404:
-                        logger.info(f"Skip missing {chlng}")
-                    queued_processes -= 1
+            accept_challenges(li, challenge_queue, max_games)
 
             if (queued_processes + busy_processes < 1
                     and not challenge_queue
@@ -324,6 +310,26 @@ def check_in_on_correspondence_games(pool, event, correspondence_queue, challeng
                 pool.apply_async(play_game,
                                  play_game_args,
                                  error_callback=game_error_handler)
+
+
+def accept_challenges(li, challenge_queue, max_games):
+    global queued_processes
+    global busy_processes
+
+    while (queued_processes + busy_processes) < max_games and challenge_queue:
+        chlng = challenge_queue.pop(0)
+        if chlng.from_self:
+            continue
+
+        try:
+            logger.info(f"Accept {chlng}")
+            queued_processes += 1
+            li.accept_challenge(chlng.id)
+            log_proc_count("Queued", queued_processes, busy_processes)
+        except (HTTPError, ReadTimeout) as exception:
+            if isinstance(exception, HTTPError) and exception.response.status_code == 404:
+                logger.info(f"Skip missing {chlng}")
+            queued_processes -= 1
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

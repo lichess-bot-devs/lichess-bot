@@ -162,6 +162,16 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
         logging_listener.join()
 
 
+wait_for_correspondence_ping = False
+busy_processes = 0
+queued_processes = 0
+
+
+def log_proc_count(change, queued, used):
+    symbol = "+++" if change == "Freed" else "---"
+    logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+
+
 def lichess_bot_main(li,
                      user_profile,
                      config,
@@ -172,17 +182,12 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
-    busy_processes = 0
-    queued_processes = 0
-
-    def log_proc_count(change, queued, used):
-        symbol = "+++" if change == "Freed" else "---"
-        logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+    global busy_processes
+    global queued_processes
 
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
 
-    wait_for_correspondence_ping = False
     startup_correspondence_games = [game["gameId"]
                                     for game in li.get_ongoing_games()
                                     if game["perf"] == "correspondence"]
@@ -257,30 +262,7 @@ def lichess_bot_main(li,
                                      play_game_args,
                                      error_callback=game_error_handler)
 
-            is_correspondence_ping = event["type"] == "correspondence_ping"
-            is_local_game_done = event["type"] == "local_game_done"
-            if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
-                if is_correspondence_ping and wait_for_correspondence_ping:
-                    correspondence_queue.put("")
-
-                wait_for_correspondence_ping = False
-                while (busy_processes + queued_processes) < max_games:
-                    game_id = correspondence_queue.get()
-                    # Stop checking in on games if we have checked in on all
-                    # games since the last correspondence_ping.
-                    if not game_id:
-                        if is_correspondence_ping and not correspondence_queue.empty():
-                            correspondence_queue.put("")
-                        else:
-                            wait_for_correspondence_ping = True
-                            break
-                    else:
-                        busy_processes += 1
-                        log_proc_count("Used", queued_processes, busy_processes)
-                        play_game_args[1] = game_id
-                        pool.apply_async(play_game,
-                                         play_game_args,
-                                         error_callback=game_error_handler)
+            check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
 
             # Keep processing the queue until empty or max_games is reached.
             while (queued_processes + busy_processes) < max_games and challenge_queue:
@@ -312,6 +294,36 @@ def lichess_bot_main(li,
             control_queue.task_done()
 
     logger.info("Terminated")
+
+
+def check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games):
+    global wait_for_correspondence_ping
+    global busy_processes
+
+    is_correspondence_ping = event["type"] == "correspondence_ping"
+    is_local_game_done = event["type"] == "local_game_done"
+    if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
+        if is_correspondence_ping and wait_for_correspondence_ping:
+            correspondence_queue.put("")
+
+        wait_for_correspondence_ping = False
+        while (busy_processes + queued_processes) < max_games:
+            game_id = correspondence_queue.get()
+            # Stop checking in on games if we have checked in on all
+            # games since the last correspondence_ping.
+            if not game_id:
+                if is_correspondence_ping and not correspondence_queue.empty():
+                    correspondence_queue.put("")
+                else:
+                    wait_for_correspondence_ping = True
+                    break
+            else:
+                busy_processes += 1
+                log_proc_count("Used", queued_processes, busy_processes)
+                play_game_args[1] = game_id
+                pool.apply_async(play_game,
+                                 play_game_args,
+                                 error_callback=game_error_handler)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

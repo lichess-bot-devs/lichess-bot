@@ -188,6 +188,8 @@ def lichess_bot_main(li,
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
 
+    one_game_completed = False
+
     startup_correspondence_games = [game["gameId"]
                                     for game in li.get_ongoing_games()
                                     if game["perf"] == "correspondence"]
@@ -207,7 +209,7 @@ def lichess_bot_main(li,
                       logging_level]
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
-        while not terminated:
+        while not (terminated or (one_game and one_game_completed)):
             try:
                 event = control_queue.get()
                 logger.debug(f"Event: {event}" if event.get("type") != "ping" else "")
@@ -224,8 +226,7 @@ def lichess_bot_main(li,
                 busy_processes -= 1
                 matchmaker.last_game_ended_delay.reset()
                 log_proc_count("Freed", queued_processes, busy_processes)
-                if one_game:
-                    break
+                one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker)
                 challenge_queue = sort_challenges(challenge_queue, challenge_config)

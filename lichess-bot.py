@@ -210,8 +210,7 @@ def lichess_bot_main(li,
         while not terminated:
             try:
                 event = control_queue.get()
-                if event.get("type") != "ping":
-                    logger.debug(f"Event: {event}")
+                logger.debug(f"Event: {event}" if event.get("type") != "ping" else "")
             except InterruptedError:
                 continue
 

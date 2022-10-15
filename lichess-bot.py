@@ -253,8 +253,7 @@ def lichess_bot_main(li,
                     correspondence_queue.put(game_id)
                     startup_correspondence_games.remove(game_id)
                 else:
-                    if queued_processes > 0:
-                        queued_processes -= 1
+                    queued_processes = max(0, queued_processes - 1)
                     busy_processes += 1
                     log_proc_count("Used", queued_processes, busy_processes)
                     play_game_args[1] = game_id

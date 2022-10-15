@@ -264,12 +264,7 @@ def lichess_bot_main(li,
 
             check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
             accept_challenges(li, challenge_queue, max_games)
-
-            if (queued_processes + busy_processes < 1
-                    and not challenge_queue
-                    and matchmaker.should_create_challenge()):
-                logger.info("Challenging a random bot")
-                matchmaker.challenge()
+            matchmaker.challenge(queued_processes, busy_processes, challenge_queue)
 
             if last_check_online_time.is_expired():
                 if not li.is_online(user_profile["id"]):

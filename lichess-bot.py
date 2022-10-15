@@ -236,10 +236,7 @@ def lichess_bot_main(li,
                 is_supported, decline_reason = chlng.is_supported(challenge_config)
                 if is_supported:
                     challenge_queue.append(chlng)
-                    if challenge_config.get("sort_by", "best") == "best":
-                        list_c = list(challenge_queue)
-                        list_c.sort(key=lambda c: -c.score())
-                        challenge_queue = list_c
+                    challenge_queue = sort_challenges(challenge_queue, challenge_config)
                 elif chlng.id != matchmaker.challenge_id:
                     li.decline_challenge(chlng.id, reason=decline_reason)
             elif event["type"] == "challengeDeclined":
@@ -327,6 +324,15 @@ def check_online_status(li, user_profile, last_check_online_time):
             logger.info("Will reset connection with lichess")
             li.reset_connection()
         last_check_online_time.reset()
+
+
+def sort_challenges(challenge_queue, challenge_config):
+    if challenge_config.get("sort_by", "best") == "best":
+        list_c = list(challenge_queue)
+        list_c.sort(key=lambda c: -c.score())
+        return list_c
+    else:
+        return challenge_queue
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

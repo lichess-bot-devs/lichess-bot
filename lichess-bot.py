@@ -216,11 +216,7 @@ def lichess_bot_main(li,
                 continue
 
             if "type" not in event:
-                logger.warning("Unable to handle response from lichess.org:")
-                logger.warning(event)
-                if event.get("error") == "Missing scope":
-                    logger.warning('Please check that the API access token for your bot has the scope "Play games '
-                                   'with the bot API".')
+                log_bad_event(event)
                 continue
 
             if event["type"] == "terminated":
@@ -344,6 +340,13 @@ def handle_challenge(event, li, challenge_queue, challenge_config, user_profile,
         challenge_queue.append(chlng)
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
+
+
+def log_bad_event(event):
+    logger.warning("Unable to handle response from lichess.org:")
+    logger.warning(event)
+    if event.get("error") == "Missing scope":
+        logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

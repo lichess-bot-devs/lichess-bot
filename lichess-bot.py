@@ -232,13 +232,8 @@ def lichess_bot_main(li,
                 if one_game:
                     break
             elif event["type"] == "challenge":
-                chlng = model.Challenge(event["challenge"], user_profile)
-                is_supported, decline_reason = chlng.is_supported(challenge_config)
-                if is_supported:
-                    challenge_queue.append(chlng)
-                    challenge_queue = sort_challenges(challenge_queue, challenge_config)
-                elif chlng.id != matchmaker.challenge_id:
-                    li.decline_challenge(chlng.id, reason=decline_reason)
+                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker)
+                challenge_queue = sort_challenges(challenge_queue, challenge_config)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -340,6 +335,15 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
         pool.apply_async(play_game,
                          play_game_args,
                          error_callback=game_error_handler)
+
+
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):
+    chlng = model.Challenge(event["challenge"], user_profile)
+    is_supported, decline_reason = chlng.is_supported(challenge_config)
+    if is_supported:
+        challenge_queue.append(chlng)
+    elif chlng.id != matchmaker.challenge_id:
+        li.decline_challenge(chlng.id, reason=decline_reason)
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

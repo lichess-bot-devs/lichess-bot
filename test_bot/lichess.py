@@ -178,6 +178,6 @@ class Lichess:
 
     def online_book_get(self, path, params=None):
         return
-
-    def reset_connection(self):
-        return
+    
+    def is_online(self, user_id):
+        return True

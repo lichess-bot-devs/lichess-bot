@@ -223,7 +223,6 @@ def lichess_bot_main(li,
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker)
-                challenge_queue = sort_challenges(challenge_queue, challenge_config)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -317,9 +316,7 @@ def sort_challenges(challenge_queue, challenge_config):
     if challenge_config.get("sort_by", "best") == "best":
         list_c = list(challenge_queue)
         list_c.sort(key=lambda c: -c.score())
-        return list_c
-    else:
-        return challenge_queue
+        challenge_queue[:] = list_c
 
 
 def start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue):
@@ -348,6 +345,7 @@ def handle_challenge(event, li, challenge_queue, challenge_config, user_profile,
     is_supported, decline_reason = chlng.is_supported(challenge_config)
     if is_supported:
         challenge_queue.append(chlng)
+        sort_challenges(challenge_queue, challenge_config)
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
 

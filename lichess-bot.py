@@ -241,17 +241,17 @@ def lichess_bot_main(li,
 def next_event(control_queue):
     try:
         event = control_queue.get()
-
-        if "type" not in event:
-            log_bad_event(event)
-            return {}
-
-        if event.get("type") != "ping":
-            logger.debug(f"Event: {event}")
-
-        return event
     except InterruptedError:
         return {}
+
+    if "type" not in event:
+        log_bad_event(event)
+        return {}
+
+    if event.get("type") != "ping":
+        logger.debug(f"Event: {event}")
+
+    return event
 
 
 def check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games):

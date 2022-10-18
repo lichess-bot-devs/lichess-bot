@@ -196,16 +196,15 @@ def lichess_bot_main(li,
     last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
 
-    play_game_args = [li,
-                      None,  # will hold the game id
-                      control_queue,
-                      user_profile,
-                      config,
-                      challenge_queue,
-                      correspondence_queue,
-                      logging_queue,
-                      game_logging_configurer,
-                      logging_level]
+    play_game_args = {"li": li,
+                      "control_queue": control_queue,
+                      "user_profile": user_profile,
+                      "config": config,
+                      "challenge_queue": challenge_queue,
+                      "correspondence_queue": correspondence_queue,
+                      "logging_queue": logging_queue,
+                      "game_logging_configurer": game_logging_configurer,
+                      "logging_level": logging_level}
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed)):
@@ -280,9 +279,9 @@ def check_in_on_correspondence_games(pool, event, correspondence_queue, challeng
             else:
                 busy_processes += 1
                 log_proc_count("Used", queued_processes, busy_processes)
-                play_game_args[1] = game_id
+                play_game_args["game_id"] = game_id
                 pool.apply_async(play_game,
-                                 play_game_args,
+                                 kwds=play_game_args,
                                  error_callback=game_error_handler)
 
 
@@ -336,9 +335,9 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
         queued_processes = max(0, queued_processes - 1)
         busy_processes += 1
         log_proc_count("Used", queued_processes, busy_processes)
-        play_game_args[1] = game_id
+        play_game_args["game_id"] = game_id
         pool.apply_async(play_game,
-                         play_game_args,
+                         kwds=play_game_args,
                          error_callback=game_error_handler)
 
 

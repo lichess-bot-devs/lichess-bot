@@ -162,7 +162,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
         logging_listener.join()
 
 
-wait_for_correspondence_ping = False
 busy_processes = 0
 queued_processes = 0
 
@@ -252,6 +251,9 @@ def next_event(control_queue):
         logger.debug(f"Event: {event}")
 
     return event
+
+
+wait_for_correspondence_ping = False
 
 
 def check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games):

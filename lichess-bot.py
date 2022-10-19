@@ -204,7 +204,7 @@ def lichess_bot_main(li,
                       logging_level]
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
-        while not terminated:
+        while not terminated and not restart:
             try:
                 event = control_queue.get()
                 if event.get("type") != "ping":
@@ -309,7 +309,6 @@ def lichess_bot_main(li,
                 if not li.is_online(user_profile["id"]):
                     logger.info("Will restart lichess-bot")
                     restart = True
-                    terminated = True
                 last_check_online_time.reset()
 
             control_queue.task_done()
@@ -641,7 +640,6 @@ if __name__ == "__main__":
     try:
         while restart:
             restart = False
-            terminated = False
             start_lichess_bot()
             time.sleep(10 if restart else 0)
     except Exception:

@@ -160,6 +160,7 @@ def run_bot(CONFIG, logging_level):
     if user_profile.get("title") != "BOT":
         return "0"
     lichess_bot.logger.info(f"Welcome {username}!")
+    lichess_bot.restart = False
 
     thr = threading.Thread(target=thread_for_test)
     thr.start()

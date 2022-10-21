@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 __version__ = "1.2.0"
 
 terminated = False
+restart = True
 
 
 def signal_handler(signal, frame):
@@ -181,8 +182,7 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
-    global busy_processes
-    global queued_processes
+    global busy_processes, queued_processes, restart, terminated
 
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
@@ -207,7 +207,7 @@ def lichess_bot_main(li,
                       "logging_level": logging_level}
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
-        while not (terminated or (one_game and one_game_completed)):
+        while not (terminated or (one_game and one_game_completed) or restart):
             event = next_event(control_queue)
             if not event:
                 continue
@@ -306,10 +306,12 @@ def accept_challenges(li, challenge_queue, max_games):
 
 
 def check_online_status(li, user_profile, last_check_online_time):
+    global restart
+
     if last_check_online_time.is_expired():
         if not li.is_online(user_profile["id"]):
-            logger.info("Will reset connection with lichess")
-            li.reset_connection()
+            logger.info("Will restart lichess-bot")
+            restart = True
         last_check_online_time.reset()
 
 
@@ -680,6 +682,9 @@ def start_lichess_bot():
 
 if __name__ == "__main__":
     try:
-        start_lichess_bot()
+        while restart:
+            restart = False
+            start_lichess_bot()
+            time.sleep(10 if restart else 0)
     except Exception:
         logger.exception("Quitting lichess-bot due to an error:")

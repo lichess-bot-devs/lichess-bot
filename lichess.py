@@ -167,8 +167,3 @@ class Lichess:
 
     def get_public_data(self, user_name):
         return self.api_get(ENDPOINTS["public_data"].format(user_name))
-
-    def reset_connection(self):
-        self.session.close()
-        self.session = requests.Session()
-        self.session.headers.update(self.header)

@@ -182,7 +182,7 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
-    global busy_processes, queued_processes, restart, terminated
+    global busy_processes
 
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
@@ -287,7 +287,6 @@ def check_in_on_correspondence_games(pool, event, correspondence_queue, challeng
 
 def accept_challenges(li, challenge_queue, max_games):
     global queued_processes
-    global busy_processes
 
     while (queued_processes + busy_processes) < max_games and challenge_queue:
         chlng = challenge_queue.pop(0)

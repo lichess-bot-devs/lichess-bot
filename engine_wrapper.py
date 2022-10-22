@@ -222,7 +222,7 @@ class EngineWrapper:
                                   info=chess.engine.INFO_ALL,
                                   ponder=ponder,
                                   draw_offered=draw_offered,
-                                  root_moves=root_moves)
+                                  root_moves=root_moves if isinstance(root_moves, list) else None)
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
@@ -654,7 +654,9 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
         comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
-        return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
+        if isinstance(best_move, chess.Move):
+            return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
+        return best_move
     return chess.engine.PlayResult(None, None)
 
 

@@ -785,17 +785,7 @@ def get_syzygy(board, syzygy_cfg):
             tablebase.add_directory(path)
 
         try:
-            def dtz_scorer(board):
-                dtz = -tablebase.probe_dtz(board)
-                return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
-
-            moves = score_moves(board, dtz_scorer)
-
-            def dtz_to_wdl(dtz):
-                return piecewise_function([(-100, -1),
-                                           (-1, -2),
-                                           (0, 0),
-                                           (99, 2)], 1, dtz)
+            moves = score_moves(board, dtz_scorer, tablebase)
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
@@ -816,7 +806,7 @@ def get_syzygy(board, syzygy_cfg):
         except KeyError:
             # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
             try:
-                moves = score_moves(board, lambda b: -tablebase.probe_wdl(b))
+                moves = score_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
                 best_wdl = max(moves.values())
                 good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
@@ -830,6 +820,15 @@ def get_syzygy(board, syzygy_cfg):
                 return move, best_wdl
             except KeyError:
                 return None, None
+
+
+def dtz_scorer(tablebase, board):
+    dtz = -tablebase.probe_dtz(board)
+    return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
+
+
+def dtz_to_wdl(dtz):
+    return piecewise_function([(-100, -1), (-1, -2), (0, 0), (99, 2)], 1, dtz)
 
 
 def get_gaviota(board, gaviota_cfg):
@@ -850,29 +849,13 @@ def get_gaviota(board, gaviota_cfg):
             tablebase.add_directory(path)
 
         try:
-            def dtm_scorer(board):
-                dtm = -tablebase.probe_dtm(board)
-                return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock * (0 if dtm == 0 else 1)
-
-            moves = score_moves(board, dtm_scorer)
-
-            def dtm_to_gaviota_wdl(dtm):
-                return piecewise_function([(-1, -1),
-                                           (0, 0)], 1, dtm)
+            moves = score_moves(board, dtm_scorer, tablebase)
 
             best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
             good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
             best_dtm = min([dtm for move, dtm in good_moves])
 
-            def dtm_to_wdl(dtm):
-                # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
-                # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
-                return piecewise_function([(-100, -1),
-                                           (-1, -2),
-                                           (0, 0),
-                                           (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
-
-            pseudo_wdl = dtm_to_wdl(best_dtm)
+            pseudo_wdl = dtm_to_wdl(best_dtm, min_dtm_to_consider_as_wdl_1)
             if move_quality == "good":
                 best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
                 move, dtm = random.choice(best_moves)
@@ -893,6 +876,21 @@ def get_gaviota(board, gaviota_cfg):
             return move, pseudo_wdl
         except KeyError:
             return None, None
+
+
+def dtm_scorer(tablebase, board):
+    dtm = -tablebase.probe_dtm(board)
+    return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock * (0 if dtm == 0 else 1)
+
+
+def dtm_to_gaviota_wdl(dtm):
+    return piecewise_function([(-1, -1), (0, 0)], 1, dtm)
+
+
+def dtm_to_wdl(dtm, min_dtm_to_consider_as_wdl_1):
+    # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
+    # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
+    return piecewise_function([(-100, -1), (-1, -2), (0, 0), (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
 
 
 def good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1):
@@ -960,10 +958,10 @@ def piecewise_function(range_definitions, last_value, position):
     return last_value
 
 
-def score_moves(board, scorer):
+def score_moves(board, scorer, tablebase):
     moves = {}
     for move in board.legal_moves:
         board_copy = board.copy()
         board_copy.push(move)
-        moves[move] = scorer(board_copy)
+        moves[move] = scorer(tablebase, board_copy)
     return moves

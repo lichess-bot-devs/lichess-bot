@@ -1,5 +1,8 @@
 import os
 import chess.engine
+import chess.polyglot
+import chess.syzygy
+import chess.gaviota
 import subprocess
 import logging
 import time

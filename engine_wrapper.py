@@ -119,26 +119,28 @@ class EngineWrapper:
                                       lichess_bot_tbs,
                                       draw_or_resign_cfg)
 
-        if best_move.move is None:
+        if not isinstance(best_move, list) and best_move.move is None:
             best_move = get_online_move(li,
                                         board,
                                         game,
                                         online_moves_cfg,
                                         draw_or_resign_cfg)
 
-        if best_move.move is None:
+        if isinstance(best_move, list) or best_move.move is None:
             draw_offered = check_for_draw_offer(game)
 
             if len(board.move_stack) < 2:
                 best_move = choose_first_move(self,
                                               board,
-                                              draw_offered)
+                                              draw_offered,
+                                              best_move)
             elif is_correspondence:
                 best_move = choose_move_time(self,
                                              board,
                                              correspondence_move_time,
                                              can_ponder,
-                                             draw_offered)
+                                             draw_offered,
+                                             best_move)
             else:
                 best_move = choose_move(self,
                                         board,
@@ -146,7 +148,8 @@ class EngineWrapper:
                                         can_ponder,
                                         draw_offered,
                                         start_time,
-                                        move_overhead)
+                                        move_overhead,
+                                        best_move)
 
         self.add_comment(best_move, board)
         self.print_stats()
@@ -155,19 +158,19 @@ class EngineWrapper:
         else:
             li.make_move(game.id, best_move)
 
-    def search_for(self, board, movetime, ponder, draw_offered):
-        return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered)
+    def search_for(self, board, movetime, ponder, draw_offered, root_moves):
+        return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered, root_moves)
 
-    def first_search(self, board, movetime, draw_offered):
+    def first_search(self, board, movetime, draw_offered, root_moves):
         # No pondering after the first move since a different clock is used afterwards.
-        return self.search_for(board, movetime, False, draw_offered)
+        return self.search_for(board, movetime, False, draw_offered, root_moves)
 
-    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered):
+    def search_with_ponder(self, board, wtime, btime, winc, binc, ponder, draw_offered, root_moves):
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
                                         black_inc=binc / 1000)
-        return self.search(board, time_limit, ponder, draw_offered)
+        return self.search(board, time_limit, ponder, draw_offered, root_moves)
 
     def add_go_commands(self, time_limit):
         movetime = self.go_commands.get("movetime")
@@ -209,13 +212,14 @@ class EngineWrapper:
                 result.resigned = True
         return result
 
-    def search(self, board, time_limit, ponder, draw_offered):
+    def search(self, board, time_limit, ponder, draw_offered, root_moves):
         time_limit = self.add_go_commands(time_limit)
         result = self.engine.play(board,
                                   time_limit,
                                   info=chess.engine.INFO_ALL,
                                   ponder=ponder,
-                                  draw_offered=draw_offered)
+                                  draw_offered=draw_offered,
+                                  root_moves=root_moves)
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
@@ -398,19 +402,19 @@ def getHomemadeEngine(name):
     return getattr(strategies, name)
 
 
-def choose_move_time(engine, board, search_time, ponder, draw_offered):
+def choose_move_time(engine, board, search_time, ponder, draw_offered, root_moves):
     logger.info(f"Searching for time {search_time}")
-    return engine.search_for(board, search_time, ponder, draw_offered)
+    return engine.search_for(board, search_time, ponder, draw_offered, root_moves)
 
 
-def choose_first_move(engine, board, draw_offered):
+def choose_first_move(engine, board, draw_offered, root_moves):
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time}")
-    return engine.first_search(board, search_time, draw_offered)
+    return engine.first_search(board, search_time, draw_offered, root_moves)
 
 
-def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead):
+def choose_move(engine, board, game, ponder, draw_offered, start_time, move_overhead, root_moves):
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -422,7 +426,8 @@ def choose_move(engine, board, game, ponder, draw_offered, start_time, move_over
                                      game.state["winc"],
                                      game.state["binc"],
                                      ponder,
-                                     draw_offered)
+                                     draw_offered,
+                                     root_moves)
 
 
 def check_for_draw_offer(game):
@@ -494,11 +499,13 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         best_move, comment = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
     if best_move:
-        return chess.engine.PlayResult(chess.Move.from_uci(best_move),
-                                       None,
-                                       comment,
-                                       draw_offered=offer_draw,
-                                       resigned=resign)
+        if isinstance(best_move, str):
+            return chess.engine.PlayResult(chess.Move.from_uci(best_move),
+                                           None,
+                                           comment,
+                                           draw_offered=offer_draw,
+                                           resigned=resign)
+        return [chess.Move.from_uci(move) for move in best_move]
     out_of_online_opening_book_moves[game.id] += 1
     used_opening_books = chessdb_cfg.get("enabled") or lichess_cloud_cfg.get("enabled")
     if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:
@@ -623,7 +630,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
         if source == "lichess":
             return get_lichess_egtb_move(li, board, quality, variant)
         elif source == "chessdb":
-            return get_chessdb_egtb_move(li, board, quality, variant)
+            return get_chessdb_egtb_move(li, board, quality)
     except Exception:
         pass
 
@@ -668,6 +675,27 @@ def get_lichess_egtb_move(li, board, quality, variant):
             dtm = data["moves"][0]["dtm"]
             if dtm:
                 dtm *= -1
+            logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
+        elif quality == "suggest":
+            best_wdl = name_to_wld[data["moves"][0]["category"]]
+
+            def good_enough(possible_move):
+                return name_to_wld[possible_move["category"]] == best_wdl
+
+            possible_moves = list(filter(good_enough, data["moves"]))
+            if len(possible_moves) > 1:
+                move = [move["uci"] for move in possible_moves]
+                wdl = best_wdl * -1
+                logger.info(f"Suggesting moves from tablebase.lichess.ovh (wdl: {wdl})")
+            else:
+                best_move = possible_moves[0]
+                move = best_move["uci"]
+                wdl = name_to_wld[best_move["category"]] * -1
+                dtz = best_move["dtz"] * -1
+                dtm = best_move["dtm"]
+                if dtm:
+                    dtm *= -1
+                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
         else:
             best_wdl = name_to_wld[data["moves"][0]["category"]]
 
@@ -681,12 +709,12 @@ def get_lichess_egtb_move(li, board, quality, variant):
             dtm = random_move["dtm"]
             if dtm:
                 dtm *= -1
+            logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
 
-        logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})")
         return move, wdl
 
 
-def get_chessdb_egtb_move(li, board, quality, variant):
+def get_chessdb_egtb_move(li, board, quality):
     def score_to_wdl(score):
         return piecewise_function([(-20001, 2),
                                    (-1, -1),
@@ -706,6 +734,27 @@ def get_chessdb_egtb_move(li, board, quality, variant):
         if quality == "best":
             score = data["score"]
             move = data["pv"][0]
+            wdl = score_to_wdl(score)
+            dtz = score_to_dtz(score)
+            logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
+        elif quality == "suggest":
+            best_wdl = score_to_wdl(data["moves"][0]["score"])
+
+            def good_enough(move):
+                return score_to_wdl(move["score"]) == best_wdl
+
+            possible_moves = list(filter(good_enough, data["moves"]))
+            if len(possible_moves) > 1:
+                wdl = score_to_wdl(possible_moves[0]["score"])
+                move = [move["uci"] for move in possible_moves]
+                logger.info(f"Suggesting moves from from chessdb.cn (wdl: {wdl})")
+            else:
+                best_move = possible_moves[0]
+                score = best_move["score"]
+                move = best_move["uci"]
+                wdl = score_to_wdl(score)
+                dtz = score_to_dtz(score)
+                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
         else:
             best_wdl = score_to_wdl(data["moves"][0]["score"])
 
@@ -715,11 +764,11 @@ def get_chessdb_egtb_move(li, board, quality, variant):
             random_move = random.choice(list(possible_moves))
             score = random_move["score"]
             move = random_move["uci"]
+            wdl = score_to_wdl(score)
+            dtz = score_to_dtz(score)
+            logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
 
-        wdl = score_to_wdl(score)
-        dtz = score_to_dtz(score)
-        logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz})")
-        return move, score_to_wdl(score)
+        return move, wdl
 
 
 def get_syzygy(board, syzygy_cfg):
@@ -751,6 +800,10 @@ def get_syzygy(board, syzygy_cfg):
                 move, dtz = random.choice(good_moves)
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {dtz})")
                 return move, best_wdl
+            elif move_quality == "suggest" and len(good_moves) > 1:
+                move = [move for move, dtz in good_moves]
+                logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl})")
+                return move, best_wdl
             else:
                 best_dtz = min([dtz for move, dtz in good_moves])
                 best_moves = [move for move, dtz in good_moves if dtz == best_dtz]
@@ -763,10 +816,14 @@ def get_syzygy(board, syzygy_cfg):
                 moves = score_moves(board, lambda b: -tablebase.probe_wdl(b))
                 best_wdl = max(moves.values())
                 good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
-                move = random.choice(good_moves)
                 logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
-                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl})")
+                if move_quality == "suggest":
+                    move = good_moves
+                    logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl})")
+                else:
+                    move = random.choice(good_moves)
+                    logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl})")
                 return move, best_wdl
             except KeyError:
                 return None, None
@@ -815,11 +872,21 @@ def get_gaviota(board, gaviota_cfg):
             pseudo_wdl = dtm_to_wdl(best_dtm)
             if move_quality == "good":
                 best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
+                move, dtm = random.choice(best_moves)
+                logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})")
+            elif move_quality == "suggest":
+                best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
+                if len(best_moves) > 1:
+                    move = [move for move, dtm in best_moves]
+                    logger.info(f"Suggesting moves from gaviota (pseudo wdl: {pseudo_wdl})")
+                else:
+                    move, dtm = random.choice(best_moves)
+                    logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})")
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]
-            move, dtm = random.choice(best_moves)
-            logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})")
+                move, dtm = random.choice(best_moves)
+                logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})")
             return move, pseudo_wdl
         except KeyError:
             return None, None

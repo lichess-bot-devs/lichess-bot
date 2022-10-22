@@ -163,6 +163,15 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
         logging_listener.join()
 
 
+busy_processes = 0
+queued_processes = 0
+
+
+def log_proc_count(change, queued, used):
+    symbol = "+++" if change == "Freed" else "---"
+    logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+
+
 def lichess_bot_main(li,
                      user_profile,
                      config,
@@ -173,18 +182,13 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
-    global restart, terminated
-    busy_processes = 0
-    queued_processes = 0
-
-    def log_proc_count(change, queued, used):
-        symbol = "+++" if change == "Freed" else "---"
-        logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+    global busy_processes
 
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
 
-    wait_for_correspondence_ping = False
+    one_game_completed = False
+
     startup_correspondence_games = [game["gameId"]
                                     for game in li.get_ongoing_games()
                                     if game["perf"] == "correspondence"]
@@ -192,32 +196,20 @@ def lichess_bot_main(li,
     last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
 
-    play_game_args = [li,
-                      None,  # will hold the game id
-                      control_queue,
-                      user_profile,
-                      config,
-                      challenge_queue,
-                      correspondence_queue,
-                      logging_queue,
-                      game_logging_configurer,
-                      logging_level]
+    play_game_args = {"li": li,
+                      "control_queue": control_queue,
+                      "user_profile": user_profile,
+                      "config": config,
+                      "challenge_queue": challenge_queue,
+                      "correspondence_queue": correspondence_queue,
+                      "logging_queue": logging_queue,
+                      "game_logging_configurer": game_logging_configurer,
+                      "logging_level": logging_level}
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
-        while not terminated and not restart:
-            try:
-                event = control_queue.get()
-                if event.get("type") != "ping":
-                    logger.debug(f"Event: {event}")
-            except InterruptedError:
-                continue
-
-            if event.get("type") is None:
-                logger.warning("Unable to handle response from lichess.org:")
-                logger.warning(event)
-                if event.get("error") == "Missing scope":
-                    logger.warning('Please check that the API access token for your bot has the scope "Play games '
-                                   'with the bot API".')
+        while not (terminated or (one_game and one_game_completed) or restart):
+            event = next_event(control_queue)
+            if not event:
                 continue
 
             if event["type"] == "terminated":
@@ -226,94 +218,145 @@ def lichess_bot_main(li,
                 busy_processes -= 1
                 matchmaker.last_game_ended_delay.reset()
                 log_proc_count("Freed", queued_processes, busy_processes)
-                if one_game:
-                    break
+                one_game_completed = True
             elif event["type"] == "challenge":
-                chlng = model.Challenge(event["challenge"], user_profile)
-                is_supported, decline_reason = chlng.is_supported(challenge_config)
-                if is_supported:
-                    challenge_queue.append(chlng)
-                    if challenge_config.get("sort_by", "best") == "best":
-                        list_c = list(challenge_queue)
-                        list_c.sort(key=lambda c: -c.score())
-                        challenge_queue = list_c
-                elif chlng.id != matchmaker.challenge_id:
-                    li.decline_challenge(chlng.id, reason=decline_reason)
+                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
-                game_id = event["game"]["id"]
-                if matchmaker.challenge_id == game_id:
-                    matchmaker.challenge_id = None
-                if game_id in startup_correspondence_games:
-                    logger.info(f'--- Enqueue {config["url"] + game_id}')
-                    correspondence_queue.put(game_id)
-                    startup_correspondence_games.remove(game_id)
-                else:
-                    if queued_processes > 0:
-                        queued_processes -= 1
-                    busy_processes += 1
-                    log_proc_count("Used", queued_processes, busy_processes)
-                    play_game_args[1] = game_id
-                    pool.apply_async(play_game,
-                                     play_game_args,
-                                     error_callback=game_error_handler)
+                start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue)
 
-            is_correspondence_ping = event["type"] == "correspondence_ping"
-            is_local_game_done = event["type"] == "local_game_done"
-            if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
-                if is_correspondence_ping and wait_for_correspondence_ping:
-                    correspondence_queue.put("")
-
-                wait_for_correspondence_ping = False
-                while (busy_processes + queued_processes) < max_games:
-                    game_id = correspondence_queue.get()
-                    # Stop checking in on games if we have checked in on all
-                    # games since the last correspondence_ping.
-                    if not game_id:
-                        if is_correspondence_ping and not correspondence_queue.empty():
-                            correspondence_queue.put("")
-                        else:
-                            wait_for_correspondence_ping = True
-                            break
-                    else:
-                        busy_processes += 1
-                        log_proc_count("Used", queued_processes, busy_processes)
-                        play_game_args[1] = game_id
-                        pool.apply_async(play_game,
-                                         play_game_args,
-                                         error_callback=game_error_handler)
-
-            # Keep processing the queue until empty or max_games is reached.
-            while (queued_processes + busy_processes) < max_games and challenge_queue:
-                chlng = challenge_queue.pop(0)
-                if chlng.from_self:
-                    continue
-                try:
-                    logger.info(f"Accept {chlng}")
-                    queued_processes += 1
-                    li.accept_challenge(chlng.id)
-                    log_proc_count("Queued", queued_processes, busy_processes)
-                except (HTTPError, ReadTimeout) as exception:
-                    if isinstance(exception, HTTPError) and exception.response.status_code == 404:
-                        logger.info(f"Skip missing {chlng}")
-                    queued_processes -= 1
-
-            if (queued_processes + busy_processes < 1
-                    and not challenge_queue
-                    and matchmaker.should_create_challenge()):
-                logger.info("Challenging a random bot")
-                matchmaker.challenge()
-
-            if last_check_online_time.is_expired():
-                if not li.is_online(user_profile["id"]):
-                    logger.info("Will restart lichess-bot")
-                    restart = True
-                last_check_online_time.reset()
+            check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
+            accept_challenges(li, challenge_queue, max_games)
+            matchmaker.challenge(queued_processes, busy_processes, challenge_queue)
+            check_online_status(li, user_profile, last_check_online_time)
 
             control_queue.task_done()
 
     logger.info("Terminated")
+
+
+def next_event(control_queue):
+    try:
+        event = control_queue.get()
+    except InterruptedError:
+        return {}
+
+    if "type" not in event:
+        log_bad_event(event)
+        return {}
+
+    if event.get("type") != "ping":
+        logger.debug(f"Event: {event}")
+
+    return event
+
+
+wait_for_correspondence_ping = False
+
+
+def check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games):
+    global wait_for_correspondence_ping
+    global busy_processes
+
+    is_correspondence_ping = event["type"] == "correspondence_ping"
+    is_local_game_done = event["type"] == "local_game_done"
+    if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
+        if is_correspondence_ping and wait_for_correspondence_ping:
+            correspondence_queue.put("")
+
+        wait_for_correspondence_ping = False
+        while (busy_processes + queued_processes) < max_games:
+            game_id = correspondence_queue.get()
+            # Stop checking in on games if we have checked in on all
+            # games since the last correspondence_ping.
+            if not game_id:
+                if is_correspondence_ping and not correspondence_queue.empty():
+                    correspondence_queue.put("")
+                else:
+                    wait_for_correspondence_ping = True
+                    break
+            else:
+                busy_processes += 1
+                log_proc_count("Used", queued_processes, busy_processes)
+                play_game_args["game_id"] = game_id
+                pool.apply_async(play_game,
+                                 kwds=play_game_args,
+                                 error_callback=game_error_handler)
+
+
+def accept_challenges(li, challenge_queue, max_games):
+    global queued_processes
+
+    while (queued_processes + busy_processes) < max_games and challenge_queue:
+        chlng = challenge_queue.pop(0)
+        if chlng.from_self:
+            continue
+
+        try:
+            logger.info(f"Accept {chlng}")
+            queued_processes += 1
+            li.accept_challenge(chlng.id)
+            log_proc_count("Queued", queued_processes, busy_processes)
+        except (HTTPError, ReadTimeout) as exception:
+            if isinstance(exception, HTTPError) and exception.response.status_code == 404:
+                logger.info(f"Skip missing {chlng}")
+            queued_processes -= 1
+
+
+def check_online_status(li, user_profile, last_check_online_time):
+    global restart
+
+    if last_check_online_time.is_expired():
+        if not li.is_online(user_profile["id"]):
+            logger.info("Will restart lichess-bot")
+            restart = True
+        last_check_online_time.reset()
+
+
+def sort_challenges(challenge_queue, challenge_config):
+    if challenge_config.get("sort_by", "best") == "best":
+        list_c = list(challenge_queue)
+        list_c.sort(key=lambda c: -c.score())
+        challenge_queue[:] = list_c
+
+
+def start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue):
+    global queued_processes
+    global busy_processes
+
+    game_id = event["game"]["id"]
+    if matchmaker.challenge_id == game_id:
+        matchmaker.challenge_id = None
+    if game_id in startup_correspondence_games:
+        logger.info(f'--- Enqueue {config["url"] + game_id}')
+        correspondence_queue.put(game_id)
+        startup_correspondence_games.remove(game_id)
+    else:
+        queued_processes = max(0, queued_processes - 1)
+        busy_processes += 1
+        log_proc_count("Used", queued_processes, busy_processes)
+        play_game_args["game_id"] = game_id
+        pool.apply_async(play_game,
+                         kwds=play_game_args,
+                         error_callback=game_error_handler)
+
+
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):
+    chlng = model.Challenge(event["challenge"], user_profile)
+    is_supported, decline_reason = chlng.is_supported(challenge_config)
+    if is_supported:
+        challenge_queue.append(chlng)
+        sort_challenges(challenge_queue, challenge_config)
+    elif chlng.id != matchmaker.challenge_id:
+        li.decline_challenge(chlng.id, reason=decline_reason)
+
+
+def log_bad_event(event):
+    logger.warning("Unable to handle response from lichess.org:")
+    logger.warning(event)
+    if event.get("error") == "Missing scope":
+        logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)

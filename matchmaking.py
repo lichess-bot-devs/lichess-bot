@@ -152,7 +152,13 @@ class Matchmaking:
         value = self.matchmaking_cfg.get(parameter) or "random"
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self):
+    def challenge(self, queued_processes, busy_processes, challenge_queue):
+        if (queued_processes + busy_processes > 0
+                or challenge_queue
+                or not self.should_create_challenge()):
+            return
+
+        logger.info("Challenging a random bot")
         self.update_user_profile()
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")

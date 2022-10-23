@@ -813,7 +813,7 @@ def get_syzygy(board, syzygy_cfg):
                 good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
-                if move_quality == "suggest":
+                if move_quality == "suggest" and len(good_moves) > 1:
                     move = good_moves
                     logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl})")
                 else:

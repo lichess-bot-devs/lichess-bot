@@ -33,6 +33,7 @@ engine:                      # Engine settings.
     offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
   online_moves:
     max_out_of_book_moves: 10 # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.
+    max_retries: 2           # The maximum amount of retries when getting an online move.
     chessdb_book:
       enabled: false
       min_time: 20

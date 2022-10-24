@@ -15,7 +15,7 @@ def check_config_section(config, data_name, data_type, subsection=""):
     config_part = config[subsection] if subsection else config
     sub = f"`{subsection}` sub" if subsection else ""
     data_location = f"`{data_name}` subsection in `{subsection}`" if subsection else f"Section `{data_name}`"
-    type_error_message = {str:  f"{data_location} must be a string wrapped in quotes.",
+    type_error_message = {str: f"{data_location} must be a string wrapped in quotes.",
                           dict: f"{data_location} must be a dictionary with indented keys followed by colons."}
     config_assert(data_name in config_part, f"Your config.yml does not have required {sub}section `{data_name}`.")
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
@@ -57,5 +57,14 @@ def load_config(config_file):
                       f"The engine {engine} file does not exist.")
         config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
                       f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
+        config_assert(CONFIG["engine"]["protocol"] != "xboard" or CONFIG["engine"]["online_moves"]["online_egtb"][
+            "move_quality"] != "suggest" or not CONFIG["engine"]["online_moves"]["online_egtb"]["enabled"],
+                      "XBoard engines can't be used with `move_quality` set to `suggest` in online_egtb.")
+        config_assert(CONFIG["engine"]["protocol"] != "xboard" or CONFIG["engine"]["lichess_bot_tbs"]["syzygy"][
+            "move_quality"] != "suggest" or not CONFIG["engine"]["lichess_bot_tbs"]["syzygy"]["enabled"],
+                      "XBoard engines can't be used with `move_quality` set to `suggest` in syzygy.")
+        config_assert(CONFIG["engine"]["protocol"] != "xboard" or CONFIG["engine"]["lichess_bot_tbs"]["gaviota"][
+            "move_quality"] != "suggest" or not CONFIG["engine"]["lichess_bot_tbs"]["gaviota"]["enabled"],
+                      "XBoard engines can't be used with `move_quality` set to `suggest` in gaviota.")
 
     return CONFIG

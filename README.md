@@ -92,7 +92,7 @@ Besides the above, there are many possible options within `config.yml` for confi
             - `all`: Choose a random move from all legal moves.
             - `best`: Choose only the highest scoring move.
             - `good`: Choose randomly from the top moves. In `lichess_cloud_analysis`, the top moves list is controlled by `max_score_difference`. In `chessdb_book`, the top list is controlled by the online source.
-            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned.
+            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned. Can't be used with XBoard engines.
     - Configurations only in `chessdb_book` and `lichess_cloud_analysis`:
         - `min_depth`: The minimum search depth for a move evaluation for a database move to be accepted.
     - Configurations only in `chessdb_book`:
@@ -113,7 +113,7 @@ Besides the above, there are many possible options within `config.yml` for confi
         - `move_quality`: Choice of `"good"`, or `"best"`.
             - `best`: Choose only the highest scoring move. When using `syzygy`, if `.*tbz` files are not provided, the bot will attempt to get a move using `move_quality` = `good`.
             - `good`: Choose randomly from the top moves.
-            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned.
+            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned. Can't be used with XBoard engines.
     - Configurations only in `gaviota`:
         - `min_dtm_to_consider_as_wdl_1`: The minimum DTM to consider as syzygy WDL=1/-1. Setting it to 100 will disable it.
 - `engine_options`: Command line options to pass to the engine on startup. For example, the `config.yml.default` has the configuration

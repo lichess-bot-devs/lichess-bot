@@ -57,14 +57,13 @@ def load_config(config_file):
                       f"The engine {engine} file does not exist.")
         config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
                       f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
-        config_assert(CONFIG["engine"]["protocol"] != "xboard" or CONFIG["engine"]["online_moves"]["online_egtb"][
-            "move_quality"] != "suggest" or not CONFIG["engine"]["online_moves"]["online_egtb"]["enabled"],
-                      "XBoard engines can't be used with `move_quality` set to `suggest` in online_egtb.")
-        config_assert(CONFIG["engine"]["protocol"] != "xboard" or CONFIG["engine"]["lichess_bot_tbs"]["syzygy"][
-            "move_quality"] != "suggest" or not CONFIG["engine"]["lichess_bot_tbs"]["syzygy"]["enabled"],
-                      "XBoard engines can't be used with `move_quality` set to `suggest` in syzygy.")
-        config_assert(CONFIG["engine"]["protocol"] != "xboard" or CONFIG["engine"]["lichess_bot_tbs"]["gaviota"][
-            "move_quality"] != "suggest" or not CONFIG["engine"]["lichess_bot_tbs"]["gaviota"]["enabled"],
-                      "XBoard engines can't be used with `move_quality` set to `suggest` in gaviota.")
+
+        if CONFIG["engine"]["protocol"] == "xboard":
+            for section, subsection in (("online_moves", "online_egtb"),
+                                        ("lichess_bot_tbs", "syzygy"),
+                                        ("lichess_bot_tbs", "gaviota")):
+                online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
+                config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
+                              f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
     return CONFIG

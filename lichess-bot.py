@@ -30,7 +30,7 @@ from http.client import RemoteDisconnected
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.2.0"
+__version__ = "2022.10.26.1"
 
 terminated = False
 restart = True

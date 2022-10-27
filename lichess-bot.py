@@ -328,7 +328,7 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
         matchmaker.challenge_id = None
-    if game_id in startup_correspondence_games:
+    if game_id in startup_correspondence_games and enough_time_to_queue(event, config):
         logger.info(f'--- Enqueue {config["url"] + game_id}')
         correspondence_queue.put(game_id)
         startup_correspondence_games.remove(game_id)
@@ -340,6 +340,15 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
         pool.apply_async(play_game,
                          kwds=play_game_args,
                          error_callback=game_error_handler)
+
+
+def enough_time_to_queue(event, config):
+    corr_cfg = config.get("correspondence") or {}
+    checkin_time = corr_cfg.get("checkin_period") or 600
+    move_time = corr_cfg.get("move_time") or 60
+    minimum_time = (checkin_time + move_time) * 10
+    game = event["game"]
+    return not game["isMyTurn"] or game["secondsLeft"] > minimum_time
 
 
 def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):

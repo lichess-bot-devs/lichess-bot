@@ -136,7 +136,10 @@ class EngineWrapper:
             elif is_correspondence:
                 best_move = choose_move_time(self,
                                              board,
+                                             game,
                                              correspondence_move_time,
+                                             start_time,
+                                             move_overhead,
                                              can_ponder,
                                              draw_offered)
             else:
@@ -398,7 +401,12 @@ def getHomemadeEngine(name):
     return getattr(strategies, name)
 
 
-def choose_move_time(engine, board, search_time, ponder, draw_offered):
+def choose_move_time(engine, board, game, search_time, start_time, move_overhead, ponder, draw_offered):
+    pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
+    overhead = pre_move_time + move_overhead
+    wb = "w" if board.turn == chess.WHITE else "b"
+    clock_time = max(0, game.state[f"{wb}time"] - overhead)
+    search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {search_time}")
     return engine.search_for(board, search_time, ponder, draw_offered)
 

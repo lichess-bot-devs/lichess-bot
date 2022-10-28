@@ -1,10 +1,7 @@
 import argparse
 import chess
 import chess.pgn
-import chess.syzygy
-import chess.gaviota
 from chess.variant import find_variant
-import chess.polyglot
 import engine_wrapper
 import model
 import matchmaking
@@ -30,7 +27,7 @@ from http.client import RemoteDisconnected
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.2.0"
+__version__ = "2022.10.28.1"
 
 terminated = False
 restart = True

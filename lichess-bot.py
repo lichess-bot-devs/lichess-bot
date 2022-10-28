@@ -1,10 +1,7 @@
 import argparse
 import chess
 import chess.pgn
-import chess.syzygy
-import chess.gaviota
 from chess.variant import find_variant
-import chess.polyglot
 import engine_wrapper
 import model
 import matchmaking

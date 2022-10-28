@@ -15,7 +15,7 @@ def check_config_section(config, data_name, data_type, subsection=""):
     config_part = config[subsection] if subsection else config
     sub = f"`{subsection}` sub" if subsection else ""
     data_location = f"`{data_name}` subsection in `{subsection}`" if subsection else f"Section `{data_name}`"
-    type_error_message = {str:  f"{data_location} must be a string wrapped in quotes.",
+    type_error_message = {str: f"{data_location} must be a string wrapped in quotes.",
                           dict: f"{data_location} must be a dictionary with indented keys followed by colons."}
     config_assert(data_name in config_part, f"Your config.yml does not have required {sub}section `{data_name}`.")
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
@@ -57,5 +57,13 @@ def load_config(config_file):
                       f"The engine {engine} file does not exist.")
         config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
                       f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
+
+        if CONFIG["engine"]["protocol"] == "xboard":
+            for section, subsection in (("online_moves", "online_egtb"),
+                                        ("lichess_bot_tbs", "syzygy"),
+                                        ("lichess_bot_tbs", "gaviota")):
+                online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
+                config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
+                              f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
     return CONFIG

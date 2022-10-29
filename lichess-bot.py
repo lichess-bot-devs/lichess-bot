@@ -203,7 +203,7 @@ def lichess_bot_main(li,
                       "game_logging_configurer": game_logging_configurer,
                       "logging_level": logging_level}
 
-    recent_challenges = []
+    recent_bot_challenges = defaultdict(list)
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
@@ -219,7 +219,7 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", queued_processes, busy_processes)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_challenges)
+                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -341,37 +341,28 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
                          error_callback=game_error_handler)
 
 
-def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_challenges):
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
     chlng = model.Challenge(event["challenge"], user_profile)
 
-    # Filter challenges older than one day
     # TODO: move time window to config file
     time_window = 60*60*24 # one day
-    now = time.time()
-    while len(recent_challenges) > 0:
-        [timestamp, _] = recent_challenges[0]
-        if now - timestamp >= time_window:
-            recent_challenges.pop(0)
-        else:
-            break
-
-    # Count how many times this player has challenge the bot in the last day
-    num_recent_challenges = 0
-    for [_, username] in recent_challenges:
-        if username == chlng.challenger_name:
-            num_recent_challenges += 1
 
     # TODO: move max_recent_challenges to config file
     max_recent_challenges = 5
-    if num_recent_challenges >= max_recent_challenges:
-        is_supported = False
-        decline_reason = "later"
-    else:
-        is_supported, decline_reason = chlng.is_supported(challenge_config)
+
+    is_supported, decline_reason = chlng.is_supported(challenge_config)
+
+    if is_supported and chlng.challenger_is_bot:
+        op = chlng.challenger_name
+        # Filter out old challenges
+        recent_bot_challenges[op] = [t for t in recent_bot_challenges[op] if not t.is_expired()]
+        if len(recent_bot_challenges[op]) > max_recent_challenges:
+            is_supported = False
+            decline_reason = "later"
+        else:
+            recent_bot_challenges[op].append(Timer(time_window))
 
     if is_supported:
-        if chlng.challenger_is_bot:
-            recent_challenges.append([now, chlng.challenger_name])
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)
     elif chlng.id != matchmaker.challenge_id:

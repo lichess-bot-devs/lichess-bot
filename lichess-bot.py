@@ -370,6 +370,8 @@ def handle_challenge(event, li, challenge_queue, challenge_config, user_profile,
         is_supported, decline_reason = chlng.is_supported(challenge_config)
 
     if is_supported:
+        if chlng.challenger_is_bot:
+            recent_challenges.append([now, chlng.challenger_name])
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)
     elif chlng.id != matchmaker.challenge_id:

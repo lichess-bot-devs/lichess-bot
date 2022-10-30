@@ -12,7 +12,7 @@ A bridge between [Lichess Bot API](https://lichess.org/api#tag/Bot) and bots.
 - Install pip: `apt install python3-pip`.
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv: `apt install python3-venv`.
-```python
+```
 python3 -m venv venv # If this fails you probably need to add Python3 to your PATH.
 virtualenv venv -p python3 # If this fails you probably need to add Python3 to your PATH.
 source ./venv/bin/activate
@@ -31,7 +31,7 @@ python3 -m pip install -r requirements.txt
 - Navigate to the directory in PowerShell: `cd [folder's address]` (example, `cd C:\chess\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
-```python
+```
 python3 -m venv .venv # If this fails you probably need to add Python3 to your PATH.
 ./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administrator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
 pip install -r requirements.txt

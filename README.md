@@ -42,7 +42,7 @@ pip install -r requirements.txt
 ## Lichess OAuth
 - Create an account for your bot on [Lichess.org](https://lichess.org/signup).
 - **NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account.**
-- Once your account has been created and you are logged in, [create a personal OAuth2 token with the "Play games with the bot API" ('bot:play') scope](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&description=lichess-bot) selected and a description added.
+- Once your account has been created and you are logged in, [create a personal OAuth2 token with the "Play games with the bot API" (`bot:play`) scope](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&description=lichess-bot) selected and a description added.
 - A `token` (e.g. `xxxxxxxxxxxxxxxx`) will be displayed. Store this in the `config.yml` file as the `token` field. You can also set the token in the environment variable `$LICHESS_BOT_TOKEN`.
 - **NOTE: You won't see this token again on Lichess, so do save it.**
 
@@ -52,7 +52,7 @@ Within the file `config.yml`:
 - Enter the executable name in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
 - If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field.
   - If this field is blank or missing, the current directory will be used.
-- Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets
+- Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero-maclinux) for Neural Nets
 
 As an optional convenience, there is a folder named `engines` within the lichess-bot folder where you can copy your engine and all the files it needs. This is the default executable location in the `config.yml.default` file.
 
@@ -174,7 +174,7 @@ will append `nodes 1 depth 5 movetime 1000` to the command to start thinking of 
 ```
 feature option="Add Noise -check VALUE"
 feature option="PGN File -string VALUE"
-feature option="CPU Count -spin VALUE MIN MAX"`
+feature option="CPU Count -spin VALUE MIN MAX"
 ```
 Any of the options can be listed under `xboard_options` in order to configure the XBoard engine.
 ```yml
@@ -270,7 +270,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
 
-If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precendence.
+If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precedence.
 
 The `delay_after_decline` option can be useful if your matchmaking settings result in a lot of declined challenges. The bots that accept challenges will be challenged more often than those that have declined. The delay is only temporary, so bots that decline a challenge will eventually be challenged again.
 
@@ -333,9 +333,9 @@ python3 lichess-bot.py --logfile log.txt
 ## LeelaChessZero: Windows CPU 2021
 - For Windows modern CPUs, download the lczero binary from the [latest Lc0 release](https://github.com/LeelaChessZero/lc0/releases) (e.g. `lc0-v0.27.0-windows-cpu-dnnl.zip`).
 - Unzip the file, it comes with `lc0.exe` , `dnnl.dll`, and a weights file example, `703810.pb.gz` (amongst other files).
-- All three main files need to be copied to the engines directory.
+- All three main files need to be copied to the `engines` directory.
 - The `lc0.exe` should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file).
-- Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the engines directory).
+- Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the `engines` directory).
 - To start: `python3 lichess-bot.py`.
 
 ## LeelaChessZero: Docker container

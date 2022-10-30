@@ -298,7 +298,7 @@ def start_low_time_games(low_time_games, max_games, pool, play_game_args):
     while low_time_games and queued_processes + busy_processes < max_games:
         busy_processes += 1
         log_proc_count("Used", queued_processes, busy_processes)
-        game_id = low_time_games.pop()
+        game_id = low_time_games.pop(0)["id"]
         play_game_args["game_id"] = game_id
         pool.apply_async(play_game,
                          kwds=play_game_args,

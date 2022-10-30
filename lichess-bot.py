@@ -188,7 +188,7 @@ def lichess_bot_main(li,
 
     startup_correspondence_games = [game["gameId"]
                                     for game in li.get_ongoing_games()
-                                    if game["perf"] == "correspondence"]
+                                    if game["speed"] == "correspondence"]
     low_time_games = []
 
     last_check_online_time = Timer(60 * 60)  # one hour interval
@@ -429,7 +429,7 @@ def play_game(li,
 
     logger.info(f"+++ {game}")
 
-    is_correspondence = game.perf_name == "Correspondence"
+    is_correspondence = game.speed == "correspondence"
     correspondence_cfg = config.get("correspondence") or {}
     correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)

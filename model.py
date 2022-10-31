@@ -64,7 +64,7 @@ class Challenge:
                 return False, ("casual" if self.rated else "rated")
 
             if self.challenger_name in config.get("block_list", []):
-                return False, "blocked"
+                return False, "generic"
 
             return True, None
 

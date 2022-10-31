@@ -167,6 +167,6 @@ matchmaking:
   opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
   delay_after_decline: none  # If a bot declines a challenge, delay issuing another challenge to that bot. Possible options are 'none', 'coarse', and 'fine'.
-# block_list:                 # The list of bots which we don't try to challenge
+# block_list:                 # The list of bots that will not be challenged
 #   - user1
 #   - user2

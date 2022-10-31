@@ -4,7 +4,6 @@ import model
 from timer import Timer
 from collections import defaultdict
 from enum import Enum
-import copy
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +25,7 @@ class Matchmaking:
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
-        self.block_list = copy.copy(self.matchmaking_cfg.get("block_list")) or []
-        assert isinstance(self.block_list, list)
+        self.block_list = (self.matchmaking_cfg.get("block_list") or []).copy()
         self.delay_timers = defaultdict(lambda: Timer(0))
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.get(delay_option) or DelayType.NONE

@@ -235,7 +235,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -rated
     -casual
 ```
-  - `blocklist`: An indented list of usernames from which the challenges are always declined.
+  - `blocklist`: An indented list of usernames from which the challenges are always declined. If this option is not present, then the list is considered empty.
 - `greeting`: Send messages via chat to the bot's opponent. The string `{me}` will be replaced by the bot's lichess account name. The string `{opponent}` will be replaced by the opponent's lichess account name. Any other word between curly brackets will be removed. If you want to put a curly bracket in the message, use two: `{{` or `}}`.
   - `hello`: Message to send to the opponent when the bot makes its first move.
   - `goodbye`: Message to send to the opponent once the game is over.
@@ -268,7 +268,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - `none` does not delay challenging a bot that declined a challenge.
     - `coarse` will delay challenging a bot to any type of game for a set time.
     - `fine` will delay challenging a bot to the same kind of game that was declined for a set time.
-  - `blocklist`: An indented list of usernames of bots that will not be challenged.
+  - `blocklist`: An indented list of usernames of bots that will not be challenged. If this option is not present, then the list is considered empty.
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
 

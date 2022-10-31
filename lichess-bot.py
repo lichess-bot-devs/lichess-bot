@@ -188,7 +188,8 @@ def lichess_bot_main(li,
 
     startup_correspondence_games = [game["gameId"]
                                     for game in li.get_ongoing_games()
-                                    if game["perf"] == "correspondence"]
+                                    if game["speed"] == "correspondence"]
+    low_time_games = []
 
     last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
@@ -221,8 +222,16 @@ def lichess_bot_main(li,
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
-                start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue)
+                start_game(event,
+                           pool,
+                           play_game_args,
+                           config,
+                           matchmaker,
+                           startup_correspondence_games,
+                           correspondence_queue,
+                           low_time_games)
 
+            start_low_time_games(low_time_games, max_games, pool, play_game_args)
             check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
             accept_challenges(li, challenge_queue, max_games)
             matchmaker.challenge(queued_processes, busy_processes, challenge_queue)
@@ -282,6 +291,20 @@ def check_in_on_correspondence_games(pool, event, correspondence_queue, challeng
                                  error_callback=game_error_handler)
 
 
+def start_low_time_games(low_time_games, max_games, pool, play_game_args):
+    global busy_processes
+
+    low_time_games.sort(key=lambda g: g["secondsLeft"])
+    while low_time_games and queued_processes + busy_processes < max_games:
+        busy_processes += 1
+        log_proc_count("Used", queued_processes, busy_processes)
+        game_id = low_time_games.pop(0)["id"]
+        play_game_args["game_id"] = game_id
+        pool.apply_async(play_game,
+                         kwds=play_game_args,
+                         error_callback=game_error_handler)
+
+
 def accept_challenges(li, challenge_queue, max_games):
     global queued_processes
 
@@ -318,7 +341,14 @@ def sort_challenges(challenge_queue, challenge_config):
         challenge_queue[:] = list_c
 
 
-def start_game(event, pool, play_game_args, config, matchmaker, startup_correspondence_games, correspondence_queue):
+def start_game(event,
+               pool,
+               play_game_args,
+               config,
+               matchmaker,
+               startup_correspondence_games,
+               correspondence_queue,
+               low_time_games):
     global queued_processes
     global busy_processes
 
@@ -326,8 +356,12 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
     if matchmaker.challenge_id == game_id:
         matchmaker.challenge_id = None
     if game_id in startup_correspondence_games:
-        logger.info(f'--- Enqueue {config["url"] + game_id}')
-        correspondence_queue.put(game_id)
+        if enough_time_to_queue(event, config):
+            logger.info(f'--- Enqueue {config["url"] + game_id}')
+            correspondence_queue.put(game_id)
+        else:
+            logger.info(f'--- Will start {config["url"] + game_id} as soon as possible')
+            low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
         queued_processes = max(0, queued_processes - 1)
@@ -337,6 +371,15 @@ def start_game(event, pool, play_game_args, config, matchmaker, startup_correspo
         pool.apply_async(play_game,
                          kwds=play_game_args,
                          error_callback=game_error_handler)
+
+
+def enough_time_to_queue(event, config):
+    corr_cfg = config.get("correspondence") or {}
+    checkin_time = corr_cfg.get("checkin_period") or 600
+    move_time = corr_cfg.get("move_time") or 60
+    minimum_time = (checkin_time + move_time) * 10
+    game = event["game"]
+    return not game["isMyTurn"] or game["secondsLeft"] > minimum_time
 
 
 def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):
@@ -386,7 +429,7 @@ def play_game(li,
 
     logger.info(f"+++ {game}")
 
-    is_correspondence = game.perf_name == "Correspondence"
+    is_correspondence = game.speed == "correspondence"
     correspondence_cfg = config.get("correspondence") or {}
     correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)

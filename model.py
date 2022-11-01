@@ -63,7 +63,7 @@ class Challenge:
             if not self.is_supported_mode(config):
                 return False, ("casual" if self.rated else "rated")
 
-            if self.challenger_name in config.get("block_list", []):
+            if self.challenger_name in (config.get("block_list") or []):
                 return False, "generic"
 
             return True, None

@@ -162,7 +162,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
 
 def log_proc_count(change, active_games):
     symbol = "+++" if change == "Freed" else "---"
-    logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games}")
+    logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games or None}")
 
 
 def lichess_bot_main(li,

@@ -160,13 +160,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
         logging_listener.join()
 
 
-busy_processes = 0
-queued_processes = 0
-
-
-def log_proc_count(change, queued, used):
+def log_proc_count(change, active_games):
     symbol = "+++" if change == "Freed" else "---"
-    logger.info(f"{symbol} Process {change}. Total Queued: {queued}. Total Used: {used}")
+    logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games}")
 
 
 def lichess_bot_main(li,
@@ -179,16 +175,18 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
-    global busy_processes
-
     challenge_config = config["challenge"]
     max_games = challenge_config.get("concurrency", 1)
 
     one_game_completed = False
 
+    all_games = li.get_ongoing_games()
     startup_correspondence_games = [game["gameId"]
-                                    for game in li.get_ongoing_games()
+                                    for game in all_games
                                     if game["speed"] == "correspondence"]
+    active_games = set(game["gameId"]
+                       for game in all_games
+                       if game["gameId"] not in startup_correspondence_games)
     low_time_games = []
 
     last_check_online_time = Timer(60 * 60)  # one hour interval
@@ -213,9 +211,9 @@ def lichess_bot_main(li,
             if event["type"] == "terminated":
                 break
             elif event["type"] == "local_game_done":
-                busy_processes -= 1
+                active_games.discard(event["id"])
                 matchmaker.last_game_ended_delay.reset()
-                log_proc_count("Freed", queued_processes, busy_processes)
+                log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker)
@@ -229,12 +227,19 @@ def lichess_bot_main(li,
                            matchmaker,
                            startup_correspondence_games,
                            correspondence_queue,
+                           active_games,
                            low_time_games)
 
-            start_low_time_games(low_time_games, max_games, pool, play_game_args)
-            check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games)
-            accept_challenges(li, challenge_queue, max_games)
-            matchmaker.challenge(queued_processes, busy_processes, challenge_queue)
+            start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args)
+            check_in_on_correspondence_games(pool,
+                                             event,
+                                             correspondence_queue,
+                                             challenge_queue,
+                                             play_game_args,
+                                             active_games,
+                                             max_games)
+            accept_challenges(li, challenge_queue, active_games, max_games)
+            matchmaker.challenge(active_games, challenge_queue)
             check_online_status(li, user_profile, last_check_online_time)
 
             control_queue.task_done()
@@ -261,9 +266,14 @@ def next_event(control_queue):
 wait_for_correspondence_ping = False
 
 
-def check_in_on_correspondence_games(pool, event, correspondence_queue, challenge_queue, play_game_args, max_games):
+def check_in_on_correspondence_games(pool,
+                                     event,
+                                     correspondence_queue,
+                                     challenge_queue,
+                                     play_game_args,
+                                     active_games,
+                                     max_games):
     global wait_for_correspondence_ping
-    global busy_processes
 
     is_correspondence_ping = event["type"] == "correspondence_ping"
     is_local_game_done = event["type"] == "local_game_done"
@@ -272,7 +282,7 @@ def check_in_on_correspondence_games(pool, event, correspondence_queue, challeng
             correspondence_queue.put("")
 
         wait_for_correspondence_ping = False
-        while (busy_processes + queued_processes) < max_games:
+        while len(active_games) < max_games:
             game_id = correspondence_queue.get()
             # Stop checking in on games if we have checked in on all
             # games since the last correspondence_ping.
@@ -283,45 +293,40 @@ def check_in_on_correspondence_games(pool, event, correspondence_queue, challeng
                     wait_for_correspondence_ping = True
                     break
             else:
-                busy_processes += 1
-                log_proc_count("Used", queued_processes, busy_processes)
+                active_games.add(game_id)
+                log_proc_count("Used", active_games)
                 play_game_args["game_id"] = game_id
                 pool.apply_async(play_game,
                                  kwds=play_game_args,
                                  error_callback=game_error_handler)
 
 
-def start_low_time_games(low_time_games, max_games, pool, play_game_args):
-    global busy_processes
-
+def start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args):
     low_time_games.sort(key=lambda g: g["secondsLeft"])
-    while low_time_games and queued_processes + busy_processes < max_games:
-        busy_processes += 1
-        log_proc_count("Used", queued_processes, busy_processes)
+    while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
+        active_games.add(game_id)
+        log_proc_count("Used", active_games)
         play_game_args["game_id"] = game_id
         pool.apply_async(play_game,
                          kwds=play_game_args,
                          error_callback=game_error_handler)
 
 
-def accept_challenges(li, challenge_queue, max_games):
-    global queued_processes
-
-    while (queued_processes + busy_processes) < max_games and challenge_queue:
+def accept_challenges(li, challenge_queue, active_games, max_games):
+    while len(active_games) < max_games and challenge_queue:
         chlng = challenge_queue.pop(0)
         if chlng.from_self:
             continue
 
         try:
             logger.info(f"Accept {chlng}")
-            queued_processes += 1
             li.accept_challenge(chlng.id)
-            log_proc_count("Queued", queued_processes, busy_processes)
+            active_games.add(chlng.id)
+            log_proc_count("Queued", active_games)
         except (HTTPError, ReadTimeout) as exception:
             if isinstance(exception, HTTPError) and exception.response.status_code == 404:
                 logger.info(f"Skip missing {chlng}")
-            queued_processes -= 1
 
 
 def check_online_status(li, user_profile, last_check_online_time):
@@ -348,10 +353,8 @@ def start_game(event,
                matchmaker,
                startup_correspondence_games,
                correspondence_queue,
+               active_games,
                low_time_games):
-    global queued_processes
-    global busy_processes
-
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
         matchmaker.challenge_id = None
@@ -364,9 +367,8 @@ def start_game(event,
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
-        queued_processes = max(0, queued_processes - 1)
-        busy_processes += 1
-        log_proc_count("Used", queued_processes, busy_processes)
+        active_games.add(game_id)
+        log_proc_count("Used", active_games)
         play_game_args["game_id"] = game_id
         pool.apply_async(play_game,
                          kwds=play_game_args,
@@ -586,7 +588,7 @@ def final_queue_entries(control_queue, correspondence_queue, game, is_correspond
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done"})
+    control_queue.put_nowait({"type": "local_game_done", "id": game.id})
 
 
 def game_changed(current_game, prior_game):

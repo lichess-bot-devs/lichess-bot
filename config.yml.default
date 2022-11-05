@@ -132,6 +132,9 @@ challenge:                   # Incoming challenges.
   modes:                     # Game modes to accept.
     - casual                 # Unrated games.
     - rated                  # Rated games - must comment if the engine doesn't try to win.
+# block_list:                # List of users from which the challenges are always declined.
+#   - user1
+#   - user2
 
 greeting:
   # Optional substitution keywords (include curly braces):
@@ -164,3 +167,6 @@ matchmaking:
   opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
   delay_after_decline: none  # If a bot declines a challenge, delay issuing another challenge to that bot. Possible options are 'none', 'coarse', and 'fine'.
+# block_list:                 # The list of bots that will not be challenged
+#   - user1
+#   - user2

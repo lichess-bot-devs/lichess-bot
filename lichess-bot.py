@@ -210,8 +210,8 @@ def lichess_bot_main(li,
 
             if event["type"] == "terminated":
                 break
-            elif event["type"] == "local_game_done":
-                active_games.discard(event["id"])
+            elif event["type"] in ["local_game_done", "gameFinish"]:
+                active_games.discard(event["game"]["id"])
                 matchmaker.last_game_ended_delay.reset()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
@@ -588,7 +588,7 @@ def final_queue_entries(control_queue, correspondence_queue, game, is_correspond
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "id": game.id})
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
 
 
 def game_changed(current_game, prior_game):

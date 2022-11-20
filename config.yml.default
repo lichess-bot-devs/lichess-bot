@@ -112,6 +112,8 @@ challenge:                   # Incoming challenges.
   min_increment: 0           # Minimum amount of increment to accept a challenge.
   max_base: 315360000        # Maximum amount of base time to accept a challenge. The max is 315360000 (10 years).
   min_base: 0                # Minimum amount of base time to accept a challenge.
+  max_days:                  # Maximum number of days per move to accept a challenge for a correspondence game.
+  min_days: 1                # Minimum number of days per move to accept a challenge for a correspondence game.
   variants:                  # Chess variants to accept (https://lichess.org/variant).
     - standard
 #   - fromPosition

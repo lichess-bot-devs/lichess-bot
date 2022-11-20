@@ -12,8 +12,10 @@ class Challenge:
         self.variant = c_info["variant"]["key"]
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
-        self.increment = c_info.get("timeControl", {}).get("increment", -1)
-        self.base = c_info.get("timeControl", {}).get("limit", -1)
+        self.time_control_type = c_info.get("timeControl", {}).get("type")
+        self.increment = c_info.get("timeControl", {}).get("increment")
+        self.base = c_info.get("timeControl", {}).get("limit")
+        self.days = c_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = c_info.get("challenger") or {}
         self.challenger_title = self.challenger.get("title")
         self.challenger_is_bot = self.challenger_title == "BOT"
@@ -32,13 +34,22 @@ class Challenge:
         increment_min = challenge_cfg.get("min_increment", 0)
         base_max = challenge_cfg.get("max_base", 315360000)
         base_min = challenge_cfg.get("min_base", 0)
+        days_max = challenge_cfg.get("max_days")
+        days_min = challenge_cfg.get("min_days", 1)
 
-        if self.increment < 0:
-            return self.speed in speeds
+        if self.speed not in speeds:
+            return False
 
-        return (self.speed in speeds
-                and increment_min <= self.increment <= increment_max
-                and base_min <= self.base <= base_max)
+        if self.time_control_type == "clock":
+            return (increment_min <= self.increment <= increment_max
+                    and base_min <= self.base <= base_max)
+        elif self.time_control_type == "correspondence":
+            return days_min <= self.days <= (days_max or 10000)
+        elif self.time_control_type == "unlimited":
+            return days_max is None
+        else:
+            logger.error(f"Challenge has unknown time control: {self.time_control_type}")
+            return False
 
     def is_supported_mode(self, challenge_cfg):
         return ("rated" if self.rated else "casual") in challenge_cfg["modes"]

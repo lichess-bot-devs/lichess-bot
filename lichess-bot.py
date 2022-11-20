@@ -381,7 +381,10 @@ def enough_time_to_queue(event, config):
     move_time = corr_cfg.get("move_time") or 60
     minimum_time = (checkin_time + move_time) * 10
     game = event["game"]
-    return not game["isMyTurn"] or game["secondsLeft"] > minimum_time
+    seconds_left = game.get("secondsLeft")
+    return (not game["isMyTurn"]
+            or seconds_left is None
+            or seconds_left > minimum_time)
 
 
 def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):

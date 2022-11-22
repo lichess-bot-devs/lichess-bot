@@ -17,6 +17,7 @@ import sys
 import os
 import io
 import copy
+import math
 from config import load_config
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -302,7 +303,7 @@ def check_in_on_correspondence_games(pool,
 
 
 def start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args):
-    low_time_games.sort(key=lambda g: g["secondsLeft"])
+    low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
         active_games.add(game_id)
@@ -381,7 +382,7 @@ def enough_time_to_queue(event, config):
     move_time = corr_cfg.get("move_time") or 60
     minimum_time = (checkin_time + move_time) * 10
     game = event["game"]
-    return not game["isMyTurn"] or game["secondsLeft"] > minimum_time
+    return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
 def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):

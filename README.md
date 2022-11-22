@@ -212,6 +212,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `min_increment`: The minimum value of time increment.
   - `max_base`: The maximum base time for a game.
   - `min_base`: The minimum base time for a game.
+  - `max_days`: The maximum number of days for a correspondence game.
+  - `min_days`: The minimum number of days for a correspondence game.
   - `variants`: An indented list of chess variants that the bot can handle.
 ```yml
   variants:

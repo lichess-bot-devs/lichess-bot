@@ -219,7 +219,7 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges, config)
+                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -387,7 +387,7 @@ def enough_time_to_queue(event, config):
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges ):
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
     chlng = model.Challenge(event["challenge"], user_profile)
 
     time_window = challenge_config.get('recent_bot_challenge_age', None)

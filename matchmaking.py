@@ -25,7 +25,7 @@ class Matchmaking:
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
-        self.block_list = []
+        self.block_list = (self.matchmaking_cfg.get("block_list") or []).copy()
         self.delay_timers = defaultdict(lambda: Timer(0))
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.get(delay_option) or DelayType.NONE
@@ -152,10 +152,8 @@ class Matchmaking:
         value = self.matchmaking_cfg.get(parameter) or "random"
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, queued_processes, busy_processes, challenge_queue):
-        if (queued_processes + busy_processes > 0
-                or challenge_queue
-                or not self.should_create_challenge()):
+    def challenge(self, active_games, challenge_queue):
+        if active_games or challenge_queue or not self.should_create_challenge():
             return
 
         logger.info("Challenging a random bot")

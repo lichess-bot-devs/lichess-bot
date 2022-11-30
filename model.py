@@ -1,3 +1,4 @@
+import math
 from urllib.parse import urljoin
 import logging
 from timer import Timer
@@ -12,8 +13,9 @@ class Challenge:
         self.variant = c_info["variant"]["key"]
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
-        self.increment = c_info.get("timeControl", {}).get("increment", -1)
-        self.base = c_info.get("timeControl", {}).get("limit", -1)
+        self.increment = c_info.get("timeControl", {}).get("increment")
+        self.base = c_info.get("timeControl", {}).get("limit")
+        self.days = c_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = c_info.get("challenger") or {}
         self.challenger_title = self.challenger.get("title")
         self.challenger_is_bot = self.challenger_title == "BOT"
@@ -32,13 +34,22 @@ class Challenge:
         increment_min = challenge_cfg.get("min_increment", 0)
         base_max = challenge_cfg.get("max_base", 315360000)
         base_min = challenge_cfg.get("min_base", 0)
+        days_max = challenge_cfg.get("max_days", math.inf)
+        days_min = challenge_cfg.get("min_days", 1)
 
-        if self.increment < 0:
-            return self.speed in speeds
+        if self.speed not in speeds:
+            return False
 
-        return (self.speed in speeds
-                and increment_min <= self.increment <= increment_max
-                and base_min <= self.base <= base_max)
+        if self.base is not None and self.increment is not None:
+            # Normal clock game
+            return (increment_min <= self.increment <= increment_max
+                    and base_min <= self.base <= base_max)
+        elif self.days is not None:
+            # Correspondence game
+            return days_min <= self.days <= days_max
+        else:
+            # Unlimited game
+            return days_max == math.inf
 
     def is_supported_mode(self, challenge_cfg):
         return ("rated" if self.rated else "casual") in challenge_cfg["modes"]
@@ -62,6 +73,9 @@ class Challenge:
 
             if not self.is_supported_mode(config):
                 return False, ("casual" if self.rated else "rated")
+
+            if self.challenger_name in (config.get("block_list") or []):
+                return False, "generic"
 
             return True, None
 

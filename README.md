@@ -12,7 +12,7 @@ A bridge between [Lichess Bot API](https://lichess.org/api#tag/Bot) and bots.
 - Install pip: `apt install python3-pip`.
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv: `apt install python3-venv`.
-```python
+```
 python3 -m venv venv # If this fails you probably need to add Python3 to your PATH.
 virtualenv venv -p python3 # If this fails you probably need to add Python3 to your PATH.
 source ./venv/bin/activate
@@ -31,7 +31,7 @@ python3 -m pip install -r requirements.txt
 - Navigate to the directory in PowerShell: `cd [folder's address]` (example, `cd C:\chess\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
-```python
+```
 python3 -m venv .venv # If this fails you probably need to add Python3 to your PATH.
 ./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administrator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
 pip install -r requirements.txt
@@ -42,7 +42,7 @@ pip install -r requirements.txt
 ## Lichess OAuth
 - Create an account for your bot on [Lichess.org](https://lichess.org/signup).
 - **NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account.**
-- Once your account has been created and you are logged in, [create a personal OAuth2 token with the "Play games with the bot API" ('bot:play') scope](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&description=lichess-bot) selected and a description added.
+- Once your account has been created and you are logged in, [create a personal OAuth2 token with the "Play games with the bot API" (`bot:play`) scope](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&description=lichess-bot) selected and a description added.
 - A `token` (e.g. `xxxxxxxxxxxxxxxx`) will be displayed. Store this in the `config.yml` file as the `token` field. You can also set the token in the environment variable `$LICHESS_BOT_TOKEN`.
 - **NOTE: You won't see this token again on Lichess, so do save it.**
 
@@ -82,7 +82,7 @@ Besides the above, there are many possible options within `config.yml` for confi
     - `offer_draw_pieces`: The bot only offers/accepts draws if the position has less than or equal to `offer_draw_pieces` pieces.
 - `online_moves`: This section gives your bot access to various online resources for choosing moves like opening books and endgame tablebases. This can be a supplement or a replacement for chess databases stored on your computer. There are three sections that correspond to three different online databases:
     1. `chessdb_book`: Consults a [Chinese chess position database](https://www.chessdb.cn/), which also hosts a xiangqi database.
-    2. `lichess_cloud_analysis`: Consults [Lichess' own position analysis database](https://lichess.org/api#operation/apiCloudEval).
+    2. `lichess_cloud_analysis`: Consults [Lichess's own position analysis database](https://lichess.org/api#operation/apiCloudEval).
     3. `online_egtb`: Consults either the online Syzygy 7-piece endgame tablebase [hosted by Lichess](https://lichess.org/blog/W3WeMyQAACQAdfAL/7-piece-syzygy-tablebases-are-complete) or the chessdb listed above.
     - `max_out_of_book_moves`: Stop using online opening books after they don't have a move for `max_out_of_book_moves` positions. Doesn't apply to the online endgame tablebases.
     - `max_retries`: The maximum amount of retries when getting an online move.
@@ -174,7 +174,7 @@ will append `nodes 1 depth 5 movetime 1000` to the command to start thinking of 
 ```
 feature option="Add Noise -check VALUE"
 feature option="PGN File -string VALUE"
-feature option="CPU Count -spin VALUE MIN MAX"`
+feature option="CPU Count -spin VALUE MIN MAX"
 ```
 Any of the options can be listed under `xboard_options` in order to configure the XBoard engine.
 ```yml
@@ -212,6 +212,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `min_increment`: The minimum value of time increment.
   - `max_base`: The maximum base time for a game.
   - `min_base`: The minimum base time for a game.
+  - `max_days`: The maximum number of days for a correspondence game.
+  - `min_days`: The minimum number of days for a correspondence game.
   - `variants`: An indented list of chess variants that the bot can handle.
 ```yml
   variants:
@@ -235,6 +237,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -rated
     -casual
 ```
+  - `block_list`: An indented list of usernames from which the challenges are always declined. If this option is not present, then the list is considered empty.
 - `greeting`: Send messages via chat to the bot's opponent. The string `{me}` will be replaced by the bot's lichess account name. The string `{opponent}` will be replaced by the opponent's lichess account name. Any other word between curly brackets will be removed. If you want to put a curly bracket in the message, use two: `{{` or `}}`.
   - `hello`: Message to send to the opponent when the bot makes its first move.
   - `goodbye`: Message to send to the opponent once the game is over.
@@ -267,10 +270,11 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - `none` does not delay challenging a bot that declined a challenge.
     - `coarse` will delay challenging a bot to any type of game for a set time.
     - `fine` will delay challenging a bot to the same kind of game that was declined for a set time.
+  - `block_list`: An indented list of usernames of bots that will not be challenged. If this option is not present, then the list is considered empty.
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
 
-If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precendence.
+If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precedence.
 
 The `delay_after_decline` option can be useful if your matchmaking settings result in a lot of declined challenges. The bots that accept challenges will be challenged more often than those that have declined. The delay is only temporary, so bots that decline a challenge will eventually be challenged again.
 
@@ -333,9 +337,9 @@ python3 lichess-bot.py --logfile log.txt
 ## LeelaChessZero: Windows CPU 2021
 - For Windows modern CPUs, download the lczero binary from the [latest Lc0 release](https://github.com/LeelaChessZero/lc0/releases) (e.g. `lc0-v0.27.0-windows-cpu-dnnl.zip`).
 - Unzip the file, it comes with `lc0.exe` , `dnnl.dll`, and a weights file example, `703810.pb.gz` (amongst other files).
-- All three main files need to be copied to the engines directory.
+- All three main files need to be copied to the `engines` directory.
 - The `lc0.exe` should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file).
-- Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the engines directory).
+- Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the `engines` directory).
 - To start: `python3 lichess-bot.py`.
 
 ## LeelaChessZero: Docker container

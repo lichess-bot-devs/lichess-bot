@@ -112,6 +112,9 @@ challenge:                   # Incoming challenges.
   min_increment: 0           # Minimum amount of increment to accept a challenge.
   max_base: 315360000        # Maximum amount of base time to accept a challenge. The max is 315360000 (10 years).
   min_base: 0                # Minimum amount of base time to accept a challenge.
+  max_days: 14               # Maximum number of days per move to accept a challenge for a correspondence game.
+                             # Unlimited games can be accepted by removing this field or specifying .inf
+  min_days: 1                # Minimum number of days per move to accept a challenge for a correspondence game.
   variants:                  # Chess variants to accept (https://lichess.org/variant).
     - standard
 #   - fromPosition
@@ -132,6 +135,9 @@ challenge:                   # Incoming challenges.
   modes:                     # Game modes to accept.
     - casual                 # Unrated games.
     - rated                  # Rated games - must comment if the engine doesn't try to win.
+# block_list:                # List of users from which the challenges are always declined.
+#   - user1
+#   - user2
 
 greeting:
   # Optional substitution keywords (include curly braces):
@@ -164,3 +170,6 @@ matchmaking:
   opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
   delay_after_decline: none  # If a bot declines a challenge, delay issuing another challenge to that bot. Possible options are 'none', 'coarse', and 'fine'.
+# block_list:                 # The list of bots that will not be challenged
+#   - user1
+#   - user2

@@ -138,6 +138,8 @@ challenge:                   # Incoming challenges.
 # block_list:                # List of users from which the challenges are always declined.
 #   - user1
 #   - user2
+# recent_bot_challenge_age: 60 # Maximum age of a bot challenge to be considered recent in seconds
+# max_recent_bot_challenges: 2 # Maximum number of recent challenges that can be accepted from the same bot
 
 greeting:
   # Optional substitution keywords (include curly braces):
@@ -173,3 +175,4 @@ matchmaking:
 # block_list:                 # The list of bots that will not be challenged
 #   - user1
 #   - user2
+

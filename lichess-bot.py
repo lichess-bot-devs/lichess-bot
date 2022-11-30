@@ -387,16 +387,11 @@ def enough_time_to_queue(event, config):
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges, config):
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges ):
     chlng = model.Challenge(event["challenge"], user_profile)
 
-    throttle_config = config.get("challenge_throttle")
-    time_window = None
-    max_recent_challenges = None
-
-    if throttle_config is not None:
-        time_window = throttle_config['time_window']
-        max_recent_challenges = throttle_config['max_recent_challenges']
+    time_window = challenge_config.get('recent_bot_challenge_age', None)
+    max_recent_challenges = challenge_config.get('max_recent_bot_challenges')
 
     is_supported, decline_reason = chlng.is_supported(challenge_config)
 

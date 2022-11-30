@@ -219,7 +219,7 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges)
+                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges, config)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -387,22 +387,24 @@ def enough_time_to_queue(event, config):
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges, config):
     chlng = model.Challenge(event["challenge"], user_profile)
 
-    # TODO: move time window to config file
-    time_window = 60*60*24 # one day
+    throttle_config = config.get("challenge_throttle")
+    time_window = None
+    max_recent_challenges = None
 
-    # TODO: move max_recent_challenges to config file
-    max_recent_challenges = 5
+    if throttle_config is not None:
+        time_window = throttle_config['time_window']
+        max_recent_challenges = throttle_config['max_recent_challenges']
 
     is_supported, decline_reason = chlng.is_supported(challenge_config)
 
-    if is_supported and chlng.challenger_is_bot:
+    if is_supported and chlng.challenger_is_bot and time_window is not None and max_recent_challenges is not None:
         op = chlng.challenger_name
         # Filter out old challenges
         recent_bot_challenges[op] = [t for t in recent_bot_challenges[op] if not t.is_expired()]
-        if len(recent_bot_challenges[op]) > max_recent_challenges:
+        if len(recent_bot_challenges[op]) >= max_recent_challenges:
             is_supported = False
             decline_reason = "later"
         else:

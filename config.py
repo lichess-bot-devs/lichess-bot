@@ -31,6 +31,12 @@ def set_config_default(config, *sections, key, default_value):
     return subconfig
 
 
+def change_value_to_list(config, *sections, key):
+    subconfig = set_config_default(config, *sections, key, [])
+    if not isinstance(subconfig[key], list):
+        subconfig[key] = [subconfig[key]]
+
+
 def load_config(config_file):
     with open(config_file) as stream:
         try:

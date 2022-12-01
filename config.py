@@ -21,6 +21,16 @@ def check_config_section(config, data_name, data_type, subsection=""):
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 
 
+def set_config_default(config, *sections, key, default_value):
+    subconfig = config
+    for section in sections:
+        subconfig = subconfig.setdefault(section, {})
+        if not isinstance(subconfig, dict):
+            raise Exception(f'The {key} section in {sections} should hold a set of key-value pairs, not a value.')
+    subconfig.setdefault(key, default_value)
+    return subconfig
+
+
 def load_config(config_file):
     with open(config_file) as stream:
         try:

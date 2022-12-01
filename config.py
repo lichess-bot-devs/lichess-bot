@@ -82,4 +82,6 @@ def load_config(config_file):
                 config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                               f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
+        set_config_default(CONFIG, "engine", key="draw_or_resign", default_value={})
+
     return CONFIG

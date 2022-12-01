@@ -21,7 +21,7 @@ def create_engine(config):
     engine_working_dir = cfg.get("working_dir") or os.getcwd()
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
-    draw_or_resign = cfg.get("draw_or_resign") or {}
+    draw_or_resign = cfg.get("draw_or_resign")
     commands = [engine_path]
     if engine_options:
         for k, v in engine_options.items():

@@ -27,7 +27,7 @@ def create_engine(config):
         for k, v in engine_options.items():
             commands.append(f"--{k}={v}")
 
-    stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
+    stderr = None if cfg.get("silence_stderr") else subprocess.DEVNULL
 
     if engine_type == "xboard":
         Engine = XBoardEngine

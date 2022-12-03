@@ -578,7 +578,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     move = None
     comment = {}
 
-    quality = lichess_cloud_cfg.get("move_quality", "best")
+    quality = lichess_cloud_cfg.get("move_quality")
     multipv = 1 if quality == "best" else 5
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 

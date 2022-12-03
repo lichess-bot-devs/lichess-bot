@@ -91,5 +91,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default_value="lichess")
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="min_time", default_value=20)
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="max_pieces", default_value=7)
+        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="move_quality", default_value="best")
 
     return CONFIG

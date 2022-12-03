@@ -634,7 +634,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 
         return None, None
 
-    quality = online_egtb_cfg.get("move_quality", "best")
+    quality = online_egtb_cfg.get("move_quality")
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:

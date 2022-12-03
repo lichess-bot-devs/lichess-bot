@@ -591,7 +591,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
             depth = data["depth"]
             knodes = data["knodes"]
             min_depth = lichess_cloud_cfg.get("min_depth")
-            min_knodes = lichess_cloud_cfg.get("min_knodes", 0)
+            min_knodes = lichess_cloud_cfg.get("min_knodes")
             if depth >= min_depth and knodes >= min_knodes:
                 if quality == "best":
                     pv = data["pvs"][0]

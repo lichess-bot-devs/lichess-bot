@@ -492,7 +492,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled")
-        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero")
         if can_offer_draw and offer_draw_for_zero and wdl == 0:
             offer_draw = True
 
@@ -654,7 +654,7 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
         best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
     if best_move:
         can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled")
-        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero")
         offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
 
         can_resign = draw_or_resign_cfg.get("resign_enabled", False)

@@ -528,7 +528,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
     wb = "w" if board.turn == chess.WHITE else "b"
     use_chessdb = chessdb_cfg.get("enabled")
     time_left = game.state[f"{wb}time"]
-    min_time = chessdb_cfg.get("min_time", 20) * 1000
+    min_time = chessdb_cfg.get("min_time") * 1000
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
         return None, None
 

@@ -93,5 +93,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="max_pieces", default=7)
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="move_quality", default="best")
         set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="enabled", default=False)
+        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_time", default=20)
 
     return CONFIG

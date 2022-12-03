@@ -112,7 +112,7 @@ class EngineWrapper:
                   engine_cfg):
         polyglot_cfg = engine_cfg.get("polyglot", {})
         online_moves_cfg = engine_cfg.get("online_moves", {})
-        draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
+        draw_or_resign_cfg = engine_cfg.get("draw_or_resign")
         lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
 
         best_move = get_book_move(board, polyglot_cfg)
@@ -192,7 +192,7 @@ class EngineWrapper:
         def actual(score):
             return score.relative.score(mate_score=40000)
 
-        can_offer_draw = self.draw_or_resign.get("offer_draw_enabled", False)
+        can_offer_draw = self.draw_or_resign.get("offer_draw_enabled")
         draw_offer_moves = self.draw_or_resign.get("offer_draw_moves", 5)
         draw_score_range = self.draw_or_resign.get("offer_draw_score", 0)
         draw_max_piece_count = self.draw_or_resign.get("offer_draw_pieces", 10)
@@ -491,7 +491,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     comment = None
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
-        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
+        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled")
         offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
         if can_offer_draw and offer_draw_for_zero and wdl == 0:
             offer_draw = True
@@ -653,7 +653,7 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
     if best_move is None:
         best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
     if best_move:
-        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
+        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled")
         offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
         offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
 

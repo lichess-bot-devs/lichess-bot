@@ -482,7 +482,7 @@ def get_book_move(board, polyglot_cfg):
 
 
 def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
-    online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
+    online_egtb_cfg = online_moves_cfg.get("online_egtb")
     chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
     max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves")
@@ -618,7 +618,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
 
 
 def get_online_egtb_move(li, board, game, online_egtb_cfg):
-    use_online_egtb = online_egtb_cfg.get("enabled", False)
+    use_online_egtb = online_egtb_cfg.get("enabled")
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
     source = online_egtb_cfg.get("source", "lichess")

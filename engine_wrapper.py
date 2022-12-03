@@ -598,7 +598,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                 else:
                     best_eval = data["pvs"][0]["cp"]
                     pvs = data["pvs"]
-                    max_difference = lichess_cloud_cfg.get("max_score_difference", 50)
+                    max_difference = lichess_cloud_cfg.get("max_score_difference")
                     if wb == "w":
                         pvs = list(filter(lambda pv: pv["cp"] >= best_eval - max_difference, pvs))
                     else:

@@ -96,5 +96,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_time", default=20)
         set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="move_quality", default="good")
         set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_depth", default=20)
+        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="contribute", default=True)
 
     return CONFIG

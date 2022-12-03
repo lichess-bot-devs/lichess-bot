@@ -558,7 +558,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn")
 
-        if chessdb_cfg.get("contribute", True):
+        if chessdb_cfg.get("contribute"):
             params["action"] = "queue"
             li.online_book_get(site, params=params)
     except Exception:

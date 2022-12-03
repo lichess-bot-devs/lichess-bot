@@ -111,7 +111,7 @@ class EngineWrapper:
                   correspondence_move_time,
                   engine_cfg):
         polyglot_cfg = engine_cfg.get("polyglot", {})
-        online_moves_cfg = engine_cfg.get("online_moves", {})
+        online_moves_cfg = engine_cfg.get("online_moves")
         draw_or_resign_cfg = engine_cfg.get("draw_or_resign")
         lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
 
@@ -485,7 +485,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
     chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
-    max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves", 10)
+    max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves")
     offer_draw = False
     resign = False
     comment = None

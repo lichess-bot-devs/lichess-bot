@@ -105,5 +105,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="max_score_difference", default=50)
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="enabled", default=False)
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="max_pieces", default=7)
+        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="move_quality", default="best")
 
     return CONFIG

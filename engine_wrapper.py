@@ -789,7 +789,7 @@ def get_syzygy(board, syzygy_cfg):
             or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces")
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
         return None, None
-    move_quality = syzygy_cfg.get("move_quality", "best")
+    move_quality = syzygy_cfg.get("move_quality")
     with chess.syzygy.open_tablebase(syzygy_cfg["paths"][0]) as tablebase:
         for path in syzygy_cfg["paths"][1:]:
             tablebase.add_directory(path)

@@ -26,7 +26,7 @@ def set_config_default(config, *sections, key, default):
     for section in sections:
         subconfig = subconfig.setdefault(section, {})
         if not isinstance(subconfig, dict):
-            raise Exception(f'The {key} section in {sections} should hold a set of key-value pairs, not a value.')
+            raise Exception(f'The {section} section in {sections} should hold a set of key-value pairs, not a value.')
     subconfig.setdefault(key, default)
     return subconfig
 

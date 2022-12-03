@@ -535,7 +535,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
     move = None
     comment = {}
     site = "https://www.chessdb.cn/cdb.php"
-    quality = chessdb_cfg.get("move_quality", "good")
+    quality = chessdb_cfg.get("move_quality")
     action = {"best": "querypv",
               "good": "querybest",
               "all": "query"}

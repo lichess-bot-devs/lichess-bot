@@ -629,7 +629,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
             and source == "lichess"
             or board.uci_variant != "chess"
             and source == "chessdb"
-            or pieces > online_egtb_cfg.get("max_pieces", 7)
+            or pieces > online_egtb_cfg.get("max_pieces")
             or board.castling_rights):
 
         return None, None

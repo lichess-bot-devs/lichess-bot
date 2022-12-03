@@ -113,7 +113,7 @@ class EngineWrapper:
         polyglot_cfg = engine_cfg.get("polyglot", {})
         online_moves_cfg = engine_cfg.get("online_moves")
         draw_or_resign_cfg = engine_cfg.get("draw_or_resign")
-        lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
+        lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs")
 
         best_move = get_book_move(board, polyglot_cfg)
 
@@ -649,7 +649,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 
 
 def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
-    best_move, wdl = get_syzygy(board, lichess_bot_tbs.get("syzygy") or {})
+    best_move, wdl = get_syzygy(board, lichess_bot_tbs.get("syzygy"))
     if best_move is None:
         best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
     if best_move:
@@ -785,7 +785,7 @@ def get_chessdb_egtb_move(li, board, quality):
 
 
 def get_syzygy(board, syzygy_cfg):
-    if (not syzygy_cfg.get("enabled", False)
+    if (not syzygy_cfg.get("enabled")
             or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
         return None, None

@@ -497,7 +497,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
             offer_draw = True
 
         can_resign = draw_or_resign_cfg.get("resign_enabled")
-        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two")
         if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
 
@@ -658,7 +658,7 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
         offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
 
         can_resign = draw_or_resign_cfg.get("resign_enabled")
-        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two")
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
         comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}

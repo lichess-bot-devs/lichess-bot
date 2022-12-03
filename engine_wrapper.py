@@ -622,7 +622,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
     source = online_egtb_cfg.get("source")
-    minimum_time = online_egtb_cfg.get("min_time", 20) * 1000
+    minimum_time = online_egtb_cfg.get("min_time") * 1000
     if (not use_online_egtb
             or game.state[f"{wb}time"] < minimum_time
             or board.uci_variant not in ["chess", "antichess", "atomic"]

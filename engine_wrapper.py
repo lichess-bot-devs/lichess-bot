@@ -590,7 +590,7 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
         if "error" not in data:
             depth = data["depth"]
             knodes = data["knodes"]
-            min_depth = lichess_cloud_cfg.get("min_depth", 20)
+            min_depth = lichess_cloud_cfg.get("min_depth")
             min_knodes = lichess_cloud_cfg.get("min_knodes", 0)
             if depth >= min_depth and knodes >= min_knodes:
                 if quality == "best":

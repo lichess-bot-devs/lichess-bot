@@ -206,7 +206,7 @@ class EngineWrapper:
             if len(scores) == len(list(filter(score_near_draw, scores))):
                 result.draw_offered = True
 
-        resign_enabled = self.draw_or_resign.get("resign_enabled", False)
+        resign_enabled = self.draw_or_resign.get("resign_enabled")
         min_moves_for_resign = self.draw_or_resign.get("resign_moves", 3)
         resign_score = self.draw_or_resign.get("resign_score", -1000)
         if resign_enabled and len(self.scores) >= min_moves_for_resign:
@@ -496,7 +496,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
         if can_offer_draw and offer_draw_for_zero and wdl == 0:
             offer_draw = True
 
-        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
+        can_resign = draw_or_resign_cfg.get("resign_enabled")
         resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
         if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
@@ -657,7 +657,7 @@ def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
         offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero")
         offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
 
-        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
+        can_resign = draw_or_resign_cfg.get("resign_enabled")
         resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}

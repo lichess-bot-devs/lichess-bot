@@ -483,7 +483,7 @@ def get_book_move(board, polyglot_cfg):
 
 def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
     online_egtb_cfg = online_moves_cfg.get("online_egtb")
-    chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
+    chessdb_cfg = online_moves_cfg.get("chessdb_book")
     lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
     max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves")
     offer_draw = False
@@ -526,7 +526,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
 
 def get_chessdb_move(li, board, game, chessdb_cfg):
     wb = "w" if board.turn == chess.WHITE else "b"
-    use_chessdb = chessdb_cfg.get("enabled", False)
+    use_chessdb = chessdb_cfg.get("enabled")
     time_left = game.state[f"{wb}time"]
     min_time = chessdb_cfg.get("min_time", 20) * 1000
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":

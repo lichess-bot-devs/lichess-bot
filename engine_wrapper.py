@@ -547,7 +547,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
         if data["status"] == "ok":
             if quality == "best":
                 depth = data["depth"]
-                if depth >= chessdb_cfg.get("min_depth", 20):
+                if depth >= chessdb_cfg.get("min_depth"):
                     score = data["score"]
                     move = data["pv"][0]
                     comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)

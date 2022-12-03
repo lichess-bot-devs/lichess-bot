@@ -621,7 +621,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
     use_online_egtb = online_egtb_cfg.get("enabled")
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
-    source = online_egtb_cfg.get("source", "lichess")
+    source = online_egtb_cfg.get("source")
     minimum_time = online_egtb_cfg.get("min_time", 20) * 1000
     if (not use_online_egtb
             or game.state[f"{wb}time"] < minimum_time

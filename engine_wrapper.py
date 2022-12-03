@@ -786,7 +786,7 @@ def get_chessdb_egtb_move(li, board, quality):
 
 def get_syzygy(board, syzygy_cfg):
     if (not syzygy_cfg.get("enabled")
-            or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
+            or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces")
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
         return None, None
     move_quality = syzygy_cfg.get("move_quality", "best")

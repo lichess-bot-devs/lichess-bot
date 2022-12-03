@@ -21,13 +21,13 @@ def check_config_section(config, data_name, data_type, subsection=""):
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 
 
-def set_config_default(config, *sections, key, default_value):
+def set_config_default(config, *sections, key, default):
     subconfig = config
     for section in sections:
         subconfig = subconfig.setdefault(section, {})
         if not isinstance(subconfig, dict):
             raise Exception(f'The {key} section in {sections} should hold a set of key-value pairs, not a value.')
-    subconfig.setdefault(key, default_value)
+    subconfig.setdefault(key, default)
     return subconfig
 
 
@@ -82,15 +82,15 @@ def load_config(config_file):
                 config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                               f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default_value=False)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default_value=True)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default_value=False)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_for_egtb_minus_two", default_value=True)
-        set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default_value=10)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="enabled", default_value=False)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default_value="lichess")
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="min_time", default_value=20)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="max_pieces", default_value=7)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="move_quality", default_value="best")
+        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
+        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
+        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default=False)
+        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_for_egtb_minus_two", default=True)
+        set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default=10)
+        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="enabled", default=False)
+        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default="lichess")
+        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="min_time", default=20)
+        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="max_pieces", default=7)
+        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="move_quality", default="best")
 
     return CONFIG

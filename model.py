@@ -62,7 +62,7 @@ class Challenge:
             if not config.get("accept_bot") and self.challenger_is_bot:
                 return False, "noBot"
 
-            if config.get("only_bot", False) and not self.challenger_is_bot:
+            if config.get("only_bot") and not self.challenger_is_bot:
                 return False, "onlyBot"
 
             if not self.is_supported_time_control(config):

@@ -110,7 +110,7 @@ class EngineWrapper:
                   is_correspondence,
                   correspondence_move_time,
                   engine_cfg):
-        polyglot_cfg = engine_cfg.get("polyglot", {})
+        polyglot_cfg = engine_cfg.get("polyglot")
         online_moves_cfg = engine_cfg.get("online_moves")
         draw_or_resign_cfg = engine_cfg.get("draw_or_resign")
         lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs")

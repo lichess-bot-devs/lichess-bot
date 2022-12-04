@@ -114,5 +114,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="max_pieces", default=5)
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="move_quality", default="best")
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="min_dtm_to_consider_as_wdl_1", default=120)
+        set_config_default(CONFIG, "engine", "polyglot", key="enabled", default=False)
 
     return CONFIG

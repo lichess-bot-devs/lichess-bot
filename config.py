@@ -86,6 +86,8 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
+    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60])
+    change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")
 
 
 def load_config(config_file):

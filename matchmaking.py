@@ -91,7 +91,7 @@ class Matchmaking:
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
-        base_time = self.get_time("challenge_initial_time", 60)
+        base_time = random.choice(self.matchmaking_cfg("challenge_initial_time"))
         increment = self.get_time("challenge_increment", 2)
         days = self.get_time("challenge_days")
 

@@ -18,7 +18,7 @@ class Matchmaking:
     def __init__(self, li, config, user_profile):
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
-        self.matchmaking_cfg = config.get("matchmaking") or {}
+        self.matchmaking_cfg = config.get("matchmaking")
         self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
         self.last_game_ended_delay = Timer(self.matchmaking_cfg.get("challenge_timeout") * 60)

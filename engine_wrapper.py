@@ -9,6 +9,7 @@ import time
 import random
 from enum import Enum
 from collections import Counter
+from config import change_value_to_list
 
 logger = logging.getLogger(__name__)
 
@@ -452,12 +453,9 @@ def get_book_move(board, polyglot_cfg):
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
-    book_config = polyglot_cfg.get("book", {})
-
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
-    books = book_config.get(variant) or []
-    if isinstance(books, str):
-        books = [books]
+    change_value_to_list(polyglot_cfg, "book", key=variant)
+    books = polyglot_cfg.get("book").get(variant)
 
     for book in books:
         with chess.polyglot.open_reader(book) as reader:

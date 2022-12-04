@@ -87,6 +87,7 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default=False)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_for_egtb_minus_two", default=True)
+        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_moves", default=5)
         set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default=10)
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="enabled", default=False)
         set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default="lichess")

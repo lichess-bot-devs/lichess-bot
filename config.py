@@ -83,6 +83,7 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
+    set_config_default(CONFIG, "challenge", key="accept_bot", default=False)
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_falsey_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_falsey_values=True)

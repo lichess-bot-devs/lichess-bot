@@ -59,7 +59,7 @@ class Challenge:
             if self.from_self:
                 return True, None
 
-            if not config.get("accept_bot", False) and self.challenger_is_bot:
+            if not config.get("accept_bot") and self.challenger_is_bot:
                 return False, "noBot"
 
             if config.get("only_bot", False) and not self.challenger_is_bot:

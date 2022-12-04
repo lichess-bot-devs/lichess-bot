@@ -19,7 +19,7 @@ out_of_online_opening_book_moves = Counter()
 def create_engine(config):
     cfg = config["engine"]
     engine_path = os.path.join(cfg["dir"], cfg["name"])
-    engine_working_dir = cfg.get("working_dir") or os.getcwd()
+    engine_working_dir = cfg.get("working_dir")
     engine_type = cfg.get("protocol")
     engine_options = cfg.get("engine_options")
     draw_or_resign = cfg.get("draw_or_resign")

@@ -92,6 +92,7 @@ def insert_default_values(CONFIG):
     change_value_to_list(CONFIG, "matchmaking", key="challenge_increment")
     set_config_default(CONFIG, "matchmaking", key="challenge_days", default=[None])
     change_value_to_list(CONFIG, "matchmaking", key="challenge_days")
+    set_config_default(CONFIG, "matchmaking", key="opponent_min_rating", default=600, force_falsey_values=True)
 
 
 def log_config(CONFIG):

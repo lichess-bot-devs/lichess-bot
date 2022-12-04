@@ -208,7 +208,7 @@ class EngineWrapper:
                 result.draw_offered = True
 
         resign_enabled = self.draw_or_resign.get("resign_enabled")
-        min_moves_for_resign = self.draw_or_resign.get("resign_moves", 3)
+        min_moves_for_resign = self.draw_or_resign.get("resign_moves")
         resign_score = self.draw_or_resign.get("resign_score", -1000)
         if resign_enabled and len(self.scores) >= min_moves_for_resign:
             scores = self.scores[-min_moves_for_resign:]

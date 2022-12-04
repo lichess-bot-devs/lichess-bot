@@ -88,6 +88,7 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default=False)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_for_egtb_minus_two", default=True)
+        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_moves", default=3)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_moves", default=5)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_score", default=0)
         set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_pieces", default=10)

@@ -28,7 +28,7 @@ class Matchmaking:
         self.block_list = self.matchmaking_cfg.get("block_list").copy()
         self.delay_timers = defaultdict(lambda: Timer(0))
         delay_option = "delay_after_decline"
-        self.delay_type = self.matchmaking_cfg.get(delay_option) or DelayType.NONE
+        self.delay_type = self.matchmaking_cfg.get(delay_option)
         if self.delay_type not in DelayType.__members__.values():
             raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
                              f" Choices are: {', '.join(DelayType)}.")

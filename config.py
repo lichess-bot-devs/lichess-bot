@@ -2,6 +2,7 @@ import yaml
 import os
 import os.path
 import logging
+from matchmaking import DelayType
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_falsey_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_falsey_values=True)
+    set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_falsey_values=True)
 
 
 def load_config(config_file):

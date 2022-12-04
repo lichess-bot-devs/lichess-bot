@@ -97,7 +97,7 @@ class Matchmaking:
         game_type = game_category(variant, base_time, increment, days)
 
         min_rating = self.matchmaking_cfg.get("opponent_min_rating")
-        max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
+        max_rating = self.matchmaking_cfg.get("opponent_max_rating")
         rating_diff = self.matchmaking_cfg.get("opponent_rating_difference")
         if rating_diff is not None:
             bot_rating = self.perf().get(game_type, {}).get("rating", 0)

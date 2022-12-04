@@ -448,7 +448,7 @@ def check_for_draw_offer(game):
 def get_book_move(board, polyglot_cfg):
     no_book_move = chess.engine.PlayResult(None, None)
     use_book = polyglot_cfg.get("enabled")
-    max_game_length = polyglot_cfg.get("max_depth", 8) * 2 - 1
+    max_game_length = polyglot_cfg.get("max_depth") * 2 - 1
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 

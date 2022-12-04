@@ -846,7 +846,7 @@ def get_gaviota(board, gaviota_cfg):
             or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces")
             or board.uci_variant != "chess"):
         return None, None
-    move_quality = gaviota_cfg.get("move_quality", "best")
+    move_quality = gaviota_cfg.get("move_quality")
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
     # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and

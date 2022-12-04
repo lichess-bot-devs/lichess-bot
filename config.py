@@ -112,5 +112,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="move_quality", default="best")
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="enabled", default=False)
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="max_pieces", default=5)
+        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="move_quality", default="best")
 
     return CONFIG

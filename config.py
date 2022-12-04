@@ -94,6 +94,13 @@ def insert_default_values(CONFIG):
     change_value_to_list(CONFIG, "matchmaking", key="challenge_days")
 
 
+def log_config(CONFIG):
+    logger_config = CONFIG.copy()
+    logger_config["token"] = "logger"
+    logger.debug(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
+    logger.debug("====================")
+
+
 def load_config(config_file):
     with open(config_file) as stream:
         try:
@@ -102,9 +109,7 @@ def load_config(config_file):
             logger.exception("There appears to be a syntax problem with your config.yml")
             raise
 
-        logger_config = CONFIG.copy()
-        logger_config["token"] = "logger"
-        logger.debug(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
+        log_config(CONFIG)
 
         if "LICHESS_BOT_TOKEN" in os.environ:
             CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
@@ -140,4 +145,5 @@ def load_config(config_file):
                               f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
     insert_default_values(CONFIG)
+    log_config(CONFIG)
     return CONFIG

@@ -95,6 +95,8 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "matchmaking", key="opponent_min_rating", default=600, force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="opponent_max_rating", default=4000, force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="opponent_allow_tos_violation", default=True)
+    set_config_default(CONFIG, "matchmaking", key="challenge_variant", default="random")
+    set_config_default(CONFIG, "matchmaking", key="challenge_mode", default="random")
 
 
 def log_config(CONFIG):

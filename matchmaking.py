@@ -141,7 +141,7 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant, mode
 
     def get_random_config_value(self, parameter, choices):
-        value = self.matchmaking_cfg.get(parameter) or "random"
+        value = self.matchmaking_cfg.get(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games, challenge_queue):

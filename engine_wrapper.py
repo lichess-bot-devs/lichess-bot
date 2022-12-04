@@ -195,7 +195,7 @@ class EngineWrapper:
         can_offer_draw = self.draw_or_resign.get("offer_draw_enabled")
         draw_offer_moves = self.draw_or_resign.get("offer_draw_moves")
         draw_score_range = self.draw_or_resign.get("offer_draw_score")
-        draw_max_piece_count = self.draw_or_resign.get("offer_draw_pieces", 10)
+        draw_max_piece_count = self.draw_or_resign.get("offer_draw_pieces")
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
         if can_offer_draw and len(self.scores) >= draw_offer_moves and enough_pieces_captured:

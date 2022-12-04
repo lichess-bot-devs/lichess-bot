@@ -104,7 +104,7 @@ class Matchmaking:
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
-        allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
+        allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation")
 
         def is_suitable_opponent(bot):
             perf = bot.get("perfs", {}).get(game_type, {})

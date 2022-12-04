@@ -177,7 +177,7 @@ def lichess_bot_main(li,
                      logging_queue,
                      one_game):
     challenge_config = config["challenge"]
-    max_games = challenge_config.get("concurrency", 1)
+    max_games = challenge_config.get("concurrency")
 
     one_game_completed = False
 

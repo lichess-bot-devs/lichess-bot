@@ -88,6 +88,8 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
     set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60])
     change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")
+    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[2])
+    change_value_to_list(CONFIG, "matchmaking", key="challenge_increment")
 
 
 def load_config(config_file):

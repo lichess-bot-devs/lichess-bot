@@ -21,7 +21,7 @@ class Matchmaking:
         self.matchmaking_cfg = config.get("matchmaking") or {}
         self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
-        self.last_game_ended_delay = Timer(max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60)
+        self.last_game_ended_delay = Timer(self.matchmaking_cfg.get("challenge_timeout") * 60)
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None

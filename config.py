@@ -116,5 +116,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="min_dtm_to_consider_as_wdl_1", default=120)
         set_config_default(CONFIG, "engine", "polyglot", key="enabled", default=False)
         set_config_default(CONFIG, "engine", "polyglot", key="max_depth", default=8)
+        set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
 
     return CONFIG

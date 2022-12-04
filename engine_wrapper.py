@@ -462,7 +462,7 @@ def get_book_move(board, polyglot_cfg):
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:
-                selection = polyglot_cfg.get("selection", "weighted_random")
+                selection = polyglot_cfg.get("selection")
                 min_weight = polyglot_cfg.get("min_weight", 1)
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move

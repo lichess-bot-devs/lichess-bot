@@ -853,7 +853,7 @@ def get_gaviota(board, gaviota_cfg):
     # another 12 to mate, so this position has a syzygy wdl=2/-2. To be safe, the first limit is 100 moves, which
     # guarantees that all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it
     # because dtm >= dtz, so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
-    min_dtm_to_consider_as_wdl_1 = gaviota_cfg.get("min_dtm_to_consider_as_wdl_1", 120)
+    min_dtm_to_consider_as_wdl_1 = gaviota_cfg.get("min_dtm_to_consider_as_wdl_1")
     with chess.gaviota.open_tablebase(gaviota_cfg["paths"][0]) as tablebase:
         for path in gaviota_cfg["paths"][1:]:
             tablebase.add_directory(path)

@@ -341,7 +341,7 @@ def check_online_status(li, user_profile, last_check_online_time):
 
 
 def sort_challenges(challenge_queue, challenge_config):
-    if challenge_config.get("sort_by", "best") == "best":
+    if challenge_config.get("sort_by") == "best":
         list_c = list(challenge_queue)
         list_c.sort(key=lambda c: -c.score())
         challenge_queue[:] = list_c

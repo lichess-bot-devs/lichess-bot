@@ -843,7 +843,7 @@ def dtz_to_wdl(dtz):
 
 def get_gaviota(board, gaviota_cfg):
     if (not gaviota_cfg.get("enabled")
-            or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces", 5)
+            or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces")
             or board.uci_variant != "chess"):
         return None, None
     move_quality = gaviota_cfg.get("move_quality", "best")

@@ -117,5 +117,6 @@ def load_config(config_file):
         set_config_default(CONFIG, "engine", "polyglot", key="enabled", default=False)
         set_config_default(CONFIG, "engine", "polyglot", key="max_depth", default=8)
         set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
+        set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
 
     return CONFIG

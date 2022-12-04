@@ -21,13 +21,16 @@ def check_config_section(config, data_name, data_type, subsection=""):
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 
 
-def set_config_default(config, *sections, key, default):
+def set_config_default(config, *sections, key, default, force_falsey_values=False):
     subconfig = config
     for section in sections:
         subconfig = subconfig.setdefault(section, {})
         if not isinstance(subconfig, dict):
             raise Exception(f'The {section} section in {sections} should hold a set of key-value pairs, not a value.')
-    subconfig.setdefault(key, default)
+    if force_falsey_values:
+        subconfig[key] = subconfig[key] or default
+    else:
+        subconfig.setdefault(key, default)
     return subconfig
 
 
@@ -35,6 +38,48 @@ def change_value_to_list(config, *sections, key):
     subconfig = set_config_default(config, *sections, key, [])
     if not isinstance(subconfig[key], list):
         subconfig[key] = [subconfig[key]]
+
+
+def insert_default_values(CONFIG):
+    set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_falsey_values=True)
+    set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default=False)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_for_egtb_minus_two", default=True)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_moves", default=3)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_score", default=-1000)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_moves", default=5)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_score", default=0)
+    set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_pieces", default=10)
+    set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default=10)
+    set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default="lichess")
+    set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="min_time", default=20)
+    set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="max_pieces", default=7)
+    set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="move_quality", default="best")
+    set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_time", default=20)
+    set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="move_quality", default="good")
+    set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_depth", default=20)
+    set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="contribute", default=True)
+    set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="min_time", default=20)
+    set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="move_quality", default="best")
+    set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="min_depth", default=20)
+    set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="min_knodes", default=0)
+    set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="max_score_difference", default=50)
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="max_pieces", default=7)
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="move_quality", default="best")
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="max_pieces", default=5)
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="move_quality", default="best")
+    set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="min_dtm_to_consider_as_wdl_1", default=120)
+    set_config_default(CONFIG, "engine", "polyglot", key="enabled", default=False)
+    set_config_default(CONFIG, "engine", "polyglot", key="max_depth", default=8)
+    set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
+    set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
 
 
 def load_config(config_file):
@@ -82,44 +127,5 @@ def load_config(config_file):
                 config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                               f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
-        set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd())
-        set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_enabled", default=False)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_for_egtb_minus_two", default=True)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_moves", default=3)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="resign_score", default=-1000)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_moves", default=5)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_score", default=0)
-        set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_pieces", default=10)
-        set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default=10)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="enabled", default=False)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default="lichess")
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="min_time", default=20)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="max_pieces", default=7)
-        set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="move_quality", default="best")
-        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="enabled", default=False)
-        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_time", default=20)
-        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="move_quality", default="good")
-        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="min_depth", default=20)
-        set_config_default(CONFIG, "engine", "online_moves", "chessdb_book", key="contribute", default=True)
-        set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="enabled", default=False)
-        set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="min_time", default=20)
-        set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="move_quality", default="best")
-        set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="min_depth", default=20)
-        set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="min_knodes", default=0)
-        set_config_default(CONFIG, "engine", "online_moves", "lichess_cloud_analysis", key="max_score_difference", default=50)
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="enabled", default=False)
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="max_pieces", default=7)
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "syzygy", key="move_quality", default="best")
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="enabled", default=False)
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="max_pieces", default=5)
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="move_quality", default="best")
-        set_config_default(CONFIG, "engine", "lichess_bot_tbs", "gaviota", key="min_dtm_to_consider_as_wdl_1", default=120)
-        set_config_default(CONFIG, "engine", "polyglot", key="enabled", default=False)
-        set_config_default(CONFIG, "engine", "polyglot", key="max_depth", default=8)
-        set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
-        set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
-
+    insert_default_values(CONFIG)
     return CONFIG

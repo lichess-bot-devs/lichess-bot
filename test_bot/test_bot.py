@@ -11,6 +11,7 @@ import sys
 import stat
 import shutil
 import importlib
+from config import insert_default_values
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 shutil.copyfile("lichess.py", "correct_lichess.py")
@@ -152,6 +153,7 @@ def thread_for_test():
 
 
 def run_bot(CONFIG, logging_level):
+    insert_default_values(CONFIG)
     lichess_bot.logger.info(lichess_bot.intro())
     li = lichess_bot.lichess.Lichess(CONFIG["token"], CONFIG["url"], lichess_bot.__version__)
 

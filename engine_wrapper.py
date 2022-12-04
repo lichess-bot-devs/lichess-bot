@@ -651,7 +651,7 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
     best_move, wdl = get_syzygy(board, lichess_bot_tbs.get("syzygy"))
     if best_move is None:
-        best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
+        best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota"))
     if best_move:
         can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled")
         offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero")
@@ -842,7 +842,7 @@ def dtz_to_wdl(dtz):
 
 
 def get_gaviota(board, gaviota_cfg):
-    if (not gaviota_cfg.get("enabled", False)
+    if (not gaviota_cfg.get("enabled")
             or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces", 5)
             or board.uci_variant != "chess"):
         return None, None

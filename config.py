@@ -115,6 +115,10 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "matchmaking", key="challenge_variant", default="random")
     set_config_default(CONFIG, "matchmaking", key="challenge_mode", default="random")
 
+    for section in ["engine", "correspondence"]:
+        for ponder in ["ponder", "uci_ponder"]:
+            set_config_default(CONFIG, section, key=ponder, default=False)
+
 
 def log_config(CONFIG):
     logger_config = CONFIG.copy()

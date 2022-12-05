@@ -34,7 +34,7 @@ class Challenge:
         increment_min = challenge_cfg.get("min_increment")
         base_max = challenge_cfg.get("max_base")
         base_min = challenge_cfg.get("min_base")
-        days_max = challenge_cfg.get("max_days", math.inf)
+        days_max = challenge_cfg.get("max_days")
         days_min = challenge_cfg.get("min_days", 1)
 
         if self.speed not in speeds:

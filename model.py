@@ -31,7 +31,7 @@ class Challenge:
     def is_supported_time_control(self, challenge_cfg):
         speeds = challenge_cfg["time_controls"]
         increment_max = challenge_cfg.get("max_increment")
-        increment_min = challenge_cfg.get("min_increment", 0)
+        increment_min = challenge_cfg.get("min_increment")
         base_max = challenge_cfg.get("max_base", 315360000)
         base_min = challenge_cfg.get("min_base", 0)
         days_max = challenge_cfg.get("max_days", math.inf)

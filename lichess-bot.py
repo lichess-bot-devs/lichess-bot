@@ -443,7 +443,7 @@ def play_game(li,
     move_overhead = config.get("move_overhead")
     delay_seconds = config.get("rate_limiting_delay")/1000
 
-    greeting_cfg = config.get("greeting") or {}
+    greeting_cfg = config.get("greeting")
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
     hello = get_greeting("hello", greeting_cfg, keyword_map)
     goodbye = get_greeting("goodbye", greeting_cfg, keyword_map)
@@ -508,7 +508,7 @@ def play_game(li,
 
 
 def get_greeting(greeting, greeting_cfg, keyword_map):
-    return str(greeting_cfg.get(greeting) or "").format_map(keyword_map)
+    return greeting_cfg.get(greeting).format_map(keyword_map)
 
 
 def say_hello(conversation, hello, hello_spectators, board):

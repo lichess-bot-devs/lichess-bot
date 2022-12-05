@@ -121,6 +121,10 @@ def insert_default_values(CONFIG):
         for ponder in ["ponder", "uci_ponder"]:
             set_config_default(CONFIG, section, key=ponder, default=False)
 
+    for type in ["hello", "goodbye"]:
+        for target in ["", "_spectators"]:
+            set_config_default(CONFIG, "greeting", key=type + target, default="", force_falsey_values=True)
+
 
 def log_config(CONFIG):
     logger_config = CONFIG.copy()

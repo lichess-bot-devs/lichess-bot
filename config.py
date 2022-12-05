@@ -44,6 +44,7 @@ def change_value_to_list(config, *sections, key):
 
 def insert_default_values(CONFIG):
     set_config_default(CONFIG, key="abort_time", default=20)
+    set_config_default(CONFIG, key="move_overhead", default=1000)
     set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_falsey_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)

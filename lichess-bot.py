@@ -441,7 +441,7 @@ def play_game(li,
     ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
     can_ponder = ponder_cfg.get("uci_ponder") or ponder_cfg.get("ponder")
     move_overhead = config.get("move_overhead")
-    delay_seconds = config.get("rate_limiting_delay")/1000   
+    delay_seconds = config.get("rate_limiting_delay")/1000
 
     greeting_cfg = config.get("greeting") or {}
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)

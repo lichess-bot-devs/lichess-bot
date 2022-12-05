@@ -435,7 +435,7 @@ def play_game(li,
     is_correspondence = game.speed == "correspondence"
     correspondence_cfg = config.get("correspondence")
     correspondence_move_time = correspondence_cfg.get("move_time") * 1000
-    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
+    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time")
 
     engine_cfg = config["engine"]
     ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg

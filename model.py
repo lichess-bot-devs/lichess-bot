@@ -32,7 +32,7 @@ class Challenge:
         speeds = challenge_cfg["time_controls"]
         increment_max = challenge_cfg.get("max_increment")
         increment_min = challenge_cfg.get("min_increment")
-        base_max = challenge_cfg.get("max_base", 315360000)
+        base_max = challenge_cfg.get("max_base")
         base_min = challenge_cfg.get("min_base", 0)
         days_max = challenge_cfg.get("max_days", math.inf)
         days_min = challenge_cfg.get("min_days", 1)

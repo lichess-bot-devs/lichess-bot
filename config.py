@@ -91,6 +91,7 @@ def insert_default_values(CONFIG):
     set_config_default(CONFIG, "challenge", key="max_base", default=math.inf)
     set_config_default(CONFIG, "challenge", key="min_base", default=0)
     set_config_default(CONFIG, "challenge", key="max_days", default=math.inf)
+    set_config_default(CONFIG, "challenge", key="min_days", default=1)
     set_config_default(CONFIG, "challenge", key="block_list", default=[])
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_falsey_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)

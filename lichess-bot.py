@@ -379,7 +379,7 @@ def start_game(event,
 def enough_time_to_queue(event, config):
     corr_cfg = config.get("correspondence")
     checkin_time = corr_cfg.get("checkin_period")
-    move_time = corr_cfg.get("move_time") or 60
+    move_time = corr_cfg.get("move_time")
     minimum_time = (checkin_time + move_time) * 10
     game = event["game"]
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
@@ -433,8 +433,8 @@ def play_game(li,
     logger.info(f"+++ {game}")
 
     is_correspondence = game.speed == "correspondence"
-    correspondence_cfg = config.get("correspondence") or {}
-    correspondence_move_time = correspondence_cfg.get("move_time", 60) * 1000
+    correspondence_cfg = config.get("correspondence")
+    correspondence_move_time = correspondence_cfg.get("move_time") * 1000
     correspondence_disconnect_time = correspondence_cfg.get("disconnect_time", 300)
 
     engine_cfg = config["engine"]

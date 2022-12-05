@@ -124,8 +124,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
-    correspondence_cfg = config.get("correspondence") or {}
-    correspondence_checkin_period = correspondence_cfg.get("checkin_period", 600)
+    correspondence_cfg = config.get("correspondence")
+    correspondence_checkin_period = correspondence_cfg.get("checkin_period")
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=[control_queue,
                                                           correspondence_checkin_period])
@@ -377,8 +377,8 @@ def start_game(event,
 
 
 def enough_time_to_queue(event, config):
-    corr_cfg = config.get("correspondence") or {}
-    checkin_time = corr_cfg.get("checkin_period") or 600
+    corr_cfg = config.get("correspondence")
+    checkin_time = corr_cfg.get("checkin_period")
     move_time = corr_cfg.get("move_time") or 60
     minimum_time = (checkin_time + move_time) * 10
     game = event["game"]

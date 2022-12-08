@@ -83,9 +83,9 @@ class Matchmaking:
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
-        base_time = random.choice(self.matchmaking_cfg("challenge_initial_time"))
-        increment = random.choice(self.matchmaking_cfg("challenge_increment"))
-        days = random.choice(self.matchmaking_cfg("challenge_days"))
+        base_time = random.choice(self.matchmaking_cfg.challenge_initial_time)
+        increment = random.choice(self.matchmaking_cfg.challenge_increment)
+        days = random.choice(self.matchmaking_cfg.challenge_days)
 
         play_correspondence = [bool(days), not bool(base_time or increment)]
         if random.choice(play_correspondence):

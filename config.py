@@ -8,6 +8,30 @@ from matchmaking import DelayType
 logger = logging.getLogger(__name__)
 
 
+class Configuration:
+    def __init__(self, parameters):
+        self.config = parameters
+
+    def __getattr__(self, name):
+        return self.lookup(name)
+
+    def lookup(self, name):
+        data = self.config.get(name)
+        return Configuration(data) if isinstance(data, dict) else data
+
+    def items(self):
+        return self.config.items()
+
+    def __bool__(self):
+        return bool(self.config)
+
+    def __getstate__(self):
+        return self.config
+
+    def __setstate__(self, d):
+        self.config = d
+
+
 def config_assert(assertion, error_message):
     if not assertion:
         raise Exception(error_message)
@@ -178,4 +202,4 @@ def load_config(config_file):
 
     insert_default_values(CONFIG)
     log_config(CONFIG)
-    return CONFIG
+    return Configuration(CONFIG)

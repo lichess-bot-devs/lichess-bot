@@ -118,17 +118,15 @@ def game_error_handler(error):
 
 
 def start(li, user_profile, config, logging_level, log_filename, one_game=False):
-    logger.info(f"You're now connected to {config['url']} and awaiting challenges.")
+    logger.info(f"You're now connected to {config.url} and awaiting challenges.")
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
     control_queue = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
     control_stream.start()
-    correspondence_cfg = config.get("correspondence")
-    correspondence_checkin_period = correspondence_cfg.get("checkin_period")
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=[control_queue,
-                                                          correspondence_checkin_period])
+                                                          config.correspondence.checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
     correspondence_queue.put("")
@@ -176,8 +174,7 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
-    challenge_config = config["challenge"]
-    max_games = challenge_config.get("concurrency")
+    max_games = config.challenge.concurrency
 
     one_game_completed = False
 
@@ -217,7 +214,7 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker)
+                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -341,7 +338,7 @@ def check_online_status(li, user_profile, last_check_online_time):
 
 
 def sort_challenges(challenge_queue, challenge_config):
-    if challenge_config.get("sort_by") == "best":
+    if challenge_config.sort_by == "best":
         list_c = list(challenge_queue)
         list_c.sort(key=lambda c: -c.score())
         challenge_queue[:] = list_c
@@ -361,10 +358,10 @@ def start_game(event,
         matchmaker.challenge_id = None
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
-            logger.info(f'--- Enqueue {config["url"] + game_id}')
+            logger.info(f'--- Enqueue {config.url + game_id}')
             correspondence_queue.put(game_id)
         else:
-            logger.info(f'--- Will start {config["url"] + game_id} as soon as possible')
+            logger.info(f'--- Will start {config.url + game_id} as soon as possible')
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
@@ -377,10 +374,8 @@ def start_game(event,
 
 
 def enough_time_to_queue(event, config):
-    corr_cfg = config.get("correspondence")
-    checkin_time = corr_cfg.get("checkin_period")
-    move_time = corr_cfg.get("move_time")
-    minimum_time = (checkin_time + move_time) * 10
+    corr_cfg = config.correspondence
+    minimum_time = (corr_cfg.checkin_period + corr_cfg.move_time) * 10
     game = event["game"]
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
@@ -423,7 +418,7 @@ def play_game(li,
     # Initial response of stream will be the full game info. Store it
     initial_state = json.loads(next(lines).decode("utf-8"))
     logger.debug(f"Initial state: {initial_state}")
-    abort_time = config.get("abort_time")
+    abort_time = config.abort_time
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
 
     engine = engine_wrapper.create_engine(config)
@@ -433,22 +428,21 @@ def play_game(li,
     logger.info(f"+++ {game}")
 
     is_correspondence = game.speed == "correspondence"
-    correspondence_cfg = config.get("correspondence")
-    correspondence_move_time = correspondence_cfg.get("move_time") * 1000
-    correspondence_disconnect_time = correspondence_cfg.get("disconnect_time")
+    correspondence_cfg = config.correspondence
+    correspondence_move_time = correspondence_cfg.move_time * 1000
+    correspondence_disconnect_time = correspondence_cfg.disconnect_time
 
-    engine_cfg = config["engine"]
+    engine_cfg = config.engine
     ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
-    can_ponder = ponder_cfg.get("uci_ponder") or ponder_cfg.get("ponder")
-    move_overhead = config.get("move_overhead")
-    delay_seconds = config.get("rate_limiting_delay")/1000
+    can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
+    move_overhead = config.move_overhead
+    delay_seconds = config.rate_limiting_delay/1000
 
-    greeting_cfg = config.get("greeting")
     keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
-    hello = get_greeting("hello", greeting_cfg, keyword_map)
-    goodbye = get_greeting("goodbye", greeting_cfg, keyword_map)
-    hello_spectators = get_greeting("hello_spectators", greeting_cfg, keyword_map)
-    goodbye_spectators = get_greeting("goodbye_spectators", greeting_cfg, keyword_map)
+    hello = get_greeting("hello", config.greeting, keyword_map)
+    goodbye = get_greeting("goodbye", config.greeting, keyword_map)
+    hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
+    goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
 
     disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
     prior_game = None
@@ -508,7 +502,7 @@ def play_game(li,
 
 
 def get_greeting(greeting, greeting_cfg, keyword_map):
-    return greeting_cfg.get(greeting).format_map(keyword_map)
+    return greeting_cfg.lookup(greeting).format_map(keyword_map)
 
 
 def say_hello(conversation, hello, hello_spectators, board):
@@ -518,7 +512,7 @@ def say_hello(conversation, hello, hello_spectators, board):
 
 
 def fake_thinking(config, board, game):
-    if config.get("fake_think_time") and len(board.move_stack) > 9:
+    if config.fake_think_time and len(board.move_stack) > 9:
         delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
         accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
         sleep = min(5, delay * accel)
@@ -639,18 +633,17 @@ def try_print_pgn_game_record(li, config, game, board, engine):
 
 
 def print_pgn_game_record(li, config, game, board, engine):
-    game_directory = config.get("pgn_directory")
-    if not game_directory:
+    if not config.pgn_directory:
         return
 
     try:
-        os.mkdir(game_directory)
+        os.mkdir(config.pgn_directory)
     except FileExistsError:
         pass
 
     game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
-    game_path = os.path.join(game_directory, game_file_name)
+    game_path = os.path.join(config.pgn_directory, game_file_name)
 
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
     try:
@@ -706,8 +699,8 @@ def start_lichess_bot():
     logging_configurer(logging_level, args.logfile)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
-    max_retries = CONFIG["engine"].get("online_moves").get("max_retries")
-    li = lichess.Lichess(CONFIG["token"], CONFIG["url"], __version__, logging_level, max_retries)
+    max_retries = CONFIG.engine.online_moves.max_retries
+    li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()
     username = user_profile["username"]

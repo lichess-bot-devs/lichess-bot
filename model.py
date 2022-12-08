@@ -26,16 +26,16 @@ class Challenge:
         self.from_self = self.challenger_name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg):
-        return self.variant in challenge_cfg["variants"]
+        return self.variant in challenge_cfg.variants
 
     def is_supported_time_control(self, challenge_cfg):
-        speeds = challenge_cfg["time_controls"]
-        increment_max = challenge_cfg.get("max_increment")
-        increment_min = challenge_cfg.get("min_increment")
-        base_max = challenge_cfg.get("max_base")
-        base_min = challenge_cfg.get("min_base")
-        days_max = challenge_cfg.get("max_days")
-        days_min = challenge_cfg.get("min_days")
+        speeds = challenge_cfg.time_controls
+        increment_max = challenge_cfg.max_increment
+        increment_min = challenge_cfg.min_increment
+        base_max = challenge_cfg.max_base
+        base_min = challenge_cfg.min_base
+        days_max = challenge_cfg.max_days
+        days_min = challenge_cfg.min_days
 
         if self.speed not in speeds:
             return False
@@ -52,17 +52,17 @@ class Challenge:
             return days_max == math.inf
 
     def is_supported_mode(self, challenge_cfg):
-        return ("rated" if self.rated else "casual") in challenge_cfg["modes"]
+        return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported(self, config):
         try:
             if self.from_self:
                 return True, None
 
-            if not config.get("accept_bot") and self.challenger_is_bot:
+            if not config.accept_bot and self.challenger_is_bot:
                 return False, "noBot"
 
-            if config.get("only_bot") and not self.challenger_is_bot:
+            if config.only_bot and not self.challenger_is_bot:
                 return False, "onlyBot"
 
             if not self.is_supported_time_control(config):
@@ -74,7 +74,7 @@ class Challenge:
             if not self.is_supported_mode(config):
                 return False, ("casual" if self.rated else "rated")
 
-            if self.challenger_name in config.get("block_list"):
+            if self.challenger_name in config.block_list:
                 return False, "generic"
 
             return True, None

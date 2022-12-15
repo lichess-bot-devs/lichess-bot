@@ -452,8 +452,9 @@ def play_game(li,
 
     disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
     prior_game = None
+    board = None
     upd = game.state
-    while not terminated:
+    while not (terminated or restart):
         move_attempted = False
         try:
             upd = upd or next_update(lines)
@@ -632,6 +633,9 @@ def tell_user_game_result(game, board):
 
 
 def try_print_pgn_game_record(li, config, game, board, engine):
+    if board is None:
+        return
+
     try:
         print_pgn_game_record(li, config, game, board, engine)
     except Exception:

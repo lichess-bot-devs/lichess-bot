@@ -6,6 +6,7 @@ from http.client import RemoteDisconnected
 import backoff
 import logging
 import time
+from engine_wrapper import MAX_CHAT_MESSAGE_LEN
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -99,6 +100,12 @@ class Lichess:
                              params={"offeringDraw": str(move.draw_offered).lower()})
 
     def chat(self, game_id, room, text):
+        if len(text) > MAX_CHAT_MESSAGE_LEN:
+            logger.warn(f"This chat message is {len(text)} characters, which is longer "
+                        f"than the maximum of {MAX_CHAT_MESSAGE_LEN}. It will not be sent.")
+            logger.warn(f"Message: {text}")
+            return {}
+
         payload = {"room": room, "text": text}
         return self.api_post(ENDPOINTS["chat"].format(game_id), data=payload)
 

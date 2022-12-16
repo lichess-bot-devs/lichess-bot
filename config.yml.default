@@ -53,7 +53,8 @@ engine:                      # Engine settings.
       max_pieces: 7
       source: "lichess"      # One of "lichess", "chessdb".
       move_quality: "best"   # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
-  lichess_bot_tbs:
+
+  lichess_bot_tbs:           # The tablebases list here will be read by lichess-bot, not the engine.
     syzygy:
       enabled: false
       paths:

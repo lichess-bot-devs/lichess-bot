@@ -9,6 +9,7 @@ import time
 import random
 from enum import Enum
 from collections import Counter
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -16,31 +17,28 @@ out_of_online_opening_book_moves = Counter()
 
 
 def create_engine(config):
-    cfg = config["engine"]
-    engine_path = os.path.join(cfg["dir"], cfg["name"])
-    engine_working_dir = cfg.get("working_dir") or os.getcwd()
-    engine_type = cfg.get("protocol")
-    engine_options = cfg.get("engine_options")
-    draw_or_resign = cfg.get("draw_or_resign") or {}
+    cfg = config.engine
+    engine_path = os.path.join(cfg.dir, cfg.name)
+    engine_type = cfg.protocol
     commands = [engine_path]
-    if engine_options:
-        for k, v in engine_options.items():
+    if cfg.engine_options:
+        for k, v in cfg.engine_options.items():
             commands.append(f"--{k}={v}")
 
-    stderr = None if cfg.get("silence_stderr", False) else subprocess.DEVNULL
+    stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
         Engine = UCIEngine
     elif engine_type == "homemade":
-        Engine = getHomemadeEngine(cfg["name"])
+        Engine = getHomemadeEngine(cfg.name)
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
-    options = remove_managed_options(cfg.get(f"{engine_type}_options") or {})
+    options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or {})
     logger.debug(f"Starting engine: {' '.join(commands)}")
-    return Engine(commands, options, stderr, draw_or_resign, cwd=engine_working_dir)
+    return Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
 
 
 def remove_managed_options(config):
@@ -96,7 +94,7 @@ class EngineWrapper:
     def __init__(self, options, draw_or_resign):
         self.scores = []
         self.draw_or_resign = draw_or_resign
-        self.go_commands = options.pop("go_commands", {}) or {}
+        self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
         self.move_commentary = []
         self.comment_start_index = None
 
@@ -110,10 +108,10 @@ class EngineWrapper:
                   is_correspondence,
                   correspondence_move_time,
                   engine_cfg):
-        polyglot_cfg = engine_cfg.get("polyglot", {})
-        online_moves_cfg = engine_cfg.get("online_moves", {})
-        draw_or_resign_cfg = engine_cfg.get("draw_or_resign") or {}
-        lichess_bot_tbs = engine_cfg.get("lichess_bot_tbs") or {}
+        polyglot_cfg = engine_cfg.polyglot
+        online_moves_cfg = engine_cfg.online_moves
+        draw_or_resign_cfg = engine_cfg.draw_or_resign
+        lichess_bot_tbs = engine_cfg.lichess_bot_tbs
 
         best_move = get_book_move(board, polyglot_cfg)
 
@@ -179,23 +177,23 @@ class EngineWrapper:
         return self.search(board, time_limit, ponder, draw_offered, root_moves)
 
     def add_go_commands(self, time_limit):
-        movetime = self.go_commands.get("movetime")
+        movetime = self.go_commands.movetime
         if movetime is not None:
             movetime_sec = float(movetime) / 1000
             if time_limit.time is None or time_limit.time > movetime_sec:
                 time_limit.time = movetime_sec
-        time_limit.depth = self.go_commands.get("depth")
-        time_limit.nodes = self.go_commands.get("nodes")
+        time_limit.depth = self.go_commands.depth
+        time_limit.nodes = self.go_commands.nodes
         return time_limit
 
     def offer_draw_or_resign(self, result, board):
         def actual(score):
             return score.relative.score(mate_score=40000)
 
-        can_offer_draw = self.draw_or_resign.get("offer_draw_enabled", False)
-        draw_offer_moves = self.draw_or_resign.get("offer_draw_moves", 5)
-        draw_score_range = self.draw_or_resign.get("offer_draw_score", 0)
-        draw_max_piece_count = self.draw_or_resign.get("offer_draw_pieces", 10)
+        can_offer_draw = self.draw_or_resign.offer_draw_enabled
+        draw_offer_moves = self.draw_or_resign.offer_draw_moves
+        draw_score_range = self.draw_or_resign.offer_draw_score
+        draw_max_piece_count = self.draw_or_resign.offer_draw_pieces
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
         if can_offer_draw and len(self.scores) >= draw_offer_moves and enough_pieces_captured:
@@ -206,9 +204,9 @@ class EngineWrapper:
             if len(scores) == len(list(filter(score_near_draw, scores))):
                 result.draw_offered = True
 
-        resign_enabled = self.draw_or_resign.get("resign_enabled", False)
-        min_moves_for_resign = self.draw_or_resign.get("resign_moves", 3)
-        resign_score = self.draw_or_resign.get("resign_score", -1000)
+        resign_enabled = self.draw_or_resign.resign_enabled
+        min_moves_for_resign = self.draw_or_resign.resign_moves
+        resign_score = self.draw_or_resign.resign_score
         if resign_enabled and len(self.scores) >= min_moves_for_resign:
             scores = self.scores[-min_moves_for_resign:]
 
@@ -447,23 +445,20 @@ def check_for_draw_offer(game):
 
 def get_book_move(board, polyglot_cfg):
     no_book_move = chess.engine.PlayResult(None, None)
-    use_book = polyglot_cfg.get("enabled")
-    max_game_length = polyglot_cfg.get("max_depth", 8) * 2 - 1
+    use_book = polyglot_cfg.enabled
+    max_game_length = polyglot_cfg.max_depth * 2 - 1
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
-    book_config = polyglot_cfg.get("book", {})
-
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
-    books = book_config.get(variant) or []
-    if isinstance(books, str):
-        books = [books]
+    config.change_value_to_list(polyglot_cfg.config, "book", key=variant)
+    books = polyglot_cfg.book.lookup(variant)
 
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:
-                selection = polyglot_cfg.get("selection", "weighted_random")
-                min_weight = polyglot_cfg.get("min_weight", 1)
+                selection = polyglot_cfg.selection
+                min_weight = polyglot_cfg.min_weight
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":
@@ -482,22 +477,22 @@ def get_book_move(board, polyglot_cfg):
 
 
 def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
-    online_egtb_cfg = online_moves_cfg.get("online_egtb", {})
-    chessdb_cfg = online_moves_cfg.get("chessdb_book", {})
-    lichess_cloud_cfg = online_moves_cfg.get("lichess_cloud_analysis", {})
-    max_out_of_book_moves = online_moves_cfg.get("max_out_of_book_moves", 10)
+    online_egtb_cfg = online_moves_cfg.online_egtb
+    chessdb_cfg = online_moves_cfg.chessdb_book
+    lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
+    max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
     offer_draw = False
     resign = False
     comment = None
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
-        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
-        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
+        offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
         if can_offer_draw and offer_draw_for_zero and wdl == 0:
             offer_draw = True
 
-        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
-        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        can_resign = draw_or_resign_cfg.resign_enabled
+        resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
         if can_resign and resign_on_egtb_loss and wdl == -2:
             resign = True
 
@@ -518,7 +513,7 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
                                            resigned=resign)
         return [chess.Move.from_uci(move) for move in best_move]
     out_of_online_opening_book_moves[game.id] += 1
-    used_opening_books = chessdb_cfg.get("enabled") or lichess_cloud_cfg.get("enabled")
+    used_opening_books = chessdb_cfg.enabled or lichess_cloud_cfg.enabled
     if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:
         logger.info("Will stop using online opening books.")
     return chess.engine.PlayResult(None, None)
@@ -526,16 +521,16 @@ def get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg):
 
 def get_chessdb_move(li, board, game, chessdb_cfg):
     wb = "w" if board.turn == chess.WHITE else "b"
-    use_chessdb = chessdb_cfg.get("enabled", False)
+    use_chessdb = chessdb_cfg.enabled
     time_left = game.state[f"{wb}time"]
-    min_time = chessdb_cfg.get("min_time", 20) * 1000
+    min_time = chessdb_cfg.min_time * 1000
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
         return None, None
 
     move = None
     comment = {}
     site = "https://www.chessdb.cn/cdb.php"
-    quality = chessdb_cfg.get("move_quality", "good")
+    quality = chessdb_cfg.move_quality
     action = {"best": "querypv",
               "good": "querybest",
               "all": "query"}
@@ -547,7 +542,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
         if data["status"] == "ok":
             if quality == "best":
                 depth = data["depth"]
-                if depth >= chessdb_cfg.get("min_depth", 20):
+                if depth >= chessdb_cfg.min_depth:
                     score = data["score"]
                     move = data["pv"][0]
                     comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
@@ -558,7 +553,7 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn")
 
-        if chessdb_cfg.get("contribute", True):
+        if chessdb_cfg.contribute:
             params["action"] = "queue"
             li.online_book_get(site, params=params)
     except Exception:
@@ -570,15 +565,15 @@ def get_chessdb_move(li, board, game, chessdb_cfg):
 def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
-    min_time = lichess_cloud_cfg.get("min_time", 20) * 1000
-    use_lichess_cloud = lichess_cloud_cfg.get("enabled", False)
+    min_time = lichess_cloud_cfg.min_time * 1000
+    use_lichess_cloud = lichess_cloud_cfg.enabled
     if not use_lichess_cloud or time_left < min_time:
         return None, None
 
     move = None
     comment = {}
 
-    quality = lichess_cloud_cfg.get("move_quality", "best")
+    quality = lichess_cloud_cfg.move_quality
     multipv = 1 if quality == "best" else 5
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
@@ -590,15 +585,15 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
         if "error" not in data:
             depth = data["depth"]
             knodes = data["knodes"]
-            min_depth = lichess_cloud_cfg.get("min_depth", 20)
-            min_knodes = lichess_cloud_cfg.get("min_knodes", 0)
+            min_depth = lichess_cloud_cfg.min_depth
+            min_knodes = lichess_cloud_cfg.min_knodes
             if depth >= min_depth and knodes >= min_knodes:
                 if quality == "best":
                     pv = data["pvs"][0]
                 else:
                     best_eval = data["pvs"][0]["cp"]
                     pvs = data["pvs"]
-                    max_difference = lichess_cloud_cfg.get("max_score_difference", 50)
+                    max_difference = lichess_cloud_cfg.max_score_difference
                     if wb == "w":
                         pvs = list(filter(lambda pv: pv["cp"] >= best_eval - max_difference, pvs))
                     else:
@@ -618,23 +613,23 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
 
 
 def get_online_egtb_move(li, board, game, online_egtb_cfg):
-    use_online_egtb = online_egtb_cfg.get("enabled", False)
+    use_online_egtb = online_egtb_cfg.enabled
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
-    source = online_egtb_cfg.get("source", "lichess")
-    minimum_time = online_egtb_cfg.get("min_time", 20) * 1000
+    source = online_egtb_cfg.source
+    minimum_time = online_egtb_cfg.min_time * 1000
     if (not use_online_egtb
             or game.state[f"{wb}time"] < minimum_time
             or board.uci_variant not in ["chess", "antichess", "atomic"]
             and source == "lichess"
             or board.uci_variant != "chess"
             and source == "chessdb"
-            or pieces > online_egtb_cfg.get("max_pieces", 7)
+            or pieces > online_egtb_cfg.max_pieces
             or board.castling_rights):
 
         return None, None
 
-    quality = online_egtb_cfg.get("move_quality", "best")
+    quality = online_egtb_cfg.move_quality
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
 
     try:
@@ -649,16 +644,16 @@ def get_online_egtb_move(li, board, game, online_egtb_cfg):
 
 
 def get_egtb_move(board, lichess_bot_tbs, draw_or_resign_cfg):
-    best_move, wdl = get_syzygy(board, lichess_bot_tbs.get("syzygy") or {})
+    best_move, wdl = get_syzygy(board, lichess_bot_tbs.syzygy)
     if best_move is None:
-        best_move, wdl = get_gaviota(board, lichess_bot_tbs.get("gaviota") or {})
+        best_move, wdl = get_gaviota(board, lichess_bot_tbs.gaviota)
     if best_move:
-        can_offer_draw = draw_or_resign_cfg.get("offer_draw_enabled", False)
-        offer_draw_for_zero = draw_or_resign_cfg.get("offer_draw_for_egtb_zero", True)
+        can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
+        offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
         offer_draw = bool(can_offer_draw and offer_draw_for_zero and wdl == 0)
 
-        can_resign = draw_or_resign_cfg.get("resign_enabled", False)
-        resign_on_egtb_loss = draw_or_resign_cfg.get("resign_for_egtb_minus_two", True)
+        can_resign = draw_or_resign_cfg.resign_enabled
+        resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
         comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
@@ -785,13 +780,13 @@ def get_chessdb_egtb_move(li, board, quality):
 
 
 def get_syzygy(board, syzygy_cfg):
-    if (not syzygy_cfg.get("enabled", False)
-            or chess.popcount(board.occupied) > syzygy_cfg.get("max_pieces", 7)
+    if (not syzygy_cfg.enabled
+            or chess.popcount(board.occupied) > syzygy_cfg.max_pieces
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
         return None, None
-    move_quality = syzygy_cfg.get("move_quality", "best")
-    with chess.syzygy.open_tablebase(syzygy_cfg["paths"][0]) as tablebase:
-        for path in syzygy_cfg["paths"][1:]:
+    move_quality = syzygy_cfg.move_quality
+    with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
+        for path in syzygy_cfg.paths[1:]:
             tablebase.add_directory(path)
 
         try:
@@ -842,20 +837,20 @@ def dtz_to_wdl(dtz):
 
 
 def get_gaviota(board, gaviota_cfg):
-    if (not gaviota_cfg.get("enabled", False)
-            or chess.popcount(board.occupied) > gaviota_cfg.get("max_pieces", 5)
+    if (not gaviota_cfg.enabled
+            or chess.popcount(board.occupied) > gaviota_cfg.max_pieces
             or board.uci_variant != "chess"):
         return None, None
-    move_quality = gaviota_cfg.get("move_quality", "best")
+    move_quality = gaviota_cfg.move_quality
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
     # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and
     # another 12 to mate, so this position has a syzygy wdl=2/-2. To be safe, the first limit is 100 moves, which
     # guarantees that all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it
     # because dtm >= dtz, so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
-    min_dtm_to_consider_as_wdl_1 = gaviota_cfg.get("min_dtm_to_consider_as_wdl_1", 120)
-    with chess.gaviota.open_tablebase(gaviota_cfg["paths"][0]) as tablebase:
-        for path in gaviota_cfg["paths"][1:]:
+    min_dtm_to_consider_as_wdl_1 = gaviota_cfg.min_dtm_to_consider_as_wdl_1
+    with chess.gaviota.open_tablebase(gaviota_cfg.paths[0]) as tablebase:
+        for path in gaviota_cfg.paths[1:]:
             tablebase.add_directory(path)
 
         try:

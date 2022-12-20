@@ -17,24 +17,24 @@ class DelayType(str, Enum):
 class Matchmaking:
     def __init__(self, li, config, user_profile):
         self.li = li
-        self.variants = list(filter(lambda variant: variant != "fromPosition", config["challenge"]["variants"]))
-        self.matchmaking_cfg = config.get("matchmaking") or {}
+        self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
+        self.matchmaking_cfg = config.matchmaking
         self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
-        self.last_game_ended_delay = Timer(max(self.matchmaking_cfg.get("challenge_timeout") or 30, 1) * 60)
+        self.last_game_ended_delay = Timer(self.matchmaking_cfg.challenge_timeout * 60)
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
-        self.block_list = (self.matchmaking_cfg.get("block_list") or []).copy()
+        self.block_list = self.matchmaking_cfg.block_list.copy()
         self.delay_timers = defaultdict(lambda: Timer(0))
         delay_option = "delay_after_decline"
-        self.delay_type = self.matchmaking_cfg.get(delay_option) or DelayType.NONE
+        self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():
             raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
                              f" Choices are: {', '.join(DelayType)}.")
 
     def should_create_challenge(self):
-        matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
+        matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         time_has_passed = self.last_game_ended_delay.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
@@ -68,14 +68,6 @@ class Matchmaking:
             logger.exception("Could not create challenge")
             return None
 
-    def get_time(self, name, default=None):
-        match_time = self.matchmaking_cfg.get(name, default)
-        if match_time is None:
-            return None
-        if isinstance(match_time, int):
-            match_time = [match_time]
-        return random.choice(match_time)
-
     def perf(self):
         return self.user_profile["perfs"]
 
@@ -91,9 +83,9 @@ class Matchmaking:
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
-        base_time = self.get_time("challenge_initial_time", 60)
-        increment = self.get_time("challenge_increment", 2)
-        days = self.get_time("challenge_days")
+        base_time = random.choice(self.matchmaking_cfg.challenge_initial_time)
+        increment = random.choice(self.matchmaking_cfg.challenge_increment)
+        days = random.choice(self.matchmaking_cfg.challenge_days)
 
         play_correspondence = [bool(days), not bool(base_time or increment)]
         if random.choice(play_correspondence):
@@ -104,15 +96,15 @@ class Matchmaking:
 
         game_type = game_category(variant, base_time, increment, days)
 
-        min_rating = self.matchmaking_cfg.get("opponent_min_rating") or 600
-        max_rating = self.matchmaking_cfg.get("opponent_max_rating") or 4000
-        rating_diff = self.matchmaking_cfg.get("opponent_rating_difference")
+        min_rating = self.matchmaking_cfg.opponent_min_rating
+        max_rating = self.matchmaking_cfg.opponent_max_rating
+        rating_diff = self.matchmaking_cfg.opponent_rating_difference
         if rating_diff is not None:
             bot_rating = self.perf().get(game_type, {}).get("rating", 0)
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
-        allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
+        allow_tos_violation = self.matchmaking_cfg.opponent_allow_tos_violation
 
         def is_suitable_opponent(bot):
             perf = bot.get("perfs", {}).get(game_type, {})
@@ -149,7 +141,7 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant, mode
 
     def get_random_config_value(self, parameter, choices):
-        value = self.matchmaking_cfg.get(parameter) or "random"
+        value = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games, challenge_queue):

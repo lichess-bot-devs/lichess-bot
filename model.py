@@ -66,33 +66,45 @@ class Challenge:
                 return False
         return True
 
+    def is_supported_generic(self, requirement, decline_reason, current_decline_reason):
+        if current_decline_reason:
+            return current_decline_reason
+
+        if not requirement:
+            return decline_reason
+        else:
+            return current_decline_reason
+
     def is_supported(self, config, recent_bot_challenges):
         try:
             if self.from_self:
                 return True, None
 
-            if not config.accept_bot and self.challenger_is_bot:
-                return False, "noBot"
+            decline_reason = None
 
-            if config.only_bot and not self.challenger_is_bot:
-                return False, "onlyBot"
+            decline_reason = self.is_supported_generic(config.accept_bot or not self.challenger_is_bot,
+                                                       "noBot",
+                                                       decline_reason)
+            decline_reason = self.is_supported_generic(not config.only_bot or self.challenger_is_bot,
+                                                       "onlyBot",
+                                                       decline_reason)
+            decline_reason = self.is_supported_generic(self.is_supported_time_control(config),
+                                                       "timeControl",
+                                                       decline_reason)
+            decline_reason = self.is_supported_generic(self.is_supported_variant(config),
+                                                       "variant",
+                                                       decline_reason)
+            decline_reason = self.is_supported_generic(self.is_supported_mode(config),
+                                                       "casual" if self.rated else "rated",
+                                                       decline_reason)
+            decline_reason = self.is_supported_generic(self.challenger_name not in config.block_list,
+                                                       "generic",
+                                                       decline_reason)
+            decline_reason = self.is_supported_generic(self.is_supported_recent_challenges(config, recent_bot_challenges),
+                                                       "later",
+                                                       decline_reason)
 
-            if not self.is_supported_time_control(config):
-                return False, "timeControl"
-
-            if not self.is_supported_variant(config):
-                return False, "variant"
-
-            if not self.is_supported_mode(config):
-                return False, ("casual" if self.rated else "rated")
-
-            if self.challenger_name in config.block_list:
-                return False, "generic"
-
-            if not self.is_supported_recent_challenges(config, recent_bot_challenges):
-                return False, "later"
-
-            return True, None
+            return bool(decline_reason), decline_reason
 
         except Exception:
             logger.exception("Error while checking challenge:")

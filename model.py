@@ -54,7 +54,7 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg):
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent_challenges(self, config, recent_bot_challenges):
+    def is_supported_recent(self, config, recent_bot_challenges):
         time_window = config.recent_bot_challenge_age
         max_recent_challenges = config.max_recent_bot_challenges
         if self.challenger_is_bot and time_window is not None and max_recent_challenges is not None:
@@ -66,21 +66,21 @@ class Challenge:
                 return False
         return True
 
-    def is_supported_generic(self, requirement, decline_reason):
-        return None if requirement else decline_reason
+    def can_support(self, requirement_met, decline_reason):
+        return None if requirement_met else decline_reason
 
     def is_supported(self, config, recent_bot_challenges):
         try:
             if self.from_self:
                 return True, None
 
-            decline_reason = (self.is_supported_generic(config.accept_bot or not self.challenger_is_bot, "noBot")
-                              or self.is_supported_generic(not config.only_bot or self.challenger_is_bot, "onlyBot")
-                              or self.is_supported_generic(self.is_supported_time_control(config), "timeControl")
-                              or self.is_supported_generic(self.is_supported_variant(config), "variant")
-                              or self.is_supported_generic(self.is_supported_mode(config), "casual" if self.rated else "rated")
-                              or self.is_supported_generic(self.challenger_name not in config.block_list, "generic")
-                              or self.is_supported_generic(self.is_supported_recent_challenges(config, recent_bot_challenges), "later"))
+            decline_reason = (self.can_support(config.accept_bot or not self.challenger_is_bot, "noBot")
+                              or self.can_support(not config.only_bot or self.challenger_is_bot, "onlyBot")
+                              or self.can_support(self.is_supported_time_control(config), "timeControl")
+                              or self.can_support(self.is_supported_variant(config), "variant")
+                              or self.can_support(self.is_supported_mode(config), "casual" if self.rated else "rated")
+                              or self.can_support(self.challenger_name not in config.block_list, "generic")
+                              or self.can_support(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
             return decline_reason is None, decline_reason
 

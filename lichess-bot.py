@@ -216,7 +216,7 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges)
+                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":

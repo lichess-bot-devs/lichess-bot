@@ -7,6 +7,7 @@ engine:                      # Engine settings.
   working_dir: ""            # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
   protocol: "uci"            # "uci", "xboard" or "homemade"
   ponder: true               # Think on opponent's time.
+
   polyglot:
     enabled: false           # Activate polyglot book.
     book:
@@ -21,6 +22,7 @@ engine:                      # Engine settings.
     min_weight: 1            # Does not select moves with weight below min_weight (min 0, max: 65535).
     selection: "weighted_random" # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
     max_depth: 8             # How many moves from the start to take from the book.
+
   draw_or_resign:
     resign_enabled: false
     resign_score: -1000      # If the score is less than or equal to this value, the bot resigns (in cp).
@@ -31,6 +33,7 @@ engine:                      # Engine settings.
     offer_draw_for_egtb_zero: true # If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
     offer_draw_moves: 5      # How many moves in a row the absolute value of the score has to be below the draw value.
     offer_draw_pieces: 10    # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
+
   online_moves:
     max_out_of_book_moves: 10 # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.
     max_retries: 2           # The maximum amount of retries when getting an online move.
@@ -53,7 +56,8 @@ engine:                      # Engine settings.
       max_pieces: 7
       source: "lichess"      # One of "lichess", "chessdb".
       move_quality: "best"   # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
-  lichess_bot_tbs:
+
+  lichess_bot_tbs:           # The tablebases list here will be read by lichess-bot, not the engine.
     syzygy:
       enabled: false
       paths:
@@ -67,18 +71,23 @@ engine:                      # Engine settings.
       max_pieces: 5
       min_dtm_to_consider_as_wdl_1: 120  # The minimum dtm to consider as syzygy wdl=1/-1. Set to 100 to disable.
       move_quality: "best"   # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
+
 # engine_options:            # Any custom command line params to pass to the engine.
 #   cpuct: 3.1
+
   homemade_options:
 #   Hash: 256
+
   uci_options:               # Arbitrary UCI options passed to the engine.
     Move Overhead: 100       # Increase if your bot flags games too often.
     Threads: 2               # Max CPU threads the engine can use.
     Hash: 256                # Max memory (in megabytes) the engine can allocate.
+    SyzygyPath: "./syzygy/"  # Paths to Syzygy endgame tablebases
 #   go_commands:             # Additional options to pass to the UCI go command.
 #     nodes: 1               # Search so many nodes only.
 #     depth: 5               # Search depth ply only.
 #     movetime: 1000         # Integer. Search exactly movetime milliseconds.
+
 # xboard_options:            # Arbitrary XBoard options passed to the engine.
 #   cores: "4"
 #   memory: "4096"
@@ -90,6 +99,7 @@ engine:                      # Engine settings.
 #   go_commands:             # Additional options to pass to the XBoard go command.
 #     depth: 5               # Search depth ply only.
 #     Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
+
   silence_stderr: false      # Some engines (yes you, Leela) are very noisy.
 
 abort_time: 20               # Time to abort a game in seconds when there is no activity.

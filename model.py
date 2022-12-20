@@ -104,7 +104,7 @@ class Challenge:
                                                        "later",
                                                        decline_reason)
 
-            return bool(decline_reason), decline_reason
+            return decline_reason is None, decline_reason
 
         except Exception:
             logger.exception("Error while checking challenge:")

@@ -55,15 +55,14 @@ class Challenge:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported_recent(self, config, recent_bot_challenges):
+        # Filter out old challenges
+        recent_bot_challenges[self.challenger_name] = [timer for timer
+                                                       in recent_bot_challenges[self.challenger_name]
+                                                       if not timer.is_expired()]
         max_recent_challenges = config.max_recent_bot_challenges
-        if self.challenger_is_bot and max_recent_challenges is not None:
-            # Filter out old challenges
-            recent_bot_challenges[self.challenger_name] = [timer for timer
-                                                           in recent_bot_challenges[self.challenger_name]
-                                                           if not timer.is_expired()]
-            if len(recent_bot_challenges[self.challenger_name]) >= max_recent_challenges:
-                return False
-        return True
+        return (not self.challenger_is_bot
+                or max_recent_challenges is None
+                or len(recent_bot_challenges[self.challenger_name]) < max_recent_challenges)
 
     def decline_due_to(self, requirement_met, decline_reason):
         return None if requirement_met else decline_reason

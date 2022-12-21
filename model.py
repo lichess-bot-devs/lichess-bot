@@ -65,7 +65,7 @@ class Challenge:
                 return False
         return True
 
-    def can_support(self, requirement_met, decline_reason):
+    def decline_due_to(self, requirement_met, decline_reason):
         return None if requirement_met else decline_reason
 
     def is_supported(self, config, recent_bot_challenges):
@@ -73,13 +73,13 @@ class Challenge:
             if self.from_self:
                 return True, None
 
-            decline_reason = (self.can_support(config.accept_bot or not self.challenger_is_bot, "noBot")
-                              or self.can_support(not config.only_bot or self.challenger_is_bot, "onlyBot")
-                              or self.can_support(self.is_supported_time_control(config), "timeControl")
-                              or self.can_support(self.is_supported_variant(config), "variant")
-                              or self.can_support(self.is_supported_mode(config), "casual" if self.rated else "rated")
-                              or self.can_support(self.challenger_name not in config.block_list, "generic")
-                              or self.can_support(self.is_supported_recent(config, recent_bot_challenges), "later"))
+            decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger_is_bot, "noBot")
+                              or self.decline_due_to(not config.only_bot or self.challenger_is_bot, "onlyBot")
+                              or self.decline_due_to(self.is_supported_time_control(config), "timeControl")
+                              or self.decline_due_to(self.is_supported_variant(config), "variant")
+                              or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
+                              or self.decline_due_to(self.challenger_name not in config.block_list, "generic")
+                              or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
             return decline_reason is None, decline_reason
 

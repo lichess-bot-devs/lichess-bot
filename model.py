@@ -55,9 +55,8 @@ class Challenge:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported_recent(self, config, recent_bot_challenges):
-        time_window = config.recent_bot_challenge_age
         max_recent_challenges = config.max_recent_bot_challenges
-        if self.challenger_is_bot and time_window is not None and max_recent_challenges is not None:
+        if self.challenger_is_bot and max_recent_challenges is not None:
             # Filter out old challenges
             recent_bot_challenges[self.challenger_name] = [t for t
                                                            in recent_bot_challenges[self.challenger_name]

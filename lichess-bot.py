@@ -387,7 +387,7 @@ def handle_challenge(event, li, challenge_queue, challenge_config, user_profile,
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
         challenge_queue.append(chlng)
-        if challenge_config.recent_bot_challenge_age:
+        if challenge_config.recent_bot_challenge_age is not None:
             recent_bot_challenges[chlng.challenger_name].append(Timer(challenge_config.recent_bot_challenge_age))
         sort_challenges(challenge_queue, challenge_config)
     elif chlng.id != matchmaker.challenge_id:

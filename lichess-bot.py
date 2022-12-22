@@ -384,25 +384,14 @@ def enough_time_to_queue(event, config):
 
 def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
     chlng = model.Challenge(event["challenge"], user_profile)
-
-    time_window = challenge_config.recent_bot_challenge_age
-    max_recent_challenges = challenge_config.max_recent_bot_challenges
-
-    is_supported, decline_reason = chlng.is_supported(challenge_config)
-
-    if is_supported and chlng.challenger_is_bot and time_window is not None and max_recent_challenges is not None:
-        op = chlng.challenger_name
-        # Filter out old challenges
-        recent_bot_challenges[op] = [t for t in recent_bot_challenges[op] if not t.is_expired()]
-        if len(recent_bot_challenges[op]) >= max_recent_challenges:
-            is_supported = False
-            decline_reason = "later"
-        else:
-            recent_bot_challenges[op].append(Timer(time_window))
+    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
 
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)
+        time_window = challenge_config.recent_bot_challenge_age
+        if time_window is not None:
+            recent_bot_challenges[chlng.challenger_name].append(Timer(time_window))
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
 

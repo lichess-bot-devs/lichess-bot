@@ -385,8 +385,8 @@ def enough_time_to_queue(event, config):
 def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
     chlng = model.Challenge(event["challenge"], user_profile)
 
-    time_window = challenge_config.get('recent_bot_challenge_age')
-    max_recent_challenges = challenge_config.get('max_recent_bot_challenges')
+    time_window = challenge_config.recent_bot_challenge_age
+    max_recent_challenges = challenge_config.max_recent_bot_challenges
 
     is_supported, decline_reason = chlng.is_supported(challenge_config)
 

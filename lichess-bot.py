@@ -13,7 +13,6 @@ import multiprocessing
 import signal
 import time
 import backoff
-import sys
 import os
 import io
 import copy
@@ -348,7 +347,7 @@ def check_online_status(li, user_profile, last_check_online_time):
                 logger.info("Will restart lichess-bot")
                 restart = True
             last_check_online_time.reset()
-        except (HTTPError, ReadTimeout) as exception:
+        except (HTTPError, ReadTimeout):
             pass
 
 

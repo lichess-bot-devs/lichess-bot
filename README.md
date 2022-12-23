@@ -238,6 +238,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -casual
 ```
   - `block_list`: An indented list of usernames from which the challenges are always declined. If this option is not present, then the list is considered empty.
+  - `recent_bot_challenge_age`: Maximum age of a bot challenge to be considered recent in seconds
+  - `max_recent_bot_challenges`: Maximum number of recent challenges that can be accepted from the same bot
 - `greeting`: Send messages via chat to the bot's opponent. The string `{me}` will be replaced by the bot's lichess account name. The string `{opponent}` will be replaced by the opponent's lichess account name. Any other word between curly brackets will be removed. If you want to put a curly bracket in the message, use two: `{{` or `}}`.
   - `hello`: Message to send to the opponent when the bot makes its first move.
   - `goodbye`: Message to send to the opponent once the game is over.

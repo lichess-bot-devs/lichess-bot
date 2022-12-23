@@ -132,7 +132,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                                           config.correspondence.checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
-    correspondence_queue.put_nowait("")
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
@@ -270,7 +269,7 @@ def next_event(control_queue):
     return event
 
 
-wait_for_correspondence_ping = False
+correspondence_games_to_start = 0
 
 
 def check_in_on_correspondence_games(pool,
@@ -280,34 +279,25 @@ def check_in_on_correspondence_games(pool,
                                      play_game_args,
                                      active_games,
                                      max_games):
-    global wait_for_correspondence_ping
+    global correspondence_games_to_start
 
-    is_correspondence_ping = event["type"] == "correspondence_ping"
-    is_local_game_done = event["type"] == "local_game_done"
-    if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
-        if is_correspondence_ping and wait_for_correspondence_ping:
-            correspondence_queue.put_nowait("")
+    if challenge_queue:
+        return
+    elif event["type"] == "correspondence_ping":
+        correspondence_games_to_start = correspondence_queue.qsize()
+    elif event["type"] != "local_game_done":
+        return
 
-        wait_for_correspondence_ping = False
-        while len(active_games) < max_games:
-            game_id = correspondence_queue.get()
-            correspondence_queue.task_done()
-            # Stop checking in on games if we have checked in on all
-            # games since the last correspondence_ping.
-            if not game_id:
-                if is_correspondence_ping and not correspondence_queue.empty():
-                    correspondence_queue.put_nowait("")
-                    is_correspondence_ping = False
-                else:
-                    wait_for_correspondence_ping = True
-                    break
-            else:
-                active_games.add(game_id)
-                log_proc_count("Used", active_games)
-                play_game_args["game_id"] = game_id
-                pool.apply_async(play_game,
-                                 kwds=play_game_args,
-                                 error_callback=game_error_handler)
+    while len(active_games) < max_games and correspondence_games_to_start > 0:
+        game_id = correspondence_queue.get_nowait()
+        active_games.add(game_id)
+        log_proc_count("Used", active_games)
+        play_game_args["game_id"] = game_id
+        pool.apply_async(play_game,
+                         kwds=play_game_args,
+                         error_callback=game_error_handler)
+        correspondence_games_to_start -= 1
+        correspondence_queue.task_done()
 
 
 def start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args):

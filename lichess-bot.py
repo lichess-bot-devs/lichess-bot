@@ -28,7 +28,7 @@ from http.client import RemoteDisconnected
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2022.12.20.2"
+__version__ = "2022.12.23.3"
 
 terminated = False
 restart = True
@@ -67,7 +67,9 @@ def watch_control_stream(control_queue, li):
                 else:
                     control_queue.put_nowait({"type": "ping"})
         except Exception:
-            pass
+            break
+
+    control_queue.put_nowait({"type": "terminated"})
 
 
 def do_correspondence_ping(control_queue, period):
@@ -98,19 +100,20 @@ def logging_listener_proc(queue, configurer, level, log_filename):
     configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
+        task = queue.get()
         try:
-            logger.handle(queue.get())
+            logger.handle(task)
         except Exception:
             pass
+        queue.task_done()
 
 
 def game_logging_configurer(queue, level):
-    if sys.platform == "win32":
-        h = logging.handlers.QueueHandler(queue)
-        root = logging.getLogger()
-        root.handlers.clear()
-        root.addHandler(h)
-        root.setLevel(level)
+    h = logging.handlers.QueueHandler(queue)
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.addHandler(h)
+    root.setLevel(level)
 
 
 def game_error_handler(error):
@@ -129,7 +132,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                                           config.correspondence.checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
-    correspondence_queue.put("")
+    correspondence_queue.put_nowait("")
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
@@ -173,6 +176,8 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
+    global restart
+
     max_games = config.challenge.concurrency
 
     one_game_completed = False
@@ -199,6 +204,8 @@ def lichess_bot_main(li,
                       "game_logging_configurer": game_logging_configurer,
                       "logging_level": logging_level}
 
+    recent_bot_challenges = defaultdict(list)
+
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
             event = next_event(control_queue)
@@ -206,6 +213,8 @@ def lichess_bot_main(li,
                 continue
 
             if event["type"] == "terminated":
+                restart = True
+                control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
                 active_games.discard(event["game"]["id"])
@@ -213,10 +222,11 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker)
+                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
+                matchmaker.accepted_challenge(event)
                 start_game(event,
                            pool,
                            play_game_args,
@@ -252,6 +262,7 @@ def next_event(control_queue):
 
     if "type" not in event:
         log_bad_event(event)
+        control_queue.task_done()
         return {}
 
     if event.get("type") != "ping":
@@ -276,16 +287,18 @@ def check_in_on_correspondence_games(pool,
     is_local_game_done = event["type"] == "local_game_done"
     if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
         if is_correspondence_ping and wait_for_correspondence_ping:
-            correspondence_queue.put("")
+            correspondence_queue.put_nowait("")
 
         wait_for_correspondence_ping = False
         while len(active_games) < max_games:
             game_id = correspondence_queue.get()
+            correspondence_queue.task_done()
             # Stop checking in on games if we have checked in on all
             # games since the last correspondence_ping.
             if not game_id:
                 if is_correspondence_ping and not correspondence_queue.empty():
-                    correspondence_queue.put("")
+                    correspondence_queue.put_nowait("")
+                    is_correspondence_ping = False
                 else:
                     wait_for_correspondence_ping = True
                     break
@@ -330,10 +343,13 @@ def check_online_status(li, user_profile, last_check_online_time):
     global restart
 
     if last_check_online_time.is_expired():
-        if not li.is_online(user_profile["id"]):
-            logger.info("Will restart lichess-bot")
-            restart = True
-        last_check_online_time.reset()
+        try:
+            if not li.is_online(user_profile["id"]):
+                logger.info("Will restart lichess-bot")
+                restart = True
+            last_check_online_time.reset()
+        except (HTTPError, ReadTimeout) as exception:
+            pass
 
 
 def sort_challenges(challenge_queue, challenge_config):
@@ -358,7 +374,7 @@ def start_game(event,
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')
-            correspondence_queue.put(game_id)
+            correspondence_queue.put_nowait(game_id)
         else:
             logger.info(f'--- Will start {config.url + game_id} as soon as possible')
             low_time_games.append(event["game"])
@@ -379,12 +395,16 @@ def enough_time_to_queue(event, config):
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
     chlng = model.Challenge(event["challenge"], user_profile)
-    is_supported, decline_reason = chlng.is_supported(challenge_config)
+    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
+
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)
+        time_window = challenge_config.recent_bot_challenge_age
+        if time_window is not None:
+            recent_bot_challenges[chlng.challenger_name].append(Timer(time_window))
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
 
@@ -445,6 +465,7 @@ def play_game(li,
 
     disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
     prior_game = None
+    board = None
     upd = game.state
     while not terminated:
         move_attempted = False
@@ -578,7 +599,7 @@ def should_exit_game(board, game, prior_game, li, is_correspondence):
 def final_queue_entries(control_queue, correspondence_queue, game, is_correspondence):
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put(game.id)
+        correspondence_queue.put_nowait(game.id)
     else:
         logger.info(f"--- {game.url()} Game over")
 
@@ -625,6 +646,9 @@ def tell_user_game_result(game, board):
 
 
 def try_print_pgn_game_record(li, config, game, board, engine):
+    if board is None:
+        return
+
     try:
         print_pgn_game_record(li, config, game, board, engine)
     except Exception:
@@ -716,6 +740,7 @@ def start_lichess_bot():
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn')
     try:
         while restart:
             restart = False

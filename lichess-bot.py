@@ -13,7 +13,6 @@ import multiprocessing
 import signal
 import time
 import backoff
-import sys
 import os
 import io
 import copy
@@ -28,7 +27,7 @@ from http.client import RemoteDisconnected
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2022.12.23.1"
+__version__ = "2022.12.23.4"
 
 terminated = False
 restart = True
@@ -146,7 +145,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                          user_profile,
                          config,
                          logging_level,
-                         log_filename,
                          challenge_queue,
                          control_queue,
                          correspondence_queue,
@@ -170,7 +168,6 @@ def lichess_bot_main(li,
                      user_profile,
                      config,
                      logging_level,
-                     log_filename,
                      challenge_queue,
                      control_queue,
                      correspondence_queue,
@@ -204,6 +201,8 @@ def lichess_bot_main(li,
                       "game_logging_configurer": game_logging_configurer,
                       "logging_level": logging_level}
 
+    recent_bot_challenges = defaultdict(list)
+
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
             event = next_event(control_queue)
@@ -220,7 +219,7 @@ def lichess_bot_main(li,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker)
+                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -337,7 +336,7 @@ def check_online_status(li, user_profile, last_check_online_time):
                 logger.info("Will restart lichess-bot")
                 restart = True
             last_check_online_time.reset()
-        except (HTTPError, ReadTimeout) as exception:
+        except (HTTPError, ReadTimeout):
             pass
 
 
@@ -384,12 +383,16 @@ def enough_time_to_queue(event, config):
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker):
+def handle_challenge(event, li, challenge_queue, challenge_config, user_profile, matchmaker, recent_bot_challenges):
     chlng = model.Challenge(event["challenge"], user_profile)
-    is_supported, decline_reason = chlng.is_supported(challenge_config)
+    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
+
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)
+        time_window = challenge_config.recent_bot_challenge_age
+        if time_window is not None:
+            recent_bot_challenges[chlng.challenger_name].append(Timer(time_window))
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
 

@@ -146,7 +146,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                          user_profile,
                          config,
                          logging_level,
-                         log_filename,
                          challenge_queue,
                          control_queue,
                          correspondence_queue,

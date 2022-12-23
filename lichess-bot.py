@@ -67,7 +67,9 @@ def watch_control_stream(control_queue, li):
                 else:
                     control_queue.put_nowait({"type": "ping"})
         except Exception:
-            pass
+            break
+
+    control_queue.put_nowait({"type": "terminated"})
 
 
 def do_correspondence_ping(control_queue, period):
@@ -98,19 +100,20 @@ def logging_listener_proc(queue, configurer, level, log_filename):
     configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
+        task = queue.get()
         try:
-            logger.handle(queue.get())
+            logger.handle(task)
         except Exception:
             pass
+        queue.task_done()
 
 
 def game_logging_configurer(queue, level):
-    if sys.platform == "win32":
-        h = logging.handlers.QueueHandler(queue)
-        root = logging.getLogger()
-        root.handlers.clear()
-        root.addHandler(h)
-        root.setLevel(level)
+    h = logging.handlers.QueueHandler(queue)
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.addHandler(h)
+    root.setLevel(level)
 
 
 def game_error_handler(error):
@@ -129,7 +132,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                                                           config.correspondence.checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
-    correspondence_queue.put("")
+    correspondence_queue.put_nowait("")
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
@@ -174,6 +177,8 @@ def lichess_bot_main(li,
                      correspondence_queue,
                      logging_queue,
                      one_game):
+    global restart
+
     max_games = config.challenge.concurrency
 
     one_game_completed = False
@@ -207,6 +212,8 @@ def lichess_bot_main(li,
                 continue
 
             if event["type"] == "terminated":
+                restart = True
+                control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
                 active_games.discard(event["game"]["id"])
@@ -218,6 +225,7 @@ def lichess_bot_main(li,
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
+                matchmaker.accepted_challenge(event)
                 start_game(event,
                            pool,
                            play_game_args,
@@ -253,6 +261,7 @@ def next_event(control_queue):
 
     if "type" not in event:
         log_bad_event(event)
+        control_queue.task_done()
         return {}
 
     if event.get("type") != "ping":
@@ -277,16 +286,18 @@ def check_in_on_correspondence_games(pool,
     is_local_game_done = event["type"] == "local_game_done"
     if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
         if is_correspondence_ping and wait_for_correspondence_ping:
-            correspondence_queue.put("")
+            correspondence_queue.put_nowait("")
 
         wait_for_correspondence_ping = False
         while len(active_games) < max_games:
             game_id = correspondence_queue.get()
+            correspondence_queue.task_done()
             # Stop checking in on games if we have checked in on all
             # games since the last correspondence_ping.
             if not game_id:
                 if is_correspondence_ping and not correspondence_queue.empty():
-                    correspondence_queue.put("")
+                    correspondence_queue.put_nowait("")
+                    is_correspondence_ping = False
                 else:
                     wait_for_correspondence_ping = True
                     break
@@ -331,10 +342,13 @@ def check_online_status(li, user_profile, last_check_online_time):
     global restart
 
     if last_check_online_time.is_expired():
-        if not li.is_online(user_profile["id"]):
-            logger.info("Will restart lichess-bot")
-            restart = True
-        last_check_online_time.reset()
+        try:
+            if not li.is_online(user_profile["id"]):
+                logger.info("Will restart lichess-bot")
+                restart = True
+            last_check_online_time.reset()
+        except (HTTPError, ReadTimeout) as exception:
+            pass
 
 
 def sort_challenges(challenge_queue, challenge_config):
@@ -359,7 +373,7 @@ def start_game(event,
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')
-            correspondence_queue.put(game_id)
+            correspondence_queue.put_nowait(game_id)
         else:
             logger.info(f'--- Will start {config.url + game_id} as soon as possible')
             low_time_games.append(event["game"])
@@ -446,6 +460,7 @@ def play_game(li,
 
     disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
     prior_game = None
+    board = None
     upd = game.state
     while not terminated:
         move_attempted = False
@@ -579,7 +594,7 @@ def should_exit_game(board, game, prior_game, li, is_correspondence):
 def final_queue_entries(control_queue, correspondence_queue, game, is_correspondence):
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put(game.id)
+        correspondence_queue.put_nowait(game.id)
     else:
         logger.info(f"--- {game.url()} Game over")
 
@@ -626,6 +641,9 @@ def tell_user_game_result(game, board):
 
 
 def try_print_pgn_game_record(li, config, game, board, engine):
+    if board is None:
+        return
+
     try:
         print_pgn_game_record(li, config, game, board, engine)
     except Exception:
@@ -717,6 +735,7 @@ def start_lichess_bot():
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn')
     try:
         while restart:
             restart = False

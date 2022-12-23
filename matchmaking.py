@@ -161,11 +161,17 @@ class Matchmaking:
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
 
+    def accepted_challenge(self, event):
+        if self.challenge_id == event["game"]["id"]:
+            self.challenge_id = None
+
     def declined_challenge(self, event):
         challenge = model.Challenge(event["challenge"], self.user_profile)
         opponent = event["challenge"]["destUser"]["name"]
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
+        if self.challenge_id == challenge.id:
+            self.challenge_id = None
         if not challenge.from_self or self.delay_type == DelayType.NONE:
             return
 

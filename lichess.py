@@ -114,11 +114,11 @@ class Lichess:
 
     def get_event_stream(self):
         url = urljoin(self.baseUrl, ENDPOINTS["stream_event"])
-        return requests.get(url, headers=self.header, stream=True)
+        return requests.get(url, headers=self.header, stream=True, timeout=15)
 
     def get_game_stream(self, game_id):
         url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
-        return requests.get(url, headers=self.header, stream=True)
+        return requests.get(url, headers=self.header, stream=True, timeout=15)
 
     def accept_challenge(self, challenge_id):
         return self.api_post(ENDPOINTS["accept"].format(challenge_id))
@@ -136,8 +136,11 @@ class Lichess:
         return profile
 
     def get_ongoing_games(self):
-        ongoing_games = self.api_get(ENDPOINTS["playing"])["nowPlaying"]
-        return ongoing_games
+        try:
+            ongoing_games = self.api_get(ENDPOINTS["playing"])["nowPlaying"]
+            return ongoing_games
+        except Exception:
+            return []
 
     def resign(self, game_id):
         self.api_post(ENDPOINTS["resign"].format(game_id))

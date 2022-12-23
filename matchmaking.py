@@ -4,6 +4,10 @@ import model
 from timer import Timer
 from collections import defaultdict
 from enum import Enum
+import lichess
+from config import Configuration
+from typing import Dict, Any, Set, Optional, Tuple, List
+import multiprocessing
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +19,7 @@ class DelayType(str, Enum):
 
 
 class Matchmaking:
-    def __init__(self, li, config, user_profile):
+    def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: Dict[str, Any]) -> None:
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
         self.matchmaking_cfg = config.matchmaking
@@ -33,7 +37,7 @@ class Matchmaking:
             raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
                              f" Choices are: {', '.join(DelayType)}.")
 
-    def should_create_challenge(self):
+    def should_create_challenge(self) -> bool:
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         time_has_passed = self.last_game_ended_delay.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
@@ -44,7 +48,7 @@ class Matchmaking:
             self.challenge_id = None
         return matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed
 
-    def create_challenge(self, username, base_time, increment, days, variant, mode):
+    def create_challenge(self, username: str, base_time: int, increment: int, days, variant: str, mode: str) -> Optional[str]:
         params = {"rated": mode == "rated", "variant": variant}
 
         if days:
@@ -68,18 +72,18 @@ class Matchmaking:
             logger.exception("Could not create challenge")
             return None
 
-    def perf(self):
+    def perf(self) -> Dict[str, Dict[str, Any]]:
         return self.user_profile["perfs"]
 
-    def username(self):
+    def username(self) -> str:
         return self.user_profile["username"]
 
-    def update_user_profile(self):
+    def update_user_profile(self) -> None:
         if self.last_user_profile_update_time.is_expired():
             self.last_user_profile_update_time.reset()
             self.user_profile = self.li.get_profile()
 
-    def choose_opponent(self):
+    def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
@@ -106,7 +110,7 @@ class Matchmaking:
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = self.matchmaking_cfg.opponent_allow_tos_violation
 
-        def is_suitable_opponent(bot):
+        def is_suitable_opponent(bot: Dict[str, Any]) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and bot["username"] not in self.block_list
@@ -118,14 +122,14 @@ class Matchmaking:
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
-        def ready_for_challenge(bot):
+        def ready_for_challenge(bot: Dict[str, Any]) -> bool:
             return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
+        bot_username = None
 
         try:
-            bot_username = None
             bot = random.choice(online_bots)
             bot_profile = self.li.get_public_data(bot["username"])
             if bot_profile.get("blocking"):
@@ -140,11 +144,11 @@ class Matchmaking:
 
         return bot_username, base_time, increment, days, variant, mode
 
-    def get_random_config_value(self, parameter, choices):
+    def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
         value = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games, challenge_queue):
+    def challenge(self, active_games: Set[str], challenge_queue: multiprocessing.Manager().Queue) -> None:
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 
@@ -157,15 +161,15 @@ class Matchmaking:
         self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
 
-    def add_to_block_list(self, username):
+    def add_to_block_list(self, username: str) -> None:
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
 
-    def accepted_challenge(self, event):
+    def accepted_challenge(self, event: Dict[str, Any]) -> None:
         if self.challenge_id == event["game"]["id"]:
             self.challenge_id = None
 
-    def declined_challenge(self, event):
+    def declined_challenge(self, event: Dict[str, Any]) -> None:
         challenge = model.Challenge(event["challenge"], self.user_profile)
         opponent = event["challenge"]["destUser"]["name"]
         reason = event["challenge"]["declineReason"]
@@ -190,14 +194,14 @@ class Matchmaking:
         else:
             logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
 
-    def get_delay_timer(self, opponent_name, variant, time_control, rated_mode):
+    def get_delay_timer(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> Timer:
         if self.delay_type == DelayType.FINE:
             return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
         else:
             return self.delay_timers[opponent_name]
 
 
-def game_category(variant, base_time, increment, days):
+def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
     game_duration = base_time + increment * 40
     if variant != "standard":
         return variant

@@ -13,7 +13,6 @@ import multiprocessing
 import signal
 import time
 import backoff
-import sys
 import os
 import io
 import copy
@@ -147,7 +146,6 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                          user_profile,
                          config,
                          logging_level,
-                         log_filename,
                          challenge_queue,
                          control_queue,
                          correspondence_queue,
@@ -171,7 +169,6 @@ def lichess_bot_main(li,
                      user_profile,
                      config,
                      logging_level,
-                     log_filename,
                      challenge_queue,
                      control_queue,
                      correspondence_queue,
@@ -349,7 +346,7 @@ def check_online_status(li, user_profile, last_check_online_time):
                 logger.info("Will restart lichess-bot")
                 restart = True
             last_check_online_time.reset()
-        except (HTTPError, ReadTimeout) as exception:
+        except (HTTPError, ReadTimeout):
             pass
 
 

@@ -289,14 +289,14 @@ def check_in_on_correspondence_games(pool,
 
     while len(active_games) < max_games and correspondence_games_to_start > 0:
         game_id = correspondence_queue.get_nowait()
+        correspondence_games_to_start -= 1
+        correspondence_queue.task_done()
         active_games.add(game_id)
         log_proc_count("Used", active_games)
         play_game_args["game_id"] = game_id
         pool.apply_async(play_game,
                          kwds=play_game_args,
                          error_callback=game_error_handler)
-        correspondence_games_to_start -= 1
-        correspondence_queue.task_done()
 
 
 def start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args):

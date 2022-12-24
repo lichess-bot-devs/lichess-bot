@@ -280,11 +280,12 @@ def check_in_on_correspondence_games(pool,
                                      max_games):
     global correspondence_games_to_start
 
-    if challenge_queue:
-        return
-    elif event["type"] == "correspondence_ping":
+    if event["type"] == "correspondence_ping":
         correspondence_games_to_start = correspondence_queue.qsize()
     elif event["type"] != "local_game_done":
+        return
+
+    if challenge_queue:
         return
 
     while len(active_games) < max_games and correspondence_games_to_start > 0:

@@ -148,7 +148,7 @@ class Matchmaking:
         value = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: Set[str], challenge_queue: multiprocessing.Manager().Queue) -> None:
+    def challenge(self, active_games: Set[str], challenge_queue: multiprocessing.queues.Queue) -> None:
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 

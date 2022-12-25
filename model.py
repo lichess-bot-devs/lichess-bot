@@ -57,7 +57,7 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict) -> bool:
+    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, Timer]) -> bool:
         # Filter out old challenges
         recent_bot_challenges[self.challenger_name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger_name]
@@ -70,7 +70,7 @@ class Challenge:
     def decline_due_to(self, requirement_met: bool, decline_reason: str) -> Optional[str]:
         return None if requirement_met else decline_reason
 
-    def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict) -> Tuple[bool, Optional[str]]:
+    def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, Timer]) -> Tuple[bool, Optional[str]]:
         try:
             if self.from_self:
                 return True, None

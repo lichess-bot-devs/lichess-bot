@@ -13,7 +13,6 @@ import multiprocessing
 import signal
 import time
 import backoff
-import sys
 import os
 import io
 import copy
@@ -31,7 +30,7 @@ collect_types.init_types_collection()
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2022.12.23.3"
+__version__ = "2022.12.25.2"
 
 terminated = False
 restart = True
@@ -135,7 +134,6 @@ def start(li: lichess.Lichess, user_profile: Dict[str, Any], config: Configurati
                                                           config.correspondence.checkin_period])
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
-    correspondence_queue.put_nowait("")
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
@@ -150,7 +148,6 @@ def start(li: lichess.Lichess, user_profile: Dict[str, Any], config: Configurati
                          user_profile,
                          config,
                          logging_level,
-                         log_filename,
                          challenge_queue,
                          control_queue,
                          correspondence_queue,
@@ -174,7 +171,6 @@ def lichess_bot_main(li: lichess.Lichess,
                      user_profile: Dict[str, Any],
                      config: Configuration,
                      logging_level: int,
-                     log_filename,
                      challenge_queue: multiprocessing.Manager().Queue,
                      control_queue: multiprocessing.Manager().Queue,
                      correspondence_queue: multiprocessing.Manager().Queue,
@@ -275,7 +271,7 @@ def next_event(control_queue: multiprocessing.Manager().Queue) -> Dict[str, Any]
     return event
 
 
-wait_for_correspondence_ping = False
+correspondence_games_to_start = 0
 
 
 def check_in_on_correspondence_games(pool: multiprocessing.pool.Pool,
@@ -285,34 +281,27 @@ def check_in_on_correspondence_games(pool: multiprocessing.pool.Pool,
                                      play_game_args: Dict[str, Any],
                                      active_games: Set[str],
                                      max_games: int) -> None:
-    global wait_for_correspondence_ping
+    global correspondence_games_to_start
 
-    is_correspondence_ping = event["type"] == "correspondence_ping"
-    is_local_game_done = event["type"] == "local_game_done"
-    if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
-        if is_correspondence_ping and wait_for_correspondence_ping:
-            correspondence_queue.put_nowait("")
+    if event["type"] == "correspondence_ping":
+        correspondence_games_to_start = correspondence_queue.qsize()
+    elif event["type"] != "local_game_done":
+        return
 
-        wait_for_correspondence_ping = False
-        while len(active_games) < max_games:
-            game_id = correspondence_queue.get()
-            correspondence_queue.task_done()
-            # Stop checking in on games if we have checked in on all
-            # games since the last correspondence_ping.
-            if not game_id:
-                if is_correspondence_ping and not correspondence_queue.empty():
-                    correspondence_queue.put_nowait("")
-                    is_correspondence_ping = False
-                else:
-                    wait_for_correspondence_ping = True
-                    break
-            else:
-                active_games.add(game_id)
-                log_proc_count("Used", active_games)
-                play_game_args["game_id"] = game_id
-                pool.apply_async(play_game,
-                                 kwds=play_game_args,
-                                 error_callback=game_error_handler)
+    if challenge_queue:
+        return
+
+    while len(active_games) < max_games and correspondence_games_to_start > 0:
+        game_id = correspondence_queue.get_nowait()
+        correspondence_games_to_start -= 1
+        correspondence_queue.task_done()
+        active_games.add(game_id)
+        log_proc_count("Used", active_games)
+        play_game_args["game_id"] = game_id
+        pool.apply_async(play_game,
+                         kwds=play_game_args,
+                         error_callback=game_error_handler)
+
 
 
 def start_low_time_games(low_time_games: List[Dict[str, Any]], active_games: Set[str], max_games: int, pool: multiprocessing.pool.Pool, play_game_args: Dict[str, Any]) -> None:
@@ -352,7 +341,7 @@ def check_online_status(li: lichess.Lichess, user_profile: Dict[str, Any], last_
                 logger.info("Will restart lichess-bot")
                 restart = True
             last_check_online_time.reset()
-        except (HTTPError, ReadTimeout) as exception:
+        except (HTTPError, ReadTimeout):
             pass
 
 
@@ -402,9 +391,10 @@ def enough_time_to_queue(event: Dict[str, Any], config: Configuration) -> bool:
 def handle_challenge(event: Dict[str, Any], li: lichess.Lichess, challenge_queue: multiprocessing.Manager().Queue, challenge_config: Configuration, user_profile: Dict[str, Any], matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict) -> None:
     chlng = model.Challenge(event["challenge"], user_profile)
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
-
     if is_supported:
         challenge_queue.append(chlng)
+        if challenge_config.recent_bot_challenge_age is not None:
+            recent_bot_challenges[chlng.challenger_name].append(Timer(challenge_config.recent_bot_challenge_age))
         sort_challenges(challenge_queue, challenge_config)
         time_window = challenge_config.recent_bot_challenge_age
         if time_window is not None:

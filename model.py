@@ -54,38 +54,33 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg):
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
+    def is_supported_recent(self, config, recent_bot_challenges):
+        # Filter out old challenges
+        recent_bot_challenges[self.challenger_name] = [timer for timer
+                                                       in recent_bot_challenges[self.challenger_name]
+                                                       if not timer.is_expired()]
+        max_recent_challenges = config.max_recent_bot_challenges
+        return (not self.challenger_is_bot
+                or max_recent_challenges is None
+                or len(recent_bot_challenges[self.challenger_name]) < max_recent_challenges)
+
+    def decline_due_to(self, requirement_met, decline_reason):
+        return None if requirement_met else decline_reason
+
     def is_supported(self, config, recent_bot_challenges):
         try:
             if self.from_self:
                 return True, None
 
-            if not config.accept_bot and self.challenger_is_bot:
-                return False, "noBot"
+            decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger_is_bot, "noBot")
+                              or self.decline_due_to(not config.only_bot or self.challenger_is_bot, "onlyBot")
+                              or self.decline_due_to(self.is_supported_time_control(config), "timeControl")
+                              or self.decline_due_to(self.is_supported_variant(config), "variant")
+                              or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
+                              or self.decline_due_to(self.challenger_name not in config.block_list, "generic")
+                              or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
-            if config.only_bot and not self.challenger_is_bot:
-                return False, "onlyBot"
-
-            if not self.is_supported_time_control(config):
-                return False, "timeControl"
-
-            if not self.is_supported_variant(config):
-                return False, "variant"
-
-            if not self.is_supported_mode(config):
-                return False, ("casual" if self.rated else "rated")
-
-            if self.challenger_name in config.block_list:
-                return False, "generic"
-
-            max_recent_challenges = config.max_recent_bot_challenges
-            if self.challenger_is_bot and max_recent_challenges is not None:
-                # Filter out old challenges
-                recent_bot_challenges[self.challenger_name] = [
-                        timer for timer in recent_bot_challenges[self.challenger_name] if not timer.is_expired()]
-                if len(recent_bot_challenges[self.challenger_name]) >= max_recent_challenges:
-                    return False, "later"
-
-            return True, None
+            return decline_reason is None, decline_reason
 
         except Exception:
             logger.exception("Error while checking challenge:")

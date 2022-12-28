@@ -76,7 +76,8 @@ class Lichess:
         
         if is_new_rate_limit(response):
             logger.warning("Rate limited. Waiting 1 minute until next request.")
-            self.rate_limit_timers[path_template] = Timer(60)
+            delay = 1 if path_template == ENDPOINTS["move"] else 60
+            self.rate_limit_timers[path_template] = Timer(delay)
         
         response.raise_for_status()
         response.encoding = "utf-8"

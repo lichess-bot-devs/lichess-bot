@@ -2,7 +2,7 @@ import shutil
 import os
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session, exitstatus) -> None:
     shutil.copyfile("correct_lichess.py", "lichess.py")
     os.remove("correct_lichess.py")
     if os.path.exists("TEMP"):

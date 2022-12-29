@@ -1,13 +1,15 @@
 import time
 import chess
+import chess.engine
 import json
+from typing import Dict, Union, List, Optional, Generator
 
 
 class GameStream:
-    def __init__(self):
+    def __init__(self) -> None:
         self.moves_sent = ""
 
-    def iter_lines(self):
+    def iter_lines(self) -> Generator[bytes, None, None]:
         yield json.dumps(
             {"id": "zzzzzzzz",
              "variant": {"key": "standard",
@@ -77,10 +79,10 @@ class GameStream:
 
 
 class EventStream:
-    def __init__(self, sent_game=False):
+    def __init__(self, sent_game: bool = False) -> None:
         self.sent_game = sent_game
 
-    def iter_lines(self):
+    def iter_lines(self) -> Generator[bytes, None, None]:
         if self.sent_game:
             yield b''
             time.sleep(1)
@@ -95,19 +97,19 @@ class EventStream:
 
 # docs: https://lichess.org/api
 class Lichess:
-    def __init__(self, token, url, version):
+    def __init__(self, token: str, url: str, version: str) -> None:
         self.baseUrl = url
         self.game_accepted = False
         self.moves = []
         self.sent_game = False
 
-    def get_game(self, game_id):
+    def get_game(self, game_id: str) -> None:
         return
 
-    def upgrade_to_bot_account(self):
+    def upgrade_to_bot_account(self) -> None:
         return
 
-    def make_move(self, game_id, move):
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
         self.moves.append(move)
         uci_move = move.move.uci()
         with open("./logs/states.txt") as file:
@@ -116,27 +118,27 @@ class Lichess:
         with open("./logs/states.txt", "w") as file:
             file.write("\n".join(contents))
 
-    def chat(self, game_id, room, text):
+    def chat(self, game_id: str, room: str, text: str) -> None:
         return
 
-    def abort(self, game_id):
+    def abort(self, game_id: str) -> None:
         return
 
-    def get_event_stream(self):
+    def get_event_stream(self) -> EventStream:
         events = EventStream(self.sent_game)
         self.sent_game = True
         return events
 
-    def get_game_stream(self, game_id):
+    def get_game_stream(self, game_id: str) -> GameStream:
         return GameStream()
 
-    def accept_challenge(self, challenge_id):
+    def accept_challenge(self, challenge_id: str) -> None:
         self.game_accepted = True
 
-    def decline_challenge(self, challenge_id, reason="generic"):
+    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> None:
         return
 
-    def get_profile(self):
+    def get_profile(self) -> Dict[str, Union[str, bool, Dict[str, str]]]:
         return {"id": "b",
                 "username": "b",
                 "online": True,
@@ -148,13 +150,13 @@ class Lichess:
                 "followsYou": False,
                 "perfs": {}}
 
-    def get_ongoing_games(self):
+    def get_ongoing_games(self) -> List[str]:
         return []
 
-    def resign(self, game_id):
+    def resign(self, game_id: str) -> None:
         return
 
-    def get_game_pgn(self, game_id):
+    def get_game_pgn(self, game_id: str) -> str:
         return """
 [Event "Test game"]
 [Site "pytest"]
@@ -167,17 +169,17 @@ class Lichess:
 *
 """
 
-    def get_online_bots(self):
+    def get_online_bots(self) -> List[Dict[str, Union[str, bool]]]:
         return [{"username": "b", "online": True}]
 
-    def challenge(self, username, params):
+    def challenge(self, username: str, params: Dict[str, str]) -> None:
         return
 
-    def cancel(self, challenge_id):
+    def cancel(self, challenge_id: str) -> None:
         return
 
-    def online_book_get(self, path, params=None):
+    def online_book_get(self, path: str, params: Optional[Dict[str, str]] = None) -> None:
         return
 
-    def is_online(self, user_id):
+    def is_online(self, user_id: str) -> bool:
         return True

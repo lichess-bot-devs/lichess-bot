@@ -12,6 +12,7 @@ import stat
 import shutil
 import importlib
 import config
+from typing import Dict, Any
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 shutil.copyfile("lichess.py", "correct_lichess.py")
@@ -23,7 +24,7 @@ file_extension = ".exe" if platform == "win32" else ""
 stockfish_path = f"./TEMP/sf{file_extension}"
 
 
-def download_sf():
+def download_sf() -> None:
     windows_or_linux = "win" if platform == "win32" else "linux"
     base_name = f"stockfish_14.1_{windows_or_linux}_x64"
     zip_link = f"https://stockfishchess.org/files/{base_name}.zip"
@@ -38,7 +39,7 @@ def download_sf():
         os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)
 
 
-def download_lc0():
+def download_lc0() -> None:
     response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.28.2/lc0-v0.28.2-windows-cpu-dnnl.zip",
                             allow_redirects=True)
     with open("./TEMP/lc0_zip.zip", "wb") as file:
@@ -47,7 +48,7 @@ def download_lc0():
         zip_ref.extractall("./TEMP/")
 
 
-def download_sjeng():
+def download_sjeng() -> None:
     response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
     with open("./TEMP/sjeng_zip.zip", "wb") as file:
         file.write(response.content)
@@ -68,12 +69,12 @@ lichess_bot.logging_configurer(logging_level, None)
 lichess_bot.logger.info("Downloaded engines")
 
 
-def thread_for_test():
+def thread_for_test() -> None:
     open("./logs/events.txt", "w").close()
     open("./logs/states.txt", "w").close()
     open("./logs/result.txt", "w").close()
 
-    start_time = 10
+    start_time = 10.
     increment = 0.1
 
     board = chess.Board()
@@ -152,7 +153,7 @@ def thread_for_test():
         file.write("1" if win else "0")
 
 
-def run_bot(raw_config, logging_level):
+def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
     lichess_bot.logger.info(lichess_bot.intro())
@@ -176,7 +177,7 @@ def run_bot(raw_config, logging_level):
 
 
 @pytest.mark.timeout(150, method="thread")
-def test_sf():
+def test_sf() -> None:
     if platform != "linux" and platform != "win32":
         assert True
         return
@@ -199,7 +200,7 @@ def test_sf():
 
 
 @pytest.mark.timeout(150, method="thread")
-def test_lc0():
+def test_lc0() -> None:
     if platform != "win32":
         assert True
         return
@@ -225,7 +226,7 @@ def test_lc0():
 
 
 @pytest.mark.timeout(150, method="thread")
-def test_sjeng():
+def test_sjeng() -> None:
     if platform != "win32":
         assert True
         return
@@ -250,7 +251,7 @@ def test_sjeng():
 
 
 @pytest.mark.timeout(150, method="thread")
-def test_homemade():
+def test_homemade() -> None:
     if platform != "linux" and platform != "win32":
         assert True
         return

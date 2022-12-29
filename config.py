@@ -5,12 +5,13 @@ import logging
 import math
 from matchmaking import DelayType
 from typing import Dict, Any
+CONFIG_DICT_TYPE = Dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
 
 class Configuration:
-    def __init__(self, parameters: Dict[str, Any]) -> None:
+    def __init__(self, parameters: CONFIG_DICT_TYPE) -> None:
         self.config = parameters
 
     def __getattr__(self, name: str) -> Any:
@@ -26,10 +27,10 @@ class Configuration:
     def __bool__(self) -> bool:
         return bool(self.config)
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> CONFIG_DICT_TYPE:
         return self.config
 
-    def __setstate__(self, d: Dict[str, Any]) -> None:
+    def __setstate__(self, d: CONFIG_DICT_TYPE) -> None:
         self.config = d
 
 
@@ -38,7 +39,7 @@ def config_assert(assertion: bool, error_message: str) -> None:
         raise Exception(error_message)
 
 
-def check_config_section(config: Dict[str, Any], data_name: str, data_type: type, subsection: str = "") -> None:
+def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: type, subsection: str = "") -> None:
     config_part = config[subsection] if subsection else config
     sub = f"`{subsection}` sub" if subsection else ""
     data_location = f"`{data_name}` subsection in `{subsection}`" if subsection else f"Section `{data_name}`"
@@ -48,7 +49,7 @@ def check_config_section(config: Dict[str, Any], data_name: str, data_type: type
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 
 
-def set_config_default(config: Dict[str, Any], *sections: str, key: str, default: Any, force_falsey_values: bool = False) -> Dict[str, Any]:
+def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, default: Any, force_falsey_values: bool = False) -> CONFIG_DICT_TYPE:
     subconfig = config
     for section in sections:
         subconfig = subconfig.setdefault(section, {})
@@ -61,13 +62,13 @@ def set_config_default(config: Dict[str, Any], *sections: str, key: str, default
     return subconfig
 
 
-def change_value_to_list(config: Dict[str, Any], *sections: str, key: str) -> None:
+def change_value_to_list(config: CONFIG_DICT_TYPE, *sections: str, key: str) -> None:
     subconfig = set_config_default(config, *sections, key=key, default=[])
     if not isinstance(subconfig[key], list):
         subconfig[key] = [subconfig[key]]
 
 
-def insert_default_values(CONFIG: Dict[str, Any]) -> None:
+def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="abort_time", default=20)
     set_config_default(CONFIG, key="move_overhead", default=1000)
     set_config_default(CONFIG, key="rate_limiting_delay", default=0)
@@ -151,7 +152,7 @@ def insert_default_values(CONFIG: Dict[str, Any]) -> None:
             set_config_default(CONFIG, "greeting", key=type + target, default="", force_falsey_values=True)
 
 
-def log_config(CONFIG: Dict[str, Any]) -> None:
+def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     logger_config = CONFIG.copy()
     logger_config["token"] = "logger"
     logger.debug(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")

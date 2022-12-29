@@ -8,6 +8,8 @@ import lichess
 from config import Configuration
 from typing import Dict, Any, Set, Optional, Tuple, List
 import multiprocessing
+USER_PROFILE_TYPE = Dict[str, Any]
+EVENT_TYPE = Dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class DelayType(str, Enum):
 
 
 class Matchmaking:
-    def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: Dict[str, Any]) -> None:
+    def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
         self.matchmaking_cfg = config.matchmaking
@@ -110,7 +112,7 @@ class Matchmaking:
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = self.matchmaking_cfg.opponent_allow_tos_violation
 
-        def is_suitable_opponent(bot: Dict[str, Any]) -> bool:
+        def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and bot["username"] not in self.block_list
@@ -122,7 +124,7 @@ class Matchmaking:
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
-        def ready_for_challenge(bot: Dict[str, Any]) -> bool:
+        def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
             return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
@@ -165,11 +167,11 @@ class Matchmaking:
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
 
-    def accepted_challenge(self, event: Dict[str, Any]) -> None:
+    def accepted_challenge(self, event: EVENT_TYPE) -> None:
         if self.challenge_id == event["game"]["id"]:
             self.challenge_id = None
 
-    def declined_challenge(self, event: Dict[str, Any]) -> None:
+    def declined_challenge(self, event: EVENT_TYPE) -> None:
         challenge = model.Challenge(event["challenge"], self.user_profile)
         opponent = event["challenge"]["destUser"]["name"]
         reason = event["challenge"]["declineReason"]

@@ -9,6 +9,8 @@ import time
 from engine_wrapper import MAX_CHAT_MESSAGE_LEN
 from typing import Optional, Dict, Union, Any, List
 import chess.engine
+JSON_REPLY_TYPE = Dict[str, Any]
+REQUESTS_PAYLOAD_TYPE = Dict[str, Any]
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -67,7 +69,7 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, path: str, params: Optional[Dict[str, str]] = None, get_raw_text: bool = False) -> Union[str, Dict[str, Any]]:
+    def api_get(self, path: str, params: Optional[Dict[str, str]] = None, get_raw_text: bool = False) -> Union[str, JSON_REPLY_TYPE]:
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.get(url, params=params, timeout=2)
@@ -83,7 +85,7 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_post(self, path: str, data: Union[str, Dict[str, str], None] = None, headers: Optional[Dict[str, str]] = None, params: Optional[Dict[str, str]] = None, payload: Optional[Dict[str, Any]] = None, raise_for_status: bool = True) -> Dict[str, Any]:
+    def api_post(self, path: str, data: Union[str, Dict[str, str], None] = None, headers: Optional[Dict[str, str]] = None, params: Optional[Dict[str, str]] = None, payload: Optional[REQUESTS_PAYLOAD_TYPE] = None, raise_for_status: bool = True) -> JSON_REPLY_TYPE:
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
@@ -91,17 +93,17 @@ class Lichess:
             response.raise_for_status()
         return response.json()
 
-    def get_game(self, game_id: str) -> Dict[str, Any]:
+    def get_game(self, game_id: str) -> JSON_REPLY_TYPE:
         return self.api_get(ENDPOINTS["game"].format(game_id))
 
-    def upgrade_to_bot_account(self) -> Dict[str, Any]:
+    def upgrade_to_bot_account(self) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["upgrade"])
 
-    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> Dict[str, Any]:
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["move"].format(game_id, move.move),
                              params={"offeringDraw": str(move.draw_offered).lower()})
 
-    def chat(self, game_id: str, room: str, text: str) -> Dict[str, Any]:
+    def chat(self, game_id: str, room: str, text: str) -> JSON_REPLY_TYPE:
         if len(text) > MAX_CHAT_MESSAGE_LEN:
             logger.warn(f"This chat message is {len(text)} characters, which is longer "
                         f"than the maximum of {MAX_CHAT_MESSAGE_LEN}. It will not be sent.")
@@ -111,7 +113,7 @@ class Lichess:
         payload = {"room": room, "text": text}
         return self.api_post(ENDPOINTS["chat"].format(game_id), data=payload)
 
-    def abort(self, game_id: str) -> Dict[str, Any]:
+    def abort(self, game_id: str) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["abort"].format(game_id))
 
     def get_event_stream(self):
@@ -122,17 +124,17 @@ class Lichess:
         url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
         return requests.get(url, headers=self.header, stream=True, timeout=15)
 
-    def accept_challenge(self, challenge_id: str) -> Dict[str, Any]:
+    def accept_challenge(self, challenge_id: str) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["accept"].format(challenge_id))
 
-    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> Dict[str, Any]:
+    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["decline"].format(challenge_id),
                              data=f"reason={reason}",
                              headers={"Content-Type":
                                       "application/x-www-form-urlencoded"},
                              raise_for_status=False)
 
-    def get_profile(self) -> Dict[str, Any]:
+    def get_profile(self) -> JSON_REPLY_TYPE:
         profile = self.api_get(ENDPOINTS["profile"])
         self.set_user_agent(profile["username"])
         return profile
@@ -162,16 +164,16 @@ class Lichess:
         except Exception:
             return []
 
-    def challenge(self, username: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["challenge"].format(username),
-                             payload=params,
+                             payload=payload,
                              raise_for_status=False)
 
-    def cancel(self, challenge_id: str) -> Dict[str, Any]:
+    def cancel(self, challenge_id: str) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["cancel"].format(challenge_id),
                              raise_for_status=False)
 
-    def online_book_get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def online_book_get(self, path: str, params: Optional[Dict[str, Any]] = None) -> JSON_REPLY_TYPE:
         @backoff.on_exception(backoff.constant,
                               (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
                               max_time=60,
@@ -180,7 +182,7 @@ class Lichess:
                               giveup=self.is_final,
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
-        def online_book_get() -> Dict[str, Any]:
+        def online_book_get() -> JSON_REPLY_TYPE:
             return self.session.get(path, timeout=2, params=params).json()
         return online_book_get()
 
@@ -188,5 +190,5 @@ class Lichess:
         user = self.api_get(ENDPOINTS["status"], params={"ids": user_id})
         return user and user[0].get("online")
 
-    def get_public_data(self, user_name: str) -> Dict[str, Any]:
+    def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
         return self.api_get(ENDPOINTS["public_data"].format(user_name))

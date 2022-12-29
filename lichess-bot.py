@@ -25,8 +25,10 @@ from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
 from typing import Dict, Any, Optional, Set, List
-from pyannotate_runtime import collect_types
-collect_types.init_types_collection()
+USER_PROFILE_TYPE = Dict[str, Any]
+EVENT_TYPE = Dict[str, Any]
+PLAY_GAME_ARGS_TYPE = Dict[str, Any]
+EVENT_GAME_TYPE = Dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +124,7 @@ def game_error_handler(error) -> None:
     logger.exception("Game ended due to error:", exc_info=error)
 
 
-def start(li: lichess.Lichess, user_profile: Dict[str, Any], config: Configuration, logging_level: int, log_filename: Optional[str], one_game: bool = False) -> None:
+def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configuration, logging_level: int, log_filename: Optional[str], one_game: bool = False) -> None:
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
@@ -168,7 +170,7 @@ def log_proc_count(change: str, active_games: Set[str]) -> None:
 
 
 def lichess_bot_main(li: lichess.Lichess,
-                     user_profile: Dict[str, Any],
+                     user_profile: USER_PROFILE_TYPE,
                      config: Configuration,
                      logging_level: int,
                      challenge_queue: multiprocessing.managers.ListProxy,
@@ -254,7 +256,7 @@ def lichess_bot_main(li: lichess.Lichess,
     logger.info("Terminated")
 
 
-def next_event(control_queue: multiprocessing.queues.Queue) -> Dict[str, Any]:
+def next_event(control_queue: multiprocessing.queues.Queue) -> EVENT_TYPE:
     try:
         event = control_queue.get()
     except InterruptedError:
@@ -275,10 +277,10 @@ correspondence_games_to_start = 0
 
 
 def check_in_on_correspondence_games(pool: multiprocessing.pool.Pool,
-                                     event: Dict[str, Any],
+                                     event: EVENT_TYPE,
                                      correspondence_queue: multiprocessing.queues.Queue,
                                      challenge_queue: multiprocessing.managers.ListProxy,
-                                     play_game_args: Dict[str, Any],
+                                     play_game_args: PLAY_GAME_ARGS_TYPE,
                                      active_games: Set[str],
                                      max_games: int) -> None:
     global correspondence_games_to_start
@@ -303,8 +305,7 @@ def check_in_on_correspondence_games(pool: multiprocessing.pool.Pool,
                          error_callback=game_error_handler)
 
 
-
-def start_low_time_games(low_time_games: List[Dict[str, Any]], active_games: Set[str], max_games: int, pool: multiprocessing.pool.Pool, play_game_args: Dict[str, Any]) -> None:
+def start_low_time_games(low_time_games: List[EVENT_GAME_TYPE], active_games: Set[str], max_games: int, pool: multiprocessing.pool.Pool, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
@@ -332,7 +333,7 @@ def accept_challenges(li: lichess.Lichess, challenge_queue: multiprocessing.mana
                 logger.info(f"Skip missing {chlng}")
 
 
-def check_online_status(li: lichess.Lichess, user_profile: Dict[str, Any], last_check_online_time: Timer) -> None:
+def check_online_status(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, last_check_online_time: Timer) -> None:
     global restart
 
     if last_check_online_time.is_expired():
@@ -352,15 +353,15 @@ def sort_challenges(challenge_queue: multiprocessing.managers.ListProxy, challen
         challenge_queue[:] = list_c
 
 
-def start_game(event: Dict[str, Any],
+def start_game(event: EVENT_TYPE,
                pool: multiprocessing.pool.Pool,
-               play_game_args: Dict[str, Any],
+               play_game_args: PLAY_GAME_ARGS_TYPE,
                config: Configuration,
                matchmaker: matchmaking.Matchmaking,
                startup_correspondence_games: List[str],
                correspondence_queue: multiprocessing.queues.Queue,
                active_games: Set[str],
-               low_time_games: List[str]) -> None:
+               low_time_games: List[EVENT_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
         matchmaker.challenge_id = None
@@ -381,14 +382,14 @@ def start_game(event: Dict[str, Any],
                          error_callback=game_error_handler)
 
 
-def enough_time_to_queue(event: Dict[str, Any], config: Configuration) -> bool:
+def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:
     corr_cfg = config.correspondence
     minimum_time = (corr_cfg.checkin_period + corr_cfg.move_time) * 10
     game = event["game"]
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event: Dict[str, Any], li: lichess.Lichess, challenge_queue: multiprocessing.managers.ListProxy, challenge_config: Configuration, user_profile: Dict[str, Any], matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict) -> None:
+def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: multiprocessing.managers.ListProxy, challenge_config: Configuration, user_profile: USER_PROFILE_TYPE, matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict) -> None:
     chlng = model.Challenge(event["challenge"], user_profile)
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
@@ -403,7 +404,7 @@ def handle_challenge(event: Dict[str, Any], li: lichess.Lichess, challenge_queue
         li.decline_challenge(chlng.id, reason=decline_reason)
 
 
-def log_bad_event(event: Dict[str, Any]):
+def log_bad_event(event: EVENT_TYPE):
     logger.warning("Unable to handle response from lichess.org:")
     logger.warning(event)
     if event.get("error") == "Missing scope":
@@ -414,7 +415,7 @@ def log_bad_event(event: Dict[str, Any]):
 def play_game(li: lichess.Lichess,
               game_id: str,
               control_queue: multiprocessing.queues.Queue,
-              user_profile: Dict[str, Any],
+              user_profile: USER_PROFILE_TYPE,
               config: Configuration,
               challenge_queue: multiprocessing.managers.ListProxy,
               correspondence_queue: multiprocessing.queues.Queue,
@@ -734,7 +735,6 @@ def start_lichess_bot() -> None:
 
 
 if __name__ == "__main__":
-    collect_types.start()
     multiprocessing.set_start_method('spawn')
     try:
         while restart:
@@ -743,5 +743,3 @@ if __name__ == "__main__":
             time.sleep(10 if restart else 0)
     except Exception:
         logger.exception("Quitting lichess-bot due to an error:")
-    collect_types.stop()
-    collect_types.dump_stats("types4.json")

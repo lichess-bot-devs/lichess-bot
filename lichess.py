@@ -69,19 +69,13 @@ class Lichess:
                           giveup_log_level=logging.DEBUG)
     def api_get(self, endpoint_name, *template_args, params=None, get_raw_text=False):
         logging.getLogger("backoff").setLevel(self.logging_level)
-
-        path_template = ENDPOINTS[endpoint_name]
-        if self.is_rate_limited(path_template):
-            raise RateLimited(f"{path_template} is rate-limited. "
-                              f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
-
+        path_template = self.get_path_template(endpoint_name)
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.get(url, params=params, timeout=2)
 
         if is_new_rate_limit(response):
-            logger.warning("Rate limited. Waiting 1 minute until next request.")
             delay = 1 if endpoint_name == "move" else 60
-            self.rate_limit_timers[path_template] = Timer(delay)
+            self.set_rate_limit_timer(path_template, delay)
 
         response.raise_for_status()
         response.encoding = "utf-8"
@@ -103,23 +97,28 @@ class Lichess:
                  payload=None,
                  raise_for_status=True):
         logging.getLogger("backoff").setLevel(self.logging_level)
-
-        path_template = ENDPOINTS[endpoint_name]
-        if self.is_rate_limited(path_template):
-            raise RateLimited(f"{path_template} is rate-limited. "
-                              f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
-
+        path_template = self.get_path_template(endpoint_name)
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
         if is_new_rate_limit(response):
-            logger.warning("Rate limited. Waiting 1 minute until next request.")
-            self.rate_limit_timers[path_template] = Timer(60)
+            self.set_rate_limit_delay(60)
 
         if raise_for_status:
             response.raise_for_status()
 
         return response.json()
+
+    def get_path_template(self, endpoint_name):
+        path_template = ENDPOINTS[endpoint_name]
+        if self.is_rate_limited(path_template):
+            raise RateLimited(f"{path_template} is rate-limited. "
+                              f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
+        return path_template
+
+    def set_rate_limit_delay(self, path_template, delay_time):
+        logger.warning(f"Endpoint {path_template} is rate limited. Waiting {delay_time} seconds until next request.")
+        self.rate_limit_timers[path_template] = Timer(delay_time)
 
     def is_rate_limited(self, path_template):
         return not self.rate_limit_timers[path_template].is_expired()

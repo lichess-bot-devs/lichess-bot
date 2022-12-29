@@ -173,14 +173,17 @@ class EngineWrapper:
         else:
             li.make_move(game.id, best_move)
 
-    def search_for(self, board: chess.Board, movetime: int, ponder: bool, draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+    def search_for(self, board: chess.Board, movetime: int, ponder: bool, draw_offered: bool,
+                   root_moves: List[chess.Move]) -> chess.engine.PlayResult:
         return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered, root_moves)
 
-    def first_search(self, board: chess.Board, movetime: int, draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+    def first_search(self, board: chess.Board, movetime: int, draw_offered: bool,
+                     root_moves: List[chess.Move]) -> chess.engine.PlayResult:
         # No pondering after the first move since a different clock is used afterwards.
         return self.search_for(board, movetime, False, draw_offered, root_moves)
 
-    def search_with_ponder(self, board: chess.Board, wtime: int, btime: int, winc: int, binc: int, ponder: bool, draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+    def search_with_ponder(self, board: chess.Board, wtime: int, btime: int, winc: int, binc: int, ponder: bool,
+                           draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
@@ -227,7 +230,8 @@ class EngineWrapper:
                 result.resigned = True
         return result
 
-    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
+               root_moves: List[chess.Move]) -> chess.engine.PlayResult:
         time_limit = self.add_go_commands(time_limit)
         result = self.engine.play(board,
                                   time_limit,
@@ -343,7 +347,8 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int], draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+                 draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
         self.engine.configure(options)
@@ -364,7 +369,8 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int], draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+                 draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
@@ -417,7 +423,9 @@ def getHomemadeEngine(name: str) -> EngineWrapper:
     return getattr(strategies, name)
 
 
-def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game, search_time: int, start_time: int, move_overhead: int, ponder: bool, draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game, search_time: int, start_time: int,
+                     move_overhead: int, ponder: bool, draw_offered: bool,
+                     root_moves: List[chess.Move]) -> chess.engine.PlayResult:
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -427,14 +435,16 @@ def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game
     return engine.search_for(board, search_time, ponder, draw_offered, root_moves)
 
 
-def choose_first_move(engine: EngineWrapper, board: chess.Board, draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+def choose_first_move(engine: EngineWrapper, board: chess.Board, draw_offered: bool,
+                      root_moves: List[chess.Move]) -> chess.engine.PlayResult:
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time}")
     return engine.first_search(board, search_time, draw_offered, root_moves)
 
 
-def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, ponder: bool, draw_offered: bool, start_time: int, move_overhead: int, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, ponder: bool, draw_offered: bool,
+                start_time: int, move_overhead: int, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -487,7 +497,8 @@ def get_book_move(board: chess.Board, polyglot_cfg: config.Configuration) -> che
     return no_book_move
 
 
-def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: config.Configuration, draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
+def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: config.Configuration,
+                    draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
     online_egtb_cfg = online_moves_cfg.online_egtb
     chessdb_cfg = online_moves_cfg.chessdb_book
     lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
@@ -530,7 +541,8 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     return chess.engine.PlayResult(None, None)
 
 
-def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, chessdb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+                     chessdb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     wb = "w" if board.turn == chess.WHITE else "b"
     use_chessdb = chessdb_cfg.enabled
     time_left = game.state[f"{wb}time"]
@@ -573,7 +585,8 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, 
     return move, comment
 
 
-def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game, lichess_cloud_cfg: config.Configuration) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+                           lichess_cloud_cfg: config.Configuration) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
     min_time = lichess_cloud_cfg.min_time * 1000
@@ -623,7 +636,8 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
     return move, comment
 
 
-def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_egtb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[int]]:
+def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+                         online_egtb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[int]]:
     use_online_egtb = online_egtb_cfg.enabled
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
@@ -654,7 +668,8 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     return None, None
 
 
-def get_egtb_move(board: chess.Board, lichess_bot_tbs: config.Configuration, draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
+def get_egtb_move(board: chess.Board, lichess_bot_tbs: config.Configuration,
+                  draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
     best_move, wdl = get_syzygy(board, lichess_bot_tbs.syzygy)
     if best_move is None:
         best_move, wdl = get_gaviota(board, lichess_bot_tbs.gaviota)
@@ -674,7 +689,8 @@ def get_egtb_move(board: chess.Board, lichess_bot_tbs: config.Configuration, dra
     return chess.engine.PlayResult(None, None)
 
 
-def get_lichess_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str, variant: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
+def get_lichess_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str,
+                          variant: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
     name_to_wld = {"loss": -2,
                    "maybe-loss": -1,
                    "blessed-loss": -1,
@@ -734,7 +750,8 @@ def get_lichess_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str,
     return None, None
 
 
-def get_chessdb_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
+def get_chessdb_egtb_move(li: lichess.Lichess, board: chess.Board,
+                          quality: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
     def score_to_wdl(score: int) -> int:
         return piecewise_function([(-20001, 2),
                                    (-1, -1),
@@ -792,7 +809,8 @@ def get_chessdb_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str)
     return None, None
 
 
-def get_syzygy(board: chess.Board, syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
+def get_syzygy(board: chess.Board,
+               syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
     if (not syzygy_cfg.enabled
             or chess.popcount(board.occupied) > syzygy_cfg.max_pieces
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
@@ -849,7 +867,8 @@ def dtz_to_wdl(dtz: int) -> int:
     return piecewise_function([(-100, -1), (-1, -2), (0, 0), (99, 2)], 1, dtz)
 
 
-def get_gaviota(board: chess.Board, gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
+def get_gaviota(board: chess.Board,
+                gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
     if (not gaviota_cfg.enabled
             or chess.popcount(board.occupied) > gaviota_cfg.max_pieces
             or board.uci_variant != "chess"):
@@ -911,7 +930,8 @@ def dtm_to_wdl(dtm: int, min_dtm_to_consider_as_wdl_1: int) -> int:
     return piecewise_function([(-100, -1), (-1, -2), (0, 0), (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
 
 
-def good_enough_gaviota_moves(good_moves: List[Tuple[chess.Move, int]], best_dtm: int, min_dtm_to_consider_as_wdl_1: int) -> List[Tuple[chess.Move, int]]:
+def good_enough_gaviota_moves(good_moves: List[Tuple[chess.Move, int]], best_dtm: int,
+                              min_dtm_to_consider_as_wdl_1: int) -> List[Tuple[chess.Move, int]]:
     if best_dtm < 100:
         # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
         # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
@@ -976,7 +996,9 @@ def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int
     return last_value
 
 
-def score_moves(board: chess.Board, scorer: Union[dtz_scorer, dtm_scorer], tablebase: Union[chess.syzygy.Tablebase, chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]) -> Dict[chess.Move, int]:
+def score_moves(board: chess.Board, scorer: Union[dtz_scorer, dtm_scorer],
+                tablebase: Union[chess.syzygy.Tablebase, chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]
+                ) -> Dict[chess.Move, int]:
     moves = {}
     for move in board.legal_moves:
         board_copy = board.copy()

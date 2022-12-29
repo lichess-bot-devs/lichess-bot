@@ -56,7 +56,8 @@ def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: AB
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 
 
-def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, default: Any, force_falsey_values: bool = False) -> CONFIG_DICT_TYPE:
+def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, default: Any,
+                       force_falsey_values: bool = False) -> CONFIG_DICT_TYPE:
     subconfig = config
     for section in sections:
         subconfig = subconfig.setdefault(section, {})

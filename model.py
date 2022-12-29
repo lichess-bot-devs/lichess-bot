@@ -70,7 +70,8 @@ class Challenge:
     def decline_due_to(self, requirement_met: bool, decline_reason: str) -> Optional[str]:
         return None if requirement_met else decline_reason
 
-    def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
+    def is_supported(self, config: Configuration,
+                     recent_bot_challenges: defaultdict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
         try:
             if self.from_self:
                 return True, None

@@ -70,7 +70,8 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, path: str, params: Optional[Dict[str, str]] = None, get_raw_text: bool = False) -> Union[str, JSON_REPLY_TYPE]:
+    def api_get(self, path: str, params: Optional[Dict[str, str]] = None,
+                get_raw_text: bool = False) -> Union[str, JSON_REPLY_TYPE]:
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.get(url, params=params, timeout=2)
@@ -86,7 +87,9 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_post(self, path: str, data: Union[str, Dict[str, str], None] = None, headers: Optional[Dict[str, str]] = None, params: Optional[Dict[str, str]] = None, payload: Optional[REQUESTS_PAYLOAD_TYPE] = None, raise_for_status: bool = True) -> JSON_REPLY_TYPE:
+    def api_post(self, path: str, data: Union[str, Dict[str, str], None] = None, headers: Optional[Dict[str, str]] = None,
+                 params: Optional[Dict[str, str]] = None, payload: Optional[REQUESTS_PAYLOAD_TYPE] = None,
+                 raise_for_status: bool = True) -> JSON_REPLY_TYPE:
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)

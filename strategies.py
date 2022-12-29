@@ -50,7 +50,8 @@ class MinimalEngine(EngineWrapper):
     however you can also change other methods like
     `notify`, `first_search`, `get_time_control`, etc.
     """
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int], draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: Dict[str, str]) -> None:
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+                 draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: Dict[str, str]) -> None:
         super().__init__(options, draw_or_resign)
 
         self.engine_name = self.__class__.__name__ if name is None else name
@@ -60,7 +61,8 @@ class MinimalEngine(EngineWrapper):
             "name": self.engine_name
         }
 
-    def search(self, board: chess.Board, time_limit: Limit, ponder: bool, draw_offered: bool, root_moves: List[chess.Move]) -> None:
+    def search(self, board: chess.Board, time_limit: Limit, ponder: bool, draw_offered: bool,
+               root_moves: List[chess.Move]) -> None:
         """
         The method to be implemented in your homemade engine
 

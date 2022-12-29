@@ -50,7 +50,8 @@ class Matchmaking:
             self.challenge_id = None
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
-    def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str, mode: str) -> Optional[str]:
+    def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
+                         mode: str) -> Optional[str]:
         params = {"rated": mode == "rated", "variant": variant}
 
         if days:

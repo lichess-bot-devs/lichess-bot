@@ -70,15 +70,15 @@ class Lichess:
             logger.warn(f"{path_template} is rate-limited. "
                         f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
             return "" if get_raw_text else {}
-        
+
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.get(url, params=params, timeout=2)
-        
+
         if is_new_rate_limit(response):
             logger.warning("Rate limited. Waiting 1 minute until next request.")
             delay = 1 if path_template == ENDPOINTS["move"] else 60
             self.rate_limit_timers[path_template] = Timer(delay)
-        
+
         response.raise_for_status()
         response.encoding = "utf-8"
         return response.text if get_raw_text else response.json()
@@ -99,19 +99,19 @@ class Lichess:
                  payload=None,
                  raise_for_status=True):
         logging.getLogger("backoff").setLevel(self.logging_level)
-        
+
         if self.is_rate_limited(path_template):
             logger.warn(f"{path_template} is rate-limited. "
                         f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
             return {}
-        
+
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
-        
+
         if is_new_rate_limit(response):
             logger.warning("Rate limited. Waiting 1 minute until next request.")
             self.rate_limit_timers[path_template] = Timer(60)
-        
+
         if raise_for_status:
             response.raise_for_status()
 

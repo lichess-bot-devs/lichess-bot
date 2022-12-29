@@ -129,7 +129,7 @@ class Lichess:
         return self.api_get(ENDPOINTS["game"], game_id)
 
     def upgrade_to_bot_account(self):
-        return self.api_post(ENDPOINTS, "upgrade")
+        return self.api_post(ENDPOINTS["upgrade"])
 
     def make_move(self, game_id, move):
         return self.api_post(ENDPOINTS["move"], game_id, move.move,

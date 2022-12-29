@@ -67,9 +67,10 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, path_template, *template_args, params=None, get_raw_text=False):
+    def api_get(self, endpoint_name, *template_args, params=None, get_raw_text=False):
         logging.getLogger("backoff").setLevel(self.logging_level)
 
+        path_template = ENDPOINTS[endpoint_name]
         if self.is_rate_limited(path_template):
             raise RateLimited(f"{path_template} is rate-limited. "
                               f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
@@ -79,7 +80,7 @@ class Lichess:
 
         if is_new_rate_limit(response):
             logger.warning("Rate limited. Waiting 1 minute until next request.")
-            delay = 1 if path_template == ENDPOINTS["move"] else 60
+            delay = 1 if endpoint_name == "move" else 60
             self.rate_limit_timers[path_template] = Timer(delay)
 
         response.raise_for_status()
@@ -94,7 +95,7 @@ class Lichess:
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
     def api_post(self,
-                 path_template,
+                 endpoint_name,
                  *template_args,
                  data=None,
                  headers=None,
@@ -103,6 +104,7 @@ class Lichess:
                  raise_for_status=True):
         logging.getLogger("backoff").setLevel(self.logging_level)
 
+        path_template = ENDPOINTS[endpoint_name]
         if self.is_rate_limited(path_template):
             raise RateLimited(f"{path_template} is rate-limited. "
                               f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
@@ -126,13 +128,13 @@ class Lichess:
         return self.rate_limit_time_left[path_template].time_until_expiration()
 
     def get_game(self, game_id):
-        return self.api_get(ENDPOINTS["game"], game_id)
+        return self.api_get("game", game_id)
 
     def upgrade_to_bot_account(self):
-        return self.api_post(ENDPOINTS["upgrade"])
+        return self.api_post("upgrade")
 
     def make_move(self, game_id, move):
-        return self.api_post(ENDPOINTS["move"], game_id, move.move,
+        return self.api_post("move", game_id, move.move,
                              params={"offeringDraw": str(move.draw_offered).lower()})
 
     def chat(self, game_id, room, text):
@@ -143,10 +145,10 @@ class Lichess:
             return {}
 
         payload = {"room": room, "text": text}
-        return self.api_post(ENDPOINTS["chat"], game_id, data=payload)
+        return self.api_post("chat", game_id, data=payload)
 
     def abort(self, game_id):
-        return self.api_post(ENDPOINTS["abort"], game_id)
+        return self.api_post("abort", game_id)
 
     def get_event_stream(self):
         url = urljoin(self.baseUrl, ENDPOINTS["stream_event"])
@@ -157,54 +159,49 @@ class Lichess:
         return requests.get(url, headers=self.header, stream=True, timeout=15)
 
     def accept_challenge(self, challenge_id):
-        return self.api_post(ENDPOINTS["accept"], challenge_id)
+        return self.api_post("accept", challenge_id)
 
     def decline_challenge(self, challenge_id, reason="generic"):
-        return self.api_post(ENDPOINTS["decline"], challenge_id,
+        return self.api_post("decline", challenge_id,
                              data=f"reason={reason}",
                              headers={"Content-Type":
                                       "application/x-www-form-urlencoded"},
                              raise_for_status=False)
 
     def get_profile(self):
-        profile = self.api_get(ENDPOINTS["profile"])
+        profile = self.api_get("profile")
         self.set_user_agent(profile["username"])
         return profile
 
     def get_ongoing_games(self):
         try:
-            return self.api_get(ENDPOINTS["playing"])["nowPlaying"]
+            return self.api_get("playing")["nowPlaying"]
         except Exception:
             return []
 
     def resign(self, game_id):
-        self.api_post(ENDPOINTS["resign"], game_id)
+        self.api_post("resign", game_id)
 
     def set_user_agent(self, username):
         self.header.update({"User-Agent": f"lichess-bot/{self.version} user:{username}"})
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id):
-        return self.api_get(ENDPOINTS["export"], game_id, get_raw_text=True)
+        return self.api_get("export", game_id, get_raw_text=True)
 
     def get_online_bots(self):
         try:
-            online_bots = self.api_get(ENDPOINTS["online_bots"], get_raw_text=True)
+            online_bots = self.api_get("online_bots", get_raw_text=True)
             online_bots = list(filter(bool, online_bots.split("\n")))
             return list(map(json.loads, online_bots))
         except Exception:
             return []
 
     def challenge(self, username, params):
-        return self.api_post(ENDPOINTS["challenge"],
-                             username,
-                             payload=params,
-                             raise_for_status=False)
+        return self.api_post("challenge", username, payload=params, raise_for_status=False)
 
     def cancel(self, challenge_id):
-        return self.api_post(ENDPOINTS["cancel"],
-                             challenge_id,
-                             raise_for_status=False)
+        return self.api_post("cancel", challenge_id, raise_for_status=False)
 
     def online_book_get(self, path, params=None):
         @backoff.on_exception(backoff.constant,
@@ -220,8 +217,8 @@ class Lichess:
         return online_book_get()
 
     def is_online(self, user_id):
-        user = self.api_get(ENDPOINTS["status"], params={"ids": user_id})
+        user = self.api_get("status", params={"ids": user_id})
         return user and user[0].get("online")
 
     def get_public_data(self, user_name):
-        return self.api_get(ENDPOINTS["public_data"], user_name)
+        return self.api_get("public_data", user_name)

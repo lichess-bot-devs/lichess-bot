@@ -189,7 +189,7 @@ class Lichess:
 
     def is_online(self, user_id: str) -> bool:
         user = self.api_get(ENDPOINTS["status"], params={"ids": user_id})
-        return user and user[0].get("online")
+        return bool(user and user[0].get("online"))
 
     def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
         return self.api_get(ENDPOINTS["public_data"].format(user_name))

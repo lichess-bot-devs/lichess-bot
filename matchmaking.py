@@ -9,7 +9,7 @@ from config import Configuration
 from typing import Dict, Any, Set, Optional, Tuple, List
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
-MULTIPROCESSING_LIST_TYPE = List
+MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,9 @@ class Matchmaking:
             self.li.cancel(self.challenge_id)
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
             self.challenge_id = None
-        return matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed
+        return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
-    def create_challenge(self, username: str, base_time: int, increment: int, days, variant: str, mode: str) -> Optional[str]:
+    def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str, mode: str) -> Optional[str]:
         params = {"rated": mode == "rated", "variant": variant}
 
         if days:

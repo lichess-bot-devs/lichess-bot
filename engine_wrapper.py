@@ -17,7 +17,8 @@ from typing import Dict, Any, List, Optional, Union, Tuple
 INFO_DICT_TYPE = Dict[str, Any]
 OPTIONS_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]
-CHESSDB_MOVE = Dict[str, Any]
+LICHESS_EGTB_MOVE = Dict[str, Any]
+CHESSDB_EGTB_MOVE = Dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
@@ -697,7 +698,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str,
         elif quality == "suggest":
             best_wdl = name_to_wld[data["moves"][0]["category"]]
 
-            def good_enough(possible_move):
+            def good_enough(possible_move: LICHESS_EGTB_MOVE) -> bool:
                 return name_to_wld[possible_move["category"]] == best_wdl
 
             possible_moves = list(filter(good_enough, data["moves"]))
@@ -717,7 +718,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str,
         else:
             best_wdl = name_to_wld[data["moves"][0]["category"]]
 
-            def good_enough(possible_move):
+            def good_enough(possible_move: LICHESS_EGTB_MOVE) -> bool:
                 return name_to_wld[possible_move["category"]] == best_wdl
             possible_moves = list(filter(good_enough, data["moves"]))
             random_move = random.choice(possible_moves)
@@ -734,13 +735,13 @@ def get_lichess_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str,
 
 
 def get_chessdb_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
-    def score_to_wdl(score):
+    def score_to_wdl(score: int) -> int:
         return piecewise_function([(-20001, 2),
                                    (-1, -1),
                                    (0, 0),
                                    (20000, 1)], 2, score)
 
-    def score_to_dtz(score):
+    def score_to_dtz(score: int) -> int:
         return piecewise_function([(-20001, -30000 - score),
                                    (-1, -20000 - score),
                                    (0, 0),
@@ -759,7 +760,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str)
         elif quality == "suggest":
             best_wdl = score_to_wdl(data["moves"][0]["score"])
 
-            def good_enough(move):
+            def good_enough(move: CHESSDB_EGTB_MOVE) -> bool:
                 return score_to_wdl(move["score"]) == best_wdl
 
             possible_moves = list(filter(good_enough, data["moves"]))
@@ -777,7 +778,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, board: chess.Board, quality: str)
         else:
             best_wdl = score_to_wdl(data["moves"][0]["score"])
 
-            def good_enough(move):
+            def good_enough(move: CHESSDB_EGTB_MOVE) -> bool:
                 return score_to_wdl(move["score"]) == best_wdl
             possible_moves = filter(good_enough, data["moves"])
             random_move = random.choice(list(possible_moves))

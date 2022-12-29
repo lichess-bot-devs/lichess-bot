@@ -3,6 +3,7 @@ import os
 import os.path
 import logging
 import math
+from abc import ABCMeta
 from enum import Enum
 from typing import Dict, Any
 CONFIG_DICT_TYPE = Dict[str, Any]
@@ -27,7 +28,7 @@ class Configuration:
         data = self.config.get(name)
         return Configuration(data) if isinstance(data, dict) else data
 
-    def items(self):
+    def items(self) -> Any:
         return self.config.items()
 
     def __bool__(self) -> bool:
@@ -45,7 +46,7 @@ def config_assert(assertion: bool, error_message: str) -> None:
         raise Exception(error_message)
 
 
-def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: type, subsection: str = "") -> None:
+def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: ABCMeta, subsection: str = "") -> None:
     config_part = config[subsection] if subsection else config
     sub = f"`{subsection}` sub" if subsection else ""
     data_location = f"`{data_name}` subsection in `{subsection}`" if subsection else f"Section `{data_name}`"

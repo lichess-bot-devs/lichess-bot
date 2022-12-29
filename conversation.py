@@ -1,17 +1,16 @@
 from __future__ import annotations
 import logging
-from model import Game
+from model import Game, Challenge
 from engine_wrapper import EngineWrapper
 from lichess import Lichess
-import multiprocessing
-from typing import Dict
-
+from typing import Dict, List
+MULTIPROCESSING_LIST_TYPE = List[Challenge]
 
 logger = logging.getLogger(__name__)
 
 
 class Conversation:
-    def __init__(self, game: Game, engine: EngineWrapper, xhr: Lichess, version: str, challenge_queue: multiprocessing.managers.ListProxy) -> None:
+    def __init__(self, game: Game, engine: EngineWrapper, xhr: Lichess, version: str, challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         self.game = game
         self.engine = engine
         self.xhr = xhr
@@ -21,7 +20,7 @@ class Conversation:
     command_prefix = "!"
 
     def react(self, line: ChatLine, game: Game) -> None:
-        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")}')
+        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")!r}')
         if line.text[0] == self.command_prefix:
             self.command(line, game, line.text[1:].lower())
 

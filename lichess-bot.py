@@ -31,8 +31,10 @@ EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
 EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
 GAME_EVENT_TYPE = Dict[str, Any]
-QUEUE_TYPE = queue.Queue
-MULTIPROCESSING_LIST_TYPE = List
+QUEUE_TYPE = queue.Queue[Dict[str, Any]]
+CORRESPONDENCE_QUEUE_TYPE = queue.Queue[str]
+LOGGING_QUEUE_TYPE = queue.Queue[logging.LogRecord]
+MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 POOL_TYPE = multiprocessing.Pool
 
 logger = logging.getLogger(__name__)
@@ -105,7 +107,7 @@ def logging_configurer(level: int, filename: Optional[str]) -> None:
                         force=True)
 
 
-def logging_listener_proc(queue: QUEUE_TYPE, configurer: logging_configurer, level: int, log_filename: Optional[str]) -> None:
+def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, configurer: logging_configurer, level: int, log_filename: Optional[str]) -> None:
     configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
@@ -125,7 +127,7 @@ def game_logging_configurer(queue: QUEUE_TYPE, level: int) -> None:
     root.setLevel(level)
 
 
-def game_error_handler(error) -> None:
+def game_error_handler(error: Exception) -> None:
     logger.exception("Game ended due to error:", exc_info=error)
 
 
@@ -134,11 +136,11 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     manager = multiprocessing.Manager()
     challenge_queue = manager.list()
     control_queue = manager.Queue()
-    control_stream = multiprocessing.Process(target=watch_control_stream, args=[control_queue, li])
+    control_stream = multiprocessing.Process(target=watch_control_stream, args=(control_queue, li))
     control_stream.start()
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
-                                                    args=[control_queue,
-                                                          config.correspondence.checkin_period])
+                                                    args=(control_queue,
+                                                          config.correspondence.checkin_period))
     correspondence_pinger.start()
     correspondence_queue = manager.Queue()
 
@@ -180,7 +182,7 @@ def lichess_bot_main(li: lichess.Lichess,
                      logging_level: int,
                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      control_queue: QUEUE_TYPE,
-                     correspondence_queue: QUEUE_TYPE,
+                     correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                      logging_queue: QUEUE_TYPE,
                      one_game: bool) -> None:
     global restart
@@ -283,7 +285,7 @@ correspondence_games_to_start = 0
 
 def check_in_on_correspondence_games(pool: POOL_TYPE,
                                      event: EVENT_TYPE,
-                                     correspondence_queue: QUEUE_TYPE,
+                                     correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                                      play_game_args: PLAY_GAME_ARGS_TYPE,
                                      active_games: Set[str],
@@ -364,7 +366,7 @@ def start_game(event: EVENT_TYPE,
                config: Configuration,
                matchmaker: matchmaking.Matchmaking,
                startup_correspondence_games: List[str],
-               correspondence_queue: QUEUE_TYPE,
+               correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                active_games: Set[str],
                low_time_games: List[EVENT_GETATTR_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
@@ -423,7 +425,7 @@ def play_game(li: lichess.Lichess,
               user_profile: USER_PROFILE_TYPE,
               config: Configuration,
               challenge_queue: MULTIPROCESSING_LIST_TYPE,
-              correspondence_queue: QUEUE_TYPE,
+              correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
               logging_queue: QUEUE_TYPE,
               game_logging_configurer: game_logging_configurer,
               logging_level: int) -> None:
@@ -596,7 +598,7 @@ def should_exit_game(board: chess.Board, game: model.Game, prior_game: model.Gam
         return False
 
 
-def final_queue_entries(control_queue: QUEUE_TYPE, correspondence_queue: QUEUE_TYPE, game: model.Game, is_correspondence: bool) -> None:
+def final_queue_entries(control_queue: QUEUE_TYPE, correspondence_queue: CORRESPONDENCE_QUEUE_TYPE, game: model.Game, is_correspondence: bool) -> None:
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
         correspondence_queue.put_nowait(game.id)

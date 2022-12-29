@@ -25,11 +25,12 @@ from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
 import queue
-from typing import Dict, Any, Optional, Set, List
+from typing import Dict, Any, Optional, Set, List, Iterator
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
-EVENT_GAME_TYPE = Dict[str, Any]
+EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
+GAME_EVENT_TYPE = Dict[str, Any]
 QUEUE_TYPE = queue.Queue
 MULTIPROCESSING_LIST_TYPE = List
 POOL_TYPE = multiprocessing.Pool
@@ -309,7 +310,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
                          error_callback=game_error_handler)
 
 
-def start_low_time_games(low_time_games: List[EVENT_GAME_TYPE], active_games: Set[str], max_games: int, pool: POOL_TYPE, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
+def start_low_time_games(low_time_games: List[EVENT_GETATTR_GAME_TYPE], active_games: Set[str], max_games: int, pool: POOL_TYPE, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
@@ -365,7 +366,7 @@ def start_game(event: EVENT_TYPE,
                startup_correspondence_games: List[str],
                correspondence_queue: QUEUE_TYPE,
                active_games: Set[str],
-               low_time_games: List[EVENT_GAME_TYPE]) -> None:
+               low_time_games: List[EVENT_GETATTR_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
         matchmaker.challenge_id = None
@@ -393,7 +394,7 @@ def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config: Configuration, user_profile: USER_PROFILE_TYPE, matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict) -> None:
+def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config: Configuration, user_profile: USER_PROFILE_TYPE, matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict[str, List[Timer]]) -> None:
     chlng = model.Challenge(event["challenge"], user_profile)
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
@@ -408,7 +409,7 @@ def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MU
         li.decline_challenge(chlng.id, reason=decline_reason)
 
 
-def log_bad_event(event: EVENT_TYPE):
+def log_bad_event(event: EVENT_TYPE) -> None:
     logger.warning("Unable to handle response from lichess.org:")
     logger.warning(event)
     if event.get("error") == "Missing scope":
@@ -520,7 +521,7 @@ def play_game(li: lichess.Lichess,
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
 
 
-def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict) -> str:
+def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict[str, str]) -> str:
     return greeting_cfg.lookup(greeting).format_map(keyword_map)
 
 
@@ -543,7 +544,7 @@ def print_move_number(board: chess.Board) -> None:
     logger.info(f"move: {len(board.move_stack) // 2 + 1}")
 
 
-def next_update(lines):
+def next_update(lines: Iterator[bytes]) -> Optional[GAME_EVENT_TYPE]:
     binary_chunk = next(lines)
     upd = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else None
     if upd:

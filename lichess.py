@@ -60,7 +60,7 @@ class Lichess:
         self.logging_level = logging_level
         self.max_retries = max_retries
 
-    def is_final(exception):
+    def is_final(exception: Exception) -> bool:
         return isinstance(exception, HTTPError) and exception.response.status_code < 500
 
     @backoff.on_exception(backoff.constant,
@@ -117,11 +117,11 @@ class Lichess:
     def abort(self, game_id: str) -> JSON_REPLY_TYPE:
         return self.api_post(ENDPOINTS["abort"].format(game_id))
 
-    def get_event_stream(self):
+    def get_event_stream(self) -> requests.models.Response:
         url = urljoin(self.baseUrl, ENDPOINTS["stream_event"])
         return requests.get(url, headers=self.header, stream=True, timeout=15)
 
-    def get_game_stream(self, game_id: str):
+    def get_game_stream(self, game_id: str) -> requests.models.Response:
         url = urljoin(self.baseUrl, ENDPOINTS["stream"].format(game_id))
         return requests.get(url, headers=self.header, stream=True, timeout=15)
 

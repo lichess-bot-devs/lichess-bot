@@ -4,7 +4,7 @@ import logging
 from timer import Timer
 from config import Configuration
 from collections import defaultdict
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, Timer]) -> bool:
+    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, List[Timer]]) -> bool:
         # Filter out old challenges
         recent_bot_challenges[self.challenger_name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger_name]
@@ -70,7 +70,7 @@ class Challenge:
     def decline_due_to(self, requirement_met: bool, decline_reason: str) -> Optional[str]:
         return None if requirement_met else decline_reason
 
-    def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, Timer]) -> Tuple[bool, Optional[str]]:
+    def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
         try:
             if self.from_self:
                 return True, None
@@ -132,7 +132,7 @@ class Game:
         self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
         self.disconnect_time = Timer(0)
 
-    def url(self):
+    def url(self) -> str:
         return urljoin(self.base_url, f"{self.id}/{self.my_color}")
 
     def is_abortable(self) -> bool:

@@ -34,6 +34,10 @@ ENDPOINTS = {
 logger = logging.getLogger(__name__)
 
 
+class RateLimited(RuntimeError):
+    pass
+
+
 def is_new_rate_limit(response):
     return response.status_code == 429
 
@@ -67,9 +71,8 @@ class Lichess:
         logging.getLogger("backoff").setLevel(self.logging_level)
 
         if self.is_rate_limited(path_template):
-            logger.warn(f"{path_template} is rate-limited. "
-                        f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
-            return "" if get_raw_text else {}
+            raise RateLimited(f"{path_template} is rate-limited. "
+                              f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
 
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.get(url, params=params, timeout=2)
@@ -101,9 +104,8 @@ class Lichess:
         logging.getLogger("backoff").setLevel(self.logging_level)
 
         if self.is_rate_limited(path_template):
-            logger.warn(f"{path_template} is rate-limited. "
-                        f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
-            return {}
+            raise RateLimited(f"{path_template} is rate-limited. "
+                              f"Will retry in {int(self.rate_limit_time_left(path_template))} seconds.")
 
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)

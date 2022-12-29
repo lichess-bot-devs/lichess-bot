@@ -6,7 +6,6 @@ from http.client import RemoteDisconnected
 import backoff
 import logging
 import time
-from engine_wrapper import MAX_CHAT_MESSAGE_LEN
 from typing import Optional, Dict, Union, Any, List
 import chess.engine
 JSON_REPLY_TYPE = Dict[str, Any]
@@ -35,6 +34,8 @@ ENDPOINTS = {
 
 
 logger = logging.getLogger(__name__)
+
+MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
 def rate_limit_check(response: requests.models.Response) -> bool:

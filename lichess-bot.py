@@ -4,12 +4,12 @@ import chess.pgn
 from chess.variant import find_variant
 import engine_wrapper
 import model
-import matchmaking
 import json
 import lichess
 import logging
 import logging.handlers
 import multiprocessing
+import matchmaking
 import signal
 import time
 import backoff
@@ -24,11 +24,15 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
+import queue
 from typing import Dict, Any, Optional, Set, List
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
 EVENT_GAME_TYPE = Dict[str, Any]
+QUEUE_TYPE = queue.Queue
+MULTIPROCESSING_LIST_TYPE = List
+POOL_TYPE = multiprocessing.Pool
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +63,7 @@ def upgrade_account(li: lichess.Lichess) -> bool:
     return True
 
 
-def watch_control_stream(control_queue: multiprocessing.queues.Queue, li: lichess.Lichess) -> None:
+def watch_control_stream(control_queue: QUEUE_TYPE, li: lichess.Lichess) -> None:
     while not terminated:
         try:
             response = li.get_event_stream()
@@ -76,7 +80,7 @@ def watch_control_stream(control_queue: multiprocessing.queues.Queue, li: liches
     control_queue.put_nowait({"type": "terminated"})
 
 
-def do_correspondence_ping(control_queue: multiprocessing.queues.Queue, period: int) -> None:
+def do_correspondence_ping(control_queue: QUEUE_TYPE, period: int) -> None:
     while not terminated:
         time.sleep(period)
         control_queue.put_nowait({"type": "correspondence_ping"})
@@ -100,7 +104,7 @@ def logging_configurer(level: int, filename: Optional[str]) -> None:
                         force=True)
 
 
-def logging_listener_proc(queue: multiprocessing.queues.Queue, configurer: logging_configurer, level: int, log_filename: Optional[str]) -> None:
+def logging_listener_proc(queue: QUEUE_TYPE, configurer: logging_configurer, level: int, log_filename: Optional[str]) -> None:
     configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
@@ -112,7 +116,7 @@ def logging_listener_proc(queue: multiprocessing.queues.Queue, configurer: loggi
         queue.task_done()
 
 
-def game_logging_configurer(queue: multiprocessing.queues.Queue, level: int) -> None:
+def game_logging_configurer(queue: QUEUE_TYPE, level: int) -> None:
     h = logging.handlers.QueueHandler(queue)
     root = logging.getLogger()
     root.handlers.clear()
@@ -173,10 +177,10 @@ def lichess_bot_main(li: lichess.Lichess,
                      user_profile: USER_PROFILE_TYPE,
                      config: Configuration,
                      logging_level: int,
-                     challenge_queue: multiprocessing.managers.ListProxy,
-                     control_queue: multiprocessing.queues.Queue,
-                     correspondence_queue: multiprocessing.queues.Queue,
-                     logging_queue: multiprocessing.queues.Queue,
+                     challenge_queue: MULTIPROCESSING_LIST_TYPE,
+                     control_queue: QUEUE_TYPE,
+                     correspondence_queue: QUEUE_TYPE,
+                     logging_queue: QUEUE_TYPE,
                      one_game: bool) -> None:
     global restart
 
@@ -256,7 +260,7 @@ def lichess_bot_main(li: lichess.Lichess,
     logger.info("Terminated")
 
 
-def next_event(control_queue: multiprocessing.queues.Queue) -> EVENT_TYPE:
+def next_event(control_queue: QUEUE_TYPE) -> EVENT_TYPE:
     try:
         event = control_queue.get()
     except InterruptedError:
@@ -276,10 +280,10 @@ def next_event(control_queue: multiprocessing.queues.Queue) -> EVENT_TYPE:
 correspondence_games_to_start = 0
 
 
-def check_in_on_correspondence_games(pool: multiprocessing.pool.Pool,
+def check_in_on_correspondence_games(pool: POOL_TYPE,
                                      event: EVENT_TYPE,
-                                     correspondence_queue: multiprocessing.queues.Queue,
-                                     challenge_queue: multiprocessing.managers.ListProxy,
+                                     correspondence_queue: QUEUE_TYPE,
+                                     challenge_queue: MULTIPROCESSING_LIST_TYPE,
                                      play_game_args: PLAY_GAME_ARGS_TYPE,
                                      active_games: Set[str],
                                      max_games: int) -> None:
@@ -305,7 +309,7 @@ def check_in_on_correspondence_games(pool: multiprocessing.pool.Pool,
                          error_callback=game_error_handler)
 
 
-def start_low_time_games(low_time_games: List[EVENT_GAME_TYPE], active_games: Set[str], max_games: int, pool: multiprocessing.pool.Pool, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
+def start_low_time_games(low_time_games: List[EVENT_GAME_TYPE], active_games: Set[str], max_games: int, pool: POOL_TYPE, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
@@ -317,7 +321,7 @@ def start_low_time_games(low_time_games: List[EVENT_GAME_TYPE], active_games: Se
                          error_callback=game_error_handler)
 
 
-def accept_challenges(li: lichess.Lichess, challenge_queue: multiprocessing.managers.ListProxy, active_games: Set[str], max_games: int) -> None:
+def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: Set[str], max_games: int) -> None:
     while len(active_games) < max_games and challenge_queue:
         chlng = challenge_queue.pop(0)
         if chlng.from_self:
@@ -346,7 +350,7 @@ def check_online_status(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, la
             pass
 
 
-def sort_challenges(challenge_queue: multiprocessing.managers.ListProxy, challenge_config: Configuration) -> None:
+def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config: Configuration) -> None:
     if challenge_config.sort_by == "best":
         list_c = list(challenge_queue)
         list_c.sort(key=lambda c: -c.score())
@@ -354,12 +358,12 @@ def sort_challenges(challenge_queue: multiprocessing.managers.ListProxy, challen
 
 
 def start_game(event: EVENT_TYPE,
-               pool: multiprocessing.pool.Pool,
+               pool: POOL_TYPE,
                play_game_args: PLAY_GAME_ARGS_TYPE,
                config: Configuration,
                matchmaker: matchmaking.Matchmaking,
                startup_correspondence_games: List[str],
-               correspondence_queue: multiprocessing.queues.Queue,
+               correspondence_queue: QUEUE_TYPE,
                active_games: Set[str],
                low_time_games: List[EVENT_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
@@ -389,7 +393,7 @@ def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:
     return not game["isMyTurn"] or game.get("secondsLeft", math.inf) > minimum_time
 
 
-def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: multiprocessing.managers.ListProxy, challenge_config: Configuration, user_profile: USER_PROFILE_TYPE, matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict) -> None:
+def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config: Configuration, user_profile: USER_PROFILE_TYPE, matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict) -> None:
     chlng = model.Challenge(event["challenge"], user_profile)
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
@@ -414,12 +418,12 @@ def log_bad_event(event: EVENT_TYPE):
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
 def play_game(li: lichess.Lichess,
               game_id: str,
-              control_queue: multiprocessing.queues.Queue,
+              control_queue: QUEUE_TYPE,
               user_profile: USER_PROFILE_TYPE,
               config: Configuration,
-              challenge_queue: multiprocessing.managers.ListProxy,
-              correspondence_queue: multiprocessing.queues.Queue,
-              logging_queue: multiprocessing.queues.Queue,
+              challenge_queue: MULTIPROCESSING_LIST_TYPE,
+              correspondence_queue: QUEUE_TYPE,
+              logging_queue: QUEUE_TYPE,
               game_logging_configurer: game_logging_configurer,
               logging_level: int) -> None:
 
@@ -591,7 +595,7 @@ def should_exit_game(board: chess.Board, game: model.Game, prior_game: model.Gam
         return False
 
 
-def final_queue_entries(control_queue: multiprocessing.queues.Queue, correspondence_queue: multiprocessing.queues.Queue, game: model.Game, is_correspondence: bool) -> None:
+def final_queue_entries(control_queue: QUEUE_TYPE, correspondence_queue: QUEUE_TYPE, game: model.Game, is_correspondence: bool) -> None:
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
         correspondence_queue.put_nowait(game.id)

@@ -6,10 +6,11 @@ from collections import defaultdict
 from enum import Enum
 import lichess
 from config import Configuration
+import queue
 from typing import Dict, Any, Set, Optional, Tuple, List
-import multiprocessing
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
+QUEUE_TYPE = queue.Queue
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ class Matchmaking:
         value = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: Set[str], challenge_queue: multiprocessing.queues.Queue) -> None:
+    def challenge(self, active_games: Set[str], challenge_queue: QUEUE_TYPE) -> None:
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 

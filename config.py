@@ -3,11 +3,17 @@ import os
 import os.path
 import logging
 import math
-from matchmaking import DelayType
+from enum import Enum
 from typing import Dict, Any
 CONFIG_DICT_TYPE = Dict[str, Any]
 
 logger = logging.getLogger(__name__)
+
+
+class DelayType(str, Enum):
+    NONE = "none"
+    COARSE = "coarse"
+    FINE = "fine"
 
 
 class Configuration:

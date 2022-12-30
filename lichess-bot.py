@@ -432,6 +432,7 @@ def play_game(li,
 
     engine = engine_wrapper.create_engine(config)
     engine.get_opponent_info(game)
+    logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info(f"+++ {game}")
@@ -505,6 +506,7 @@ def play_game(li,
             upd = None
 
     engine.stop()
+    engine.ping()
     engine.quit()
 
     try_print_pgn_game_record(li, config, game, board, engine)

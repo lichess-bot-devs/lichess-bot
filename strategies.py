@@ -54,6 +54,9 @@ class MinimalEngine(EngineWrapper):
             "name": self.engine_name
         }
 
+    def get_pid(self):
+        return "?"
+
     def search(self, board, time_limit, ponder, draw_offered, root_moves):
         """
         The method to be implemented in your homemade engine

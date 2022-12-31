@@ -61,6 +61,9 @@ class MinimalEngine(EngineWrapper):
             "name": self.engine_name
         }
 
+    def get_pid(self) -> str:
+        return "?"
+
     def search(self, board: chess.Board, time_limit: Limit, ponder: bool, draw_offered: bool,
                root_moves: List[chess.Move]) -> None:
         """

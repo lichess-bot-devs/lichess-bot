@@ -39,7 +39,7 @@ POOL_TYPE = multiprocessing.Pool
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2022.12.25.2"
+__version__ = "2022.12.31.2"
 
 terminated = False
 restart = True
@@ -450,6 +450,7 @@ def play_game(li: lichess.Lichess,
 
     engine = engine_wrapper.create_engine(config)
     engine.get_opponent_info(game)
+    logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
     conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
     logger.info(f"+++ {game}")
@@ -523,6 +524,7 @@ def play_game(li: lichess.Lichess,
             upd = None
 
     engine.stop()
+    engine.ping()
     engine.quit()
 
     try_print_pgn_game_record(li, config, game, board, engine)

@@ -72,6 +72,10 @@ def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, defau
 
 def change_value_to_list(config: CONFIG_DICT_TYPE, *sections: str, key: str) -> None:
     subconfig = set_config_default(config, *sections, key=key, default=[])
+
+    if subconfig[key] is None:
+        subconfig[key] = []
+
     if not isinstance(subconfig[key], list):
         subconfig[key] = [subconfig[key]]
 

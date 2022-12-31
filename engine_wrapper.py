@@ -638,7 +638,8 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
                 comment["depth"] = data["depth"]
                 comment["nodes"] = data["knodes"] * 1000
                 comment["pv"] = list(map(chess.Move.from_uci, pv["moves"].split()))
-                logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes}) for game {game.id}")
+                logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})"
+                            f" for game {game.id}")
     except Exception:
         pass
 
@@ -739,7 +740,8 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 dtm = best_move["dtm"]
                 if dtm:
                     dtm *= -1
-                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
+                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})"
+                            f" for game {game.id}")
         else:
             best_wdl = name_to_wld[data["moves"][0]["category"]]
 
@@ -913,7 +915,8 @@ def get_gaviota(board: chess.Board, game: model.Game,
                     logger.info(f"Suggesting moves from gaviota (pseudo wdl: {pseudo_wdl}) for game {game.id}")
                 else:
                     move, dtm = random.choice(best_moves)
-                    logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm}) for game {game.id}")
+                    logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})"
+                                f" for game {game.id}")
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]

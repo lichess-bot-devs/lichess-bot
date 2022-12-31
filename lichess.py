@@ -75,7 +75,7 @@ class Lichess:
 
         if is_new_rate_limit(response):
             delay = 1 if endpoint_name == "move" else 60
-            self.set_rate_limit_timer(path_template, delay)
+            self.set_rate_limit_delay(path_template, delay)
 
         response.raise_for_status()
         response.encoding = "utf-8"
@@ -102,7 +102,7 @@ class Lichess:
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
         if is_new_rate_limit(response):
-            self.set_rate_limit_delay(60)
+            self.set_rate_limit_delay(path_template, 60)
 
         if raise_for_status:
             response.raise_for_status()
@@ -124,7 +124,7 @@ class Lichess:
         return not self.rate_limit_timers[path_template].is_expired()
 
     def rate_limit_time_left(self, path_template):
-        return self.rate_limit_time_left[path_template].time_until_expiration()
+        return self.rate_limit_timers[path_template].time_until_expiration()
 
     def get_game(self, game_id):
         return self.api_get("game", game_id)

@@ -62,6 +62,10 @@ def set_config_default(config, *sections, key, default, force_falsey_values=Fals
 
 def change_value_to_list(config, *sections, key):
     subconfig = set_config_default(config, *sections, key=key, default=[])
+
+    if subconfig[key] is None:
+        subconfig[key] = []
+
     if not isinstance(subconfig[key], list):
         subconfig[key] = [subconfig[key]]
 

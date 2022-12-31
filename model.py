@@ -83,7 +83,7 @@ class Challenge:
             return decline_reason is None, decline_reason
 
         except Exception:
-            logger.exception("Error while checking challenge:")
+            logger.exception(f"Error while checking challenge {self.id}:")
             return False, "generic"
 
     def score(self):
@@ -98,7 +98,7 @@ class Challenge:
         return f'{self.challenger_title or ""} {self.challenger_name}'.strip()
 
     def __str__(self):
-        return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating})"
+        return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating}) ({self.id})"
 
     def __repr__(self):
         return self.__str__()
@@ -154,7 +154,7 @@ class Game:
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000
 
     def __str__(self):
-        return f"{self.url()} {self.perf_name} vs {self.opponent.__str__()}"
+        return f"{self.url()} {self.perf_name} vs {self.opponent.__str__()} ({self.id})"
 
     def __repr__(self):
         return self.__str__()

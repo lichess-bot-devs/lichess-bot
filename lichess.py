@@ -144,9 +144,9 @@ class Lichess:
 
     def chat(self, game_id: str, room: str, text: str) -> JSON_REPLY_TYPE:
         if len(text) > MAX_CHAT_MESSAGE_LEN:
-            logger.warn(f"This chat message is {len(text)} characters, which is longer "
-                        f"than the maximum of {MAX_CHAT_MESSAGE_LEN}. It will not be sent.")
-            logger.warn(f"Message: {text}")
+            logger.warning(f"This chat message is {len(text)} characters, which is longer "
+                           f"than the maximum of {MAX_CHAT_MESSAGE_LEN}. It will not be sent.")
+            logger.warning(f"Message: {text}")
             return {}
 
         payload = {"room": room, "text": text}

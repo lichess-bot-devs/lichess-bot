@@ -26,7 +26,7 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id = None
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.delay_timers = defaultdict(lambda: Timer(0))
+        self.delay_timers = defaultdict(Timer)
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():

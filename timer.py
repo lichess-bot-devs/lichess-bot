@@ -2,7 +2,7 @@ import time
 
 
 class Timer:
-    def __init__(self, duration):
+    def __init__(self, duration=-1):
         self.duration = duration
         self.reset()
 
@@ -14,3 +14,6 @@ class Timer:
 
     def time_since_reset(self):
         return time.time() - self.starting_time
+
+    def time_until_expiration(self):
+        return max(0, self.duration - self.time_since_reset())

@@ -3,21 +3,14 @@ import logging
 import model
 from timer import Timer
 from collections import defaultdict
-from enum import Enum
 import lichess
-from config import Configuration
+from config import Configuration, DelayType
 from typing import Dict, Any, Set, Optional, Tuple, List
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 
 logger = logging.getLogger(__name__)
-
-
-class DelayType(str, Enum):
-    NONE = "none"
-    COARSE = "coarse"
-    FINE = "fine"
 
 
 class Matchmaking:

@@ -96,7 +96,6 @@ def translate_termination(termination: Termination, board: chess.Board, winner_c
 
 
 PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
-MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
 class EngineWrapper:
@@ -320,7 +319,7 @@ class EngineWrapper:
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = info["ponderpv"].split()
             try:
-                while len(" ".join(ponder_pv)) + len_bot_stats > MAX_CHAT_MESSAGE_LEN:
+                while len(" ".join(ponder_pv)) + len_bot_stats > lichess.MAX_CHAT_MESSAGE_LEN:
                     ponder_pv.pop()
                 if ponder_pv[-1].endswith("."):
                     ponder_pv.pop()

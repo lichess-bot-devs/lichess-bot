@@ -98,7 +98,8 @@ class Challenge:
         return f'{self.challenger_title or ""} {self.challenger_name}'.strip()
 
     def __str__(self):
-        return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating}) ({self.id})"
+        return f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating})" \
+               f" ({self.id})"
 
     def __repr__(self):
         return self.__str__()

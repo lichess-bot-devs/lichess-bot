@@ -431,92 +431,88 @@ def play_game(li,
     abort_time = config.abort_time
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
 
-    engine = engine_wrapper.create_engine(config)
-    engine.get_opponent_info(game)
-    logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
-    conversation = Conversation(game, engine, li, __version__, challenge_queue)
+    with engine_wrapper.create_engine(config) as engine:
+        engine.get_opponent_info(game)
+        logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
+        conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
-    logger.info(f"+++ {game}")
+        logger.info(f"+++ {game}")
 
-    is_correspondence = game.speed == "correspondence"
-    correspondence_cfg = config.correspondence
-    correspondence_move_time = correspondence_cfg.move_time * 1000
-    correspondence_disconnect_time = correspondence_cfg.disconnect_time
+        is_correspondence = game.speed == "correspondence"
+        correspondence_cfg = config.correspondence
+        correspondence_move_time = correspondence_cfg.move_time * 1000
+        correspondence_disconnect_time = correspondence_cfg.disconnect_time
 
-    engine_cfg = config.engine
-    ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
-    can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
-    move_overhead = config.move_overhead
-    delay_seconds = config.rate_limiting_delay/1000
+        engine_cfg = config.engine
+        ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
+        can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
+        move_overhead = config.move_overhead
+        delay_seconds = config.rate_limiting_delay/1000
 
-    keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
-    hello = get_greeting("hello", config.greeting, keyword_map)
-    goodbye = get_greeting("goodbye", config.greeting, keyword_map)
-    hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
-    goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
+        keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
+        hello = get_greeting("hello", config.greeting, keyword_map)
+        goodbye = get_greeting("goodbye", config.greeting, keyword_map)
+        hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
+        goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
 
-    disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
-    prior_game = None
-    board = None
-    upd = game.state
-    while not terminated:
-        move_attempted = False
-        try:
-            upd = upd or next_update(lines)
-            u_type = upd["type"] if upd else "ping"
-            if u_type == "chatLine":
-                conversation.react(ChatLine(upd), game)
-            elif u_type == "gameState":
-                game.state = upd
-                board = setup_board(game)
-                if not is_game_over(game) and is_engine_move(game, prior_game, board):
-                    disconnect_time = correspondence_disconnect_time
-                    say_hello(conversation, hello, hello_spectators, board)
-                    start_time = time.perf_counter_ns()
-                    fake_thinking(config, board, game)
-                    print_move_number(board)
-                    move_attempted = True
-                    engine.play_move(board,
-                                     game,
-                                     li,
-                                     start_time,
-                                     move_overhead,
-                                     can_ponder,
-                                     is_correspondence,
-                                     correspondence_move_time,
-                                     engine_cfg)
-                    time.sleep(delay_seconds)
-                elif is_game_over(game):
-                    engine.report_game_result(game, board)
-                    tell_user_game_result(game, board)
-                    conversation.send_message("player", goodbye)
-                    conversation.send_message("spectator", goodbye_spectators)
+        disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
+        prior_game = None
+        board = None
+        upd = game.state
+        while not terminated:
+            move_attempted = False
+            try:
+                upd = upd or next_update(lines)
+                u_type = upd["type"] if upd else "ping"
+                if u_type == "chatLine":
+                    conversation.react(ChatLine(upd), game)
+                elif u_type == "gameState":
+                    game.state = upd
+                    board = setup_board(game)
+                    if not is_game_over(game) and is_engine_move(game, prior_game, board):
+                        disconnect_time = correspondence_disconnect_time
+                        say_hello(conversation, hello, hello_spectators, board)
+                        start_time = time.perf_counter_ns()
+                        fake_thinking(config, board, game)
+                        print_move_number(board)
+                        move_attempted = True
+                        engine.play_move(board,
+                                         game,
+                                         li,
+                                         start_time,
+                                         move_overhead,
+                                         can_ponder,
+                                         is_correspondence,
+                                         correspondence_move_time,
+                                         engine_cfg)
+                        time.sleep(delay_seconds)
+                    elif is_game_over(game):
+                        engine.report_game_result(game, board)
+                        tell_user_game_result(game, board)
+                        conversation.send_message("player", goodbye)
+                        conversation.send_message("spectator", goodbye_spectators)
 
-                wb = "w" if board.turn == chess.WHITE else "b"
-                terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
-                game.ping(abort_time, terminate_time, disconnect_time)
-                prior_game = copy.deepcopy(game)
-            elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
-                break
-        except (HTTPError,
-                ReadTimeout,
-                RemoteDisconnected,
-                ChunkedEncodingError,
-                ConnectionError,
-                StopIteration,
-                MoveTimeout) as e:
-            stopped = isinstance(e, StopIteration)
-            is_ongoing = game.id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
-            if stopped or (not move_attempted and not is_ongoing):
-                break
-        finally:
-            upd = None
+                    wb = "w" if board.turn == chess.WHITE else "b"
+                    terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
+                    game.ping(abort_time, terminate_time, disconnect_time)
+                    prior_game = copy.deepcopy(game)
+                elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
+                    break
+            except (HTTPError,
+                    ReadTimeout,
+                    RemoteDisconnected,
+                    ChunkedEncodingError,
+                    ConnectionError,
+                    StopIteration,
+                    MoveTimeout) as e:
+                stopped = isinstance(e, StopIteration)
+                is_ongoing = game.id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
+                if stopped or (not move_attempted and not is_ongoing):
+                    break
+            finally:
+                upd = None
 
-    engine.stop()
-    engine.ping()
-    engine.quit()
-
-    try_print_pgn_game_record(li, config, game, board, engine)
+        try_print_pgn_game_record(li, config, game, board, engine)
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
 
 

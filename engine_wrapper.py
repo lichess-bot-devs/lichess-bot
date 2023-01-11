@@ -9,6 +9,7 @@ import time
 import random
 from enum import Enum
 from collections import Counter
+from contextlib import contextmanager
 import config
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 out_of_online_opening_book_moves = Counter()
 
 
+@contextmanager
 def create_engine(config):
     cfg = config.engine
     engine_path = os.path.join(cfg.dir, cfg.name)
@@ -38,7 +40,13 @@ def create_engine(config):
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or {})
     logger.debug(f"Starting engine: {commands}")
-    return Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
+    engine = Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
+    try:
+        yield engine
+    finally:
+        engine.stop()
+        engine.ping()
+        engine.quit()
 
 
 def remove_managed_options(config):
@@ -615,7 +623,8 @@ def get_lichess_cloud_move(li, board, game, lichess_cloud_cfg):
                 comment["depth"] = data["depth"]
                 comment["nodes"] = data["knodes"] * 1000
                 comment["pv"] = list(map(chess.Move.from_uci, pv["moves"].split()))
-                logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes}) for game {game.id}")
+                logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})"
+                            f" for game {game.id}")
     except Exception:
         pass
 
@@ -713,7 +722,8 @@ def get_lichess_egtb_move(li, game, board, quality, variant):
                 dtm = best_move["dtm"]
                 if dtm:
                     dtm *= -1
-                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
+                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})"
+                            f" for game {game.id}")
         else:
             best_wdl = name_to_wld[data["moves"][0]["category"]]
 
@@ -882,7 +892,8 @@ def get_gaviota(board, game, gaviota_cfg):
                     logger.info(f"Suggesting moves from gaviota (pseudo wdl: {pseudo_wdl}) for game {game.id}")
                 else:
                     move, dtm = random.choice(best_moves)
-                    logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm}) for game {game.id}")
+                    logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})"
+                                f" for game {game.id}")
             else:
                 # There can be multiple moves with the same dtm.
                 best_moves = [(move, dtm) for move, dtm in good_moves if dtm == best_dtm]

@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import config
 import model
 import lichess
-from typing import Dict, Any, List, Optional, Union, Tuple
+from typing import Dict, Any, List, Optional, Union, Tuple, Generator
 INFO_DICT_TYPE = Dict[str, Any]
 OPTIONS_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]

@@ -10,6 +10,7 @@ import time
 import random
 from enum import Enum
 from collections import Counter
+from contextlib import contextmanager
 import config
 import model
 import lichess
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 out_of_online_opening_book_moves: Counter[str] = Counter()
 
 
-def create_engine(config: config.Configuration) -> EngineWrapper:
+@contextmanager
+def create_engine(config: config.Configuration) -> Generator[EngineWrapper, None, None]:
     cfg = config.engine
     engine_path = os.path.join(cfg.dir, cfg.name)
     engine_type = cfg.protocol
@@ -47,7 +49,13 @@ def create_engine(config: config.Configuration) -> EngineWrapper:
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or {})
     logger.debug(f"Starting engine: {commands}")
-    return Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
+    engine = Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
+    try:
+        yield engine
+    finally:
+        engine.stop()
+        engine.ping()
+        engine.quit()
 
 
 def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:

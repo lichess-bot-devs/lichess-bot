@@ -3,8 +3,7 @@ from urllib.parse import urljoin
 import logging
 from timer import Timer
 from config import Configuration
-from collections import defaultdict
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, DefaultDict
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, List[Timer]]) -> bool:
+    def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
         # Filter out old challenges
         recent_bot_challenges[self.challenger_name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger_name]
@@ -71,7 +70,7 @@ class Challenge:
         return None if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
-                     recent_bot_challenges: defaultdict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
+                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
         try:
             if self.from_self:
                 return True, None

@@ -26,15 +26,15 @@ from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
 import queue
-from typing import Dict, Any, Optional, Set, List, Iterator
+from typing import Dict, Any, Optional, Set, List, Iterator, DefaultDict
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
 EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
 GAME_EVENT_TYPE = Dict[str, Any]
-CONTROL_QUEUE_TYPE = queue.Queue[EVENT_TYPE]
-CORRESPONDENCE_QUEUE_TYPE = queue.Queue[str]
-LOGGING_QUEUE_TYPE = queue.Queue[logging.LogRecord]
+CONTROL_QUEUE_TYPE = "queue.Queue[EVENT_TYPE]"
+CORRESPONDENCE_QUEUE_TYPE = "queue.Queue[str]"
+LOGGING_QUEUE_TYPE = "queue.Queue[logging.LogRecord]"
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 POOL_TYPE = multiprocessing.Pool
 
@@ -403,7 +403,7 @@ def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:
 
 def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      challenge_config: Configuration, user_profile: USER_PROFILE_TYPE,
-                     matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict[str, List[Timer]]) -> None:
+                     matchmaker: matchmaking.Matchmaking, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> None:
     chlng = model.Challenge(event["challenge"], user_profile)
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
@@ -534,7 +534,7 @@ def play_game(li: lichess.Lichess,
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
 
 
-def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict[str, str]) -> str:
+def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: DefaultDict[str, str]) -> str:
     return greeting_cfg.lookup(greeting).format_map(keyword_map)
 
 

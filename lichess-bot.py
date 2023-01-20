@@ -40,7 +40,7 @@ POOL_TYPE = multiprocessing.Pool
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2023.1.13.1"
+__version__ = "2023.1.20.2"
 
 terminated = False
 restart = True

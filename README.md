@@ -24,9 +24,13 @@ python3 -m pip install -r requirements.txt
 
 ### Windows:
 - **NOTE: Only Python 3.8 or later is supported!**
-- If you don't have Python, you may [download it here](https://www.python.org/downloads/). When installing it, enable "add Python to PATH"
+- If needed, install Python:
+  - [Download Python here](https://www.python.org/downloads/).
+  - When installing, enable "add Python to PATH".
+  - If the Python version is at least 3.10, a default local install works.
+  - If the Python version is 3.8 or 3.9, choose "Custom installation", keep the defaults on the Optional Features page, and choose "Install for all users" in the Advanced Options page.
 - Start Terminal, PowerShell, cmd, or your preferred command prompt.
-- Upgrade pip. Execute `python -m pip install --upgrade pip`.
+- Upgrade pip: `python -m pip install --upgrade pip`.
 - Download the repo into lichess-bot directory.
 - Navigate to the directory: `cd [folder's address]` (for example, `cd C:\Users\username\repos\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.

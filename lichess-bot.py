@@ -17,6 +17,9 @@ import os
 import io
 import copy
 import math
+import sys
+import datetime
+import yaml
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -40,7 +43,10 @@ POOL_TYPE = multiprocessing.Pool
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2023.1.21.1"
+with open("versioning.yml") as version_file:
+    versioning_info = yaml.safe_load(version_file)
+
+__version__ = versioning_info["lichess_bot_version"]
 
 terminated = False
 restart = True
@@ -740,6 +746,7 @@ def start_lichess_bot() -> None:
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
     max_retries = CONFIG.engine.online_moves.max_retries
+    check_python_version()
     li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()
@@ -754,6 +761,32 @@ def start_lichess_bot() -> None:
         start(li, user_profile, CONFIG, logging_level, args.logfile)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
+
+
+def check_python_version() -> None:
+    def version_numeric(version_str: str) -> List[int]:
+        return [int(n) for n in version_str.split(".")]
+
+    deprecated_version = version_numeric(versioning_info["deprecated_python_version"])
+    good_version = version_numeric(versioning_info["minimum_python_version"])
+    user_version = list(sys.version_info[0:2])
+
+    version_change_date = versioning_info["deprecation_date"]
+    today = datetime.date.today()
+
+    def version_str(version: Iterator[int]) -> str:
+        return "Python " + ".".join(str(n) for n in version)
+
+    if (user_version < deprecated_version
+            or (user_version == deprecated_version and today >= version_change_date)):
+        raise RuntimeError("A newer version of python is required to run lichess-bot. "
+                           f"You are currently running {version_str(user_version)}. "
+                           f"Please upgrade to at least {version_str(good_version)}.")
+
+    if user_version == deprecated_version:
+        logger.warning(f"A newer version of python will be required on {version_change_date} to run lichess-bot. "
+                       f"You are currently running {version_str(user_version)}. "
+                       f"Please upgrade to at least {version_str(good_version)} before then.")
 
 
 if __name__ == "__main__":

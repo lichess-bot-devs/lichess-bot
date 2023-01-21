@@ -1,10 +1,17 @@
+from __future__ import annotations
 import logging
+import model
+from engine_wrapper import EngineWrapper
+from lichess import Lichess
+from typing import Dict, List
+MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 
 logger = logging.getLogger(__name__)
 
 
 class Conversation:
-    def __init__(self, game, engine, xhr, version, challenge_queue):
+    def __init__(self, game: model.Game, engine: EngineWrapper, xhr: Lichess, version: str,
+                 challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         self.game = game
         self.engine = engine
         self.xhr = xhr
@@ -13,12 +20,12 @@ class Conversation:
 
     command_prefix = "!"
 
-    def react(self, line, game):
-        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")}')
+    def react(self, line: ChatLine, game: model.Game) -> None:
+        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")!r}')
         if line.text[0] == self.command_prefix:
             self.command(line, game, line.text[1:].lower())
 
-    def command(self, line, game, cmd):
+    def command(self, line: ChatLine, game: model.Game, cmd: str) -> None:
         from_self = line.username == self.game.username
         if cmd == "commands" or cmd == "help":
             self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
@@ -42,17 +49,17 @@ class Conversation:
             else:
                 self.send_reply(line, "No challenges queued.")
 
-    def send_reply(self, line, reply):
+    def send_reply(self, line: ChatLine, reply: str) -> None:
         logger.info(f'*** {self.game.url()} [{line.room}] {self.game.username}: {reply}')
         self.xhr.chat(self.game.id, line.room, reply)
 
-    def send_message(self, room, message):
+    def send_message(self, room: str, message: str) -> None:
         if message:
             self.send_reply(ChatLine({"room": room}), message)
 
 
 class ChatLine:
-    def __init__(self, json):
+    def __init__(self, json: Dict[str, str]) -> None:
         self.room = json.get("room")
         self.username = json.get("username")
         self.text = json.get("text")

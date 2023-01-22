@@ -18,7 +18,6 @@ import io
 import copy
 import math
 import sys
-import datetime
 import yaml
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
@@ -767,26 +766,32 @@ def check_python_version() -> None:
     def version_numeric(version_str: str) -> List[int]:
         return [int(n) for n in version_str.split(".")]
 
-    deprecated_version = version_numeric(versioning_info["deprecated_python_version"])
-    good_version = version_numeric(versioning_info["minimum_python_version"])
-    user_version = list(sys.version_info[0:2])
-
+    python_deprecated_version = version_numeric(versioning_info["deprecated_python_version"])
+    python_good_version = version_numeric(versioning_info["minimum_python_version"])
     version_change_date = versioning_info["deprecation_date"]
-    today = datetime.date.today()
+    this_python_version = list(sys.version_info[0:2])
 
-    def version_str(version: Iterator[int]) -> str:
+    def version_str(version: List[int]) -> str:
         return "Python " + ".".join(str(n) for n in version)
 
-    if (user_version < deprecated_version
-            or (user_version == deprecated_version and today >= version_change_date)):
-        raise RuntimeError("A newer version of python is required to run lichess-bot. "
-                           f"You are currently running {version_str(user_version)}. "
-                           f"Please upgrade to at least {version_str(good_version)}.")
+    upgrade_request = (f"You are currently running {version_str(this_python_version)}. "
+                       f"Please upgrade to {version_str(python_good_version)} or newer")
+    out_of_date_error = RuntimeError("A newer version of python is required to run this vesion of lichess-bot. "
+                                     + upgrade_request + ".")
+    out_of_date_warning = (f"A newer version of python will be required on {version_change_date} to run lichess-bot. "
+                           + upgrade_request + " before then.")
 
-    if user_version == deprecated_version:
-        logger.warning(f"A newer version of python will be required on {version_change_date} to run lichess-bot. "
-                       f"You are currently running {version_str(user_version)}. "
-                       f"Please upgrade to at least {version_str(good_version)} before then.")
+    this_lichess_bot_version = version_numeric(__version__)
+    lichess_bot_breaking_version = list(version_change_date.timetuple()[0:3])
+
+    if this_python_version < python_deprecated_version:
+        raise out_of_date_error
+
+    if this_python_version == python_deprecated_version:
+        if this_lichess_bot_version < lichess_bot_breaking_version:
+            logger.warning(out_of_date_warning)
+        else:
+            raise out_of_date_error
 
 
 if __name__ == "__main__":

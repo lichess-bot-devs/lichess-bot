@@ -10,11 +10,12 @@ A bridge between [Lichess Bot API](https://lichess.org/api#tag/Bot) and bots.
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
 - Install pip: `apt install python3-pip`.
+  - In non-Ubuntu distros, replace `apt` with the correct package manager (`pacman` in Arch, `dnf` in Fedora, `brew` in Mac, etc.), package name, and installation command.
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv: `apt install python3-venv`.
 ```
 python3 -m venv venv # If this fails you probably need to add Python3 to your PATH.
-virtualenv venv -p python3 # If this fails you probably need to add Python3 to your PATH.
+virtualenv venv -p python3
 source ./venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```
@@ -22,20 +23,24 @@ python3 -m pip install -r requirements.txt
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the `config.yml` file as necessary.
 
 ### Windows:
-- [Here is a video on how to install the bot](https://youtu.be/w-aJFk00POQ). Or you may proceed to the following steps.
 - **NOTE: Only Python 3.8 or later is supported!**
-- If you don't have Python, you may [download it here](https://www.python.org/downloads/). When installing it, enable "add Python to PATH", then go to custom installation (this may be not necessary, but on some computers it won't work otherwise) and enable all options (especially "install for all users"), except the last. It's better to install Python in a path without spaces, like "C:\Python\".
-- To type commands it's better to use PowerShell. Go to the Start menu and type "PowerShell" (you may use "cmd" too, but sometimes it may not work).
-- Then you may need to upgrade pip. Execute `python3 -m pip install --upgrade pip` in PowerShell.
+- If needed, install Python:
+  - [Download Python here](https://www.python.org/downloads/).
+  - When installing, enable "add Python to PATH".
+  - If the Python version is at least 3.10, a default local install works.
+  - If the Python version is 3.8 or 3.9, choose "Custom installation", keep the defaults on the Optional Features page, and choose "Install for all users" in the Advanced Options page.
+- Start Terminal, PowerShell, cmd, or your preferred command prompt.
+- Upgrade pip: `python -m pip install --upgrade pip`.
 - Download the repo into lichess-bot directory.
-- Navigate to the directory in PowerShell: `cd [folder's address]` (example, `cd C:\chess\lichess-bot`).
+- Navigate to the directory: `cd [folder's address]` (for example, `cd C:\Users\username\repos\lichess-bot`).
 - Install virtualenv: `pip install virtualenv`.
 - Setup virtualenv:
 ```
-python3 -m venv .venv # If this fails you probably need to add Python3 to your PATH.
-./.venv/Scripts/Activate.ps1 # `.\.venv\Scripts\activate.bat` should work in cmd in administrator mode. This may not work on Windows, and in this case you need to execute "Set-ExecutionPolicy RemoteSigned" first and choose "Y" there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with "Set-ExecutionPolicy Restricted" and pressing "Y".
+python -m venv venv # If this fails you probably need to add Python3 to your PATH.
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
+PowerShell note: If the `activate` command does not work in PowerShell, execute `Set-ExecutionPolicy RemoteSigned` first and choose `Y` there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with `Set-ExecutionPolicy Restricted` and pressing `Y`.
 - Copy `config.yml.default` to `config.yml`.
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the `config.yml` file as necessary (use "#" to disable certain ones).
 

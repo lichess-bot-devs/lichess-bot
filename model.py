@@ -15,15 +15,15 @@ class Challenge:
         self.variant = c_info["variant"]["key"]
         self.perf_name = c_info["perf"]["name"]
         self.speed = c_info["speed"]
-        self.increment = c_info.get("timeControl", {}).get("increment")
-        self.base = c_info.get("timeControl", {}).get("limit")
-        self.days = c_info.get("timeControl", {}).get("daysPerTurn")
+        self.increment: int = c_info.get("timeControl", {}).get("increment")
+        self.base: int = c_info.get("timeControl", {}).get("limit")
+        self.days: int = c_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = c_info.get("challenger") or {}
         self.challenger_title = self.challenger.get("title")
         self.challenger_is_bot = self.challenger_title == "BOT"
         self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None
         self.challenger_name = self.challenger.get("name", "Anonymous")
-        self.challenger_rating_int = self.challenger.get("rating", 0)
+        self.challenger_rating_int: int = self.challenger.get("rating", 0)
         self.challenger_rating = self.challenger_rating_int or "?"
         self.from_self = self.challenger_name == user_profile["username"]
 
@@ -32,12 +32,12 @@ class Challenge:
 
     def is_supported_time_control(self, challenge_cfg: Configuration) -> bool:
         speeds = challenge_cfg.time_controls
-        increment_max = challenge_cfg.max_increment
-        increment_min = challenge_cfg.min_increment
-        base_max = challenge_cfg.max_base
-        base_min = challenge_cfg.min_base
-        days_max = challenge_cfg.max_days
-        days_min = challenge_cfg.min_days
+        increment_max: int = challenge_cfg.max_increment
+        increment_min: int = challenge_cfg.min_increment
+        base_max: int = challenge_cfg.max_base
+        base_min: int = challenge_cfg.min_base
+        days_max: int = challenge_cfg.max_days
+        days_min: int = challenge_cfg.min_days
 
         if self.speed not in speeds:
             return False
@@ -118,11 +118,11 @@ class Game:
         self.clock_initial = clock.get("initial", ten_years_in_ms)
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = (json.get("perf") or {}).get("name", "{perf?}")
-        self.variant_name = json.get("variant")["name"]
-        self.white = Player(json.get("white"))
-        self.black = Player(json.get("black"))
+        self.variant_name = json["variant"]["name"]
+        self.white = Player(json["white"])
+        self.black = Player(json["black"])
         self.initial_fen = json.get("initialFen")
-        self.state = json.get("state")
+        self.state: Dict[str, Any] = json["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
@@ -155,7 +155,9 @@ class Game:
         return self.disconnect_time.is_expired()
 
     def my_remaining_seconds(self) -> float:
-        return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000
+        wtime: int = self.state["wtime"]
+        btime: int = self.state["btime"]
+        return (wtime if self.is_white else btime) / 1000
 
     def __str__(self) -> str:
         return f"{self.url()} {self.perf_name} vs {self.opponent.__str__()} ({self.id})"

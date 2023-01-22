@@ -5,7 +5,7 @@ from timer import Timer
 from collections import defaultdict
 import lichess
 from config import Configuration, DelayType
-from typing import Dict, Any, Set, Optional, Tuple, List
+from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
@@ -23,9 +23,9 @@ class Matchmaking:
         self.last_game_ended_delay = Timer(self.matchmaking_cfg.challenge_timeout * 60)
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
-        self.challenge_id = None
+        self.challenge_id: Optional[str] = None
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.delay_timers = defaultdict(Timer)
+        self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():
@@ -59,7 +59,7 @@ class Matchmaking:
 
         try:
             response = self.li.challenge(username, params)
-            challenge_id = response.get("challenge", {}).get("id")
+            challenge_id: Optional[str] = response.get("challenge", {}).get("id")
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)
@@ -69,10 +69,12 @@ class Matchmaking:
             return None
 
     def perf(self) -> Dict[str, Dict[str, Any]]:
-        return self.user_profile["perfs"]
+        user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
+        return user_perf
 
     def username(self) -> str:
-        return self.user_profile["username"]
+        username: str = self.user_profile["username"]
+        return username
 
     def update_user_profile(self) -> None:
         if self.last_user_profile_update_time.is_expired():
@@ -141,7 +143,7 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant, mode
 
     def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
-        value = self.matchmaking_cfg.lookup(parameter)
+        value: str = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:

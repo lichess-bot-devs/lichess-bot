@@ -37,7 +37,7 @@ python3 -m pip install -r requirements.txt
 - Setup virtualenv:
 ```
 python -m venv venv # If this fails you probably need to add Python3 to your PATH.
-venv/Scripts/activate
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
 PowerShell note: If the `activate` command does not work in PowerShell, execute `Set-ExecutionPolicy RemoteSigned` first and choose `Y` there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with `Set-ExecutionPolicy Restricted` and pressing `Y`.

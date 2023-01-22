@@ -102,30 +102,32 @@ def thread_for_test() -> None:
                 end_time = time.perf_counter_ns()
                 wtime -= (end_time - start_time) / 1e9
                 wtime += increment
-            board.push(move.move)
+            engine_move: chess.Move = move.move
+            board.push(engine_move)
 
-            uci_move = move.move.uci()
+            uci_move = engine_move.uci()
             with open("./logs/states.txt") as states:
-                state = states.read().split("\n")
+                state_str = states.read()
+            state = state_str.split("\n")
             state[0] += f" {uci_move}"
-            state = "\n".join(state)
+            state_str = "\n".join(state)
             with open("./logs/states.txt", "w") as file:
-                file.write(state)
+                file.write(state_str)
 
         else:  # lichess-bot move
             start_time = time.perf_counter_ns()
-            state2 = state
+            state2 = state_str
             moves_are_correct = False
-            while state2 == state or not moves_are_correct:
+            while state2 == state_str or not moves_are_correct:
                 with open("./logs/states.txt") as states:
                     state2 = states.read()
                 time.sleep(0.001)
                 moves = state2.split("\n")[0]
                 temp_board = chess.Board()
                 moves_are_correct = True
-                for move in moves.split():
+                for move_str in moves.split():
                     try:
-                        temp_board.push_uci(move)
+                        temp_board.push_uci(move_str)
                     except ValueError:
                         moves_are_correct = False
             with open("./logs/states.txt") as states:
@@ -134,16 +136,17 @@ def thread_for_test() -> None:
             if len(board.move_stack) > 1:
                 btime -= (end_time - start_time) / 1e9
                 btime += increment
-            move = state2.split("\n")[0].split(" ")[-1]
-            board.push_uci(move)
+            move_str = state2.split("\n")[0].split(" ")[-1]
+            board.push_uci(move_str)
 
         time.sleep(0.001)
         with open("./logs/states.txt") as states:
-            state = states.read().split("\n")
+            state_str = states.read()
+        state = state_str.split("\n")
         state[1] = f"{wtime},{btime}"
-        state = "\n".join(state)
+        state_str = "\n".join(state)
         with open("./logs/states.txt", "w") as file:
-            file.write(state)
+            file.write(state_str)
 
     with open("./logs/events.txt", "w") as file:
         file.write("end")

@@ -772,14 +772,14 @@ def check_python_version() -> None:
     this_python_version = list(sys.version_info[0:2])
 
     def version_str(version: List[int]) -> str:
-        return "Python " + ".".join(str(n) for n in version)
+        return f"Python {'.'.join(str(n) for n in version)}"
 
     upgrade_request = (f"You are currently running {version_str(this_python_version)}. "
                        f"Please upgrade to {version_str(python_good_version)} or newer")
-    out_of_date_error = RuntimeError("A newer version of python is required to run this vesion of lichess-bot. "
-                                     + upgrade_request + ".")
-    out_of_date_warning = (f"A newer version of python will be required on {version_change_date} to run lichess-bot. "
-                           + upgrade_request + " before then.")
+    out_of_date_error = RuntimeError("A newer version of Python is required "
+                                     f"to run this version of lichess-bot. {upgrade_request}.")
+    out_of_date_warning = ("A newer version of Python will be required "
+                           f"on {version_change_date} to run lichess-bot. {upgrade_request} before then.")
 
     this_lichess_bot_version = version_numeric(__version__)
     lichess_bot_breaking_version = list(version_change_date.timetuple()[0:3])

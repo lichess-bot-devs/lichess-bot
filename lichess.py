@@ -57,6 +57,7 @@ class Lichess:
         self.baseUrl = url
         self.session = requests.Session()
         self.session.headers.update(self.header)
+        self.other_session = requests.Session()
         self.set_user_agent("?")
         self.logging_level = logging_level
         self.max_retries = max_retries
@@ -218,7 +219,7 @@ class Lichess:
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> JSON_REPLY_TYPE:
-            return self.session.get(path, timeout=2, params=params).json()
+            return self.other_session.get(path, timeout=2, params=params).json()
         return online_book_get()
 
     def is_online(self, user_id: str) -> bool:

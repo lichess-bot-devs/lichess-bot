@@ -418,7 +418,7 @@ class XBoardEngine(EngineWrapper):
         if endgame_message:
             endgame_message = " {" + endgame_message + "}"
 
-        self.engine.protocol.send_line(f"result {game_result}{endgame_message}")
+        self.engine.protocol.send_line(f"result {game_result.value}{endgame_message}")
 
     def stop(self) -> None:
         self.engine.protocol.send_line("?")

@@ -9,7 +9,8 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  mypy:
+    if: "github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'Update version')"
 
     runs-on: ${{ matrix.os }}
     strategy:

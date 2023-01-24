@@ -11,6 +11,7 @@ on:
 
 jobs:
   build:
+    if: "github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'Update version')"
 
     runs-on: ${{ matrix.os }}
     strategy:

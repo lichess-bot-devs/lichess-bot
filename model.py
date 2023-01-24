@@ -158,7 +158,7 @@ class Game:
         return (self.state["wtime"] if self.is_white else self.state["btime"]) / 1000
 
     def __str__(self) -> str:
-        return f"{self.url()} {self.perf_name} vs {self.opponent.__str__()} ({self.id})"
+        return f"{self.url()} {self.perf_name} vs {self.opponent} ({self.id})"
 
     def __repr__(self) -> str:
         return self.__str__()

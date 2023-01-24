@@ -18,14 +18,9 @@ class Challenge:
         self.increment = c_info.get("timeControl", {}).get("increment")
         self.base = c_info.get("timeControl", {}).get("limit")
         self.days = c_info.get("timeControl", {}).get("daysPerTurn")
-        self.challenger = c_info.get("challenger") or {}
-        self.challenger_title = self.challenger.get("title")
-        self.challenger_is_bot = self.challenger_title == "BOT"
-        self.challenger_master_title = self.challenger_title if not self.challenger_is_bot else None
-        self.challenger_name = self.challenger.get("name", "Anonymous")
-        self.challenger_rating_int = self.challenger.get("rating", 0)
-        self.challenger_rating = self.challenger_rating_int or "?"
-        self.from_self = self.challenger_name == user_profile["username"]
+        self.challenger = Player(c_info.get("challenger") or {})
+        self.opponent = Player(c_info.get("destUser"))
+        self.from_self = self.challenger.name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
         return self.variant in challenge_cfg.variants
@@ -58,13 +53,13 @@ class Challenge:
 
     def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
         # Filter out old challenges
-        recent_bot_challenges[self.challenger_name] = [timer for timer
-                                                       in recent_bot_challenges[self.challenger_name]
+        recent_bot_challenges[self.challenger.name] = [timer for timer
+                                                       in recent_bot_challenges[self.challenger.name]
                                                        if not timer.is_expired()]
         max_recent_challenges = config.max_recent_bot_challenges
-        return (not self.challenger_is_bot
+        return (not self.challenger.is_bot
                 or max_recent_challenges is None
-                or len(recent_bot_challenges[self.challenger_name]) < max_recent_challenges)
+                or len(recent_bot_challenges[self.challenger.name]) < max_recent_challenges)
 
     def decline_due_to(self, requirement_met: bool, decline_reason: str) -> Optional[str]:
         return None if requirement_met else decline_reason
@@ -75,12 +70,12 @@ class Challenge:
             if self.from_self:
                 return True, None
 
-            decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger_is_bot, "noBot")
-                              or self.decline_due_to(not config.only_bot or self.challenger_is_bot, "onlyBot")
+            decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")
+                              or self.decline_due_to(not config.only_bot or self.challenger.is_bot, "onlyBot")
                               or self.decline_due_to(self.is_supported_time_control(config), "timeControl")
                               or self.decline_due_to(self.is_supported_variant(config), "variant")
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
-                              or self.decline_due_to(self.challenger_name not in config.block_list, "generic")
+                              or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
             return decline_reason is None, decline_reason
@@ -91,18 +86,16 @@ class Challenge:
 
     def score(self) -> int:
         rated_bonus = 200 if self.rated else 0
-        titled_bonus = 200 if self.challenger_master_title else 0
-        return self.challenger_rating_int + rated_bonus + titled_bonus
+        challenger_master_title = self.challenger.title if not self.challenger.is_bot else None
+        titled_bonus = 200 if challenger_master_title else 0
+        challenger_rating_int = self.challenger.rating or 0
+        return challenger_rating_int + rated_bonus + titled_bonus
 
     def mode(self) -> str:
         return "rated" if self.rated else "casual"
 
-    def challenger_full_name(self) -> str:
-        return f'{self.challenger_title or ""} {self.challenger_name}'.strip()
-
     def __str__(self) -> str:
-        return (f"{self.perf_name} {self.mode()} challenge from {self.challenger_full_name()}({self.challenger_rating})"
-                f" ({self.id})")
+        return f"{self.perf_name} {self.mode()} challenge from {self.challenger} ({self.id})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -168,6 +161,7 @@ class Player:
     def __init__(self, json: Dict[str, Any]) -> None:
         self.name = json.get("name")
         self.title = json.get("title")
+        self.is_bot = self.title == "BOT"
         self.rating = json.get("rating")
         self.provisional = json.get("provisional")
         self.aiLevel = json.get("aiLevel")

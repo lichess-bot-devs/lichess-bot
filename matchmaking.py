@@ -167,7 +167,7 @@ class Matchmaking:
 
     def declined_challenge(self, event: EVENT_TYPE) -> None:
         challenge = model.Challenge(event["challenge"], self.user_profile)
-        opponent = event["challenge"]["destUser"]["name"]
+        opponent = challenge.opponent
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
         if self.challenge_id == challenge.id:
@@ -177,7 +177,7 @@ class Matchmaking:
 
         # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
-        delay_timer = self.get_delay_timer(opponent,
+        delay_timer = self.get_delay_timer(opponent.name,
                                            challenge.variant,
                                            challenge.speed,
                                            mode)

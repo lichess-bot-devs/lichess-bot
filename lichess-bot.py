@@ -408,11 +408,11 @@ def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MU
     if is_supported:
         challenge_queue.append(chlng)
         if challenge_config.recent_bot_challenge_age is not None:
-            recent_bot_challenges[chlng.challenger_name].append(Timer(challenge_config.recent_bot_challenge_age))
+            recent_bot_challenges[chlng.challenger.name].append(Timer(challenge_config.recent_bot_challenge_age))
         sort_challenges(challenge_queue, challenge_config)
         time_window = challenge_config.recent_bot_challenge_age
         if time_window is not None:
-            recent_bot_challenges[chlng.challenger_name].append(Timer(time_window))
+            recent_bot_challenges[chlng.challenger.name].append(Timer(time_window))
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
 

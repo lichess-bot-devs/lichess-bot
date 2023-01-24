@@ -177,7 +177,7 @@ class Player:
             return f"AI level {self.aiLevel}"
         else:
             rating = f'{self.rating}{"?" if self.provisional else ""}'
-            return f'{self.title or ""} {self.name}({rating})'.strip()
+            return f'{self.title or ""} {self.name} ({rating})'.strip()
 
     def __repr__(self) -> str:
         return self.__str__()

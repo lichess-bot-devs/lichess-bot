@@ -40,7 +40,7 @@ def download_sf() -> None:
 
 
 def download_lc0() -> None:
-    response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.28.2/lc0-v0.28.2-windows-cpu-dnnl.zip",
+    response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.29.0/lc0-v0.29.0-windows-cpu-dnnl.zip",
                             allow_redirects=True)
     with open("./TEMP/lc0_zip.zip", "wb") as file:
         file.write(response.content)
@@ -64,7 +64,7 @@ download_sf()
 if platform == "win32":
     download_lc0()
     download_sjeng()
-logging_level = lichess_bot.logging.INFO
+logging_level = lichess_bot.logging.DEBUG
 lichess_bot.logging_configurer(logging_level, None)
 lichess_bot.logger.info("Downloaded engines")
 

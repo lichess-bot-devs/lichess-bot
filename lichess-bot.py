@@ -312,12 +312,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         game_id = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
-        active_games.add(game_id)
-        log_proc_count("Used", active_games)
-        play_game_args["game_id"] = game_id
-        pool.apply_async(play_game,
-                         kwds=play_game_args,
-                         error_callback=game_error_handler)
+        start_game_thread(active_games, game_id, play_game_args, pool)
 
 
 def start_low_time_games(low_time_games: List[EVENT_GETATTR_GAME_TYPE], active_games: Set[str], max_games: int,
@@ -325,12 +320,7 @@ def start_low_time_games(low_time_games: List[EVENT_GETATTR_GAME_TYPE], active_g
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         game_id = low_time_games.pop(0)["id"]
-        active_games.add(game_id)
-        log_proc_count("Used", active_games)
-        play_game_args["game_id"] = game_id
-        pool.apply_async(play_game,
-                         kwds=play_game_args,
-                         error_callback=game_error_handler)
+        start_game_thread(active_games, game_id, play_game_args, pool)
 
 
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: Set[str],
@@ -370,6 +360,15 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
         challenge_queue[:] = list_c
 
 
+def start_game_thread(active_games: Set[str], game_id: str, play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
+    active_games.add(game_id)
+    log_proc_count("Used", active_games)
+    play_game_args["game_id"] = game_id
+    pool.apply_async(play_game,
+                     kwds=play_game_args,
+                     error_callback=game_error_handler)
+
+
 def start_game(event: EVENT_TYPE,
                pool: POOL_TYPE,
                play_game_args: PLAY_GAME_ARGS_TYPE,
@@ -391,12 +390,7 @@ def start_game(event: EVENT_TYPE,
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
-        active_games.add(game_id)
-        log_proc_count("Used", active_games)
-        play_game_args["game_id"] = game_id
-        pool.apply_async(play_game,
-                         kwds=play_game_args,
-                         error_callback=game_error_handler)
+        start_game_thread(active_games, game_id, play_game_args, pool)
 
 
 def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:

@@ -19,7 +19,7 @@ class Challenge:
         self.base = c_info.get("timeControl", {}).get("limit")
         self.days = c_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = Player(c_info.get("challenger") or {})
-        self.opponent = Player(c_info.get("destUser"))
+        self.opponent = Player(c_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:

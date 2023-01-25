@@ -11,7 +11,7 @@ on:
 
 jobs:
   test:
-    if: "github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'Update version')"
+    if: "github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'Auto updating version')"
 
     runs-on: ${{ matrix.os }}
     strategy:

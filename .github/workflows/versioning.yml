@@ -1,0 +1,38 @@
+name: Versioning
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  versioning:
+      if: "!contains(github.event.head_commit.message, 'Auto updating version')"
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML
+      - name: Update version
+        run: python .github/workflows/update_version.py
+      - name: Get version
+        id: yaml-data
+        uses: jbutcher5/read-yaml@main      # You may wish to replace main with a version tag such as '1.6' etc.
+        with:
+          file: 'versioning.yml'          # File to read from
+          key-path: '["lichess_bot_version"]'
+      - name: Auto update version
+        run: |
+          git config --global user.email "EMAIL"
+          git config --global user.name "NAME"
+          git remote set-url origin ${{ secrets.ssh }}
+          git status
+          git add versioning.yml
+          git commit -m "Auto updating version to ${{ steps.yaml-data.outputs.data }}"
+          git fetch origin main
+          git push origin HEAD:main

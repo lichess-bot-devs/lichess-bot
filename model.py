@@ -111,7 +111,7 @@ class Challenge:
 class Game:
     def __init__(self, json: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         self.username = username
-        self.id: str = json.get("id")
+        self.id: str = json["id"]
         self.speed = json.get("speed")
         clock = json.get("clock") or {}
         ten_years_in_ms = 1000 * 3600 * 24 * 365 * 10
@@ -168,7 +168,7 @@ class Game:
 
 class Player:
     def __init__(self, json: Dict[str, Any]) -> None:
-        self.name = json.get("name")
+        self.name: str = json["name"]
         self.title = json.get("title")
         self.rating = json.get("rating")
         self.provisional = json.get("provisional")

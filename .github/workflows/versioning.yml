@@ -2,7 +2,7 @@ name: Versioning
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   versioning:
@@ -34,5 +34,5 @@ jobs:
           git status
           git add versioning.yml
           git commit -m "Auto updating version to ${{ steps.yaml-data.outputs.data }}"
-          git fetch origin main
-          git push origin HEAD:main
+          git fetch origin master
+          git push origin HEAD:master

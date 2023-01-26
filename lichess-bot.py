@@ -27,16 +27,16 @@ from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
-import queue
+from queue import Queue
 from typing import Dict, Any, Optional, Set, List, Iterator, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
 EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
 GAME_EVENT_TYPE = Dict[str, Any]
-CONTROL_QUEUE_TYPE = "queue.Queue[EVENT_TYPE]"
-CORRESPONDENCE_QUEUE_TYPE = "queue.Queue[str]"
-LOGGING_QUEUE_TYPE = "queue.Queue[logging.LogRecord]"
+CONTROL_QUEUE_TYPE = "Queue[EVENT_TYPE]"
+CORRESPONDENCE_QUEUE_TYPE = "Queue[str]"
+LOGGING_QUEUE_TYPE = "Queue[logging.LogRecord]"
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 POOL_TYPE = multiprocessing.Pool
 

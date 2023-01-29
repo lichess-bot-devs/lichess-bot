@@ -14,7 +14,8 @@ from contextlib import contextmanager
 import config
 import model
 import lichess
-from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable
+import strategies
+from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable, Type
 OPTIONS_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]
 LICHESS_EGTB_MOVE = Dict[str, Any]
@@ -37,6 +38,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
+    Engine: Union[Type[UCIEngine], Type[XBoardEngine], Type[strategies.MinimalEngine]]
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
@@ -443,8 +445,7 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line("computer")
 
 
-def getHomemadeEngine(name: str) -> EngineWrapper:
-    import strategies
+def getHomemadeEngine(name: str) -> Type[strategies.MinimalEngine]:
     return getattr(strategies, name)
 
 

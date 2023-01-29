@@ -6,7 +6,7 @@ on:
 
 jobs:
   versioning:
-      if: "!contains(github.event.head_commit.message, 'Auto updating version')"
+      if: "!contains(github.event.head_commit.message, 'Auto update version')"
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v1
@@ -31,8 +31,6 @@ jobs:
           git config --global user.email "123640915+Version-BOT@users.noreply.github.com"
           git config --global user.name "Version-BOT"
           git remote set-url origin ${{ secrets.version_bot_ssh }}
-          git status
           git add versioning.yml
-          git commit -m "Auto updating version to ${{ steps.yaml-data.outputs.data }}"
-          git fetch origin master
+          git commit -m "Auto update version to ${{ steps.yaml-data.outputs.data }}"
           git push origin HEAD:master

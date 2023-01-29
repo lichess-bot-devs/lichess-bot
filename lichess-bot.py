@@ -28,6 +28,7 @@ from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
 from queue import Queue
+from multiprocessing.pool import Pool
 from typing import Dict, Any, Optional, Set, List, Iterator, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
@@ -38,7 +39,7 @@ CONTROL_QUEUE_TYPE = "Queue[EVENT_TYPE]"
 CORRESPONDENCE_QUEUE_TYPE = "Queue[str]"
 LOGGING_QUEUE_TYPE = "Queue[logging.LogRecord]"
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
-POOL_TYPE = multiprocessing.Pool
+POOL_TYPE = Pool
 
 logger = logging.getLogger(__name__)
 
@@ -141,15 +142,15 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
           log_filename: Optional[str], one_game: bool = False) -> None:
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
     manager = multiprocessing.Manager()
-    challenge_queue = manager.list()
-    control_queue = manager.Queue()
+    challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()
+    control_queue: CONTROL_QUEUE_TYPE = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=(control_queue, li))
     control_stream.start()
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=(control_queue,
                                                           config.correspondence.checkin_period))
     correspondence_pinger.start()
-    correspondence_queue = manager.Queue()
+    correspondence_queue: CORRESPONDENCE_QUEUE_TYPE = manager.Queue()
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,

@@ -66,14 +66,14 @@ class Challenge:
                 or max_recent_challenges is None
                 or len(recent_bot_challenges[self.challenger_name]) < max_recent_challenges)
 
-    def decline_due_to(self, requirement_met: bool, decline_reason: str) -> Optional[str]:
-        return None if requirement_met else decline_reason
+    def decline_due_to(self, requirement_met: bool, decline_reason: str) -> str:
+        return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
-                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
+                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, str]:
         try:
             if self.from_self:
-                return True, None
+                return True, ""
 
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger_is_bot, "noBot")
                               or self.decline_due_to(not config.only_bot or self.challenger_is_bot, "onlyBot")

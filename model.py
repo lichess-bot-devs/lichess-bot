@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 import logging
 from timer import Timer
 from config import Configuration
-from typing import Dict, Any, Optional, Tuple, List, DefaultDict
+from typing import Dict, Any, Tuple, List, DefaultDict
 
 logger = logging.getLogger(__name__)
 

@@ -134,7 +134,7 @@ def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE]
     root.setLevel(level)
 
 
-def game_error_handler(error: Exception) -> None:
+def game_error_handler(error: BaseException) -> None:
     logger.exception("Game ended due to error:", exc_info=error)
 
 

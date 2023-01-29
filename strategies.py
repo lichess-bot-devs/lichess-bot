@@ -65,7 +65,7 @@ class MinimalEngine(EngineWrapper):
         return "?"
 
     def search(self, board: chess.Board, time_limit: Limit, ponder: bool, draw_offered: bool,
-               root_moves: List[chess.Move]) -> None:
+               root_moves: List[chess.Move]) -> chess.engine.PlayResult:
         """
         The method to be implemented in your homemade engine
 

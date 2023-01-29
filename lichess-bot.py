@@ -377,7 +377,7 @@ def start_game(event: EVENT_TYPE,
                low_time_games: List[EVENT_GETATTR_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
-        matchmaker.challenge_id = None
+        matchmaker.challenge_id = ""
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')
@@ -684,19 +684,20 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(config.pgn_directory, game_file_name)
 
-    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
+    lichess_game_record: chess.pgn.Game = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
     try:
         # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            game_record = chess.pgn.read_game(game_data)
+            game_record: chess.pgn.Game = chess.pgn.read_game(game_data)
         game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    current_node = game_record.game()
-    lichess_node = lichess_game_record.game()
+    current_node: chess.pgn.GameNode = game_record.game()
+    lichess_node: chess.pgn.GameNode = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
-        if current_node.is_end() or current_node.next().move != move:
+        next_node = current_node.next()
+        if next_node is None or next_node.move != move:
             current_node = current_node.add_main_variation(move)
         else:
             current_node = current_node.next()

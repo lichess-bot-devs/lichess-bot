@@ -16,6 +16,7 @@ import model
 import lichess
 from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable
 OPTIONS_TYPE = Dict[str, Any]
+MOVE_INFO_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]
 LICHESS_EGTB_MOVE = Dict[str, Any]
 CHESSDB_EGTB_MOVE = Dict[str, Any]
@@ -79,7 +80,7 @@ class GameEnding(str, Enum):
     INCOMPLETE = "*"
 
 
-def translate_termination(termination: Optional[str], board: chess.Board, winner_color: Optional[str]) -> str:
+def translate_termination(termination: Optional[str], board: chess.Board, winner_color: str) -> str:
     if termination == Termination.MATE:
         return f"{winner_color.title()} mates"
     elif termination == Termination.TIMEOUT:
@@ -110,7 +111,7 @@ class EngineWrapper:
         self.scores: List[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
-        self.move_commentary: List[chess.engine.InfoDict] = []
+        self.move_commentary: List[MOVE_INFO_TYPE] = []
         self.comment_start_index = -1
 
     def play_move(self,
@@ -253,12 +254,6 @@ class EngineWrapper:
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
         result = self.offer_draw_or_resign(result, board)
-        if "pv" in result.info:
-            result.info["ponderpv"] = board.variation_san(result.info["pv"])
-        if "refutation" in result.info:
-            result.info["refutation"] = board.variation_san(result.info["refutation"])
-        if "currmove" in result.info:
-            result.info["currmove"] = board.san(result.info["currmove"])
         return result
 
     def comment_index(self, move_stack_index: int) -> int:
@@ -267,8 +262,8 @@ class EngineWrapper:
         else:
             return move_stack_index - self.comment_start_index
 
-    def comment_for_board_index(self, index: int) -> chess.engine.InfoDict:
-        no_info: chess.engine.InfoDict = {}
+    def comment_for_board_index(self, index: int) -> MOVE_INFO_TYPE:
+        no_info: MOVE_INFO_TYPE = {}
         comment_index = self.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:
             return no_info
@@ -281,7 +276,14 @@ class EngineWrapper:
     def add_comment(self, move: chess.engine.PlayResult, board: chess.Board) -> None:
         if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
-        self.move_commentary.append(move.info.copy() if move.info else chess.engine.InfoDict())
+        move_info: MOVE_INFO_TYPE = dict(move.info.copy()) if move.info else {}
+        if "pv" in move_info:
+            move_info["ponderpv"] = board.variation_san(move.info["pv"])
+        if "refutation" in move_info:
+            move_info["refutation"] = board.variation_san(move.info["refutation"])
+        if "currmove" in move_info:
+            move_info["currmove"] = board.san(move.info["currmove"])
+        self.move_commentary.append(move_info)
 
     def print_stats(self) -> None:
         for line in self.get_stats():
@@ -311,9 +313,9 @@ class EngineWrapper:
 
     def get_stats(self, for_chat: bool = False) -> List[str]:
         can_index = self.move_commentary and self.move_commentary[-1]
-        info: chess.engine.InfoDict = self.move_commentary[-1].copy() if can_index else {}
+        info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
-        def to_readable_value(stat: str, info: chess.engine.InfoDict) -> str:
+        def to_readable_value(stat: str, info: MOVE_INFO_TYPE) -> str:
             readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
                         "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
                         "tbhits": self.readable_number, "cpuload": lambda x: f"{round(x / 10, 1)}%"}
@@ -412,7 +414,7 @@ class XBoardEngine(EngineWrapper):
         # Send final moves, if any, to engine
         self.engine.protocol._new(board, None, {})
 
-        winner: Optional[str] = game.state.get("winner")
+        winner: str = game.state.get("winner", "")
         termination: Optional[str] = game.state.get("status")
 
         if winner == "white":
@@ -664,7 +666,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
 
 
 def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                         online_egtb_cfg: config.Configuration) -> Tuple[Union[str, List[str], None], Optional[int]]:
+                         online_egtb_cfg: config.Configuration) -> Tuple[Union[str, List[str], None], int]:
     use_online_egtb = online_egtb_cfg.enabled
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
@@ -679,7 +681,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
             or pieces > online_egtb_cfg.max_pieces
             or board.castling_rights):
 
-        return None, None
+        return None, -3
 
     quality = online_egtb_cfg.move_quality
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
@@ -692,7 +694,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     except Exception:
         pass
 
-    return None, None
+    return None, -3
 
 
 def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.Configuration,
@@ -717,7 +719,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
 
 def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
-                          variant: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
+                          variant: str) -> Tuple[Union[str, List[str], None], int]:
     name_to_wld = {"loss": -2,
                    "maybe-loss": -1,
                    "blessed-loss": -1,
@@ -775,11 +777,11 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
 
         return move, wdl
-    return None, None
+    return None, -3
 
 
 def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
-                          quality: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
+                          quality: str) -> Tuple[Union[str, List[str], None], int]:
     def score_to_wdl(score: int) -> int:
         return piecewise_function([(-20001, 2),
                                    (-1, -1),
@@ -834,15 +836,15 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
         return move, wdl
-    return None, None
+    return None, -3
 
 
 def get_syzygy(board: chess.Board, game: model.Game,
-               syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
+               syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
     if (not syzygy_cfg.enabled
             or chess.popcount(board.occupied) > syzygy_cfg.max_pieces
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
-        return None, None
+        return None, -3
     move: Union[chess.Move, List[chess.Move]]
     move_quality = syzygy_cfg.move_quality
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
@@ -884,7 +886,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
                     logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             except KeyError:
-                return None, None
+                return None, -3
 
 
 def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> int:
@@ -897,11 +899,11 @@ def dtz_to_wdl(dtz: int) -> int:
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
-                gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
+                gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
     if (not gaviota_cfg.enabled
             or chess.popcount(board.occupied) > gaviota_cfg.max_pieces
             or board.uci_variant != "chess"):
-        return None, None
+        return None, -3
     move: Union[chess.Move, List[chess.Move]]
     move_quality = gaviota_cfg.move_quality
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
@@ -943,7 +945,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
                 logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm}) for game {game.id}")
             return move, pseudo_wdl
         except KeyError:
-            return None, None
+            return None, -3
 
 
 def dtm_scorer(tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase], board: chess.Board) -> int:

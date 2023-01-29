@@ -113,6 +113,7 @@ class EngineWrapper:
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
         self.move_commentary: List[MOVE_INFO_TYPE] = []
         self.comment_start_index = -1
+        self.engine: chess.engine.SimpleEngine  # and FillerEngine
 
     def play_move(self,
                   board: chess.Board,
@@ -316,11 +317,17 @@ class EngineWrapper:
         info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
         def to_readable_value(stat: str, info: MOVE_INFO_TYPE) -> str:
-            readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
-                        "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
-                        "tbhits": self.readable_number, "cpuload": lambda x: f"{round(x / 10, 1)}%"}
+            readable: Dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
+                                                         "hashfull": lambda x: f"{round(x / 10, 1)}%",
+                                                         "nodes": self.readable_number,
+                                                         "nps": lambda x: f"{self.readable_number(x)}nps",
+                                                         "tbhits": self.readable_number,
+                                                         "cpuload": lambda x: f"{round(x / 10, 1)}%"}
 
-            return str(readable.get(stat, lambda x: x)(info[stat]))
+            def identity(x: Any) -> str:
+                return str(x)
+
+            return str(readable.get(stat, identity)(info[stat]))
 
         def to_readable_key(stat: str) -> str:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
@@ -361,7 +368,7 @@ class EngineWrapper:
     def get_pid(self) -> str:
         pid = "?"
         if self.engine.transport is not None:
-            pid = self.engine.transport.get_pid()
+            pid = str(self.engine.transport.get_pid())
         return pid
 
     def ping(self) -> None:
@@ -447,7 +454,8 @@ class XBoardEngine(EngineWrapper):
 
 def getHomemadeEngine(name: str) -> EngineWrapper:
     import strategies
-    return getattr(strategies, name)
+    engine: EngineWrapper = getattr(strategies, name)
+    return engine
 
 
 def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game, search_time: int, start_time: int,

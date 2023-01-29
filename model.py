@@ -168,7 +168,7 @@ class Game:
 
 class Player:
     def __init__(self, json: Dict[str, Any]) -> None:
-        self.name: str = json["name"]
+        self.name: str = json.get("name")
         self.title = json.get("title")
         self.rating = json.get("rating")
         self.provisional = json.get("provisional")

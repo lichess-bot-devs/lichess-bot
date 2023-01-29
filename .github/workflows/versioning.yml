@@ -22,9 +22,9 @@ jobs:
         run: python .github/workflows/update_version.py
       - name: Get version
         id: yaml-data
-        uses: jbutcher5/read-yaml@main      # You may wish to replace main with a version tag such as '1.6' etc.
+        uses: jbutcher5/read-yaml@main
         with:
-          file: 'versioning.yml'          # File to read from
+          file: 'versioning.yml'
           key-path: '["lichess_bot_version"]'
       - name: Auto update version
         run: |

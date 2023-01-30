@@ -469,7 +469,7 @@ def play_game(li: lichess.Lichess,
         goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
 
         disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
-        prior_game = copy.deepcopy(game)
+        prior_game = None
         board = chess.Board()
         upd: Dict[str, Any] = game.state
         while not terminated:
@@ -588,7 +588,7 @@ def is_game_over(game: model.Game) -> bool:
     return status != "started"
 
 
-def should_exit_game(board: chess.Board, game: model.Game, prior_game: model.Game, li: lichess.Lichess,
+def should_exit_game(board: chess.Board, game: model.Game, prior_game: Optional[model.Game], li: lichess.Lichess,
                      is_correspondence: bool) -> bool:
     if (is_correspondence
             and not is_engine_move(game, prior_game, board)

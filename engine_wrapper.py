@@ -109,6 +109,7 @@ PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
 
 class EngineWrapper:
     def __init__(self, options: OPTIONS_TYPE, draw_or_resign: config.Configuration) -> None:
+        self.engine: Union[chess.engine.SimpleEngine, strategies.FillerEngine]
         self.scores: List[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})

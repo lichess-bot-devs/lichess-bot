@@ -1,3 +1,4 @@
+# mypy: disable-error-code=valid-type
 import argparse
 import chess
 import chess.pgn

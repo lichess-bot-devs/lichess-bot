@@ -21,6 +21,7 @@ MOVE_INFO_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]
 LICHESS_EGTB_MOVE = Dict[str, Any]
 CHESSDB_EGTB_MOVE = Dict[str, Any]
+MOVE = Union[chess.engine.PlayResult, List[chess.Move]]
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,6 @@ class EngineWrapper:
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
         self.move_commentary: List[MOVE_INFO_TYPE] = []
         self.comment_start_index = -1
-        self.engine: chess.engine.SimpleEngine  # and FillerEngine
 
     def play_move(self,
                   board: chess.Board,
@@ -133,7 +133,7 @@ class EngineWrapper:
         draw_or_resign_cfg = engine_cfg.draw_or_resign
         lichess_bot_tbs = engine_cfg.lichess_bot_tbs
 
-        best_move: Union[chess.engine.PlayResult, List[chess.Move]]
+        best_move: MOVE
         best_move = get_book_move(board, game, polyglot_cfg)
 
         if best_move.move is None:
@@ -188,16 +188,16 @@ class EngineWrapper:
             li.make_move(game.id, best_move)
 
     def search_for(self, board: chess.Board, movetime: int, ponder: bool, draw_offered: bool,
-                   root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                   root_moves: MOVE) -> chess.engine.PlayResult:
         return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered, root_moves)
 
     def first_search(self, board: chess.Board, movetime: int, draw_offered: bool,
-                     root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                     root_moves: MOVE) -> chess.engine.PlayResult:
         # No pondering after the first move since a different clock is used afterwards.
         return self.search_for(board, movetime, False, draw_offered, root_moves)
 
     def search_with_ponder(self, board: chess.Board, wtime: int, btime: int, winc: int, binc: int, ponder: bool,
-                           draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                           draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
@@ -245,7 +245,7 @@ class EngineWrapper:
         return result
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
-               root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+               root_moves: MOVE) -> chess.engine.PlayResult:
         time_limit = self.add_go_commands(time_limit)
         result: chess.engine.PlayResult
         result = self.engine.play(board,
@@ -295,11 +295,11 @@ class EngineWrapper:
 
     def readable_score(self, relative_score: chess.engine.PovScore) -> str:
         score = relative_score.relative
-        if score.mate():
+        cp_score = score.score()
+        if cp_score is None:
             str_score = f"#{score.mate()}"
         else:
-            int_score: int = score.score()
-            str_score = str(round(int_score / 100, 2))
+            str_score = str(round(cp_score / 100, 2))
         return str_score
 
     def readable_wdl(self, wdl: chess.engine.PovWdl) -> str:
@@ -359,7 +359,8 @@ class EngineWrapper:
         pass
 
     def name(self) -> str:
-        name: str = self.engine.id["name"]
+        engine_info: Dict[str, str] = dict(self.engine.id)
+        name: str = engine_info["name"]
         return name
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
@@ -384,7 +385,7 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
-                 draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
+                 draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
         self.engine.configure(options)
@@ -406,7 +407,7 @@ class UCIEngine(EngineWrapper):
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
-                 draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
+                 draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
@@ -467,21 +468,18 @@ class MinimalEngine(EngineWrapper):
     `notify`, `first_search`, `get_time_control`, etc.
     """
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
-                 draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: Dict[str, str]) -> None:
+                 draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
 
         self.engine_name = self.__class__.__name__ if name is None else name
 
         self.engine = FillerEngine(self, name=self.engine_name)
-        self.engine.id = {
-            "name": self.engine_name
-        }
 
     def get_pid(self) -> str:
         return "?"
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
-               root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+               root_moves: MOVE) -> chess.engine.PlayResult:
         """
         The method to be implemented in your homemade engine
 
@@ -511,8 +509,8 @@ class FillerEngine:
     This is only used to provide the property "self.engine"
     in "MinimalEngine" which extends "EngineWrapper"
     """
-    def __init__(self, main_engine: MinimalEngine, name: Optional[str] = None) -> None:
-        self.id = {
+    def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
+        self.id: Dict[str, str] = {
             "name": name
         }
         self.name = name
@@ -531,13 +529,12 @@ class FillerEngine:
 
 def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
     import strategies
-    engine: EngineWrapper = getattr(strategies, name)
+    engine: Type[MinimalEngine] = getattr(strategies, name)
     return engine
 
 
 def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game, search_time: int, start_time: int,
-                     move_overhead: int, ponder: bool, draw_offered: bool,
-                     root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                     move_overhead: int, ponder: bool, draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -548,7 +545,7 @@ def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game
 
 
 def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Game,
-                      draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                      draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time} for game {game.id}")
@@ -556,7 +553,7 @@ def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Gam
 
 
 def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, ponder: bool, draw_offered: bool,
-                start_time: int, move_overhead: int, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                start_time: int, move_overhead: int, root_moves: MOVE) -> chess.engine.PlayResult:
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -584,7 +581,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
-    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
     config.change_value_to_list(polyglot_cfg.config, "book", key=variant)
     books = polyglot_cfg.book.lookup(variant)
 
@@ -769,7 +766,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
         return None, -3
 
     quality = online_egtb_cfg.move_quality
-    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
     try:
         if source == "lichess":

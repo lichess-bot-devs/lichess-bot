@@ -14,7 +14,8 @@ from contextlib import contextmanager
 import config
 import model
 import lichess
-from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable
+from config import Configuration
+from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable, Type
 OPTIONS_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]
 LICHESS_EGTB_MOVE = Dict[str, Any]
@@ -37,6 +38,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
+    Engine: Union[Type[UCIEngine], Type[XBoardEngine], Type[MinimalEngine]]
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
@@ -107,6 +109,7 @@ PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
 
 class EngineWrapper:
     def __init__(self, options: OPTIONS_TYPE, draw_or_resign: config.Configuration) -> None:
+        self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
         self.scores: List[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
@@ -443,7 +446,81 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line("computer")
 
 
-def getHomemadeEngine(name: str) -> EngineWrapper:
+class MinimalEngine(EngineWrapper):
+    """
+    Subclass this to prevent a few random errors
+
+    Even though MinimalEngine extends EngineWrapper,
+    you don't have to actually wrap an engine.
+
+    At minimum, just implement `search`,
+    however you can also change other methods like
+    `notify`, `first_search`, `get_time_control`, etc.
+    """
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+                 draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: Dict[str, str]) -> None:
+        super().__init__(options, draw_or_resign)
+
+        self.engine_name = self.__class__.__name__ if name is None else name
+
+        self.engine = FillerEngine(self, name=self.engine_name)
+        self.engine.id = {
+            "name": self.engine_name
+        }
+
+    def get_pid(self) -> str:
+        return "?"
+
+    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
+               root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+        """
+        The method to be implemented in your homemade engine
+
+        NOTE: This method must return an instance of "chess.engine.PlayResult"
+        """
+        raise NotImplementedError("The search method is not implemented")
+
+    def notify(self, method_name: str, *args: Any, **kwargs: Dict[str, Any]) -> None:
+        """
+        The EngineWrapper class sometimes calls methods on "self.engine".
+        "self.engine" is a filler property that notifies <self>
+        whenever an attribute is called.
+
+        Nothing happens unless the main engine does something.
+
+        Simply put, the following code is equivalent
+        self.engine.<method_name>(<*args>, <**kwargs>)
+        self.notify(<method_name>, <*args>, <**kwargs>)
+        """
+        pass
+
+
+class FillerEngine:
+    """
+    Not meant to be an actual engine.
+
+    This is only used to provide the property "self.engine"
+    in "MinimalEngine" which extends "EngineWrapper"
+    """
+    def __init__(self, main_engine: MinimalEngine, name: Optional[str] = None) -> None:
+        self.id = {
+            "name": name
+        }
+        self.name = name
+        self.main_engine = main_engine
+
+    def __getattr__(self, method_name: str) -> Any:
+        main_engine = self.main_engine
+
+        def method(*args: Any, **kwargs: Dict[str, Any]) -> Any:
+            nonlocal main_engine
+            nonlocal method_name
+            return main_engine.notify(method_name, *args, **kwargs)
+
+        return method
+
+
+def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
     import strategies
     return getattr(strategies, name)
 

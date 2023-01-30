@@ -13,7 +13,7 @@ if current_version.startswith(new_version):
     current_version_list[-1] = str(int(current_version_list[-1]) + 1)
     new_version = ".".join(current_version_list)
 else:
-    new_version += ".1"
+    new_version += "1"
 
 versioning_info["lichess_bot_version"] = new_version
 

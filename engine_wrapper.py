@@ -387,7 +387,8 @@ class UCIEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
+                                                          **popen_args)
         self.engine.configure(options)
 
     def stop(self) -> None:
@@ -395,35 +396,39 @@ class UCIEngine(EngineWrapper):
 
     def get_opponent_info(self, game: model.Game) -> None:
         name = game.opponent.name
-        if name and "UCI_Opponent" in self.engine.protocol.config:
+        if name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and "UCI_Opponent" in self.engine.protocol.config:
             rating = game.opponent.rating or "none"
             title = game.opponent.title or "none"
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        self.engine.protocol._position(board)
+        if isinstance(self.engine.protocol, chess.engine.UciProtocol):
+            self.engine.protocol._position(board)
 
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
-        features = self.engine.protocol.features
-        egt_types_from_engine = features.get("egt", "").split(",")
-        egt_type: str
-        for egt_type in filter(None, egt_types_from_engine):
-            if egt_type in egt_paths:
-                options[f"egtpath {egt_type}"] = egt_paths[egt_type]
-            else:
-                logger.debug(f"No paths found for egt type: {egt_type}.")
+        features = self.engine.protocol.features if isinstance(self.engine.protocol, chess.engine.XBoardProtocol) else {}
+        egt_features = features.get("egt", "")
+        if isinstance(egt_features, str):
+            egt_types_from_engine = egt_features.split(",")
+            egt_type: str
+            for egt_type in filter(None, egt_types_from_engine):
+                if egt_type in egt_paths:
+                    options[f"egtpath {egt_type}"] = egt_paths[egt_type]
+                else:
+                    logger.debug(f"No paths found for egt type: {egt_type}.")
         self.engine.configure(options)
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         # Send final moves, if any, to engine
-        self.engine.protocol._new(board, None, {})
+        if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
+            self.engine.protocol._new(board, None, {})
 
         winner: str = game.state.get("winner", "")
         termination: Optional[str] = game.state.get("status")
@@ -447,7 +452,8 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game: model.Game) -> None:
-        if game.opponent.name and self.engine.protocol.features.get("name", True):
+        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and
+                self.engine.protocol.features.get("name", True)):
             title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
         if game.me.rating and game.opponent.rating:
@@ -934,7 +940,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
             tablebase.add_directory(path)
 
         try:
-            moves = score_moves(board, dtz_scorer, tablebase)
+            moves = score_syzygy_moves(board, dtz_scorer, tablebase)
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
@@ -955,7 +961,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
         except KeyError:
             # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
             try:
-                moves = score_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
+                moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
                 best_wdl = max(moves.values())
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
@@ -1000,7 +1006,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
             tablebase.add_directory(path)
 
         try:
-            moves = score_moves(board, dtm_scorer, tablebase)
+            moves = score_gaviota_moves(board, dtm_scorer, tablebase)
 
             best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
             good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
@@ -1111,14 +1117,23 @@ def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int
     return last_value
 
 
-def score_moves(board: chess.Board,
-                scorer: Callable[[Union[chess.syzygy.Tablebase, chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase],
-                                  chess.Board], int],
-                tablebase: Union[chess.syzygy.Tablebase, chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]
-                ) -> Dict[chess.Move, int]:
+def score_syzygy_moves(board: chess.Board, scorer: Callable[[chess.syzygy.Tablebase, chess.Board], int],
+                       tablebase: chess.syzygy.Tablebase) -> Dict[chess.Move, int]:
     moves = {}
     for move in board.legal_moves:
         board_copy = board.copy()
         board_copy.push(move)
         moves[move] = scorer(tablebase, board_copy)
     return moves
+
+
+def score_gaviota_moves(board: chess.Board,
+                        scorer: Callable[[Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase], chess.Board], int],
+                        tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]) -> Dict[chess.Move, int]:
+    moves = {}
+    for move in board.legal_moves:
+        board_copy = board.copy()
+        board_copy.push(move)
+        moves[move] = scorer(tablebase, board_copy)
+    return moves
+

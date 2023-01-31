@@ -83,7 +83,7 @@ class Challenge:
                               or self.decline_due_to(self.challenger_name not in config.block_list, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
-            return decline_reason is None, decline_reason
+            return not decline_reason, decline_reason
 
         except Exception:
             logger.exception(f"Error while checking challenge {self.id}:")

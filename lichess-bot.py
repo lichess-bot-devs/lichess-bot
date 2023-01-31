@@ -686,26 +686,36 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(config.pgn_directory, game_file_name)
 
-    lichess_game_record: chess.pgn.Game = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
+    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
+    if not isinstance(lichess_game_record, chess.pgn.Game):
+        return
     try:
         # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            game_record: chess.pgn.Game = chess.pgn.read_game(game_data)
+            game_record = chess.pgn.read_game(game_data)
+        if not isinstance(game_record, chess.pgn.Game):
+            return
         game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    current_node: chess.pgn.GameNode = game_record.game()
-    lichess_node: chess.pgn.GameNode = lichess_game_record.game()
+    current_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = game_record.game()
+    lichess_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
         next_node = current_node.next()
         if next_node is None or next_node.move != move:
             current_node = current_node.add_main_variation(move)
         else:
-            current_node = current_node.next()
+            optional_current_node = current_node.next()
+            if not isinstance(optional_current_node, chess.pgn.ChildNode):
+                break
+            current_node = optional_current_node
 
         if not lichess_node.is_end():
-            lichess_node = lichess_node.next()
+            optional_lichess_node = lichess_node.next()
+            if not isinstance(optional_lichess_node, chess.pgn.ChildNode):
+                break
+            lichess_node = optional_lichess_node
             current_node.set_clock(lichess_node.clock())
             if current_node.comment != lichess_node.comment:
                 current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()

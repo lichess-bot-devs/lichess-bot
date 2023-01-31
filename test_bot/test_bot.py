@@ -102,7 +102,9 @@ def thread_for_test() -> None:
                 end_time = time.perf_counter_ns()
                 wtime -= (end_time - start_time) / 1e9
                 wtime += increment
-            engine_move: chess.Move = move.move
+            engine_move = move.move
+            if engine_move is None:
+                raise RuntimeError("Engine attempted to make null move.")
             board.push(engine_move)
 
             uci_move = engine_move.uci()
@@ -151,7 +153,8 @@ def thread_for_test() -> None:
     with open("./logs/events.txt", "w") as file:
         file.write("end")
     engine.quit()
-    win = board.outcome().winner == chess.BLACK
+    outcome = board.outcome()
+    win = outcome.winner == chess.BLACK if outcome else False
     with open("./logs/result.txt", "w") as file:
         file.write("1" if win else "0")
 

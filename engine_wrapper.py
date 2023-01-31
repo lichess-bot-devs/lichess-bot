@@ -396,7 +396,8 @@ class UCIEngine(EngineWrapper):
 
     def get_opponent_info(self, game: model.Game) -> None:
         name = game.opponent.name
-        if name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and "UCI_Opponent" in self.engine.protocol.config:
+        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and
+                "UCI_Opponent" in self.engine.protocol.config):
             rating = game.opponent.rating or "none"
             title = game.opponent.title or "none"
             player_type = "computer" if title == "BOT" else "human"
@@ -411,7 +412,8 @@ class XBoardEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr, **popen_args)
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=False,
+                                                             stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
         features = self.engine.protocol.features if isinstance(self.engine.protocol, chess.engine.XBoardProtocol) else {}
         egt_features = features.get("egt", "")
@@ -1128,12 +1130,13 @@ def score_syzygy_moves(board: chess.Board, scorer: Callable[[chess.syzygy.Tableb
 
 
 def score_gaviota_moves(board: chess.Board,
-                        scorer: Callable[[Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase], chess.Board], int],
-                        tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]) -> Dict[chess.Move, int]:
+                        scorer: Callable[[Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase],
+                                          chess.Board], int],
+                        tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]
+                        ) -> Dict[chess.Move, int]:
     moves = {}
     for move in board.legal_moves:
         board_copy = board.copy()
         board_copy.push(move)
         moves[move] = scorer(tablebase, board_copy)
     return moves
-

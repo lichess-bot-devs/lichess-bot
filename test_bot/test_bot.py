@@ -85,7 +85,7 @@ def thread_for_test() -> None:
         file.write(f"\n{wtime},{btime}")
 
     engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
-    engine.configure({"Skill Level": 0, "Move Overhead": 1000})
+    engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False})
 
     while not board.is_game_over():
         if len(board.move_stack) % 2 == 0:
@@ -170,7 +170,7 @@ def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
     if user_profile.get("title") != "BOT":
         return "0"
     lichess_bot.logger.info(f"Welcome {username}!")
-    lichess_bot.restart = False  # type: ignore[attr-defined]
+    lichess_bot.restart = False
 
     thr = threading.Thread(target=thread_for_test)
     thr.start()

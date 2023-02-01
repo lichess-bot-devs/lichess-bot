@@ -495,7 +495,7 @@ class MinimalEngine(EngineWrapper):
         """
         raise NotImplementedError("The search method is not implemented")
 
-    def notify(self, method_name: str, *args: Any, **kwargs: Dict[str, Any]) -> None:
+    def notify(self, method_name: str, *args: Any, **kwargs: Any) -> None:
         """
         The EngineWrapper class sometimes calls methods on "self.engine".
         "self.engine" is a filler property that notifies <self>
@@ -527,7 +527,7 @@ class FillerEngine:
     def __getattr__(self, method_name: str) -> Any:
         main_engine = self.main_engine
 
-        def method(*args: Any, **kwargs: Dict[str, Any]) -> Any:
+        def method(*args: Any, **kwargs: Any) -> Any:
             nonlocal main_engine
             nonlocal method_name
             return main_engine.notify(method_name, *args, **kwargs)

@@ -74,7 +74,7 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, endpoint_name: str, *template_args: Any,
+    def api_get(self, endpoint_name: str, *template_args: str,
                 params: Optional[Dict[str, str]] = None) -> JSON_REPLY_TYPE:
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)
@@ -97,7 +97,7 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get_list(self, endpoint_name: str, *template_args: Any,
+    def api_get_list(self, endpoint_name: str, *template_args: str,
                      params: Optional[Dict[str, str]] = None) -> List[JSON_REPLY_TYPE]:
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)
@@ -120,7 +120,7 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get_raw(self, endpoint_name: str, *template_args: Any,
+    def api_get_raw(self, endpoint_name: str, *template_args: str,
                     params: Optional[Dict[str, str]] = None, ) -> str:
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)

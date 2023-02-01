@@ -82,19 +82,19 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
             for line in lines:
                 if line:
                     event = json.loads(line.decode("utf-8"))
-                    control_queue.put_nowait(event)
+                    control_queue.put_nowait(event)  # type: ignore[attr-defined]
                 else:
-                    control_queue.put_nowait({"type": "ping"})
+                    control_queue.put_nowait({"type": "ping"})  # type: ignore[attr-defined]
         except Exception:
             break
 
-    control_queue.put_nowait({"type": "terminated"})
+    control_queue.put_nowait({"type": "terminated"})  # type: ignore[attr-defined]
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> None:
     while not terminated:
         time.sleep(period)
-        control_queue.put_nowait({"type": "correspondence_ping"})
+        control_queue.put_nowait({"type": "correspondence_ping"})  # type: ignore[attr-defined]
 
 
 def logging_configurer(level: int, filename: Optional[str]) -> None:
@@ -119,12 +119,12 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
     logging_configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
-        task = queue.get()
+        task = queue.get()  # type: ignore[attr-defined]
         try:
             logger.handle(task)
         except Exception:
             pass
-        queue.task_done()
+        queue.task_done()  # type: ignore[attr-defined]
 
 
 def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE], level: int) -> None:
@@ -143,7 +143,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
           log_filename: Optional[str], one_game: bool = False) -> None:
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
     manager = multiprocessing.Manager()
-    challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()
+    challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()  # type: ignore[assignment]
     control_queue: CONTROL_QUEUE_TYPE = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=(control_queue, li))
     control_stream.start()
@@ -230,7 +230,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 restart = True
-                control_queue.task_done()
+                control_queue.task_done()  # type: ignore[attr-defined]
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
                 active_games.discard(event["game"]["id"])
@@ -265,20 +265,20 @@ def lichess_bot_main(li: lichess.Lichess,
             matchmaker.challenge(active_games, challenge_queue)
             check_online_status(li, user_profile, last_check_online_time)
 
-            control_queue.task_done()
+            control_queue.task_done()  # type: ignore[attr-defined]
 
     logger.info("Terminated")
 
 
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
     try:
-        event: EVENT_TYPE = control_queue.get()
+        event: EVENT_TYPE = control_queue.get()  # type: ignore[attr-defined]
     except InterruptedError:
         return {}
 
     if "type" not in event:
         log_bad_event(event)
-        control_queue.task_done()
+        control_queue.task_done()  # type: ignore[attr-defined]
         return {}
 
     if event.get("type") != "ping":
@@ -300,7 +300,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
     global correspondence_games_to_start
 
     if event["type"] == "correspondence_ping":
-        correspondence_games_to_start = correspondence_queue.qsize()
+        correspondence_games_to_start = correspondence_queue.qsize()  # type: ignore[attr-defined]
     elif event["type"] != "local_game_done":
         return
 
@@ -308,9 +308,9 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         return
 
     while len(active_games) < max_games and correspondence_games_to_start > 0:
-        game_id = correspondence_queue.get_nowait()
+        game_id = correspondence_queue.get_nowait()  # type: ignore[attr-defined]
         correspondence_games_to_start -= 1
-        correspondence_queue.task_done()
+        correspondence_queue.task_done()  # type: ignore[attr-defined]
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
@@ -383,7 +383,7 @@ def start_game(event: EVENT_TYPE,
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')
-            correspondence_queue.put_nowait(game_id)
+            correspondence_queue.put_nowait(game_id)  # type: ignore[attr-defined]
         else:
             logger.info(f'--- Will start {config.url + game_id} as soon as possible')
             low_time_games.append(event["game"])
@@ -423,7 +423,7 @@ def log_bad_event(event: EVENT_TYPE) -> None:
         logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
 
 
-@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)  # type: ignore[arg-type]
 def play_game(li: lichess.Lichess,
               game_id: str,
               control_queue: CONTROL_QUEUE_TYPE,
@@ -613,11 +613,11 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
                         game: model.Game, is_correspondence: bool) -> None:
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put_nowait(game.id)
+        correspondence_queue.put_nowait(game.id)  # type: ignore[attr-defined]
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})  # type: ignore[attr-defined]
 
 
 def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:
@@ -686,15 +686,11 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(config.pgn_directory, game_file_name)
 
-    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
-    if not isinstance(lichess_game_record, chess.pgn.Game):
-        return
+    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            game_record = chess.pgn.read_game(game_data)
-        if not isinstance(game_record, chess.pgn.Game):
-            return
+            game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
         game_record = lichess_game_record
@@ -706,16 +702,11 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
         if next_node is None or next_node.move != move:
             current_node = current_node.add_main_variation(move)
         else:
-            optional_current_node = current_node.next()
-            if not isinstance(optional_current_node, chess.pgn.ChildNode):
-                break
-            current_node = optional_current_node
+            current_node = next_node
 
-        if not lichess_node.is_end():
-            optional_lichess_node = lichess_node.next()
-            if not isinstance(optional_lichess_node, chess.pgn.ChildNode):
-                break
-            lichess_node = optional_lichess_node
+        next_lichess_node = lichess_node.next()
+        if next_lichess_node:
+            lichess_node = next_lichess_node
             current_node.set_clock(lichess_node.clock())
             if current_node.comment != lichess_node.comment:
                 current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()

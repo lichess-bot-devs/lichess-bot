@@ -265,7 +265,7 @@ class Lichess:
                               max_time=60,
                               max_tries=self.max_retries,
                               interval=0.1,
-                              giveup=self.is_final,
+                              giveup=is_final,
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> JSON_REPLY_TYPE:

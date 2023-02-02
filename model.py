@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 import logging
 from timer import Timer
 from config import Configuration
-from typing import Dict, Any, Optional, Tuple, List, DefaultDict
+from typing import Dict, Any, Tuple, List, DefaultDict
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +66,14 @@ class Challenge:
                 or max_recent_challenges is None
                 or len(recent_bot_challenges[self.challenger_name]) < max_recent_challenges)
 
-    def decline_due_to(self, requirement_met: bool, decline_reason: str) -> Optional[str]:
-        return None if requirement_met else decline_reason
+    def decline_due_to(self, requirement_met: bool, decline_reason: str) -> str:
+        return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
-                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, Optional[str]]:
+                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, str]:
         try:
             if self.from_self:
-                return True, None
+                return True, ""
 
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger_is_bot, "noBot")
                               or self.decline_due_to(not config.only_bot or self.challenger_is_bot, "onlyBot")
@@ -83,7 +83,7 @@ class Challenge:
                               or self.decline_due_to(self.challenger_name not in config.block_list, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
-            return decline_reason is None, decline_reason
+            return not decline_reason, decline_reason
 
         except Exception:
             logger.exception(f"Error while checking challenge {self.id}:")
@@ -168,7 +168,7 @@ class Game:
 
 class Player:
     def __init__(self, json: Dict[str, Any]) -> None:
-        self.name = json.get("name")
+        self.name: str = json.get("name", "")
         self.title = json.get("title")
         self.rating = json.get("rating")
         self.provisional = json.get("provisional")

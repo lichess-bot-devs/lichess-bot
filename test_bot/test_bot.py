@@ -85,7 +85,7 @@ def thread_for_test() -> None:
         file.write(f"\n{wtime},{btime}")
 
     engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
-    engine.configure({"Skill Level": 0, "Move Overhead": 1000})
+    engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False})
 
     while not board.is_game_over():
         if len(board.move_stack) % 2 == 0:
@@ -102,7 +102,9 @@ def thread_for_test() -> None:
                 end_time = time.perf_counter_ns()
                 wtime -= (end_time - start_time) / 1e9
                 wtime += increment
-            engine_move: chess.Move = move.move
+            engine_move = move.move
+            if engine_move is None:
+                raise RuntimeError("Engine attempted to make null move.")
             board.push(engine_move)
 
             uci_move = engine_move.uci()
@@ -151,7 +153,8 @@ def thread_for_test() -> None:
     with open("./logs/events.txt", "w") as file:
         file.write("end")
     engine.quit()
-    win = board.outcome().winner == chess.BLACK
+    outcome = board.outcome()
+    win = outcome.winner == chess.BLACK if outcome else False
     with open("./logs/result.txt", "w") as file:
         file.write("1" if win else "0")
 
@@ -167,7 +170,7 @@ def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
     if user_profile.get("title") != "BOT":
         return "0"
     lichess_bot.logger.info(f"Welcome {username}!")
-    lichess_bot.restart = False
+    lichess_bot.restart = False  # type: ignore[attr-defined]
 
     thr = threading.Thread(target=thread_for_test)
     thr.start()

@@ -111,7 +111,7 @@ class Lichess:
 
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
         self.moves.append(move)
-        uci_move: str = move.move.uci()
+        uci_move = move.move.uci() if move.move else "error"
         with open("./logs/states.txt") as file:
             contents = file.read().split("\n")
         contents[0] += f" {uci_move}"

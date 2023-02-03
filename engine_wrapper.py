@@ -454,14 +454,10 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game: model.Game) -> None:
-        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and
-                self.engine.protocol.features.get("name", True)):
-            title = f"{game.opponent.title} " if game.opponent.title else ""
-            self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
-        if game.me.rating and game.opponent.rating:
-            self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
-        if game.opponent.title == "BOT":
-            self.engine.protocol.send_line("computer")
+        if game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
+            self.engine.configure({"name": f"{game.opponent.title or ''} {game.opponent.name}".strip(),
+                                   "rating": f"{game.me.rating or 0} {game.opponent.rating or 0}",
+                                   "computer": game.opponent.title == "BOT"})
 
 
 class MinimalEngine(EngineWrapper):

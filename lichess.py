@@ -152,9 +152,6 @@ class Lichess:
     def rate_limit_time_left(self, path_template: str) -> float:
         return self.rate_limit_timers[path_template].time_until_expiration()
 
-    def get_game(self, game_id: str) -> JSON_REPLY_TYPE:
-        return self.api_get_json("game", game_id)
-
     def upgrade_to_bot_account(self) -> JSON_REPLY_TYPE:
         return self.api_post("upgrade")
 

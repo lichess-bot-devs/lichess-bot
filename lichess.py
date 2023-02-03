@@ -47,6 +47,10 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
     return response.status_code == 429
 
 
+def is_final(exception: Exception) -> bool:
+    return isinstance(exception, HTTPError) and exception.response.status_code < 500
+
+
 # docs: https://lichess.org/api
 class Lichess:
     def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
@@ -62,10 +66,6 @@ class Lichess:
         self.logging_level = logging_level
         self.max_retries = max_retries
         self.rate_limit_timers: DefaultDict[str, Timer] = defaultdict(Timer)
-
-    @staticmethod
-    def is_final(exception: Exception) -> bool:
-        return isinstance(exception, HTTPError) and exception.response.status_code < 500
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
@@ -265,7 +265,7 @@ class Lichess:
                               max_time=60,
                               max_tries=self.max_retries,
                               interval=0.1,
-                              giveup=self.is_final,
+                              giveup=is_final,
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> JSON_REPLY_TYPE:

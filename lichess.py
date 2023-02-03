@@ -259,17 +259,19 @@ class Lichess:
     def cancel(self, challenge_id: str) -> JSON_REPLY_TYPE:
         return self.api_post("cancel", challenge_id, raise_for_status=False)
 
-    @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
-                          max_time=60,
-                          max_tries=self.max_retries,
-                          interval=0.1,
-                          giveup=is_final,
-                          backoff_log_level=logging.DEBUG,
-                          giveup_log_level=logging.DEBUG)
     def online_book_get(self, path: str, params: Optional[Dict[str, Any]] = None) -> JSON_REPLY_TYPE:
-        json_response: JSON_REPLY_TYPE = self.other_session.get(path, timeout=2, params=params).json()
-        return json_response
+        @backoff.on_exception(backoff.constant,
+                              (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
+                              max_time=60,
+                              max_tries=self.max_retries,
+                              interval=0.1,
+                              giveup=is_final,
+                              backoff_log_level=logging.DEBUG,
+                              giveup_log_level=logging.DEBUG)
+        def online_book_get() -> JSON_REPLY_TYPE:
+            json_response: JSON_REPLY_TYPE = self.other_session.get(path, timeout=2, params=params).json()
+            return json_response
+        return online_book_get()
 
     def is_online(self, user_id: str) -> bool:
         user = self.api_get_list("status", params={"ids": user_id})

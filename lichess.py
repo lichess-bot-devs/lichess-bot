@@ -246,7 +246,10 @@ class Lichess:
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id: str) -> str:
-        return self.api_get_raw("export", game_id)
+        try:
+            return self.api_get_raw("export", game_id)
+        except Exception:
+            return ""
 
     def get_online_bots(self) -> List[Dict[str, Any]]:
         try:

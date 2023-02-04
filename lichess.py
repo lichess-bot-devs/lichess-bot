@@ -223,7 +223,7 @@ class Lichess:
                                           "application/x-www-form-urlencoded"},
                                  raise_for_status=False)
         except Exception:
-            pass
+            return {}
 
     def get_profile(self) -> JSON_REPLY_TYPE:
         profile = self.api_get("profile")

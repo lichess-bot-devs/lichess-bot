@@ -216,11 +216,14 @@ class Lichess:
         return self.api_post("accept", challenge_id)
 
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> JSON_REPLY_TYPE:
-        return self.api_post("decline", challenge_id,
-                             data=f"reason={reason}",
-                             headers={"Content-Type":
-                                      "application/x-www-form-urlencoded"},
-                             raise_for_status=False)
+        try:
+            return self.api_post("decline", challenge_id,
+                                 data=f"reason={reason}",
+                                 headers={"Content-Type":
+                                          "application/x-www-form-urlencoded"},
+                                 raise_for_status=False)
+        except Exception:
+            pass
 
     def get_profile(self) -> JSON_REPLY_TYPE:
         profile = self.api_get("profile")

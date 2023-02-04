@@ -216,11 +216,14 @@ class Lichess:
         return self.api_post("accept", challenge_id)
 
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> JSON_REPLY_TYPE:
-        return self.api_post("decline", challenge_id,
-                             data=f"reason={reason}",
-                             headers={"Content-Type":
-                                      "application/x-www-form-urlencoded"},
-                             raise_for_status=False)
+        try:
+            return self.api_post("decline", challenge_id,
+                                 data=f"reason={reason}",
+                                 headers={"Content-Type":
+                                          "application/x-www-form-urlencoded"},
+                                 raise_for_status=False)
+        except Exception:
+            return {}
 
     def get_profile(self) -> JSON_REPLY_TYPE:
         profile = self.api_get("profile")
@@ -243,7 +246,10 @@ class Lichess:
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id: str) -> str:
-        return self.api_get_raw("export", game_id)
+        try:
+            return self.api_get_raw("export", game_id)
+        except Exception:
+            return ""
 
     def get_online_bots(self) -> List[Dict[str, Any]]:
         try:

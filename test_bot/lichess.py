@@ -103,9 +103,6 @@ class Lichess:
         self.moves: List[chess.engine.PlayResult] = []
         self.sent_game = False
 
-    def get_game(self, game_id: str) -> None:
-        return
-
     def upgrade_to_bot_account(self) -> None:
         return
 

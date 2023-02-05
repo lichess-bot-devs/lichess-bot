@@ -456,7 +456,8 @@ class XBoardEngine(EngineWrapper):
     def get_opponent_info(self, game: model.Game) -> None:
         if game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
             self.engine.configure({"name": f"{game.opponent.title or ''} {game.opponent.name}".strip(),
-                                   "rating": f"{game.me.rating or 0} {game.opponent.rating or 0}",
+                                   "engine_rating": game.me.rating or 0,
+                                   "opponent_rating": game.opponent.rating or 0,
                                    "computer": game.opponent.title == "BOT"})
 
 

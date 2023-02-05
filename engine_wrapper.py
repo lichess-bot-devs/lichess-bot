@@ -14,12 +14,14 @@ from contextlib import contextmanager
 import config
 import model
 import lichess
-from typing import Dict, Any, List, Optional, Union, Tuple, Generator
-INFO_DICT_TYPE = Dict[str, Any]
+from config import Configuration
+from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable, Type
 OPTIONS_TYPE = Dict[str, Any]
+MOVE_INFO_TYPE = Dict[str, Any]
 COMMANDS_TYPE = List[str]
 LICHESS_EGTB_MOVE = Dict[str, Any]
 CHESSDB_EGTB_MOVE = Dict[str, Any]
+MOVE = Union[chess.engine.PlayResult, List[chess.Move]]
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +29,8 @@ out_of_online_opening_book_moves: Counter[str] = Counter()
 
 
 @contextmanager
-def create_engine(config: config.Configuration) -> Generator[EngineWrapper, None, None]:
-    cfg = config.engine
+def create_engine(engine_config: config.Configuration) -> Generator[EngineWrapper, None, None]:
+    cfg = engine_config.engine
     engine_path = os.path.join(cfg.dir, cfg.name)
     engine_type = cfg.protocol
     commands = [engine_path]
@@ -38,6 +40,7 @@ def create_engine(config: config.Configuration) -> Generator[EngineWrapper, None
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
+    Engine: Union[Type[UCIEngine], Type[XBoardEngine], Type[MinimalEngine]]
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
@@ -47,7 +50,7 @@ def create_engine(config: config.Configuration) -> Generator[EngineWrapper, None
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
-    options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or {})
+    options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or config.Configuration({}))
     logger.debug(f"Starting engine: {commands}")
     engine = Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
     try:
@@ -60,7 +63,7 @@ def create_engine(config: config.Configuration) -> Generator[EngineWrapper, None
 
 def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
     def is_managed(key: str) -> bool:
-        return chess.engine.Option(key, None, None, None, None, None).is_managed()
+        return chess.engine.Option(key, "", None, None, None, None).is_managed()
 
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
@@ -80,7 +83,7 @@ class GameEnding(str, Enum):
     INCOMPLETE = "*"
 
 
-def translate_termination(termination: Termination, board: chess.Board, winner_color: str) -> str:
+def translate_termination(termination: Optional[str], board: chess.Board, winner_color: str) -> str:
     if termination == Termination.MATE:
         return f"{winner_color.title()} mates"
     elif termination == Termination.TIMEOUT:
@@ -108,11 +111,12 @@ PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
 
 class EngineWrapper:
     def __init__(self, options: OPTIONS_TYPE, draw_or_resign: config.Configuration) -> None:
-        self.scores = []
+        self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
+        self.scores: List[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
-        self.move_commentary = []
-        self.comment_start_index = None
+        self.move_commentary: List[MOVE_INFO_TYPE] = []
+        self.comment_start_index = -1
 
     def play_move(self,
                   board: chess.Board,
@@ -129,6 +133,7 @@ class EngineWrapper:
         draw_or_resign_cfg = engine_cfg.draw_or_resign
         lichess_bot_tbs = engine_cfg.lichess_bot_tbs
 
+        best_move: MOVE
         best_move = get_book_move(board, game, polyglot_cfg)
 
         if best_move.move is None:
@@ -183,16 +188,16 @@ class EngineWrapper:
             li.make_move(game.id, best_move)
 
     def search_for(self, board: chess.Board, movetime: int, ponder: bool, draw_offered: bool,
-                   root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                   root_moves: MOVE) -> chess.engine.PlayResult:
         return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered, root_moves)
 
     def first_search(self, board: chess.Board, movetime: int, draw_offered: bool,
-                     root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                     root_moves: MOVE) -> chess.engine.PlayResult:
         # No pondering after the first move since a different clock is used afterwards.
         return self.search_for(board, movetime, False, draw_offered, root_moves)
 
     def search_with_ponder(self, board: chess.Board, wtime: int, btime: int, winc: int, binc: int, ponder: bool,
-                           draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                           draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
@@ -215,7 +220,7 @@ class EngineWrapper:
 
         can_offer_draw = self.draw_or_resign.offer_draw_enabled
         draw_offer_moves = self.draw_or_resign.offer_draw_moves
-        draw_score_range = self.draw_or_resign.offer_draw_score
+        draw_score_range: int = self.draw_or_resign.offer_draw_score
         draw_max_piece_count = self.draw_or_resign.offer_draw_pieces
         pieces_on_board = chess.popcount(board.occupied)
         enough_pieces_captured = pieces_on_board <= draw_max_piece_count
@@ -229,7 +234,7 @@ class EngineWrapper:
 
         resign_enabled = self.draw_or_resign.resign_enabled
         min_moves_for_resign = self.draw_or_resign.resign_moves
-        resign_score = self.draw_or_resign.resign_score
+        resign_score: int = self.draw_or_resign.resign_score
         if resign_enabled and len(self.scores) >= min_moves_for_resign:
             scores = self.scores[-min_moves_for_resign:]
 
@@ -240,8 +245,9 @@ class EngineWrapper:
         return result
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
-               root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+               root_moves: MOVE) -> chess.engine.PlayResult:
         time_limit = self.add_go_commands(time_limit)
+        result: chess.engine.PlayResult
         result = self.engine.play(board,
                                   time_limit,
                                   info=chess.engine.INFO_ALL,
@@ -252,50 +258,53 @@ class EngineWrapper:
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
         result = self.offer_draw_or_resign(result, board)
-        if "pv" in result.info:
-            result.info["ponderpv"] = board.variation_san(result.info["pv"])
-        if "refutation" in result.info:
-            result.info["refutation"] = board.variation_san(result.info["refutation"])
-        if "currmove" in result.info:
-            result.info["currmove"] = board.san(result.info["currmove"])
         return result
 
     def comment_index(self, move_stack_index: int) -> int:
-        if self.comment_start_index is None:
+        if self.comment_start_index < 0:
             return -1
         else:
             return move_stack_index - self.comment_start_index
 
-    def comment_for_board_index(self, index: int) -> INFO_DICT_TYPE:
+    def comment_for_board_index(self, index: int) -> MOVE_INFO_TYPE:
+        no_info: MOVE_INFO_TYPE = {}
         comment_index = self.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:
-            return {}
+            return no_info
 
         try:
             return self.move_commentary[comment_index // 2]
         except IndexError:
-            return {}
+            return no_info
 
     def add_comment(self, move: chess.engine.PlayResult, board: chess.Board) -> None:
-        if self.comment_start_index is None:
+        if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
-        self.move_commentary.append(move.info.copy() if move.info else {})
+        move_info: MOVE_INFO_TYPE = dict(move.info.copy()) if move.info else {}
+        if "pv" in move_info:
+            move_info["ponderpv"] = board.variation_san(move.info["pv"])
+        if "refutation" in move_info:
+            move_info["refutation"] = board.variation_san(move.info["refutation"])
+        if "currmove" in move_info:
+            move_info["currmove"] = board.san(move.info["currmove"])
+        self.move_commentary.append(move_info)
 
     def print_stats(self) -> None:
         for line in self.get_stats():
             logger.info(line)
 
-    def readable_score(self, score: chess.engine.PovScore) -> str:
-        score = score.relative
-        if score.mate():
+    def readable_score(self, relative_score: chess.engine.PovScore) -> str:
+        score = relative_score.relative
+        cp_score = score.score()
+        if cp_score is None:
             str_score = f"#{score.mate()}"
         else:
-            str_score = str(round(score.score() / 100, 2))
+            str_score = str(round(cp_score / 100, 2))
         return str_score
 
     def readable_wdl(self, wdl: chess.engine.PovWdl) -> str:
-        wdl = round(wdl.relative.expectation() * 100, 1)
-        return f"{wdl}%"
+        wdl_percentage = round(wdl.relative.expectation() * 100, 1)
+        return f"{wdl_percentage}%"
 
     def readable_number(self, number: int) -> str:
         if number >= 1e9:
@@ -307,13 +316,21 @@ class EngineWrapper:
         return str(number)
 
     def get_stats(self, for_chat: bool = False) -> List[str]:
-        info = self.move_commentary[-1].copy() if self.move_commentary and self.move_commentary[-1] else {}
+        can_index = self.move_commentary and self.move_commentary[-1]
+        info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
-        def to_readable_value(stat: str, info: INFO_DICT_TYPE) -> str:
-            readable = {"score": self.readable_score, "wdl": self.readable_wdl, "hashfull": lambda x: f"{round(x / 10, 1)}%",
-                        "nodes": self.readable_number, "nps": lambda x: f"{self.readable_number(x)}nps",
-                        "tbhits": self.readable_number, "cpuload": lambda x: f"{round(x / 10, 1)}%"}
-            return str(readable.get(stat, lambda x: x)(info[stat]))
+        def to_readable_value(stat: str, info: MOVE_INFO_TYPE) -> str:
+            readable: Dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
+                                                         "hashfull": lambda x: f"{round(x / 10, 1)}%",
+                                                         "nodes": self.readable_number,
+                                                         "nps": lambda x: f"{self.readable_number(x)}nps",
+                                                         "tbhits": self.readable_number,
+                                                         "cpuload": lambda x: f"{round(x / 10, 1)}%"}
+
+            def identity(x: Any) -> str:
+                return str(x)
+
+            return str(readable.get(stat, identity)(info[stat]))
 
         def to_readable_key(stat: str) -> str:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
@@ -342,7 +359,9 @@ class EngineWrapper:
         pass
 
     def name(self) -> str:
-        return self.engine.id["name"]
+        engine_info: Dict[str, str] = dict(self.engine.id)
+        name: str = engine_info["name"]
+        return name
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         pass
@@ -351,7 +370,10 @@ class EngineWrapper:
         pass
 
     def get_pid(self) -> str:
-        return self.engine.transport.get_pid() if self.engine.transport is not None else "?"
+        pid = "?"
+        if self.engine.transport is not None:
+            pid = str(self.engine.transport.get_pid())
+        return pid
 
     def ping(self) -> None:
         self.engine.ping()
@@ -363,9 +385,10 @@ class EngineWrapper:
 
 class UCIEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
-                 draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
+                 draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, stderr=stderr, **popen_args)
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
+                                                          **popen_args)
         self.engine.configure(options)
 
     def stop(self) -> None:
@@ -373,37 +396,44 @@ class UCIEngine(EngineWrapper):
 
     def get_opponent_info(self, game: model.Game) -> None:
         name = game.opponent.name
-        if name and "UCI_Opponent" in self.engine.protocol.config:
+        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and
+                "UCI_Opponent" in self.engine.protocol.config):
             rating = game.opponent.rating or "none"
             title = game.opponent.title or "none"
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        self.engine.protocol._position(board)
+        if isinstance(self.engine.protocol, chess.engine.UciProtocol):
+            self.engine.protocol._position(board)
 
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
-                 draw_or_resign: config.Configuration, **popen_args: Dict[str, str]) -> None:
+                 draw_or_resign: config.Configuration, **popen_args: str) -> None:
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, stderr=stderr, **popen_args)
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=False,
+                                                             stderr=stderr, **popen_args)
         egt_paths = options.pop("egtpath", {}) or {}
-        features = self.engine.protocol.features
-        egt_types_from_engine = features.get("egt", "").split(",")
-        for egt_type in filter(None, egt_types_from_engine):
-            if egt_type in egt_paths:
-                options[f"egtpath {egt_type}"] = egt_paths[egt_type]
-            else:
-                logger.debug(f"No paths found for egt type: {egt_type}.")
+        features = self.engine.protocol.features if isinstance(self.engine.protocol, chess.engine.XBoardProtocol) else {}
+        egt_features = features.get("egt", "")
+        if isinstance(egt_features, str):
+            egt_types_from_engine = egt_features.split(",")
+            egt_type: str
+            for egt_type in filter(None, egt_types_from_engine):
+                if egt_type in egt_paths:
+                    options[f"egtpath {egt_type}"] = egt_paths[egt_type]
+                else:
+                    logger.debug(f"No paths found for egt type: {egt_type}.")
         self.engine.configure(options)
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         # Send final moves, if any, to engine
-        self.engine.protocol._new(board, None, {})
+        if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
+            self.engine.protocol._new(board, None, {})
 
-        winner = game.state.get("winner")
-        termination = game.state.get("status")
+        winner: str = game.state.get("winner", "")
+        termination: Optional[str] = game.state.get("status")
 
         if winner == "white":
             game_result = GameEnding.WHITE_WINS
@@ -424,7 +454,8 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game: model.Game) -> None:
-        if game.opponent.name and self.engine.protocol.features.get("name", True):
+        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and
+                self.engine.protocol.features.get("name", True)):
             title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
         if game.me.rating and game.opponent.rating:
@@ -433,14 +464,85 @@ class XBoardEngine(EngineWrapper):
             self.engine.protocol.send_line("computer")
 
 
-def getHomemadeEngine(name: str) -> EngineWrapper:
+class MinimalEngine(EngineWrapper):
+    """
+    Subclass this to prevent a few random errors
+
+    Even though MinimalEngine extends EngineWrapper,
+    you don't have to actually wrap an engine.
+
+    At minimum, just implement `search`,
+    however you can also change other methods like
+    `notify`, `first_search`, `get_time_control`, etc.
+    """
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+                 draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: str) -> None:
+        super().__init__(options, draw_or_resign)
+
+        self.engine_name = self.__class__.__name__ if name is None else name
+
+        self.engine = FillerEngine(self, name=self.engine_name)
+
+    def get_pid(self) -> str:
+        return "?"
+
+    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
+               root_moves: MOVE) -> chess.engine.PlayResult:
+        """
+        The method to be implemented in your homemade engine
+
+        NOTE: This method must return an instance of "chess.engine.PlayResult"
+        """
+        raise NotImplementedError("The search method is not implemented")
+
+    def notify(self, method_name: str, *args: Any, **kwargs: Any) -> None:
+        """
+        The EngineWrapper class sometimes calls methods on "self.engine".
+        "self.engine" is a filler property that notifies <self>
+        whenever an attribute is called.
+
+        Nothing happens unless the main engine does something.
+
+        Simply put, the following code is equivalent
+        self.engine.<method_name>(<*args>, <**kwargs>)
+        self.notify(<method_name>, <*args>, <**kwargs>)
+        """
+        pass
+
+
+class FillerEngine:
+    """
+    Not meant to be an actual engine.
+
+    This is only used to provide the property "self.engine"
+    in "MinimalEngine" which extends "EngineWrapper"
+    """
+    def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
+        self.id: Dict[str, str] = {
+            "name": name
+        }
+        self.name = name
+        self.main_engine = main_engine
+
+    def __getattr__(self, method_name: str) -> Any:
+        main_engine = self.main_engine
+
+        def method(*args: Any, **kwargs: Any) -> Any:
+            nonlocal main_engine
+            nonlocal method_name
+            return main_engine.notify(method_name, *args, **kwargs)
+
+        return method
+
+
+def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
     import strategies
-    return getattr(strategies, name)
+    engine: Type[MinimalEngine] = getattr(strategies, name)
+    return engine
 
 
 def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game, search_time: int, start_time: int,
-                     move_overhead: int, ponder: bool, draw_offered: bool,
-                     root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                     move_overhead: int, ponder: bool, draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -451,7 +553,7 @@ def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game
 
 
 def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Game,
-                      draw_offered: bool, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                      draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
     # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time} for game {game.id}")
@@ -459,7 +561,7 @@ def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Gam
 
 
 def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, ponder: bool, draw_offered: bool,
-                start_time: int, move_overhead: int, root_moves: List[chess.Move]) -> chess.engine.PlayResult:
+                start_time: int, move_overhead: int, root_moves: MOVE) -> chess.engine.PlayResult:
     pre_move_time = int((time.perf_counter_ns() - start_time) / 1e6)
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -487,7 +589,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
-    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
     config.change_value_to_list(polyglot_cfg.config, "book", key=variant)
     books = polyglot_cfg.book.lookup(variant)
 
@@ -521,7 +623,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
     offer_draw = False
     resign = False
-    comment = None
+    comment: Optional[chess.engine.InfoDict] = None
     best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
@@ -558,7 +660,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
 
 
 def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                     chessdb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+                     chessdb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[chess.engine.InfoDict]]:
     wb = "w" if board.turn == chess.WHITE else "b"
     use_chessdb = chessdb_cfg.enabled
     time_left = game.state[f"{wb}time"]
@@ -567,7 +669,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
         return None, None
 
     move = None
-    comment = {}
+    comment: chess.engine.InfoDict = {}
     site = "https://www.chessdb.cn/cdb.php"
     quality = chessdb_cfg.move_quality
     action = {"best": "querypv",
@@ -602,7 +704,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
 
 
 def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                           lichess_cloud_cfg: config.Configuration) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+                           lichess_cloud_cfg: config.Configuration) -> Tuple[Optional[str], Optional[chess.engine.InfoDict]]:
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
     min_time = lichess_cloud_cfg.min_time * 1000
@@ -611,7 +713,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
         return None, None
 
     move = None
-    comment = {}
+    comment: chess.engine.InfoDict = {}
 
     quality = lichess_cloud_cfg.move_quality
     multipv = 1 if quality == "best" else 5
@@ -654,7 +756,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
 
 
 def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                         online_egtb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[int]]:
+                         online_egtb_cfg: config.Configuration) -> Tuple[Union[str, List[str], None], int]:
     use_online_egtb = online_egtb_cfg.enabled
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
@@ -669,10 +771,10 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
             or pieces > online_egtb_cfg.max_pieces
             or board.castling_rights):
 
-        return None, None
+        return None, -3
 
     quality = online_egtb_cfg.move_quality
-    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
     try:
         if source == "lichess":
@@ -682,7 +784,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     except Exception:
         pass
 
-    return None, None
+    return None, -3
 
 
 def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.Configuration,
@@ -699,7 +801,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
         resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
-        comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
+        comment: chess.engine.InfoDict = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
         if isinstance(best_move, chess.Move):
             return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
         return best_move
@@ -707,7 +809,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
 
 def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
-                          variant: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
+                          variant: str) -> Tuple[Union[str, List[str], None], int]:
     name_to_wld = {"loss": -2,
                    "maybe-loss": -1,
                    "blessed-loss": -1,
@@ -765,11 +867,11 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
 
         return move, wdl
-    return None, None
+    return None, -3
 
 
 def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
-                          quality: str) -> Tuple[Union[str, List[str], None], Optional[int]]:
+                          quality: str) -> Tuple[Union[str, List[str], None], int]:
     def score_to_wdl(score: int) -> int:
         return piecewise_function([(-20001, 2),
                                    (-1, -1),
@@ -815,8 +917,8 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
 
             def good_enough(move: CHESSDB_EGTB_MOVE) -> bool:
                 return score_to_wdl(move["score"]) == best_wdl
-            possible_moves = filter(good_enough, data["moves"])
-            random_move = random.choice(list(possible_moves))
+            possible_moves = list(filter(good_enough, data["moves"]))
+            random_move = random.choice(possible_moves)
             score = random_move["score"]
             move = random_move["uci"]
             wdl = score_to_wdl(score)
@@ -824,22 +926,23 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
         return move, wdl
-    return None, None
+    return None, -3
 
 
 def get_syzygy(board: chess.Board, game: model.Game,
-               syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
+               syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
     if (not syzygy_cfg.enabled
             or chess.popcount(board.occupied) > syzygy_cfg.max_pieces
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
-        return None, None
+        return None, -3
+    move: Union[chess.Move, List[chess.Move]]
     move_quality = syzygy_cfg.move_quality
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
         for path in syzygy_cfg.paths[1:]:
             tablebase.add_directory(path)
 
         try:
-            moves = score_moves(board, dtz_scorer, tablebase)
+            moves = score_syzygy_moves(board, dtz_scorer, tablebase)
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
@@ -848,32 +951,32 @@ def get_syzygy(board: chess.Board, game: model.Game,
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {dtz}) for game {game.id}")
                 return move, best_wdl
             elif move_quality == "suggest" and len(good_moves) > 1:
-                move = [move for move, dtz in good_moves]
+                move = [chess_move for chess_move, dtz in good_moves]
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             else:
-                best_dtz = min([dtz for move, dtz in good_moves])
-                best_moves = [move for move, dtz in good_moves if dtz == best_dtz]
+                best_dtz = min([dtz for chess_move, dtz in good_moves])
+                best_moves = [chess_move for chess_move, dtz in good_moves if dtz == best_dtz]
                 move = random.choice(best_moves)
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz}) for game {game.id}")
                 return move, best_wdl
         except KeyError:
             # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
             try:
-                moves = score_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
+                moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
                 best_wdl = max(moves.values())
-                good_moves = [move for move, wdl in moves.items() if wdl == best_wdl]
+                good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
-                if move_quality == "suggest" and len(good_moves) > 1:
-                    move = good_moves
+                if move_quality == "suggest" and len(good_chess_moves) > 1:
+                    move = good_chess_moves
                     logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 else:
-                    move = random.choice(good_moves)
+                    move = random.choice(good_chess_moves)
                     logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             except KeyError:
-                return None, None
+                return None, -3
 
 
 def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> int:
@@ -886,11 +989,12 @@ def dtz_to_wdl(dtz: int) -> int:
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
-                gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], Optional[int]]:
+                gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
     if (not gaviota_cfg.enabled
             or chess.popcount(board.occupied) > gaviota_cfg.max_pieces
             or board.uci_variant != "chess"):
-        return None, None
+        return None, -3
+    move: Union[chess.Move, List[chess.Move]]
     move_quality = gaviota_cfg.move_quality
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
@@ -904,7 +1008,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
             tablebase.add_directory(path)
 
         try:
-            moves = score_moves(board, dtm_scorer, tablebase)
+            moves = score_gaviota_moves(board, dtm_scorer, tablebase)
 
             best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
             good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
@@ -918,7 +1022,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
             elif move_quality == "suggest":
                 best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
                 if len(best_moves) > 1:
-                    move = [move for move, dtm in best_moves]
+                    move = [chess_move for chess_move, dtm in best_moves]
                     logger.info(f"Suggesting moves from gaviota (pseudo wdl: {pseudo_wdl}) for game {game.id}")
                 else:
                     move, dtm = random.choice(best_moves)
@@ -931,7 +1035,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
                 logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm}) for game {game.id}")
             return move, pseudo_wdl
         except KeyError:
-            return None, None
+            return None, -3
 
 
 def dtm_scorer(tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase], board: chess.Board) -> int:
@@ -1015,9 +1119,21 @@ def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int
     return last_value
 
 
-def score_moves(board: chess.Board, scorer: Union[dtz_scorer, dtm_scorer],
-                tablebase: Union[chess.syzygy.Tablebase, chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]
-                ) -> Dict[chess.Move, int]:
+def score_syzygy_moves(board: chess.Board, scorer: Callable[[chess.syzygy.Tablebase, chess.Board], int],
+                       tablebase: chess.syzygy.Tablebase) -> Dict[chess.Move, int]:
+    moves = {}
+    for move in board.legal_moves:
+        board_copy = board.copy()
+        board_copy.push(move)
+        moves[move] = scorer(tablebase, board_copy)
+    return moves
+
+
+def score_gaviota_moves(board: chess.Board,
+                        scorer: Callable[[Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase],
+                                          chess.Board], int],
+                        tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]
+                        ) -> Dict[chess.Move, int]:
     moves = {}
     for move in board.legal_moves:
         board_copy = board.copy()

@@ -7,7 +7,7 @@ import backoff
 import logging
 from collections import defaultdict
 from timer import Timer
-from typing import Optional, Dict, Union, Any, List
+from typing import Optional, Dict, Union, Any, List, DefaultDict
 import chess.engine
 JSON_REPLY_TYPE = Dict[str, Any]
 REQUESTS_PAYLOAD_TYPE = Dict[str, Any]
@@ -47,6 +47,10 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
     return response.status_code == 429
 
 
+def is_final(exception: Exception) -> bool:
+    return isinstance(exception, HTTPError) and exception.response.status_code < 500
+
+
 # docs: https://lichess.org/api
 class Lichess:
     def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
@@ -61,10 +65,7 @@ class Lichess:
         self.set_user_agent("?")
         self.logging_level = logging_level
         self.max_retries = max_retries
-        self.rate_limit_timers = defaultdict(Timer)
-
-    def is_final(exception: Exception) -> bool:
-        return isinstance(exception, HTTPError) and exception.response.status_code < 500
+        self.rate_limit_timers: DefaultDict[str, Timer] = defaultdict(Timer)
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
@@ -73,8 +74,8 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_get(self, endpoint_name: str, *template_args: Any, params: Optional[Dict[str, str]] = None,
-                get_raw_text: bool = False) -> Union[str, JSON_REPLY_TYPE]:
+    def api_get(self, endpoint_name: str, *template_args: str,
+                params: Optional[Dict[str, str]] = None) -> requests.Response:
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)
         url = urljoin(self.baseUrl, path_template.format(*template_args))
@@ -86,7 +87,24 @@ class Lichess:
 
         response.raise_for_status()
         response.encoding = "utf-8"
-        return response.text if get_raw_text else response.json()
+        return response
+
+    def api_get_json(self, endpoint_name: str, *template_args: str,
+                     params: Optional[Dict[str, str]] = None) -> JSON_REPLY_TYPE:
+        response = self.api_get(endpoint_name, *template_args, params=params)
+        json_response: JSON_REPLY_TYPE = response.json()
+        return json_response
+
+    def api_get_list(self, endpoint_name: str, *template_args: str,
+                     params: Optional[Dict[str, str]] = None) -> List[JSON_REPLY_TYPE]:
+        response = self.api_get(endpoint_name, *template_args, params=params)
+        json_response: List[JSON_REPLY_TYPE] = response.json()
+        return json_response
+
+    def api_get_raw(self, endpoint_name: str, *template_args: str,
+                    params: Optional[Dict[str, str]] = None, ) -> str:
+        response = self.api_get(endpoint_name, *template_args, params=params)
+        return response.text
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
@@ -114,7 +132,8 @@ class Lichess:
         if raise_for_status:
             response.raise_for_status()
 
-        return response.json()
+        json_response: JSON_REPLY_TYPE = response.json()
+        return json_response
 
     def get_path_template(self, endpoint_name: str) -> str:
         path_template = ENDPOINTS[endpoint_name]
@@ -132,9 +151,6 @@ class Lichess:
 
     def rate_limit_time_left(self, path_template: str) -> float:
         return self.rate_limit_timers[path_template].time_until_expiration()
-
-    def get_game(self, game_id: str) -> JSON_REPLY_TYPE:
-        return self.api_get("game", game_id)
 
     def upgrade_to_bot_account(self) -> JSON_REPLY_TYPE:
         return self.api_post("upgrade")
@@ -168,22 +184,27 @@ class Lichess:
         return self.api_post("accept", challenge_id)
 
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> JSON_REPLY_TYPE:
-        return self.api_post("decline", challenge_id,
-                             data=f"reason={reason}",
-                             headers={"Content-Type":
-                                      "application/x-www-form-urlencoded"},
-                             raise_for_status=False)
+        try:
+            return self.api_post("decline", challenge_id,
+                                 data=f"reason={reason}",
+                                 headers={"Content-Type":
+                                          "application/x-www-form-urlencoded"},
+                                 raise_for_status=False)
+        except Exception:
+            return {}
 
     def get_profile(self) -> JSON_REPLY_TYPE:
-        profile = self.api_get("profile")
+        profile = self.api_get_json("profile")
         self.set_user_agent(profile["username"])
         return profile
 
     def get_ongoing_games(self) -> List[Dict[str, Any]]:
+        ongoing_games: List[Dict[str, Any]] = []
         try:
-            return self.api_get("playing")["nowPlaying"]
+            ongoing_games = self.api_get_json("playing")["nowPlaying"]
         except Exception:
-            return []
+            pass
+        return ongoing_games
 
     def resign(self, game_id: str) -> None:
         self.api_post("resign", game_id)
@@ -193,12 +214,15 @@ class Lichess:
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id: str) -> str:
-        return self.api_get("export", game_id, get_raw_text=True)
+        try:
+            return self.api_get_raw("export", game_id)
+        except Exception:
+            return ""
 
     def get_online_bots(self) -> List[Dict[str, Any]]:
         try:
-            online_bots = self.api_get("online_bots", get_raw_text=True)
-            online_bots = list(filter(bool, online_bots.split("\n")))
+            online_bots_str = self.api_get_raw("online_bots")
+            online_bots = list(filter(bool, online_bots_str.split("\n")))
             return list(map(json.loads, online_bots))
         except Exception:
             return []
@@ -215,16 +239,17 @@ class Lichess:
                               max_time=60,
                               max_tries=self.max_retries,
                               interval=0.1,
-                              giveup=self.is_final,
+                              giveup=is_final,
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> JSON_REPLY_TYPE:
-            return self.other_session.get(path, timeout=2, params=params).json()
+            json_response: JSON_REPLY_TYPE = self.other_session.get(path, timeout=2, params=params).json()
+            return json_response
         return online_book_get()
 
     def is_online(self, user_id: str) -> bool:
-        user = self.api_get("status", params={"ids": user_id})
-        return user and user[0].get("online")
+        user = self.api_get_list("status", params={"ids": user_id})
+        return bool(user and user[0].get("online"))
 
     def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
-        return self.api_get("public_data", user_name)
+        return self.api_get_json("public_data", user_name)

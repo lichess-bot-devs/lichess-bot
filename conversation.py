@@ -55,11 +55,11 @@ class Conversation:
 
     def send_message(self, room: str, message: str) -> None:
         if message:
-            self.send_reply(ChatLine({"room": room}), message)
+            self.send_reply(ChatLine({"room": room, "username": "", "text": ""}), message)
 
 
 class ChatLine:
     def __init__(self, json: Dict[str, str]) -> None:
-        self.room = json.get("room")
-        self.username = json.get("username")
-        self.text = json.get("text")
+        self.room = json["room"]
+        self.username = json["username"]
+        self.text = json["text"]

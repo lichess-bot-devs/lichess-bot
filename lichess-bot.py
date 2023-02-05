@@ -1,3 +1,4 @@
+# mypy: disable-error-code=valid-type
 import argparse
 import chess
 import chess.pgn
@@ -27,18 +28,19 @@ from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
 from collections import defaultdict
 from http.client import RemoteDisconnected
-import queue
-from typing import Dict, Any, Optional, Set, List, Iterator, DefaultDict
+from queue import Queue
+from multiprocessing.pool import Pool
+from typing import Dict, Any, Optional, Set, List, Iterator, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
 EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
 GAME_EVENT_TYPE = Dict[str, Any]
-CONTROL_QUEUE_TYPE = "queue.Queue[EVENT_TYPE]"
-CORRESPONDENCE_QUEUE_TYPE = "queue.Queue[str]"
-LOGGING_QUEUE_TYPE = "queue.Queue[logging.LogRecord]"
+CONTROL_QUEUE_TYPE = "Queue[EVENT_TYPE]"
+CORRESPONDENCE_QUEUE_TYPE = "Queue[str]"
+LOGGING_QUEUE_TYPE = "Queue[logging.LogRecord]"
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
-POOL_TYPE = multiprocessing.Pool
+POOL_TYPE = Pool
 
 logger = logging.getLogger(__name__)
 
@@ -80,26 +82,26 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
             for line in lines:
                 if line:
                     event = json.loads(line.decode("utf-8"))
-                    control_queue.put_nowait(event)
+                    control_queue.put_nowait(event)  # type: ignore[attr-defined]
                 else:
-                    control_queue.put_nowait({"type": "ping"})
+                    control_queue.put_nowait({"type": "ping"})  # type: ignore[attr-defined]
         except Exception:
             break
 
-    control_queue.put_nowait({"type": "terminated"})
+    control_queue.put_nowait({"type": "terminated"})  # type: ignore[attr-defined]
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> None:
     while not terminated:
         time.sleep(period)
-        control_queue.put_nowait({"type": "correspondence_ping"})
+        control_queue.put_nowait({"type": "correspondence_ping"})  # type: ignore[attr-defined]
 
 
 def logging_configurer(level: int, filename: Optional[str]) -> None:
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_formatter)
-    all_handlers = [console_handler]
+    all_handlers: List[logging.Handler] = [console_handler]
 
     if filename:
         file_handler = logging.FileHandler(filename, delay=True)
@@ -113,20 +115,19 @@ def logging_configurer(level: int, filename: Optional[str]) -> None:
                         force=True)
 
 
-def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, configurer: logging_configurer, level: int,
-                          log_filename: Optional[str]) -> None:
-    configurer(level, log_filename)
+def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str]) -> None:
+    logging_configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
-        task = queue.get()
+        task = queue.get()  # type: ignore[attr-defined]
         try:
             logger.handle(task)
         except Exception:
             pass
-        queue.task_done()
+        queue.task_done()  # type: ignore[attr-defined]
 
 
-def game_logging_configurer(queue: CONTROL_QUEUE_TYPE, level: int) -> None:
+def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE], level: int) -> None:
     h = logging.handlers.QueueHandler(queue)
     root = logging.getLogger()
     root.handlers.clear()
@@ -134,7 +135,7 @@ def game_logging_configurer(queue: CONTROL_QUEUE_TYPE, level: int) -> None:
     root.setLevel(level)
 
 
-def game_error_handler(error: Exception) -> None:
+def game_error_handler(error: BaseException) -> None:
     logger.exception("Game ended due to error:", exc_info=error)
 
 
@@ -142,20 +143,19 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
           log_filename: Optional[str], one_game: bool = False) -> None:
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
     manager = multiprocessing.Manager()
-    challenge_queue = manager.list()
-    control_queue = manager.Queue()
+    challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()  # type: ignore[assignment]
+    control_queue: CONTROL_QUEUE_TYPE = manager.Queue()
     control_stream = multiprocessing.Process(target=watch_control_stream, args=(control_queue, li))
     control_stream.start()
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=(control_queue,
                                                           config.correspondence.checkin_period))
     correspondence_pinger.start()
-    correspondence_queue = manager.Queue()
+    correspondence_queue: CORRESPONDENCE_QUEUE_TYPE = manager.Queue()
 
     logging_queue = manager.Queue()
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
                                                args=(logging_queue,
-                                                     logging_configurer,
                                                      logging_level,
                                                      log_filename))
     logging_listener.start()
@@ -206,7 +206,7 @@ def lichess_bot_main(li: lichess.Lichess,
     active_games = set(game["gameId"]
                        for game in all_games
                        if game["gameId"] not in startup_correspondence_games)
-    low_time_games = []
+    low_time_games: List[EVENT_GETATTR_GAME_TYPE] = []
 
     last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
@@ -218,10 +218,9 @@ def lichess_bot_main(li: lichess.Lichess,
                       "challenge_queue": challenge_queue,
                       "correspondence_queue": correspondence_queue,
                       "logging_queue": logging_queue,
-                      "game_logging_configurer": game_logging_configurer,
                       "logging_level": logging_level}
 
-    recent_bot_challenges = defaultdict(list)
+    recent_bot_challenges: DefaultDict[str, List[Timer]] = defaultdict(list)
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
@@ -231,7 +230,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 restart = True
-                control_queue.task_done()
+                control_queue.task_done()  # type: ignore[attr-defined]
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
                 active_games.discard(event["game"]["id"])
@@ -266,20 +265,20 @@ def lichess_bot_main(li: lichess.Lichess,
             matchmaker.challenge(active_games, challenge_queue)
             check_online_status(li, user_profile, last_check_online_time)
 
-            control_queue.task_done()
+            control_queue.task_done()  # type: ignore[attr-defined]
 
     logger.info("Terminated")
 
 
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
     try:
-        event = control_queue.get()
+        event: EVENT_TYPE = control_queue.get()  # type: ignore[attr-defined]
     except InterruptedError:
         return {}
 
     if "type" not in event:
         log_bad_event(event)
-        control_queue.task_done()
+        control_queue.task_done()  # type: ignore[attr-defined]
         return {}
 
     if event.get("type") != "ping":
@@ -301,7 +300,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
     global correspondence_games_to_start
 
     if event["type"] == "correspondence_ping":
-        correspondence_games_to_start = correspondence_queue.qsize()
+        correspondence_games_to_start = correspondence_queue.qsize()  # type: ignore[attr-defined]
     elif event["type"] != "local_game_done":
         return
 
@@ -309,9 +308,9 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         return
 
     while len(active_games) < max_games and correspondence_games_to_start > 0:
-        game_id = correspondence_queue.get_nowait()
+        game_id = correspondence_queue.get_nowait()  # type: ignore[attr-defined]
         correspondence_games_to_start -= 1
-        correspondence_queue.task_done()
+        correspondence_queue.task_done()  # type: ignore[attr-defined]
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
@@ -380,11 +379,11 @@ def start_game(event: EVENT_TYPE,
                low_time_games: List[EVENT_GETATTR_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
-        matchmaker.challenge_id = None
+        matchmaker.challenge_id = ""
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')
-            correspondence_queue.put_nowait(game_id)
+            correspondence_queue.put_nowait(game_id)  # type: ignore[attr-defined]
         else:
             logger.info(f'--- Will start {config.url + game_id} as soon as possible')
             low_time_games.append(event["game"])
@@ -424,7 +423,7 @@ def log_bad_event(event: EVENT_TYPE) -> None:
         logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
 
 
-@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)  # type: ignore[arg-type]
 def play_game(li: lichess.Lichess,
               game_id: str,
               control_queue: CONTROL_QUEUE_TYPE,
@@ -433,7 +432,6 @@ def play_game(li: lichess.Lichess,
               challenge_queue: MULTIPROCESSING_LIST_TYPE,
               correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
               logging_queue: LOGGING_QUEUE_TYPE,
-              game_logging_configurer: game_logging_configurer,
               logging_level: int) -> None:
 
     game_logging_configurer(logging_queue, logging_level)
@@ -466,7 +464,7 @@ def play_game(li: lichess.Lichess,
         move_overhead = config.move_overhead
         delay_seconds = config.rate_limiting_delay/1000
 
-        keyword_map = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
+        keyword_map: DefaultDict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
         goodbye = get_greeting("goodbye", config.greeting, keyword_map)
         hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
@@ -474,8 +472,8 @@ def play_game(li: lichess.Lichess,
 
         disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
         prior_game = None
-        board = None
-        upd = game.state
+        board = chess.Board()
+        upd: Dict[str, Any] = game.state
         while not terminated:
             move_attempted = False
             try:
@@ -527,14 +525,15 @@ def play_game(li: lichess.Lichess,
                 if stopped or (not move_attempted and not is_ongoing):
                     break
             finally:
-                upd = None
+                upd = {}
 
         try_print_pgn_game_record(li, config, game, board, engine)
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
 
 
 def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: DefaultDict[str, str]) -> str:
-    return greeting_cfg.lookup(greeting).format_map(keyword_map)
+    greeting_text: str = greeting_cfg.lookup(greeting)
+    return greeting_text.format_map(keyword_map)
 
 
 def say_hello(conversation: Conversation, hello: str, hello_spectators: str, board: chess.Board) -> None:
@@ -556,9 +555,9 @@ def print_move_number(board: chess.Board) -> None:
     logger.info(f"move: {len(board.move_stack) // 2 + 1}")
 
 
-def next_update(lines: Iterator[bytes]) -> Optional[GAME_EVENT_TYPE]:
+def next_update(lines: Iterator[bytes]) -> GAME_EVENT_TYPE:
     binary_chunk = next(lines)
-    upd = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else None
+    upd: GAME_EVENT_TYPE = json.loads(binary_chunk.decode("utf-8")) if binary_chunk else {}
     if upd:
         logger.debug(f"Game state: {upd}")
     return upd
@@ -582,15 +581,16 @@ def setup_board(game: model.Game) -> chess.Board:
     return board
 
 
-def is_engine_move(game: model.Game, prior_game: model.Game, board: chess.Board) -> bool:
+def is_engine_move(game: model.Game, prior_game: Optional[model.Game], board: chess.Board) -> bool:
     return game_changed(game, prior_game) and game.is_white == (board.turn == chess.WHITE)
 
 
 def is_game_over(game: model.Game) -> bool:
-    return game.state["status"] != "started"
+    status: str = game.state["status"]
+    return status != "started"
 
 
-def should_exit_game(board: chess.Board, game: model.Game, prior_game: model.Game, li: lichess.Lichess,
+def should_exit_game(board: chess.Board, game: model.Game, prior_game: Optional[model.Game], li: lichess.Lichess,
                      is_correspondence: bool) -> bool:
     if (is_correspondence
             and not is_engine_move(game, prior_game, board)
@@ -613,18 +613,20 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
                         game: model.Game, is_correspondence: bool) -> None:
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put_nowait(game.id)
+        correspondence_queue.put_nowait(game.id)  # type: ignore[attr-defined]
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})  # type: ignore[attr-defined]
 
 
-def game_changed(current_game: model.Game, prior_game: model.Game) -> bool:
+def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:
     if prior_game is None:
         return True
 
-    return current_game.state["moves"] != prior_game.state["moves"]
+    current_game_moves_str: str = current_game.state["moves"]
+    prior_game_moves_str: str = prior_game.state["moves"]
+    return current_game_moves_str != prior_game_moves_str
 
 
 def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
@@ -684,25 +686,27 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     game_path = os.path.join(config.pgn_directory, game_file_name)
 
-    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id)))
+    lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
         with open(game_path) as game_data:
-            game_record = chess.pgn.read_game(game_data)
+            game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
         game_record = lichess_game_record
 
-    current_node = game_record.game()
-    lichess_node = lichess_game_record.game()
+    current_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = game_record.game()
+    lichess_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
-        if current_node.is_end() or current_node.next().move != move:
+        next_node = current_node.next()
+        if next_node is None or next_node.move != move:
             current_node = current_node.add_main_variation(move)
         else:
-            current_node = current_node.next()
+            current_node = next_node
 
-        if not lichess_node.is_end():
-            lichess_node = lichess_node.next()
+        next_lichess_node = lichess_node.next()
+        if next_lichess_node:
+            lichess_node = next_lichess_node
             current_node.set_clock(lichess_node.clock())
             if current_node.comment != lichess_node.comment:
                 current_node.comment = f"{current_node.comment} {lichess_node.comment}".strip()

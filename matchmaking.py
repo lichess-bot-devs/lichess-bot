@@ -5,7 +5,7 @@ from timer import Timer
 from collections import defaultdict
 import lichess
 from config import Configuration, DelayType
-from typing import Dict, Any, Set, Optional, Tuple, List
+from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
@@ -23,9 +23,9 @@ class Matchmaking:
         self.last_game_ended_delay = Timer(self.matchmaking_cfg.challenge_timeout * 60)
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
-        self.challenge_id = None
+        self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.delay_timers = defaultdict(Timer)
+        self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():
@@ -40,11 +40,11 @@ class Matchmaking:
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
-            self.challenge_id = None
+            self.challenge_id = ""
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
-                         mode: str) -> Optional[str]:
+                         mode: str) -> str:
         params = {"rated": mode == "rated", "variant": variant}
 
         if days:
@@ -55,29 +55,34 @@ class Matchmaking:
         else:
             logger.error("At least one of challenge_days, challenge_initial_time, or challenge_increment "
                          "must be greater than zero in the matchmaking section of your config file.")
-            return None
+            return ""
 
         try:
             response = self.li.challenge(username, params)
-            challenge_id = response.get("challenge", {}).get("id")
+            challenge_id: str = response.get("challenge", {}).get("id", "")
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)
             return challenge_id
         except Exception:
             logger.exception("Could not create challenge")
-            return None
+            return ""
 
     def perf(self) -> Dict[str, Dict[str, Any]]:
-        return self.user_profile["perfs"]
+        user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
+        return user_perf
 
     def username(self) -> str:
-        return self.user_profile["username"]
+        username: str = self.user_profile["username"]
+        return username
 
     def update_user_profile(self) -> None:
         if self.last_user_profile_update_time.is_expired():
             self.last_user_profile_update_time.reset()
-            self.user_profile = self.li.get_profile()
+            try:
+                self.user_profile = self.li.get_profile()
+            except Exception:
+                pass
 
     def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
         variant = self.get_random_config_value("challenge_variant", self.variants)
@@ -141,7 +146,7 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant, mode
 
     def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
-        value = self.matchmaking_cfg.lookup(parameter)
+        value: str = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
@@ -152,8 +157,8 @@ class Matchmaking:
         self.update_user_profile()
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
-        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else None
-        logger.info(f"Challenge id is {challenge_id}.")
+        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
+        logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")
         self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
 
@@ -163,7 +168,7 @@ class Matchmaking:
 
     def accepted_challenge(self, event: EVENT_TYPE) -> None:
         if self.challenge_id == event["game"]["id"]:
-            self.challenge_id = None
+            self.challenge_id = ""
 
     def declined_challenge(self, event: EVENT_TYPE) -> None:
         challenge = model.Challenge(event["challenge"], self.user_profile)
@@ -171,7 +176,7 @@ class Matchmaking:
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
         if self.challenge_id == challenge.id:
-            self.challenge_id = None
+            self.challenge_id = ""
         if not challenge.from_self or self.delay_type == DelayType.NONE:
             return
 

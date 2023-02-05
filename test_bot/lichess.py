@@ -60,12 +60,12 @@ class GameStream:
                     break
                 except (IndexError, ValueError):
                     pass
-            wtime, btime = float(wtime), float(btime)
+            wtime_int, wtime_int = float(wtime), float(btime)
             time.sleep(0.1)
             new_game_state = {"type": "gameState",
                               "moves": moves,
-                              "wtime": int(wtime * 1000),
-                              "btime": int(btime * 1000),
+                              "wtime": int(wtime_int * 1000),
+                              "btime": int(wtime_int * 1000),
                               "winc": 2000,
                               "binc": 2000}
             if event == "end":
@@ -100,18 +100,15 @@ class Lichess:
     def __init__(self, token: str, url: str, version: str) -> None:
         self.baseUrl = url
         self.game_accepted = False
-        self.moves = []
+        self.moves: List[chess.engine.PlayResult] = []
         self.sent_game = False
-
-    def get_game(self, game_id: str) -> None:
-        return
 
     def upgrade_to_bot_account(self) -> None:
         return
 
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
         self.moves.append(move)
-        uci_move = move.move.uci()
+        uci_move = move.move.uci() if move.move else "error"
         with open("./logs/states.txt") as file:
             contents = file.read().split("\n")
         contents[0] += f" {uci_move}"

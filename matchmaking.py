@@ -79,7 +79,10 @@ class Matchmaking:
     def update_user_profile(self) -> None:
         if self.last_user_profile_update_time.is_expired():
             self.last_user_profile_update_time.reset()
-            self.user_profile = self.li.get_profile()
+            try:
+                self.user_profile = self.li.get_profile()
+            except Exception:
+                pass
 
     def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
         variant = self.get_random_config_value("challenge_variant", self.variants)

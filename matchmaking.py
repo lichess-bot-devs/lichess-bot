@@ -104,8 +104,8 @@ class Matchmaking:
         min_rating = self.matchmaking_cfg.opponent_min_rating
         max_rating = self.matchmaking_cfg.opponent_max_rating
         rating_diff = self.matchmaking_cfg.opponent_rating_difference
-        if rating_diff is not None:
-            bot_rating = self.perf().get(game_type, {}).get("rating", 0)
+        bot_rating = self.perf().get(game_type, {}).get("rating", 0)
+        if rating_diff is not None and bot_rating > 0:
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")

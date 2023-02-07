@@ -8,7 +8,6 @@ import subprocess
 import logging
 import time
 import random
-from enum import Enum
 from collections import Counter
 from contextlib import contextmanager
 import config
@@ -68,32 +67,20 @@ def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
-class Termination(str, Enum):
-    MATE = "mate"
-    TIMEOUT = "outoftime"
-    RESIGN = "resign"
-    ABORT = "aborted"
-    DRAW = "draw"
+def translate_termination(game: model.Game, board: chess.Board) -> str:
+    winner_color = game.state.get("winner", "")
+    termination: Optional[str] = game.state.get("status")
 
-
-class GameEnding(str, Enum):
-    WHITE_WINS = "1-0"
-    BLACK_WINS = "0-1"
-    DRAW = "1/2-1/2"
-    INCOMPLETE = "*"
-
-
-def translate_termination(termination: Optional[str], board: chess.Board, winner_color: str) -> str:
-    if termination == Termination.MATE:
+    if termination == model.Termination.MATE:
         return f"{winner_color.title()} mates"
-    elif termination == Termination.TIMEOUT:
+    elif termination == model.Termination.TIMEOUT:
         return "Time forfeiture"
-    elif termination == Termination.RESIGN:
+    elif termination == model.Termination.RESIGN:
         resigner = "black" if winner_color == "white" else "white"
         return f"{resigner.title()} resigns"
-    elif termination == Termination.ABORT:
+    elif termination == model.Termination.ABORT:
         return "Game aborted"
-    elif termination == Termination.DRAW:
+    elif termination == model.Termination.DRAW:
         if board.is_fifty_moves():
             return "50-move rule"
         elif board.is_repetition():
@@ -432,23 +419,11 @@ class XBoardEngine(EngineWrapper):
         if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
             self.engine.protocol._new(board, None, {})
 
-        winner: str = game.state.get("winner", "")
-        termination: Optional[str] = game.state.get("status")
-
-        if winner == "white":
-            game_result = GameEnding.WHITE_WINS
-        elif winner == "black":
-            game_result = GameEnding.BLACK_WINS
-        elif termination == Termination.DRAW:
-            game_result = GameEnding.DRAW
-        else:
-            game_result = GameEnding.INCOMPLETE
-
-        endgame_message = translate_termination(termination, board, winner)
+        endgame_message = translate_termination(game, board)
         if endgame_message:
             endgame_message = " {" + endgame_message + "}"
 
-        self.engine.protocol.send_line(f"result {game_result.value}{endgame_message}")
+        self.engine.protocol.send_line(f"result {game.result()}{endgame_message}")
 
     def stop(self) -> None:
         self.engine.protocol.send_line("?")

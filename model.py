@@ -2,6 +2,7 @@ import math
 from urllib.parse import urljoin
 import logging
 import datetime
+from enum import Enum
 from timer import Timer
 from config import Configuration
 from typing import Dict, Any, Tuple, List, DefaultDict
@@ -109,6 +110,14 @@ class Challenge:
         return self.__str__()
 
 
+class Termination(str, Enum):
+    MATE = "mate"
+    TIMEOUT = "outoftime"
+    RESIGN = "resign"
+    ABORT = "aborted"
+    DRAW = "draw"
+
+
 class Game:
     def __init__(self, json: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         self.username = username
@@ -175,16 +184,25 @@ class Game:
         return (wtime if self.is_white else btime) / 1000
 
     def result(self) -> str:
-        if self.state.get("status") == "started":
-            return "*"
+        class GameEnding(str, Enum):
+            WHITE_WINS = "1-0"
+            BLACK_WINS = "0-1"
+            DRAW = "1/2-1/2"
+            INCOMPLETE = "*"
 
         winner = self.state.get("winner")
+        termination = self.state.get("status")
+
         if winner == "white":
-            return "1-0"
+            result = GameEnding.WHITE_WINS
         elif winner == "black":
-            return "0-1"
+            result = GameEnding.BLACK_WINS
+        elif termination == Termination.DRAW:
+            result = GameEnding.DRAW
         else:
-            return "1/2-1/2"
+            result = GameEnding.INCOMPLETE
+
+        return result.value
 
     def __str__(self) -> str:
         return f"{self.url()} {self.perf_name} vs {self.opponent.__str__()} ({self.id})"

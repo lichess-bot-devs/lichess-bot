@@ -638,19 +638,19 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
 
     if winner is not None:
         logger.info(f"{winning_name} won!")
-    elif termination == engine_wrapper.Termination.DRAW:
+    elif termination == model.Termination.DRAW:
         logger.info("Game ended in draw.")
     else:
         logger.info("Game adjourned.")
 
-    simple_endings = {engine_wrapper.Termination.MATE: "Game won by checkmate.",
-                      engine_wrapper.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
-                      engine_wrapper.Termination.RESIGN: f"{losing_name} resigned.",
-                      engine_wrapper.Termination.ABORT: "Game aborted."}
+    simple_endings = {model.Termination.MATE: "Game won by checkmate.",
+                      model.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
+                      model.Termination.RESIGN: f"{losing_name} resigned.",
+                      model.Termination.ABORT: "Game aborted."}
 
     if termination in simple_endings:
         logger.info(simple_endings[termination])
-    elif termination == engine_wrapper.Termination.DRAW:
+    elif termination == model.Termination.DRAW:
         if board.is_fifty_moves():
             logger.info("Game drawn by 50-move rule.")
         elif board.is_repetition():

@@ -149,8 +149,7 @@ class Game:
             return f"{self.mode.title()} {self.variant_name} game"
 
     def time_control(self) -> str:
-        ms_in_min = 60 * 1000
-        return f"{int(self.clock_initial/ms_in_min)}+{int(self.clock_increment/1000)}"
+        return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
 
     def is_abortable(self) -> bool:
         return len(self.state["moves"]) < 6

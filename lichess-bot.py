@@ -638,19 +638,19 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
 
     if winner is not None:
         logger.info(f"{winning_name} won!")
-    elif termination == engine_wrapper.Termination.DRAW:
+    elif termination == model.Termination.DRAW:
         logger.info("Game ended in draw.")
     else:
         logger.info("Game adjourned.")
 
-    simple_endings = {engine_wrapper.Termination.MATE: "Game won by checkmate.",
-                      engine_wrapper.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
-                      engine_wrapper.Termination.RESIGN: f"{losing_name} resigned.",
-                      engine_wrapper.Termination.ABORT: "Game aborted."}
+    simple_endings = {model.Termination.MATE: "Game won by checkmate.",
+                      model.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
+                      model.Termination.RESIGN: f"{losing_name} resigned.",
+                      model.Termination.ABORT: "Game aborted."}
 
     if termination in simple_endings:
         logger.info(simple_endings[termination])
-    elif termination == engine_wrapper.Termination.DRAW:
+    elif termination == model.Termination.DRAW:
         if board.is_fifty_moves():
             logger.info("Game drawn by 50-move rule.")
         elif board.is_repetition():
@@ -695,6 +695,8 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     except FileNotFoundError:
         game_record = lichess_game_record
 
+    fill_missing_pgn_headers(game_record, game)
+
     current_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = game_record.game()
     lichess_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
@@ -718,6 +720,44 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     with open(game_path, "w") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)
         game_record.accept(pgn_writer)
+
+
+def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
+    local_headers = get_headers(game)
+    for header, game_value in local_headers.items():
+        record_value = game_record.headers.get(header)
+        if not record_value or record_value.startswith("?") or (header == "Result" and record_value == "*"):
+            game_record.headers[header] = str(game_value)
+
+
+def get_headers(game: model.Game) -> Dict[str, Union[str, int]]:
+    headers: Dict[str, Union[str, int]] = {}
+    headers["Event"] = game.pgn_event()
+    headers["Site"] = game.short_url()
+    headers["Date"] = game.game_start.strftime("%Y.%m.%d")
+    headers["White"] = game.white.name or str(game.white)
+    headers["Black"] = game.black.name or str(game.black)
+    headers["Result"] = game.result()
+
+    if game.black.rating:
+        headers["BlackElo"] = game.black.rating
+    if game.black.title:
+        headers["BlackTitle"] = game.black.title
+
+    if game.perf_name != "correspondence":
+        headers["TimeControl"] = game.time_control()
+
+    headers["UTCDate"] = headers["Date"]
+    headers["UTCTime"] = game.game_start.strftime("%H:%M:%S")
+    if game.variant_name not in ["Standard", "From Position"]:
+        headers["Variant"] = game.variant_name
+
+    if game.white.rating:
+        headers["WhiteElo"] = game.white.rating
+    if game.white.title:
+        headers["WhiteTitle"] = game.white.title
+
+    return headers
 
 
 def intro() -> str:

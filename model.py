@@ -1,6 +1,8 @@
 import math
 from urllib.parse import urljoin
 import logging
+import datetime
+from enum import Enum
 from timer import Timer
 from config import Configuration
 from typing import Dict, Any, Tuple, List, DefaultDict
@@ -101,6 +103,14 @@ class Challenge:
         return self.__str__()
 
 
+class Termination(str, Enum):
+    MATE = "mate"
+    TIMEOUT = "outoftime"
+    RESIGN = "resign"
+    ABORT = "aborted"
+    DRAW = "draw"
+
+
 class Game:
     def __init__(self, json: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         self.username = username
@@ -112,6 +122,7 @@ class Game:
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = (json.get("perf") or {}).get("name", "{perf?}")
         self.variant_name = json["variant"]["name"]
+        self.mode = "rated" if json.get("rated") else "casual"
         self.white = Player(json["white"])
         self.black = Player(json["black"])
         self.initial_fen = json.get("initialFen")
@@ -122,12 +133,25 @@ class Game:
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
+        self.game_start = datetime.datetime.fromtimestamp(json["createdAt"]/1000, tz=datetime.timezone.utc)
         self.abort_time = Timer(abort_time)
         self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
         self.disconnect_time = Timer(0)
 
     def url(self) -> str:
-        return urljoin(self.base_url, f"{self.id}/{self.my_color}")
+        return "/".join([self.short_url(), self.my_color])
+
+    def short_url(self) -> str:
+        return urljoin(self.base_url, self.id)
+
+    def pgn_event(self) -> str:
+        if self.variant_name in ["Standard", "From Position"]:
+            return f"{self.mode.title()} {self.perf_name.title()} game"
+        else:
+            return f"{self.mode.title()} {self.variant_name} game"
+
+    def time_control(self) -> str:
+        return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
 
     def is_abortable(self) -> bool:
         return len(self.state["moves"]) < 6
@@ -151,6 +175,27 @@ class Game:
         wtime: int = self.state["wtime"]
         btime: int = self.state["btime"]
         return (wtime if self.is_white else btime) / 1000
+
+    def result(self) -> str:
+        class GameEnding(str, Enum):
+            WHITE_WINS = "1-0"
+            BLACK_WINS = "0-1"
+            DRAW = "1/2-1/2"
+            INCOMPLETE = "*"
+
+        winner = self.state.get("winner")
+        termination = self.state.get("status")
+
+        if winner == "white":
+            result = GameEnding.WHITE_WINS
+        elif winner == "black":
+            result = GameEnding.BLACK_WINS
+        elif termination == Termination.DRAW:
+            result = GameEnding.DRAW
+        else:
+            result = GameEnding.INCOMPLETE
+
+        return result.value
 
     def __str__(self) -> str:
         return f"{self.url()} {self.perf_name} vs {self.opponent} ({self.id})"

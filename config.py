@@ -64,7 +64,8 @@ def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, defau
         if not isinstance(subconfig, dict):
             raise Exception(f'The {section} section in {sections} should hold a set of key-value pairs, not a value.')
     if force_falsey_values:
-        subconfig[key] = subconfig.get(key) or default
+        if subconfig.get(key) is None:
+            subconfig[key] = default
     else:
         subconfig.setdefault(key, default)
     return subconfig

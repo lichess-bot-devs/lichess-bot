@@ -64,7 +64,8 @@ def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, defau
         if not isinstance(subconfig, dict):
             raise Exception(f'The {section} section in {sections} should hold a set of key-value pairs, not a value.')
     if force_falsey_values:
-        subconfig[key] = subconfig.get(key) or default
+        if subconfig.get(key) in [None, ""]:
+            subconfig[key] = default
     else:
         subconfig.setdefault(key, default)
     return subconfig
@@ -143,11 +144,11 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
-    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60])
+    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60], force_falsey_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")
-    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[2])
+    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[2], force_falsey_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_increment")
-    set_config_default(CONFIG, "matchmaking", key="challenge_days", default=[None])
+    set_config_default(CONFIG, "matchmaking", key="challenge_days", default=[None], force_falsey_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_days")
     set_config_default(CONFIG, "matchmaking", key="opponent_min_rating", default=600, force_falsey_values=True)
     set_config_default(CONFIG, "matchmaking", key="opponent_max_rating", default=4000, force_falsey_values=True)

@@ -139,7 +139,7 @@ class Game:
         self.disconnect_time = Timer(0)
 
     def url(self) -> str:
-        return "/".join([self.short_url(), self.my_color])
+        return f"{self.short_url()}/{self.my_color}"
 
     def short_url(self) -> str:
         return urljoin(self.base_url, self.id)

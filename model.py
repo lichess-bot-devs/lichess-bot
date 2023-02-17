@@ -154,7 +154,9 @@ class Game:
         return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
 
     def is_abortable(self) -> bool:
-        return len(self.state["moves"]) < 6
+        # Moves are separated by spaces. A game is abortable when less
+        # than two moves (one from each player) have been played.
+        return " " not in self.state["moves"]
 
     def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
         if self.is_abortable():

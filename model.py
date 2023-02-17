@@ -139,7 +139,7 @@ class Game:
         self.disconnect_time = Timer(0)
 
     def url(self) -> str:
-        return "/".join([self.short_url(), self.my_color])
+        return f"{self.short_url()}/{self.my_color}"
 
     def short_url(self) -> str:
         return urljoin(self.base_url, self.id)
@@ -154,7 +154,9 @@ class Game:
         return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
 
     def is_abortable(self) -> bool:
-        return len(self.state["moves"]) < 6
+        # Moves are separated by spaces. A game is abortable when less
+        # than two moves (one from each player) have been played.
+        return " " not in self.state["moves"]
 
     def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
         if self.is_abortable():

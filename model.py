@@ -5,7 +5,7 @@ import datetime
 from enum import Enum
 from timer import Timer
 from config import Configuration
-from typing import Dict, Any, Tuple, List, DefaultDict
+from typing import Dict, Any, Tuple, List, DefaultDict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -209,11 +209,11 @@ class Game:
 class Player:
     def __init__(self, json: Dict[str, Any]) -> None:
         self.name: str = json.get("name", "")
-        self.title = json.get("title")
+        self.title: Optional[str] = json.get("title")
         self.is_bot = self.title == "BOT"
-        self.rating = json.get("rating")
-        self.provisional = json.get("provisional")
-        self.aiLevel = json.get("aiLevel")
+        self.rating: Optional[int] = json.get("rating")
+        self.provisional: Optional[bool] = json.get("provisional")
+        self.aiLevel: Optional[int] = json.get("aiLevel")
 
     def __str__(self) -> str:
         if self.aiLevel:

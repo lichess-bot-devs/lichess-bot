@@ -382,13 +382,12 @@ class UCIEngine(EngineWrapper):
         self.engine.protocol.send_line("stop")
 
     def get_opponent_info(self, game: model.Game) -> None:
-        name = game.opponent.name
-        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and
+        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and
                 "UCI_Opponent" in self.engine.protocol.config):
-            rating = game.opponent.rating or "none"
-            title = game.opponent.title or "none"
-            player_type = "computer" if title == "BOT" else "human"
-            self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
+            self.engine.send_opponent_information(opponent_name=game.opponent.name,
+                                                  opponent_title=game.opponent.title,
+                                                  opponent_rating=game.opponent.rating,
+                                                  opponent_is_engine=game.opponent.is_bot)
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         if isinstance(self.engine.protocol, chess.engine.UciProtocol):
@@ -430,10 +429,11 @@ class XBoardEngine(EngineWrapper):
 
     def get_opponent_info(self, game: model.Game) -> None:
         if game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
-            self.engine.configure({"name": f"{game.opponent.title or ''} {game.opponent.name}".strip(),
-                                   "engine_rating": game.me.rating or 0,
-                                   "opponent_rating": game.opponent.rating or 0,
-                                   "computer": game.opponent.title == "BOT"})
+            self.engine.send_opponent_information(opponent_name=game.opponent.name,
+                                                  opponent_title=game.opponent.title,
+                                                  opponent_rating=game.opponent.rating,
+                                                  opponent_is_engine=game.opponent.is_bot,
+                                                  engine_rating=game.me.rating)
 
 
 class MinimalEngine(EngineWrapper):

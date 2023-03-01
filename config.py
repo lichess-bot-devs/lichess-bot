@@ -57,14 +57,15 @@ def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: AB
 
 
 def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, default: Any,
-                       force_falsey_values: bool = False) -> CONFIG_DICT_TYPE:
+                       force_empty_values: bool = False) -> CONFIG_DICT_TYPE:
     subconfig = config
     for section in sections:
         subconfig = subconfig.setdefault(section, {})
         if not isinstance(subconfig, dict):
             raise Exception(f'The {section} section in {sections} should hold a set of key-value pairs, not a value.')
-    if force_falsey_values:
-        subconfig[key] = subconfig.get(key) or default
+    if force_empty_values:
+        if subconfig.get(key) in [None, ""]:
+            subconfig[key] = default
     else:
         subconfig.setdefault(key, default)
     return subconfig
@@ -84,7 +85,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="abort_time", default=20)
     set_config_default(CONFIG, key="move_overhead", default=1000)
     set_config_default(CONFIG, key="rate_limiting_delay", default=0)
-    set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_falsey_values=True)
+    set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_for_egtb_zero", default=True)
@@ -96,7 +97,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_score", default=0)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_pieces", default=10)
     set_config_default(CONFIG, "engine", "online_moves", key="max_out_of_book_moves", default=10)
-    set_config_default(CONFIG, "engine", "online_moves", key="max_retries", default=2, force_falsey_values=True)
+    set_config_default(CONFIG, "engine", "online_moves", key="max_retries", default=2, force_empty_values=True)
     set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="enabled", default=False)
     set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="source", default="lichess")
     set_config_default(CONFIG, "engine", "online_moves", "online_egtb", key="min_time", default=20)
@@ -134,23 +135,23 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "challenge", key="min_base", default=0)
     set_config_default(CONFIG, "challenge", key="max_days", default=math.inf)
     set_config_default(CONFIG, "challenge", key="min_days", default=1)
-    set_config_default(CONFIG, "challenge", key="block_list", default=[], force_falsey_values=True)
+    set_config_default(CONFIG, "challenge", key="block_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "correspondence", key="checkin_period", default=600)
-    set_config_default(CONFIG, "correspondence", key="move_time", default=60, force_falsey_values=True)
+    set_config_default(CONFIG, "correspondence", key="move_time", default=60, force_empty_values=True)
     set_config_default(CONFIG, "correspondence", key="disconnect_time", default=300)
-    set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_falsey_values=True)
+    set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_empty_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
-    set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_falsey_values=True)
-    set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_falsey_values=True)
+    set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
-    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60])
+    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")
-    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[2])
+    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[2], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_increment")
-    set_config_default(CONFIG, "matchmaking", key="challenge_days", default=[None])
+    set_config_default(CONFIG, "matchmaking", key="challenge_days", default=[None], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_days")
-    set_config_default(CONFIG, "matchmaking", key="opponent_min_rating", default=600, force_falsey_values=True)
-    set_config_default(CONFIG, "matchmaking", key="opponent_max_rating", default=4000, force_falsey_values=True)
+    set_config_default(CONFIG, "matchmaking", key="opponent_min_rating", default=600, force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="opponent_max_rating", default=4000, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="opponent_allow_tos_violation", default=True)
     set_config_default(CONFIG, "matchmaking", key="challenge_variant", default="random")
     set_config_default(CONFIG, "matchmaking", key="challenge_mode", default="random")
@@ -161,7 +162,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     for type in ["hello", "goodbye"]:
         for target in ["", "_spectators"]:
-            set_config_default(CONFIG, "greeting", key=type + target, default="", force_falsey_values=True)
+            set_config_default(CONFIG, "greeting", key=type + target, default="", force_empty_values=True)
 
 
 def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:

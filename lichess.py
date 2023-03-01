@@ -17,7 +17,6 @@ ENDPOINTS = {
     "playing": "/api/account/playing",
     "stream": "/api/bot/game/stream/{}",
     "stream_event": "/api/stream/event",
-    "game": "/api/bot/game/{}",
     "move": "/api/bot/game/{}/move/{}",
     "chat": "/api/bot/game/{}/chat",
     "abort": "/api/bot/game/{}/abort",

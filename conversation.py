@@ -44,7 +44,7 @@ class Conversation:
             self.send_reply(line, "I don't tell that to my opponent, sorry.")
         elif cmd == "queue":
             if self.challengers:
-                challengers = ", ".join([f"@{challenger.challenger_name}" for challenger in reversed(self.challengers)])
+                challengers = ", ".join([f"@{challenger.challenger.name}" for challenger in reversed(self.challengers)])
                 self.send_reply(line, f"Challenge queue: {challengers}")
             else:
                 self.send_reply(line, "No challenges queued.")

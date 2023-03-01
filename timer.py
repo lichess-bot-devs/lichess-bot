@@ -2,7 +2,7 @@ import time
 
 
 class Timer:
-    def __init__(self, duration: int = -1) -> None:
+    def __init__(self, duration: int = 0) -> None:
         self.duration = duration
         self.reset()
 

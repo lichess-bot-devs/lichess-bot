@@ -104,8 +104,8 @@ class Matchmaking:
         min_rating = self.matchmaking_cfg.opponent_min_rating
         max_rating = self.matchmaking_cfg.opponent_max_rating
         rating_diff = self.matchmaking_cfg.opponent_rating_difference
-        if rating_diff is not None:
-            bot_rating = self.perf().get(game_type, {}).get("rating", 0)
+        bot_rating = self.perf().get(game_type, {}).get("rating", 0)
+        if rating_diff is not None and bot_rating > 0:
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
@@ -172,7 +172,7 @@ class Matchmaking:
 
     def declined_challenge(self, event: EVENT_TYPE) -> None:
         challenge = model.Challenge(event["challenge"], self.user_profile)
-        opponent = event["challenge"]["destUser"]["name"]
+        opponent = challenge.opponent
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
         if self.challenge_id == challenge.id:
@@ -182,7 +182,7 @@ class Matchmaking:
 
         # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
-        delay_timer = self.get_delay_timer(opponent,
+        delay_timer = self.get_delay_timer(opponent.name,
                                            challenge.variant,
                                            challenge.speed,
                                            mode)

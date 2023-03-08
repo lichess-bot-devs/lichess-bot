@@ -343,11 +343,11 @@ class EngineWrapper:
         return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
-        self.engine.send_opponent_information(opponent_name=game.opponent.name,
-                                              opponent_title=game.opponent.title,
-                                              opponent_rating=game.opponent.rating,
-                                              opponent_is_engine=game.opponent.is_bot,
-                                              engine_rating=game.me.rating)
+        opponent = chess.engine.Opponent(name=game.opponent.name,
+                                         title=game.opponent.title,
+                                         rating=game.opponent.rating,
+                                         is_engine=game.opponent.is_bot)
+        self.engine.send_opponent_information(opponent=opponent, engine_rating=game.me.rating)
 
     def name(self) -> str:
         engine_info: Dict[str, str] = dict(self.engine.id)

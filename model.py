@@ -209,10 +209,10 @@ class Game:
 class Player:
     def __init__(self, json: Dict[str, Any]) -> None:
         self.title: Optional[str] = json.get("title")
-        self.is_bot = self.title == "BOT"
         self.rating: Optional[int] = json.get("rating")
         self.provisional: Optional[bool] = json.get("provisional")
         self.aiLevel: Optional[int] = json.get("aiLevel")
+        self.is_bot = self.title == "BOT" or self.aiLevel is not None
         self.name: str = f"AI level {self.aiLevel}" if self.aiLevel else json.get("name", "")
 
     def __str__(self) -> str:

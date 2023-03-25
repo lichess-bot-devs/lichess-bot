@@ -4,6 +4,7 @@ import model
 from timer import Timer
 from collections import defaultdict
 import lichess
+import datetime
 from config import Configuration, DelayType
 from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
@@ -26,6 +27,8 @@ class Matchmaking:
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
         self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
+        self.daily_challenges: List[Timer] = []
+
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():
@@ -59,6 +62,7 @@ class Matchmaking:
 
         try:
             response = self.li.challenge(username, params)
+            self.update_daily_challenge_record()
             challenge_id: str = response.get("challenge", {}).get("id", "")
             if not challenge_id:
                 logger.error(response)
@@ -67,6 +71,16 @@ class Matchmaking:
         except Exception:
             logger.exception("Could not create challenge")
             return ""
+
+    def update_daily_challenge_record(self) -> None:
+        # As the number of challenges in a day increase, the minimum wait time between challenges increases.
+        # 0   -  49 challenges --> 1 minute
+        # 50  -  99 challenges --> 2 minutes
+        # 100 - 149 challenges --> 3 minutes
+        # etc.
+        self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
+        self.daily_challenges.append(Timer(int(datetime.timedelta(days=1).total_seconds())))
+        self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
 
     def perf(self) -> Dict[str, Dict[str, Any]]:
         user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]

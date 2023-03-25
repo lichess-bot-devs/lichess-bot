@@ -234,7 +234,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
                 active_games.discard(event["game"]["id"])
-                matchmaker.last_game_ended_delay.reset()
+                matchmaker.game_done()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":

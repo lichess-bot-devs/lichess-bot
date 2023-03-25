@@ -176,6 +176,14 @@ class Matchmaking:
         self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
 
+    def game_done(self) -> None:
+        self.last_game_ended_delay.reset()
+        postgame_timeout = self.last_game_ended_delay.time_until_expiration()
+        time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
+        time_left = max(postgame_timeout, time_to_next_challenge)
+        earliest_challenge_time = datetime.datetime.now() + datetime.timedelta(seconds=time_left)
+        logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')}")
+
     def add_to_block_list(self, username: str) -> None:
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)

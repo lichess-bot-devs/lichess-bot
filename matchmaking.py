@@ -178,6 +178,9 @@ class Matchmaking:
 
     def game_done(self) -> None:
         self.last_game_ended_delay.reset()
+        self.show_earliest_challenge_time()
+
+    def show_earliest_challenge_time(self) -> None:
         postgame_timeout = self.last_game_ended_delay.time_until_expiration()
         time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
         time_left = max(postgame_timeout, time_to_next_challenge)
@@ -216,6 +219,8 @@ class Matchmaking:
                         f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
         else:
             logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
+
+        self.show_earliest_challenge_time()
 
     def get_delay_timer(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> Timer:
         if self.delay_type == DelayType.FINE:

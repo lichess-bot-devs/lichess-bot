@@ -10,8 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class Conversation:
+    """
+    Enables the bot to communicate with its opponent and the spectators.
+    """
     def __init__(self, game: model.Game, engine: EngineWrapper, xhr: Lichess, version: str,
                  challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+        """
+        :param game: The game that the bot will send messages to.
+        :param engine: The engine playing the game.
+        :param xhr: A class that is used for communication with lichess.
+        :param version: The lichess-bot version.
+        :param challenge_queue: The active challenges the bot has.
+        """
         self.game = game
         self.engine = engine
         self.xhr = xhr

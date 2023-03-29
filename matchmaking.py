@@ -68,7 +68,7 @@ class Matchmaking:
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
             self.li.cancel(self.challenge_id)
-            logger.debug(f"Challenge id {self.challenge_id} cancelled.")
+            logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.challenge_id = ""
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 

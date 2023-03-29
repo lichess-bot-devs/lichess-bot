@@ -185,7 +185,9 @@ class Matchmaking:
         time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
         time_left = max(postgame_timeout, time_to_next_challenge)
         earliest_challenge_time = datetime.datetime.now() + datetime.timedelta(seconds=time_left)
-        logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')}")
+        challenges = "challenge" + ("" if len(self.daily_challenges) == 1 else "s")
+        logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')} "
+                    f"({len(self.daily_challenges)} {challenges} in last 24 hours)")
 
     def add_to_block_list(self, username: str) -> None:
         logger.info(f"Will not challenge {username} again during this session.")

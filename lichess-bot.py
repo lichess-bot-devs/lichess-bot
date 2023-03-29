@@ -210,6 +210,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
     last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
+    matchmaker.show_earliest_challenge_time()
 
     play_game_args = {"li": li,
                       "control_queue": control_queue,
@@ -233,9 +234,11 @@ def lichess_bot_main(li: lichess.Lichess,
                 control_queue.task_done()  # type: ignore[attr-defined]
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
-                active_games.discard(event["game"]["id"])
-                matchmaker.game_done()
-                log_proc_count("Freed", active_games)
+                id = event["game"]["id"]
+                if id in active_games:
+                    active_games.discard(id)
+                    matchmaker.game_done()
+                    log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)

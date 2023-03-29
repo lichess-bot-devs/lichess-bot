@@ -13,6 +13,32 @@ MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 
 logger = logging.getLogger(__name__)
 
+daily_challenges_file_name = "daily_challenge_times.txt"
+timestamp_format = "%Y-%m-%d %H:%M:%S"
+one_day = datetime.timedelta(days=1)
+
+
+def read_daily_challenges() -> List[Timer]:
+    timers = []
+    now = datetime.datetime.now()
+
+    try:
+        with open(daily_challenges_file_name) as file:
+            for line in file:
+                timestamp = datetime.datetime.strptime(line.strip(), timestamp_format)
+                time_left = one_day - (now - timestamp)
+                timers.append(Timer(int(time_left.total_seconds())))
+    except FileNotFoundError:
+        pass
+
+    return [timer for timer in timers if not timer.is_expired()]
+
+
+def write_daily_challenges(daily_challenges: List[Timer]) -> None:
+    with open(daily_challenges_file_name, 'w') as file:
+        for timer in daily_challenges:
+            file.write(timer.starting_timestamp().strftime(timestamp_format) + "\n")
+
 
 class Matchmaking:
     def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
@@ -27,7 +53,7 @@ class Matchmaking:
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
         self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
-        self.daily_challenges: List[Timer] = []
+        self.daily_challenges: List[Timer] = read_daily_challenges()
 
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
@@ -79,8 +105,9 @@ class Matchmaking:
         # 100 - 149 challenges --> 3 minutes
         # etc.
         self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
-        self.daily_challenges.append(Timer(int(datetime.timedelta(days=1).total_seconds())))
+        self.daily_challenges.append(Timer(int(one_day.total_seconds())))
         self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
+        write_daily_challenges(self.daily_challenges)
 
     def perf(self) -> Dict[str, Dict[str, Any]]:
         user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]

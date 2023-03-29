@@ -1,4 +1,5 @@
 import time
+import datetime
 
 
 class Timer:
@@ -17,3 +18,6 @@ class Timer:
 
     def time_until_expiration(self) -> float:
         return max(0., self.duration - self.time_since_reset())
+
+    def starting_timestamp(self) -> datetime.datetime:
+        return datetime.datetime.now() - datetime.timedelta(seconds=self.time_since_reset())

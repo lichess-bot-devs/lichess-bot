@@ -61,8 +61,8 @@ class Matchmaking:
             return ""
 
         try:
-            response = self.li.challenge(username, params)
             self.update_daily_challenge_record()
+            response = self.li.challenge(username, params)
             challenge_id: str = response.get("challenge", {}).get("id", "")
             if not challenge_id:
                 logger.error(response)

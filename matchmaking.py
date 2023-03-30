@@ -14,20 +14,16 @@ MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 logger = logging.getLogger(__name__)
 
 daily_challenges_file_name = "daily_challenge_times.txt"
-timestamp_format = "%Y-%m-%d %H:%M:%S"
-one_day = datetime.timedelta(days=1)
+timestamp_format = "%Y-%m-%d %H:%M:%S\n"
+one_day_seconds = datetime.timedelta(days=1).total_seconds()
 
 
 def read_daily_challenges() -> List[Timer]:
-    timers = []
-    now = datetime.datetime.now()
-
     try:
+        timers: List[Timer] = []
         with open(daily_challenges_file_name) as file:
             for line in file:
-                timestamp = datetime.datetime.strptime(line.strip(), timestamp_format)
-                time_left = one_day - (now - timestamp)
-                timers.append(Timer(int(time_left.total_seconds())))
+                timers.append(Timer(one_day_seconds, datetime.datetime.strptime(line, timestamp_format)))
     except FileNotFoundError:
         pass
 
@@ -35,9 +31,9 @@ def read_daily_challenges() -> List[Timer]:
 
 
 def write_daily_challenges(daily_challenges: List[Timer]) -> None:
-    with open(daily_challenges_file_name, 'w') as file:
+    with open(daily_challenges_file_name, "w") as file:
         for timer in daily_challenges:
-            file.write(timer.starting_timestamp().strftime(timestamp_format) + "\n")
+            file.write(timer.starting_timestamp().strftime(timestamp_format))
 
 
 class Matchmaking:
@@ -105,7 +101,7 @@ class Matchmaking:
         # 100 - 149 challenges --> 3 minutes
         # etc.
         self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
-        self.daily_challenges.append(Timer(int(one_day.total_seconds())))
+        self.daily_challenges.append(Timer(one_day_seconds))
         self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 

@@ -84,6 +84,7 @@ class Matchmaking:
 
         try:
             self.update_daily_challenge_record()
+            self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
             challenge_id: str = response.get("challenge", {}).get("id", "")
             if not challenge_id:
@@ -196,7 +197,6 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
         logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")
-        self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
 
     def game_done(self) -> None:

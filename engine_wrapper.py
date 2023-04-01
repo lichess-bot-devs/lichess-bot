@@ -74,7 +74,7 @@ def translate_termination(game: model.Game, board: chess.Board) -> str:
     if termination == model.Termination.MATE:
         return f"{winner_color.title()} mates"
     elif termination == model.Termination.TIMEOUT:
-        return "Time forfeiture"
+        return "Time forfeiture" if winner_color else "Timeout with insufficient material"
     elif termination == model.Termination.RESIGN:
         resigner = "black" if winner_color == "white" else "white"
         return f"{resigner.title()} resigns"

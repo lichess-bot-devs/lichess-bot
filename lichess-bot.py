@@ -638,13 +638,12 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
 
     if winner is not None:
         logger.info(f"{winning_name} won!")
-    elif termination == model.Termination.DRAW:
+    elif termination in [model.Termination.DRAW, model.Termination.TIMEOUT]:
         logger.info("Game ended in draw.")
     else:
         logger.info("Game adjourned.")
 
     simple_endings = {model.Termination.MATE: "Game won by checkmate.",
-                      model.Termination.TIMEOUT: f"{losing_name} forfeited on time.",
                       model.Termination.RESIGN: f"{losing_name} resigned.",
                       model.Termination.ABORT: "Game aborted."}
 
@@ -657,6 +656,13 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
             logger.info("Game drawn by threefold repetition.")
         else:
             logger.info("Game drawn by agreement.")
+    elif termination == model.Termination.TIMEOUT:
+        if winner:
+            logger.info(f"{losing_name} forfeited on time.")
+        else:
+            timeout_name = game.white.name if game.state.get("wtime") == 0 else game.black.name
+            other_name = game.white.name if timeout_name == game.black.name else game.black.name
+            logger.info(f"{timeout_name} ran out of time, but {other_name} did not have enough material to mate.")
     elif termination:
         logger.info(f"Game ended by {termination}")
 

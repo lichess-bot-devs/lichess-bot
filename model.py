@@ -192,7 +192,7 @@ class Game:
             result = GameEnding.WHITE_WINS
         elif winner == "black":
             result = GameEnding.BLACK_WINS
-        elif termination == Termination.DRAW:
+        elif termination in [Termination.DRAW, Termination.TIMEOUT]:
             result = GameEnding.DRAW
         else:
             result = GameEnding.INCOMPLETE

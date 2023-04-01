@@ -91,8 +91,10 @@ class Matchmaking:
                 logger.error(response)
                 self.add_to_block_list(username)
             return challenge_id
-        except Exception:
-            logger.exception("Could not create challenge")
+        except Exception as e:
+            logger.warning("Could not create challenge")
+            logger.debug(e, exc_info=e)
+            self.show_earliest_challenge_time()
             return ""
 
     def update_daily_challenge_record(self) -> None:

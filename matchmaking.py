@@ -4,6 +4,7 @@ import model
 from timer import Timer
 from collections import defaultdict
 import lichess
+import datetime
 from config import Configuration, DelayType
 from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
 USER_PROFILE_TYPE = Dict[str, Any]
@@ -11,6 +12,28 @@ EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
 
 logger = logging.getLogger(__name__)
+
+daily_challenges_file_name = "daily_challenge_times.txt"
+timestamp_format = "%Y-%m-%d %H:%M:%S\n"
+one_day_seconds = datetime.timedelta(days=1).total_seconds()
+
+
+def read_daily_challenges() -> List[Timer]:
+    try:
+        timers: List[Timer] = []
+        with open(daily_challenges_file_name) as file:
+            for line in file:
+                timers.append(Timer(one_day_seconds, datetime.datetime.strptime(line, timestamp_format)))
+    except FileNotFoundError:
+        pass
+
+    return [timer for timer in timers if not timer.is_expired()]
+
+
+def write_daily_challenges(daily_challenges: List[Timer]) -> None:
+    with open(daily_challenges_file_name, "w") as file:
+        for timer in daily_challenges:
+            file.write(timer.starting_timestamp().strftime(timestamp_format))
 
 
 class Matchmaking:
@@ -26,6 +49,8 @@ class Matchmaking:
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
         self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
+        self.daily_challenges: List[Timer] = read_daily_challenges()
+
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():
@@ -39,7 +64,7 @@ class Matchmaking:
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
             self.li.cancel(self.challenge_id)
-            logger.debug(f"Challenge id {self.challenge_id} cancelled.")
+            logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.challenge_id = ""
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
@@ -58,15 +83,30 @@ class Matchmaking:
             return ""
 
         try:
+            self.update_daily_challenge_record()
+            self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
             challenge_id: str = response.get("challenge", {}).get("id", "")
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)
             return challenge_id
-        except Exception:
-            logger.exception("Could not create challenge")
+        except Exception as e:
+            logger.warning("Could not create challenge")
+            logger.debug(e, exc_info=e)
+            self.show_earliest_challenge_time()
             return ""
+
+    def update_daily_challenge_record(self) -> None:
+        # As the number of challenges in a day increase, the minimum wait time between challenges increases.
+        # 0   -  49 challenges --> 1 minute
+        # 50  -  99 challenges --> 2 minutes
+        # 100 - 149 challenges --> 3 minutes
+        # etc.
+        self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
+        self.daily_challenges.append(Timer(one_day_seconds))
+        self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
+        write_daily_challenges(self.daily_challenges)
 
     def perf(self) -> Dict[str, Dict[str, Any]]:
         user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
@@ -159,8 +199,20 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
         logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")
-        self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
+
+    def game_done(self) -> None:
+        self.last_game_ended_delay.reset()
+        self.show_earliest_challenge_time()
+
+    def show_earliest_challenge_time(self) -> None:
+        postgame_timeout = self.last_game_ended_delay.time_until_expiration()
+        time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
+        time_left = max(postgame_timeout, time_to_next_challenge)
+        earliest_challenge_time = datetime.datetime.now() + datetime.timedelta(seconds=time_left)
+        challenges = "challenge" + ("" if len(self.daily_challenges) == 1 else "s")
+        logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')} "
+                    f"({len(self.daily_challenges)} {challenges} in last 24 hours)")
 
     def add_to_block_list(self, username: str) -> None:
         logger.info(f"Will not challenge {username} again during this session.")
@@ -194,6 +246,8 @@ class Matchmaking:
                         f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
         else:
             logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
+
+        self.show_earliest_challenge_time()
 
     def get_delay_timer(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> Timer:
         if self.delay_type == DelayType.FINE:

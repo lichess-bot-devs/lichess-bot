@@ -57,11 +57,7 @@ class Matchmaking:
         #   - casual/rated
         #   - empty string (if no other reason is given or self.delay_type is COARSE)
         self.delay_timers: DefaultDict[Tuple[str, str], Timer] = defaultdict(Timer)
-        delay_option = "delay_after_decline"
-        self.delay_type = self.matchmaking_cfg.lookup(delay_option)
-        if self.delay_type not in DelayType.__members__.values():
-            raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
-                             f" Choices are: {', '.join(DelayType)}.")
+        self.delay_type = self.matchmaking_cfg.delay_after_decline
 
     def should_create_challenge(self) -> bool:
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking

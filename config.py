@@ -215,6 +215,11 @@ def load_config(config_file: str) -> Configuration:
                 config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                               f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
+        delay_option = "delay_after_decline"
+        delay_type = (CONFIG.get("matchmaking") or {}).get(delay_option)
+        config_assert(delay_type is None or delay_type in DelayType.__members__.values(),
+                      f"{delay_type} is not a valid value for {delay_option} parameter. Choices are: {', '.join(DelayType)}.")
+
     insert_default_values(CONFIG)
     log_config(CONFIG)
     return Configuration(CONFIG)

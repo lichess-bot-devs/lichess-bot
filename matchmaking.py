@@ -261,7 +261,8 @@ class Matchmaking:
             hours = "hours" if delay_timer.duration > 3600 else "hour"
             logger.info(f"Will not challenge {opponent} to a {game_problem}".strip()
                         + f" game for {int(delay_timer.duration/3600)} {hours}.")
-            self.show_earliest_challenge_time()
+        
+        self.show_earliest_challenge_time()
 
     def get_delay_timers(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> List[Timer]:
         aspects = ["", variant, time_control, rated_mode] if self.delay_type == DelayType.FINE else [""]

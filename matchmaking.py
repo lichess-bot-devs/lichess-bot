@@ -5,7 +5,7 @@ from timer import Timer
 from collections import defaultdict
 import lichess
 from config import Configuration, DelayType
-from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
+from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
@@ -25,7 +25,15 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
+
+        # (username, game aspect) --> Timer
+        # game aspect is one of:
+        #   - game speed (bullet, blitz, etc.)
+        #   - variant (standard, horde, etc.)
+        #   - casual/rated
+        #   - empty string ("") for the opponent
+        self.delay_timers: DefaultDict[Tuple[str, str], Timer] = defaultdict(Timer)
+
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
         if self.delay_type not in DelayType.__members__.values():
@@ -124,7 +132,7 @@ class Matchmaking:
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
-            return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
+            return all(timer.is_expired() for timer in self.get_delay_timers(bot["username"], variant, game_type, mode))
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
@@ -180,26 +188,33 @@ class Matchmaking:
         if not challenge.from_self or self.delay_type == DelayType.NONE:
             return
 
-        # Add one hour to delay each time a challenge is declined.
-        mode = "rated" if challenge.rated else "casual"
-        delay_timer = self.get_delay_timer(opponent.name,
-                                           challenge.variant,
-                                           challenge.speed,
-                                           mode)
-        delay_timer.duration += 3600
-        delay_timer.reset()
-        hours = "hours" if delay_timer.duration > 3600 else "hour"
-        if self.delay_type == DelayType.FINE:
-            logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
-                        f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
+        reason_key = event["challenge"]["declineReasonKey"].lower()
+        if reason_key == "nobot":
+            self.add_to_block_list(opponent.name)
         else:
-            logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
+            mode = "rated" if challenge.rated else "casual"
+            decline_details: Dict[str, str] = {"generic": "",
+                                               "later": "",
+                                               "toofast": challenge.speed,
+                                               "tooslow": challenge.speed,
+                                               "timecontrol": challenge.speed,
+                                               "rated": mode,
+                                               "casual": mode,
+                                               "standard": challenge.variant,
+                                               "variant": challenge.variant}
 
-    def get_delay_timer(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> Timer:
-        if self.delay_type == DelayType.FINE:
-            return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
-        else:
-            return self.delay_timers[opponent_name]
+            # Add one hour to delay each time a challenge is declined.
+            game_problem = decline_details[reason_key] if self.delay_type == DelayType.FINE else ""
+            delay_timer = self.delay_timers[(opponent.name, game_problem)]
+            delay_timer.duration += 3600
+            delay_timer.reset()
+            hours = "hours" if delay_timer.duration > 3600 else "hour"
+            logger.info(f"Will not challenge {opponent} to a {game_problem}".strip()
+                        + f" game for {int(delay_timer.duration/3600)} {hours}.")
+
+    def get_delay_timers(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> List[Timer]:
+        aspects = ["", variant, time_control, rated_mode] if self.delay_type == DelayType.FINE else [""]
+        return [self.delay_timers[(opponent_name, aspect)] for aspect in aspects]
 
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:

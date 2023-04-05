@@ -142,7 +142,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_empty_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
-    set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE.value, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
     set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")

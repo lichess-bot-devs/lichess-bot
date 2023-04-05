@@ -55,7 +55,7 @@ class Matchmaking:
         #   - game speed (bullet, blitz, etc.)
         #   - variant (standard, horde, etc.)
         #   - casual/rated
-        #   - opponent name (if no other reason is given)
+        #   - empty string (if no other reason is given or self.delay_type is COARSE)
         self.delay_timers: DefaultDict[Tuple[str, str], Timer] = defaultdict(Timer)
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
@@ -240,9 +240,9 @@ class Matchmaking:
 
         # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
-        decline_details: Dict[str, str] = {"generic": opponent.name,
-                                           "later": opponent.name,
-                                           "nobot": opponent.name,
+        decline_details: Dict[str, str] = {"generic": "",
+                                           "later": "",
+                                           "nobot": "",
                                            "toofast": challenge.speed,
                                            "tooslow": challenge.speed,
                                            "timecontrol": challenge.speed,
@@ -263,7 +263,7 @@ class Matchmaking:
         self.show_earliest_challenge_time()
 
     def get_delay_timers(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> List[Timer]:
-        aspects = [opponent_name, variant, time_control, rated_mode] if self.delay_type == DelayType.FINE else [opponent_name]
+        aspects = ["", variant, time_control, rated_mode] if self.delay_type == DelayType.FINE else [""]
         return [self.delay_timers[(opponent_name, aspect)] for aspect in aspects]
 
 

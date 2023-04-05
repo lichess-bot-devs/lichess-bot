@@ -248,7 +248,9 @@ class Matchmaking:
                                            "variant": challenge.variant}
 
         reason_key = event["challenge"]["declineReasonKey"].lower()
-        game_problem = decline_details[reason_key] if self.delay_type == DelayType.FINE else ""
+        if reason_key not in decline_details:
+            logger.warning(f"Unknown decline reason received: {reason_key}")
+        game_problem = decline_details.get(reason_key, "") if self.delay_type == DelayType.FINE else ""
         delay_timer = self.delay_timers[(opponent.name, game_problem)]
         delay_timer.duration += 3600
         delay_timer.reset()

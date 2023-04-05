@@ -50,12 +50,12 @@ class Matchmaking:
         self.block_list = self.matchmaking_cfg.block_list.copy()
         self.daily_challenges: List[Timer] = read_daily_challenges()
 
-        # (username, game aspect) --> Timer
-        # game aspect is one of:
+        # (opponent name, game aspect) --> Timer
+        # game aspect is the one the challenged bot objects to and is one of:
         #   - game speed (bullet, blitz, etc.)
         #   - variant (standard, horde, etc.)
         #   - casual/rated
-        #   - empty string ("") for the opponent
+        #   - opponent name (if no other reason is given)
         self.delay_timers: DefaultDict[Tuple[str, str], Timer] = defaultdict(Timer)
         delay_option = "delay_after_decline"
         self.delay_type = self.matchmaking_cfg.lookup(delay_option)
@@ -238,34 +238,32 @@ class Matchmaking:
         if not challenge.from_self or self.delay_type == DelayType.NONE:
             return
 
-        reason_key = event["challenge"]["declineReasonKey"].lower()
-        if reason_key == "nobot":
-            self.add_to_block_list(opponent.name)
-        else:
-            mode = "rated" if challenge.rated else "casual"
-            decline_details: Dict[str, str] = {"generic": "",
-                                               "later": "",
-                                               "toofast": challenge.speed,
-                                               "tooslow": challenge.speed,
-                                               "timecontrol": challenge.speed,
-                                               "rated": mode,
-                                               "casual": mode,
-                                               "standard": challenge.variant,
-                                               "variant": challenge.variant}
+        # Add one hour to delay each time a challenge is declined.
+        mode = "rated" if challenge.rated else "casual"
+        decline_details: Dict[str, str] = {"generic": opponent.name,
+                                           "later": opponent.name,
+                                           "nobot": opponent.name,
+                                           "toofast": challenge.speed,
+                                           "tooslow": challenge.speed,
+                                           "timecontrol": challenge.speed,
+                                           "rated": mode,
+                                           "casual": mode,
+                                           "standard": challenge.variant,
+                                           "variant": challenge.variant}
 
-            # Add one hour to delay each time a challenge is declined.
-            game_problem = decline_details[reason_key] if self.delay_type == DelayType.FINE else ""
-            delay_timer = self.delay_timers[(opponent.name, game_problem)]
-            delay_timer.duration += 3600
-            delay_timer.reset()
-            hours = "hours" if delay_timer.duration > 3600 else "hour"
-            logger.info(f"Will not challenge {opponent} to a {game_problem}".strip()
-                        + f" game for {int(delay_timer.duration/3600)} {hours}.")
+        reason_key = event["challenge"]["declineReasonKey"].lower()
+        game_problem = decline_details[reason_key] if self.delay_type == DelayType.FINE else ""
+        delay_timer = self.delay_timers[(opponent.name, game_problem)]
+        delay_timer.duration += 3600
+        delay_timer.reset()
+        hours = "hours" if delay_timer.duration > 3600 else "hour"
+        logger.info(f"Will not challenge {opponent} to a {game_problem}".strip()
+                    + f" game for {int(delay_timer.duration/3600)} {hours}.")
 
         self.show_earliest_challenge_time()
 
     def get_delay_timers(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> List[Timer]:
-        aspects = ["", variant, time_control, rated_mode] if self.delay_type == DelayType.FINE else [""]
+        aspects = [opponent_name, variant, time_control, rated_mode] if self.delay_type == DelayType.FINE else [opponent_name]
         return [self.delay_timers[(opponent_name, aspect)] for aspect in aspects]
 
 

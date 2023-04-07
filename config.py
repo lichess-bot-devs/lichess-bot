@@ -11,7 +11,7 @@ CONFIG_DICT_TYPE = Dict[str, Any]
 logger = logging.getLogger(__name__)
 
 
-class DelayType(str, Enum):
+class FilterType(str, Enum):
     NONE = "none"
     COARSE = "coarse"
     FINE = "fine"
@@ -142,7 +142,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_empty_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
-    default_filter = (CONFIG.get("matchmaking") or {}).get("delay_after_decline") or DelayType.NONE.value
+    default_filter = (CONFIG.get("matchmaking") or {}).get("delay_after_decline") or FilterType.NONE.value
     set_config_default(CONFIG, "matchmaking", key="challenge_filter", default=default_filter, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
     set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60], force_empty_values=True)
@@ -216,10 +216,11 @@ def load_config(config_file: str) -> Configuration:
                 config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                               f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
-        delay_option = "delay_after_decline"
-        delay_type = (CONFIG.get("matchmaking") or {}).get(delay_option)
-        config_assert(delay_type is None or delay_type in DelayType.__members__.values(),
-                      f"{delay_type} is not a valid value for {delay_option} parameter. Choices are: {', '.join(DelayType)}.")
+        filter_option = "challenge_filter"
+        filter_type = (CONFIG.get("matchmaking") or {}).get(filter_option)
+        config_assert(filter_type is None or filter_type in FilterType.__members__.values(),
+                      f"{filter_type} is not a valid value for {filter_option} parameter. "
+                      f"Choices are: {', '.join(FilterType)}.")
 
     insert_default_values(CONFIG)
     log_config(CONFIG)

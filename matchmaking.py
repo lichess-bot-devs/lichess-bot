@@ -5,7 +5,7 @@ from timer import Timer
 from collections import defaultdict
 import lichess
 import datetime
-from config import Configuration, DelayType
+from config import Configuration, FilterType
 from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
@@ -166,7 +166,7 @@ class Matchmaking:
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
-            aspects = ["", variant, game_type, mode] if self.challenge_filter == DelayType.FINE else [""]
+            aspects = ["", variant, game_type, mode] if self.challenge_filter == FilterType.FINE else [""]
             return all(self.challenge_type_acceptable[(bot["username"], aspect)] for aspect in aspects)
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
@@ -232,7 +232,7 @@ class Matchmaking:
         logger.info(f"{opponent} declined {challenge}: {reason}")
         if self.challenge_id == challenge.id:
             self.challenge_id = ""
-        if not challenge.from_self or self.challenge_filter == DelayType.NONE:
+        if not challenge.from_self or self.challenge_filter == FilterType.NONE:
             return
 
         # Add one hour to delay each time a challenge is declined.
@@ -251,7 +251,7 @@ class Matchmaking:
         reason_key = event["challenge"]["declineReasonKey"].lower()
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
-        game_problem = decline_details.get(reason_key, "") if self.challenge_filter == DelayType.FINE else ""
+        game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.challenge_type_acceptable[(opponent.name, game_problem)] = False
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game.")
 

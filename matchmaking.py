@@ -5,8 +5,8 @@ from timer import Timer
 from collections import defaultdict
 import lichess
 import datetime
-from config import Configuration, DelayType
-from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
+from config import Configuration, FilterType
+from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
@@ -48,14 +48,16 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
         self.daily_challenges: List[Timer] = read_daily_challenges()
 
-        delay_option = "delay_after_decline"
-        self.delay_type = self.matchmaking_cfg.lookup(delay_option)
-        if self.delay_type not in DelayType.__members__.values():
-            raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
-                             f" Choices are: {', '.join(DelayType)}.")
+        # (opponent name, game aspect) --> other bot is likely to accept challenge
+        # game aspect is the one the challenged bot objects to and is one of:
+        #   - game speed (bullet, blitz, etc.)
+        #   - variant (standard, horde, etc.)
+        #   - casual/rated
+        #   - empty string (if no other reason is given or self.filter_type is COARSE)
+        self.challenge_type_acceptable: DefaultDict[Tuple[str, str], bool] = defaultdict(lambda: True)
+        self.challenge_filter = self.matchmaking_cfg.challenge_filter
 
     def should_create_challenge(self) -> bool:
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
@@ -164,7 +166,8 @@ class Matchmaking:
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
-            return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
+            aspects = ["", variant, game_type, mode] if self.challenge_filter == FilterType.FINE else [""]
+            return all(self.challenge_type_acceptable[(bot["username"], aspect)] for aspect in aspects)
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
@@ -229,31 +232,30 @@ class Matchmaking:
         logger.info(f"{opponent} declined {challenge}: {reason}")
         if self.challenge_id == challenge.id:
             self.challenge_id = ""
-        if not challenge.from_self or self.delay_type == DelayType.NONE:
+        if not challenge.from_self or self.challenge_filter == FilterType.NONE:
             return
 
         # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
-        delay_timer = self.get_delay_timer(opponent.name,
-                                           challenge.variant,
-                                           challenge.speed,
-                                           mode)
-        delay_timer.duration += 3600
-        delay_timer.reset()
-        hours = "hours" if delay_timer.duration > 3600 else "hour"
-        if self.delay_type == DelayType.FINE:
-            logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
-                        f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
-        else:
-            logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
+        decline_details: Dict[str, str] = {"generic": "",
+                                           "later": "",
+                                           "nobot": "",
+                                           "toofast": challenge.speed,
+                                           "tooslow": challenge.speed,
+                                           "timecontrol": challenge.speed,
+                                           "rated": mode,
+                                           "casual": mode,
+                                           "standard": challenge.variant,
+                                           "variant": challenge.variant}
+
+        reason_key = event["challenge"]["declineReasonKey"].lower()
+        if reason_key not in decline_details:
+            logger.warning(f"Unknown decline reason received: {reason_key}")
+        game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
+        self.challenge_type_acceptable[(opponent.name, game_problem)] = False
+        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game.")
 
         self.show_earliest_challenge_time()
-
-    def get_delay_timer(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> Timer:
-        if self.delay_type == DelayType.FINE:
-            return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
-        else:
-            return self.delay_timers[opponent_name]
 
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:

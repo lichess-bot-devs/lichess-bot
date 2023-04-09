@@ -3,8 +3,8 @@ import logging
 import model
 from engine_wrapper import EngineWrapper
 from lichess import Lichess
-from typing import Dict, List
-MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
+from typing import Dict, Sequence
+MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
 

@@ -6,10 +6,10 @@ from collections import defaultdict
 import lichess
 import datetime
 from config import Configuration, FilterType
-from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
+from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Sequence
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
-MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
+MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ A bridge between [Lichess Bot API](https://lichess.org/api#tag/Bot) and bots.
 
 ## How to Install
 ### Mac/Linux:
-- **NOTE: Only Python 3.8 or later is supported!**
+- **NOTE: Only Python 3.9 or later is supported!**
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
 - Install pip: `apt install python3-pip`.
@@ -24,12 +24,12 @@ python3 -m pip install -r requirements.txt
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the `config.yml` file as necessary.
 
 ### Windows:
-- **NOTE: Only Python 3.8 or later is supported!**
+- **NOTE: Only Python 3.9 or later is supported!**
 - If needed, install Python:
   - [Download Python here](https://www.python.org/downloads/).
   - When installing, enable "add Python to PATH".
   - If the Python version is at least 3.10, a default local install works.
-  - If the Python version is 3.8 or 3.9, choose "Custom installation", keep the defaults on the Optional Features page, and choose "Install for all users" in the Advanced Options page.
+  - If the Python version is 3.9, choose "Custom installation", keep the defaults on the Optional Features page, and choose "Install for all users" in the Advanced Options page.
 - Start Terminal, PowerShell, cmd, or your preferred command prompt.
 - Upgrade pip: `python -m pip install --upgrade pip`.
 - Download the repo into lichess-bot directory.

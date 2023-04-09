@@ -52,6 +52,11 @@ terminated = False
 restart = True
 
 
+def disable_restart() -> None:
+    global restart
+    restart = False
+
+
 def signal_handler(signal: int, frame: Any) -> None:
     global terminated
     logger.debug("Recieved SIGINT. Terminating client.")

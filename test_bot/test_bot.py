@@ -170,7 +170,7 @@ def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
     if user_profile.get("title") != "BOT":
         return "0"
     lichess_bot.logger.info(f"Welcome {username}!")
-    lichess_bot.restart = False  # type: ignore[attr-defined]
+    lichess_bot.disable_restart()
 
     thr = threading.Thread(target=thread_for_test)
     thr.start()

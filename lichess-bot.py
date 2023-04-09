@@ -1,4 +1,3 @@
-# mypy: disable-error-code=valid-type
 import argparse
 import chess
 import chess.pgn
@@ -36,10 +35,10 @@ EVENT_TYPE = Dict[str, Any]
 PLAY_GAME_ARGS_TYPE = Dict[str, Any]
 EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
 GAME_EVENT_TYPE = Dict[str, Any]
-CONTROL_QUEUE_TYPE = "Queue[EVENT_TYPE]"
-CORRESPONDENCE_QUEUE_TYPE = "Queue[str]"
-LOGGING_QUEUE_TYPE = "Queue[logging.LogRecord]"
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
+CONTROL_QUEUE_TYPE = Queue[EVENT_TYPE]
+CORRESPONDENCE_QUEUE_TYPE = Queue[str]
+LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
 POOL_TYPE = Pool
 
 logger = logging.getLogger(__name__)
@@ -82,19 +81,19 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
             for line in lines:
                 if line:
                     event = json.loads(line.decode("utf-8"))
-                    control_queue.put_nowait(event)  # type: ignore[attr-defined]
+                    control_queue.put_nowait(event)
                 else:
-                    control_queue.put_nowait({"type": "ping"})  # type: ignore[attr-defined]
+                    control_queue.put_nowait({"type": "ping"})
         except Exception:
             break
 
-    control_queue.put_nowait({"type": "terminated"})  # type: ignore[attr-defined]
+    control_queue.put_nowait({"type": "terminated"})
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> None:
     while not terminated:
         time.sleep(period)
-        control_queue.put_nowait({"type": "correspondence_ping"})  # type: ignore[attr-defined]
+        control_queue.put_nowait({"type": "correspondence_ping"})
 
 
 def logging_configurer(level: int, filename: Optional[str]) -> None:
@@ -119,12 +118,12 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
     logging_configurer(level, log_filename)
     logger = logging.getLogger()
     while not terminated:
-        task = queue.get()  # type: ignore[attr-defined]
+        task = queue.get()
         try:
             logger.handle(task)
         except Exception:
             pass
-        queue.task_done()  # type: ignore[attr-defined]
+        queue.task_done()
 
 
 def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE], level: int) -> None:
@@ -231,7 +230,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 restart = True
-                control_queue.task_done()  # type: ignore[attr-defined]
+                control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
                 id = event["game"]["id"]
@@ -268,20 +267,20 @@ def lichess_bot_main(li: lichess.Lichess,
             matchmaker.challenge(active_games, challenge_queue)
             check_online_status(li, user_profile, last_check_online_time)
 
-            control_queue.task_done()  # type: ignore[attr-defined]
+            control_queue.task_done()
 
     logger.info("Terminated")
 
 
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
     try:
-        event: EVENT_TYPE = control_queue.get()  # type: ignore[attr-defined]
+        event: EVENT_TYPE = control_queue.get()
     except InterruptedError:
         return {}
 
     if "type" not in event:
         log_bad_event(event)
-        control_queue.task_done()  # type: ignore[attr-defined]
+        control_queue.task_done()
         return {}
 
     if event.get("type") != "ping":
@@ -303,7 +302,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
     global correspondence_games_to_start
 
     if event["type"] == "correspondence_ping":
-        correspondence_games_to_start = correspondence_queue.qsize()  # type: ignore[attr-defined]
+        correspondence_games_to_start = correspondence_queue.qsize()
     elif event["type"] != "local_game_done":
         return
 
@@ -311,9 +310,9 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         return
 
     while len(active_games) < max_games and correspondence_games_to_start > 0:
-        game_id = correspondence_queue.get_nowait()  # type: ignore[attr-defined]
+        game_id = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
-        correspondence_queue.task_done()  # type: ignore[attr-defined]
+        correspondence_queue.task_done()
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
@@ -386,7 +385,7 @@ def start_game(event: EVENT_TYPE,
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')
-            correspondence_queue.put_nowait(game_id)  # type: ignore[attr-defined]
+            correspondence_queue.put_nowait(game_id)
         else:
             logger.info(f'--- Will start {config.url + game_id} as soon as possible')
             low_time_games.append(event["game"])
@@ -616,11 +615,11 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
                         game: model.Game, is_correspondence: bool) -> None:
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put_nowait(game.id)  # type: ignore[attr-defined]
+        correspondence_queue.put_nowait(game.id)
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})  # type: ignore[attr-defined]
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
 
 
 def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:

@@ -31,11 +31,22 @@ class Conversation:
     command_prefix = "!"
 
     def react(self, line: ChatLine, game: model.Game) -> None:
+        """
+        Reacts to the messages sent.
+        :param line: Information about the message.
+        :param game: The game that the command came from.
+        """
         logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")!r}')
         if line.text[0] == self.command_prefix:
             self.command(line, game, line.text[1:].lower())
 
     def command(self, line: ChatLine, game: model.Game, cmd: str) -> None:
+        """
+        Reacts to the specific commands in the chat.
+        :param line: Information about the message.
+        :param game: The game that the command came from.
+        :param cmd: The command to react to.
+        """
         from_self = line.username == self.game.username
         if cmd == "commands" or cmd == "help":
             self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
@@ -60,6 +71,11 @@ class Conversation:
                 self.send_reply(line, "No challenges queued.")
 
     def send_reply(self, line: ChatLine, reply: str) -> None:
+        """
+        Sends the reply to the chat.
+        :param line: Information about the original message that we reply to.
+        :param reply: The reply to send.
+        """
         logger.info(f'*** {self.game.url()} [{line.room}] {self.game.username}: {reply}')
         self.xhr.chat(self.game.id, line.room, reply)
 
@@ -69,7 +85,13 @@ class Conversation:
 
 
 class ChatLine:
+    """
+    Information about the message.
+    """
     def __init__(self, json: Dict[str, str]) -> None:
         self.room = json["room"]
+        """Whether the message was sent in the chat room or in the spectator room."""
         self.username = json["username"]
+        """The username of the account that sent the message."""
         self.text = json["text"]
+        """The message sent."""

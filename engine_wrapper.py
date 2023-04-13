@@ -29,6 +29,11 @@ out_of_online_opening_book_moves: Counter[str] = Counter()
 
 @contextmanager
 def create_engine(engine_config: config.Configuration) -> Generator[EngineWrapper, None, None]:
+    """
+    Creates the engine.
+    :param engine_config: The options for the engine.
+    :return: An engine. Either UCI, XBoard, or Homemade.
+    """
     cfg = engine_config.engine
     engine_path = os.path.join(cfg.dir, cfg.name)
     engine_type = cfg.protocol
@@ -61,6 +66,9 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
 
 
 def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
+    """
+    Removes the options managed by python-chess.
+    """
     def is_managed(key: str) -> bool:
         return chess.engine.Option(key, "", None, None, None, None).is_managed()
 
@@ -68,6 +76,9 @@ def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
 
 
 def translate_termination(game: model.Game, board: chess.Board) -> str:
+    """
+    A human-readable string with the result of the game.
+    """
     winner_color = game.state.get("winner", "")
     termination: Optional[str] = game.state.get("status")
 
@@ -97,7 +108,14 @@ PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
 
 
 class EngineWrapper:
+    """
+    A wrapper used by all engines (UCI, XBoard, Homemade).
+    """
     def __init__(self, options: OPTIONS_TYPE, draw_or_resign: config.Configuration) -> None:
+        """
+        :param options: The options to send to the engine.
+        :param draw_or_resign: Options on whether the bot should resign or offer draws.
+        """
         self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
         self.scores: List[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
@@ -115,6 +133,19 @@ class EngineWrapper:
                   is_correspondence: bool,
                   correspondence_move_time: int,
                   engine_cfg: config.Configuration) -> None:
+        """
+
+        :param board: The current position.
+        :param game: The game that the bot is playing.
+        :param li: Provides communication with lichess.org.
+        :param start_time: The time that the bot received the move.
+        :param move_overhead: The time it takes to communicate between the engine and lichess.org.
+        :param can_ponder: Whether the engine is allowed to ponder.
+        :param is_correspondence: Whether this is a correspondence or unlimited game.
+        :param correspondence_move_time: The time the engine will think if `is_correspondence` is true.
+        :param engine_cfg: Options for external moves (e.g. from an opening book), and for engine resignation and draw offers.
+        :return: The move to play.
+        """
         polyglot_cfg = engine_cfg.polyglot
         online_moves_cfg = engine_cfg.online_moves
         draw_or_resign_cfg = engine_cfg.draw_or_resign
@@ -176,15 +207,44 @@ class EngineWrapper:
 
     def search_for(self, board: chess.Board, movetime: int, ponder: bool, draw_offered: bool,
                    root_moves: MOVE) -> chess.engine.PlayResult:
+        """
+        Tells the engine to search for `movetime` time.
+        :param board: The current position.
+        :param movetime: The time to search for.
+        :param ponder: Whether the engine can ponder.
+        :param draw_offered: Whether the engine was offered a draw.
+        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
+        :return: The move to play.
+        """
         return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered, root_moves)
 
     def first_search(self, board: chess.Board, movetime: int, draw_offered: bool,
                      root_moves: MOVE) -> chess.engine.PlayResult:
+        """
+        The first move played by the engine.
+        :param board: The current position.
+        :param movetime: The time to search for.
+        :param draw_offered: Whether the engine was offered a draw.
+        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
+        :return: The move to play.
+        """
         # No pondering after the first move since a different clock is used afterwards.
         return self.search_for(board, movetime, False, draw_offered, root_moves)
 
     def search_with_ponder(self, board: chess.Board, wtime: int, btime: int, winc: int, binc: int, ponder: bool,
                            draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
+        """
+        Gets the move to play by the engine.
+        :param board: The current position.
+        :param wtime: The time white has.
+        :param btime: The time black has.
+        :param winc: The increment white has. `winc` is equal to `binc`.
+        :param binc: The increment black has. `winc` is equal to `binc`.
+        :param ponder: Whether the engine can ponder.
+        :param draw_offered: Whether the engine was offered a draw.
+        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
+        :return: The move to play.
+        """
         time_limit = chess.engine.Limit(white_clock=wtime / 1000,
                                         black_clock=btime / 1000,
                                         white_inc=winc / 1000,
@@ -192,6 +252,9 @@ class EngineWrapper:
         return self.search(board, time_limit, ponder, draw_offered, root_moves)
 
     def add_go_commands(self, time_limit: chess.engine.Limit) -> chess.engine.Limit:
+        """
+        Adds extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10.
+        """
         movetime = self.go_commands.movetime
         if movetime is not None:
             movetime_sec = float(movetime) / 1000
@@ -202,6 +265,9 @@ class EngineWrapper:
         return time_limit
 
     def offer_draw_or_resign(self, result: chess.engine.PlayResult, board: chess.Board) -> chess.engine.PlayResult:
+        """
+        Offers draw or resigns depending on the score of the engine.
+        """
         def actual(score: chess.engine.PovScore) -> int:
             return score.relative.score(mate_score=40000)
 
@@ -233,6 +299,15 @@ class EngineWrapper:
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
                root_moves: MOVE) -> chess.engine.PlayResult:
+        """
+        Tells the engine to search.
+        :param board: The current position.
+        :param time_limit: Conditions for how long the engine can search (e.g. we have 10 seconds and search up to depth 10).
+        :param ponder: Whether the engine can ponder.
+        :param draw_offered: Whether the engine was offered a draw.
+        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
+        :return: The move to play.
+        """
         time_limit = self.add_go_commands(time_limit)
         result: chess.engine.PlayResult
         result = self.engine.play(board,
@@ -248,12 +323,20 @@ class EngineWrapper:
         return result
 
     def comment_index(self, move_stack_index: int) -> int:
+        """
+        Gets the index of a move for use in `comment_for_board_index`.
+        :param move_stack_index: The move number.
+        :return: The index of the move in `self.move_commentary`.
+        """
         if self.comment_start_index < 0:
             return -1
         else:
             return move_stack_index - self.comment_start_index
 
     def comment_for_board_index(self, index: int) -> MOVE_INFO_TYPE:
+        """
+        Gets the engine comments for a specific move.
+        """
         no_info: MOVE_INFO_TYPE = {}
         comment_index = self.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:
@@ -277,10 +360,16 @@ class EngineWrapper:
         self.move_commentary.append(move_info)
 
     def print_stats(self) -> None:
+        """
+        Prints the engine stats.
+        """
         for line in self.get_stats():
             logger.info(line)
 
     def readable_score(self, relative_score: chess.engine.PovScore) -> str:
+        """
+        Converts the score to a more human-readable format.
+        """
         score = relative_score.relative
         cp_score = score.score()
         if cp_score is None:
@@ -290,10 +379,16 @@ class EngineWrapper:
         return str_score
 
     def readable_wdl(self, wdl: chess.engine.PovWdl) -> str:
+        """
+        Converts the WDL score to a percentage, so it is more human-readable.
+        """
         wdl_percentage = round(wdl.relative.expectation() * 100, 1)
         return f"{wdl_percentage}%"
 
     def readable_number(self, number: int) -> str:
+        """
+        Converts number to a more human-readable format. e.g. 123456789 -> 123M.
+        """
         if number >= 1e9:
             return f"{round(number / 1e9, 1)}B"
         elif number >= 1e6:
@@ -303,6 +398,10 @@ class EngineWrapper:
         return str(number)
 
     def get_stats(self, for_chat: bool = False) -> List[str]:
+        """
+        Gets the stats returned by the engine.
+        :param for_chat: Whether the stats will be sent to the game chat, which has a 140 character limit.
+        """
         can_index = self.move_commentary and self.move_commentary[-1]
         info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
@@ -346,6 +445,7 @@ class EngineWrapper:
         pass
 
     def name(self) -> str:
+        """Gets the name of the engine."""
         engine_info: Dict[str, str] = dict(self.engine.id)
         name: str = engine_info["name"]
         return name
@@ -357,15 +457,18 @@ class EngineWrapper:
         pass
 
     def get_pid(self) -> str:
+        """Gets the pid of the engine."""
         pid = "?"
         if self.engine.transport is not None:
             pid = str(self.engine.transport.get_pid())
         return pid
 
     def ping(self) -> None:
+        """Pings the engine."""
         self.engine.ping()
 
     def quit(self) -> None:
+        """Closes the engine."""
         self.engine.quit()
         self.engine.close()
 
@@ -373,15 +476,24 @@ class EngineWrapper:
 class UCIEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
+        """
+        :param commands: The engine path and commands to send to the engine. e.g. ["engines/engine.exe", "--option1=value1"]
+        :param options: The options to send to the engine.
+        :param stderr: Whether we should silence the stderr.
+        :param draw_or_resign: Options on whether the bot should resign or offer draws.
+        :param popen_args: The cwd of the engine.
+        """
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
                                                           **popen_args)
         self.engine.configure(options)
 
     def stop(self) -> None:
+        """Tells the engine to stop searching."""
         self.engine.protocol.send_line("stop")
 
     def get_opponent_info(self, game: model.Game) -> None:
+        """Gets the opponents info and sends it to the engine."""
         name = game.opponent.name
         if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and
                 "UCI_Opponent" in self.engine.protocol.config):
@@ -391,6 +503,7 @@ class UCIEngine(EngineWrapper):
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
+        """Send the game result to the engine."""
         if isinstance(self.engine.protocol, chess.engine.UciProtocol):
             self.engine.protocol._position(board)
 
@@ -398,6 +511,13 @@ class UCIEngine(EngineWrapper):
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
+        """
+        :param commands: The engine path and commands to send to the engine. e.g. ["engines/engine.exe", "--option1=value1"]
+        :param options: The options to send to the engine.
+        :param stderr: Whether we should silence the stderr.
+        :param draw_or_resign: Options on whether the bot should resign or offer draws.
+        :param popen_args: The cwd of the engine.
+        """
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=False,
                                                              stderr=stderr, **popen_args)
@@ -415,6 +535,7 @@ class XBoardEngine(EngineWrapper):
         self.engine.configure(options)
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
+        """Send the game result to the engine."""
         # Send final moves, if any, to engine
         if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
             self.engine.protocol._new(board, None, {})
@@ -426,9 +547,11 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line(f"result {game.result()}{endgame_message}")
 
     def stop(self) -> None:
+        """Tells the engine to stop searching."""
         self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game: model.Game) -> None:
+        """Gets the opponents info and sends it to the engine."""
         if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and
                 self.engine.protocol.features.get("name", True)):
             title = f"{game.opponent.title} " if game.opponent.title else ""
@@ -452,6 +575,10 @@ class MinimalEngine(EngineWrapper):
     """
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: str) -> None:
+        """
+        :param options: The options to send to the engine.
+        :param draw_or_resign: Options on whether the bot should resign or offer draws.
+        """
         super().__init__(options, draw_or_resign)
 
         self.engine_name = self.__class__.__name__ if name is None else name
@@ -459,6 +586,7 @@ class MinimalEngine(EngineWrapper):
         self.engine = FillerEngine(self, name=self.engine_name)
 
     def get_pid(self) -> str:
+        """Homemade engines don't have a pid, so we return a question mark."""
         return "?"
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
@@ -511,6 +639,11 @@ class FillerEngine:
 
 
 def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
+    """
+    Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `strategies.RandomMove`.
+    :param name: The name of the homemade engine.
+    :return: The engine with this name.
+    """
     import strategies
     engine: Type[MinimalEngine] = getattr(strategies, name)
     return engine

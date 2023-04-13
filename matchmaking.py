@@ -19,8 +19,9 @@ one_day_seconds = datetime.timedelta(days=1).total_seconds()
 
 
 def read_daily_challenges() -> List[Timer]:
+    """Reads the challenges we have created in the past 24 hours from a text file."""
+    timers: List[Timer] = []
     try:
-        timers: List[Timer] = []
         with open(daily_challenges_file_name) as file:
             for line in file:
                 timers.append(Timer(one_day_seconds, datetime.datetime.strptime(line, timestamp_format)))
@@ -31,6 +32,7 @@ def read_daily_challenges() -> List[Timer]:
 
 
 def write_daily_challenges(daily_challenges: List[Timer]) -> None:
+    """Writes the challenges we have created in the past 24 hours to a text file."""
     with open(daily_challenges_file_name, "w") as file:
         for timer in daily_challenges:
             file.write(timer.starting_timestamp().strftime(timestamp_format))
@@ -60,6 +62,7 @@ class Matchmaking:
         self.challenge_filter = self.matchmaking_cfg.challenge_filter
 
     def should_create_challenge(self) -> bool:
+        """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         time_has_passed = self.last_game_ended_delay.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
@@ -72,6 +75,7 @@ class Matchmaking:
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
+        """Creates a challenge."""
         params = {"rated": mode == "rated", "variant": variant}
 
         if days:
@@ -100,25 +104,30 @@ class Matchmaking:
             return ""
 
     def update_daily_challenge_record(self) -> None:
-        # As the number of challenges in a day increase, the minimum wait time between challenges increases.
-        # 0   -  49 challenges --> 1 minute
-        # 50  -  99 challenges --> 2 minutes
-        # 100 - 149 challenges --> 3 minutes
-        # etc.
+        """
+        As the number of challenges in a day increase, the minimum wait time between challenges increases.
+        0   -  49 challenges --> 1 minute
+        50  -  99 challenges --> 2 minutes
+        100 - 149 challenges --> 3 minutes
+        etc.
+        """
         self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
         self.daily_challenges.append(Timer(one_day_seconds))
         self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 
     def perf(self) -> Dict[str, Dict[str, Any]]:
+        """The bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""
         user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
         return user_perf
 
     def username(self) -> str:
+        """Our username."""
         username: str = self.user_profile["username"]
         return username
 
     def update_user_profile(self) -> None:
+        """Updates our user profile data, to get our latest rating."""
         if self.last_user_profile_update_time.is_expired():
             self.last_user_profile_update_time.reset()
             try:
@@ -127,6 +136,7 @@ class Matchmaking:
                 pass
 
     def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
+        """Chooses an opponent."""
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
@@ -189,10 +199,12 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant, mode
 
     def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
+        """Chooses a random value from `choices` if the parameter value in the config is `random`."""
         value: str = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+        """Challenges an opponent."""
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 
@@ -205,10 +217,12 @@ class Matchmaking:
         self.challenge_id = challenge_id
 
     def game_done(self) -> None:
+        """Resets the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
         self.last_game_ended_delay.reset()
         self.show_earliest_challenge_time()
 
     def show_earliest_challenge_time(self) -> None:
+        """Shows the earliest that the next challenge will be created."""
         postgame_timeout = self.last_game_ended_delay.time_until_expiration()
         time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
         time_left = max(postgame_timeout, time_to_next_challenge)
@@ -218,14 +232,23 @@ class Matchmaking:
                     f"({len(self.daily_challenges)} {challenges} in last 24 hours)")
 
     def add_to_block_list(self, username: str) -> None:
+        """Adds a bot to the blocklist."""
         logger.info(f"Will not challenge {username} again during this session.")
         self.block_list.append(username)
 
     def accepted_challenge(self, event: EVENT_TYPE) -> None:
+        """
+        Sets the challenge id to an empty string, if the challenge was accepted.
+        Otherwise, we would attempt to cancel the challenge later.
+        """
         if self.challenge_id == event["game"]["id"]:
             self.challenge_id = ""
 
     def declined_challenge(self, event: EVENT_TYPE) -> None:
+        """
+        Handles a challenge that was declined by the opponent.
+        Depends on whether `FilterType` is `NONE`, `COARSE`, or `FINE`.
+        """
         challenge = model.Challenge(event["challenge"], self.user_profile)
         opponent = challenge.opponent
         reason = event["challenge"]["declineReason"]
@@ -259,6 +282,7 @@ class Matchmaking:
 
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
+    """The game type (e.g. bullet, blitz, atomic, correspondence)."""
     game_duration = base_time + increment * 40
     if variant != "standard":
         return variant

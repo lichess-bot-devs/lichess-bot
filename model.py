@@ -25,9 +25,11 @@ class Challenge:
         self.from_self = self.challenger.name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
+        """Checks whether the variant is supported."""
         return self.variant in challenge_cfg.variants
 
     def is_supported_time_control(self, challenge_cfg: Configuration) -> bool:
+        """Checks whether the time control is supported."""
         speeds = challenge_cfg.time_controls
         increment_max: int = challenge_cfg.max_increment
         increment_min: int = challenge_cfg.min_increment
@@ -51,9 +53,11 @@ class Challenge:
             return days_max == math.inf
 
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
+        """Checks whether the mode is supported."""
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
+        """Checks whether we have played a lot of games with this bot recently."""
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger.name]
@@ -68,6 +72,7 @@ class Challenge:
 
     def is_supported(self, config: Configuration,
                      recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, str]:
+        """Whether the challenge is supported."""
         try:
             if self.from_self:
                 return True, ""
@@ -87,6 +92,7 @@ class Challenge:
             return False, "generic"
 
     def score(self) -> int:
+        """Gives a rating estimate to the opponent."""
         rated_bonus = 200 if self.rated else 0
         challenger_master_title = self.challenger.title if not self.challenger.is_bot else None
         titled_bonus = 200 if challenger_master_title else 0
@@ -94,6 +100,7 @@ class Challenge:
         return challenger_rating_int + rated_bonus + titled_bonus
 
     def mode(self) -> str:
+        """The mode of the challenge (rated or casual)."""
         return "rated" if self.rated else "casual"
 
     def __str__(self) -> str:
@@ -104,6 +111,7 @@ class Challenge:
 
 
 class Termination(str, Enum):
+    """The possible game terminations."""
     MATE = "mate"
     TIMEOUT = "outoftime"
     RESIGN = "resign"
@@ -139,46 +147,57 @@ class Game:
         self.disconnect_time = Timer(0)
 
     def url(self) -> str:
+        """The url of the game."""
         return f"{self.short_url()}/{self.my_color}"
 
     def short_url(self) -> str:
+        """The short url of the game."""
         return urljoin(self.base_url, self.id)
 
     def pgn_event(self) -> str:
+        """The event to write in the PGN file."""
         if self.variant_name in ["Standard", "From Position"]:
             return f"{self.mode.title()} {self.perf_name.title()} game"
         else:
             return f"{self.mode.title()} {self.variant_name} game"
 
     def time_control(self) -> str:
+        """The time control of the game."""
         return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
 
     def is_abortable(self) -> bool:
+        """Whether the game can be aborted."""
         # Moves are separated by spaces. A game is abortable when less
         # than two moves (one from each player) have been played.
         return " " not in self.state["moves"]
 
     def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
+        """Tells the bot when to abort, terminate, and disconnect froma game."""
         if self.is_abortable():
             self.abort_time = Timer(abort_in)
         self.terminate_time = Timer(terminate_in)
         self.disconnect_time = Timer(disconnect_in)
 
     def should_abort_now(self) -> bool:
+        """Whether we should abort the game."""
         return self.is_abortable() and self.abort_time.is_expired()
 
     def should_terminate_now(self) -> bool:
+        """Whether we should terminate the game."""
         return self.terminate_time.is_expired()
 
     def should_disconnect_now(self) -> bool:
+        """Whether we should disconnect form the game."""
         return self.disconnect_time.is_expired()
 
     def my_remaining_seconds(self) -> float:
+        """How many seconds we have left."""
         wtime: int = self.state["wtime"]
         btime: int = self.state["btime"]
         return (wtime if self.is_white else btime) / 1000
 
     def result(self) -> str:
+        """The result of the game."""
         class GameEnding(str, Enum):
             WHITE_WINS = "1-0"
             BLACK_WINS = "0-1"

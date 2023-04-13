@@ -11,10 +11,7 @@ CONFIG_DICT_TYPE = Dict[str, Any]
 logger = logging.getLogger(__name__)
 
 
-class DelayType(str, Enum):
-    """
-    Whether we should avoid challenging the same opponent after they have declined our challenge.
-    """
+class FilterType(str, Enum):
     NONE = "none"
     """Will still challenge the opponent."""
     COARSE = "coarse"
@@ -196,7 +193,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_empty_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
-    set_config_default(CONFIG, "matchmaking", key="delay_after_decline", default=DelayType.NONE, force_empty_values=True)
+    default_filter = (CONFIG.get("matchmaking") or {}).get("delay_after_decline") or FilterType.NONE.value
+    set_config_default(CONFIG, "matchmaking", key="challenge_filter", default=default_filter, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
     set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")
@@ -230,6 +228,44 @@ def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     logger.debug("====================")
 
 
+def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
+    check_config_section(CONFIG, "token", str)
+    check_config_section(CONFIG, "url", str)
+    check_config_section(CONFIG, "engine", dict)
+    check_config_section(CONFIG, "challenge", dict)
+    check_config_section(CONFIG, "dir", str, "engine")
+    check_config_section(CONFIG, "name", str, "engine")
+
+    config_assert(CONFIG["token"] != "xxxxxxxxxxxxxxxx",
+                  "Your config.yml has the default Lichess API token. This is probably wrong.")
+    config_assert(os.path.isdir(CONFIG["engine"]["dir"]),
+                  f'Your engine directory `{CONFIG["engine"]["dir"]}` is not a directory.')
+
+    working_dir = CONFIG["engine"].get("working_dir")
+    config_assert(not working_dir or os.path.isdir(working_dir),
+                  f"Your engine's working directory `{working_dir}` is not a directory.")
+
+    engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
+    config_assert(os.path.isfile(engine) or CONFIG["engine"]["protocol"] == "homemade",
+                  f"The engine {engine} file does not exist.")
+    config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
+                  f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
+
+    if CONFIG["engine"]["protocol"] == "xboard":
+        for section, subsection in (("online_moves", "online_egtb"),
+                                    ("lichess_bot_tbs", "syzygy"),
+                                    ("lichess_bot_tbs", "gaviota")):
+            online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
+            config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
+                          f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
+
+    filter_option = "challenge_filter"
+    filter_type = (CONFIG.get("matchmaking") or {}).get(filter_option)
+    config_assert(filter_type is None or filter_type in FilterType.__members__.values(),
+                  f"{filter_type} is not a valid value for {filter_option} (formerly delay_after_decline) parameter. "
+                  f"Choices are: {', '.join(FilterType)}.")
+
+
 def load_config(config_file: str) -> Configuration:
     """
     Reads the config.
@@ -243,41 +279,14 @@ def load_config(config_file: str) -> Configuration:
             logger.exception("There appears to be a syntax problem with your config.yml")
             raise
 
-        log_config(CONFIG)
+    log_config(CONFIG)
 
-        if "LICHESS_BOT_TOKEN" in os.environ:
-            CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
+    if "LICHESS_BOT_TOKEN" in os.environ:
+        CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
 
-        check_config_section(CONFIG, "token", str)
-        check_config_section(CONFIG, "url", str)
-        check_config_section(CONFIG, "engine", dict)
-        check_config_section(CONFIG, "challenge", dict)
-        check_config_section(CONFIG, "dir", str, "engine")
-        check_config_section(CONFIG, "name", str, "engine")
-
-        config_assert(CONFIG["token"] != "xxxxxxxxxxxxxxxx",
-                      "Your config.yml has the default Lichess API token. This is probably wrong.")
-        config_assert(os.path.isdir(CONFIG["engine"]["dir"]),
-                      f'Your engine directory `{CONFIG["engine"]["dir"]}` is not a directory.')
-
-        working_dir = CONFIG["engine"].get("working_dir")
-        config_assert(not working_dir or os.path.isdir(working_dir),
-                      f"Your engine's working directory `{working_dir}` is not a directory.")
-
-        engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
-        config_assert(os.path.isfile(engine) or CONFIG["engine"]["protocol"] == "homemade",
-                      f"The engine {engine} file does not exist.")
-        config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
-                      f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
-
-        if CONFIG["engine"]["protocol"] == "xboard":
-            for section, subsection in (("online_moves", "online_egtb"),
-                                        ("lichess_bot_tbs", "syzygy"),
-                                        ("lichess_bot_tbs", "gaviota")):
-                online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
-                config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
-                              f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
-
+    validate_config(CONFIG)
     insert_default_values(CONFIG)
     log_config(CONFIG)
+    validate_config(CONFIG)
+
     return Configuration(CONFIG)

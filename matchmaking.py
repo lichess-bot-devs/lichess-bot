@@ -1,3 +1,4 @@
+"""Challenges other bots."""
 import random
 import logging
 import model
@@ -40,7 +41,10 @@ def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
 
 
 class Matchmaking:
+    """Challenges other bots."""
+
     def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
+        """Initializes values needed for matchmaking."""
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
         self.matchmaking_cfg = config.matchmaking
@@ -107,6 +111,7 @@ class Matchmaking:
     def update_daily_challenge_record(self) -> None:
         """
         As the number of challenges in a day increase, the minimum wait time between challenges increases.
+
         0   -  49 challenges --> 1 minute
         50  -  99 challenges --> 2 minutes
         100 - 149 challenges --> 3 minutes
@@ -207,6 +212,7 @@ class Matchmaking:
     def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         """
         Challenges an opponent.
+
         :param active_games: The games that the bot is playing.
         :param challenge_queue: The queue containing the challenges.
         """
@@ -244,6 +250,7 @@ class Matchmaking:
     def accepted_challenge(self, event: EVENT_TYPE) -> None:
         """
         Sets the challenge id to an empty string, if the challenge was accepted.
+
         Otherwise, we would attempt to cancel the challenge later.
         """
         if self.challenge_id == event["game"]["id"]:
@@ -252,6 +259,7 @@ class Matchmaking:
     def declined_challenge(self, event: EVENT_TYPE) -> None:
         """
         Handles a challenge that was declined by the opponent.
+
         Depends on whether `FilterType` is `NONE`, `COARSE`, or `FINE`.
         """
         challenge = model.Challenge(event["challenge"], self.user_profile)
@@ -288,8 +296,8 @@ class Matchmaking:
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
     """
-    The game type (e.g. bullet, blitz, atomic, correspondence).
-    Lichess has one rating for every variant regardless of time control.
+    The game type (e.g. bullet, atomic, correspondence). Lichess has one rating for every variant regardless of time control.
+
     :param variant: The game's variant.
     :param base_time: The base time in seconds.
     :param increment: The increment in seconds.

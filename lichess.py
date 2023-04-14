@@ -1,3 +1,4 @@
+"""Communication with APIs."""
 import json
 import requests
 from urllib.parse import urljoin
@@ -40,6 +41,7 @@ MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 class RateLimited(RuntimeError):
     """Exception raised when we are rate limited (status code 429)."""
+
     pass
 
 
@@ -55,8 +57,12 @@ def is_final(exception: Exception) -> bool:
 
 # Docs: https://lichess.org/api.
 class Lichess:
+    """Communication with lichess.org (and chessdb.cn for getting moves)."""
+
     def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
         """
+        Communication with lichess.org (and chessdb.cn for getting moves).
+
         :param token: The bot's token.
         :param url: The base url (lichess.org).
         :param version: The lichess-bot version running.
@@ -87,6 +93,7 @@ class Lichess:
                 params: Optional[Dict[str, str]] = None) -> requests.Response:
         """
         Send a GET to lichess.org.
+
         :param endpoint_name: The name of the endpoint.
         :param template_args: The values that go in the url (e.g. the challenge id if `endpoint_name` is `accept`).
         :param params: Parameters sent to lichess.org.
@@ -109,6 +116,7 @@ class Lichess:
                      params: Optional[Dict[str, str]] = None) -> JSON_REPLY_TYPE:
         """
         Send a GET to the lichess.org endpoints that return a JSON.
+
         :param endpoint_name: The name of the endpoint.
         :param template_args: The values that go in the url (e.g. the challenge id if `endpoint_name` is `accept`).
         :param params: Parameters sent to lichess.org.
@@ -122,6 +130,7 @@ class Lichess:
                      params: Optional[Dict[str, str]] = None) -> List[JSON_REPLY_TYPE]:
         """
         Send a GET to the lichess.org endpoints that return a list containing JSON.
+
         :param endpoint_name: The name of the endpoint.
         :param template_args: The values that go in the url (e.g. the challenge id if `endpoint_name` is `accept`).
         :param params: Parameters sent to lichess.org.
@@ -135,6 +144,7 @@ class Lichess:
                     params: Optional[Dict[str, str]] = None, ) -> str:
         """
         Send a GET to lichess.org.
+
         :param endpoint_name: The name of the endpoint.
         :param template_args: The values that go in the url (e.g. the challenge id if `endpoint_name` is `accept`).
         :param params: Parameters sent to lichess.org.
@@ -160,6 +170,7 @@ class Lichess:
                  raise_for_status: bool = True) -> JSON_REPLY_TYPE:
         """
         Send a POST to lichess.org.
+
         :param endpoint_name: The name of the endpoint.
         :param template_args: The values that go in the url (e.g. the challenge id if `endpoint_name` is `accept`).
         :param data: Data sent to lichess.org.
@@ -186,6 +197,7 @@ class Lichess:
     def get_path_template(self, endpoint_name: str) -> str:
         """
         Gets the path template given the endpoint name. Will raise an exception if the path template is rate limited.
+
         :param endpoint_name: The name of the endpoint.
         :return: The path template.
         """
@@ -198,6 +210,7 @@ class Lichess:
     def set_rate_limit_delay(self, path_template: str, delay_time: int) -> None:
         """
         Sets a delay to a path template if it was rate limited.
+
         :param path_template: The path template.
         :param delay_time: How long we won't call this endpoint.
         """
@@ -219,6 +232,7 @@ class Lichess:
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> JSON_REPLY_TYPE:
         """
         Makes a move.
+
         :param game_id: The id of the game.
         :param move: The move to make.
         """
@@ -228,6 +242,7 @@ class Lichess:
     def chat(self, game_id: str, room: str, text: str) -> JSON_REPLY_TYPE:
         """
         Sends a message to the chat.
+
         :param game_id: The id of the game.
         :param room: The room (either chat or spectator room).
         :param text: The text to send.

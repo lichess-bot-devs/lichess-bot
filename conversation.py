@@ -1,3 +1,4 @@
+"""Allows lichess-bot to send messages to the chat."""
 from __future__ import annotations
 import logging
 import model
@@ -11,9 +12,12 @@ logger = logging.getLogger(__name__)
 
 class Conversation:
     """Enables the bot to communicate with its opponent and the spectators."""
+
     def __init__(self, game: model.Game, engine: EngineWrapper, xhr: Lichess, version: str,
                  challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         """
+        Communication between lichess-bot and the game chats.
+
         :param game: The game that the bot will send messages to.
         :param engine: The engine playing the game.
         :param xhr: A class that is used for communication with lichess.
@@ -31,6 +35,7 @@ class Conversation:
     def react(self, line: ChatLine, game: model.Game) -> None:
         """
         Reacts to the messages sent.
+
         :param line: Information about the message.
         :param game: The game that the command came from.
         """
@@ -41,6 +46,7 @@ class Conversation:
     def command(self, line: ChatLine, game: model.Game, cmd: str) -> None:
         """
         Reacts to the specific commands in the chat.
+
         :param line: Information about the message.
         :param game: The game that the command came from.
         :param cmd: The command to react to.
@@ -71,6 +77,7 @@ class Conversation:
     def send_reply(self, line: ChatLine, reply: str) -> None:
         """
         Sends the reply to the chat.
+
         :param line: Information about the original message that we reply to.
         :param reply: The reply to send.
         """
@@ -78,16 +85,19 @@ class Conversation:
         self.xhr.chat(self.game.id, line.room, reply)
 
     def send_message(self, room: str, message: str) -> None:
+        """Send the message to the chat."""
         if message:
             self.send_reply(ChatLine({"room": room, "username": "", "text": ""}), message)
 
 
 class ChatLine:
     """Information about the message."""
-    def __init__(self, json: Dict[str, str]) -> None:
-        self.room = json["room"]
+
+    def __init__(self, message_info: Dict[str, str]) -> None:
+        """Information about the message."""
+        self.room = message_info["room"]
         """Whether the message was sent in the chat room or in the spectator room."""
-        self.username = json["username"]
+        self.username = message_info["username"]
         """The username of the account that sent the message."""
-        self.text = json["text"]
+        self.text = message_info["text"]
         """The message sent."""

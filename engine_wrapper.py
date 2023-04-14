@@ -1,3 +1,4 @@
+"""Provides communication with the engine."""
 from __future__ import annotations
 import os
 import chess.engine
@@ -31,6 +32,7 @@ out_of_online_opening_book_moves: Counter[str] = Counter()
 def create_engine(engine_config: config.Configuration) -> Generator[EngineWrapper, None, None]:
     """
     Creates the engine.
+
     :param engine_config: The options for the engine.
     :return: An engine. Either UCI, XBoard, or Homemade.
     """
@@ -66,9 +68,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
 
 
 def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
-    """
-    Removes the options managed by python-chess.
-    """
+    """Removes the options managed by python-chess."""
     def is_managed(key: str) -> bool:
         return chess.engine.Option(key, "", None, None, None, None).is_managed()
 
@@ -76,9 +76,7 @@ def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
 
 
 def translate_termination(game: model.Game, board: chess.Board) -> str:
-    """
-    A human-readable string with the result of the game.
-    """
+    """A human-readable string with the result of the game."""
     winner_color = game.state.get("winner", "")
     termination: Optional[str] = game.state.get("status")
 
@@ -108,11 +106,12 @@ PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
 
 
 class EngineWrapper:
-    """
-    A wrapper used by all engines (UCI, XBoard, Homemade).
-    """
+    """A wrapper used by all engines (UCI, XBoard, Homemade)."""
+
     def __init__(self, options: OPTIONS_TYPE, draw_or_resign: config.Configuration) -> None:
         """
+        A wrapper used by all engines (UCI, XBoard, Homemade).
+
         :param options: The options to send to the engine.
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         """
@@ -134,6 +133,7 @@ class EngineWrapper:
                   correspondence_move_time: int,
                   engine_cfg: config.Configuration) -> None:
         """
+        Plays a move.
 
         :param board: The current position.
         :param game: The game that the bot is playing.
@@ -209,6 +209,7 @@ class EngineWrapper:
                    root_moves: MOVE) -> chess.engine.PlayResult:
         """
         Tells the engine to search for `movetime` time.
+
         :param board: The current position.
         :param movetime: The time to search for.
         :param ponder: Whether the engine can ponder.
@@ -222,6 +223,7 @@ class EngineWrapper:
                      root_moves: MOVE) -> chess.engine.PlayResult:
         """
         Tells the engine to search for the first move in the game.
+
         :param board: The current position.
         :param movetime: The time to search for.
         :param draw_offered: Whether the bot was offered a draw.
@@ -235,6 +237,7 @@ class EngineWrapper:
                            draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
         """
         Gets the move to play by the engine.
+
         :param board: The current position.
         :param wtime: The time white has.
         :param btime: The time black has.
@@ -252,9 +255,7 @@ class EngineWrapper:
         return self.search(board, time_limit, ponder, draw_offered, root_moves)
 
     def add_go_commands(self, time_limit: chess.engine.Limit) -> chess.engine.Limit:
-        """
-        Adds extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10.
-        """
+        """Adds extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10."""
         movetime = self.go_commands.movetime
         if movetime is not None:
             movetime_sec = float(movetime) / 1000
@@ -265,9 +266,7 @@ class EngineWrapper:
         return time_limit
 
     def offer_draw_or_resign(self, result: chess.engine.PlayResult, board: chess.Board) -> chess.engine.PlayResult:
-        """
-        Offers draw or resigns depending on the score of the engine.
-        """
+        """Offers draw or resigns depending on the score of the engine."""
         def actual(score: chess.engine.PovScore) -> int:
             return score.relative.score(mate_score=40000)
 
@@ -301,6 +300,7 @@ class EngineWrapper:
                root_moves: MOVE) -> chess.engine.PlayResult:
         """
         Tells the engine to search.
+
         :param board: The current position.
         :param time_limit: Conditions for how long the engine can search (e.g. we have 10 seconds and search up to depth 10).
         :param ponder: Whether the engine can ponder.
@@ -325,6 +325,7 @@ class EngineWrapper:
     def comment_index(self, move_stack_index: int) -> int:
         """
         Gets the index of a move for use in `comment_for_board_index`.
+
         :param move_stack_index: The move number.
         :return: The index of the move in `self.move_commentary`.
         """
@@ -336,6 +337,7 @@ class EngineWrapper:
     def comment_for_board_index(self, index: int) -> MOVE_INFO_TYPE:
         """
         Gets the engine comments for a specific move.
+
         :param index: The move number.
         :return: The move comments.
         """
@@ -352,6 +354,7 @@ class EngineWrapper:
     def add_comment(self, move: chess.engine.PlayResult, board: chess.Board) -> None:
         """
         Stores the move's comments.
+
         :param move: The move. Contains the comments in `move.info`.
         :param board: The current position.
         """
@@ -399,6 +402,7 @@ class EngineWrapper:
     def get_stats(self, for_chat: bool = False) -> List[str]:
         """
         Gets the stats returned by the engine.
+
         :param for_chat: Whether the stats will be sent to the game chat, which has a 140 character limit.
         """
         can_index = self.move_commentary and self.move_commentary[-1]
@@ -441,6 +445,7 @@ class EngineWrapper:
         return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
+        """Gets the opponent's information and sends it to the engine. Depends on the protocol."""
         pass
 
     def name(self) -> str:
@@ -450,9 +455,11 @@ class EngineWrapper:
         return name
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
+        """Reports the game result to the engine. Depends on the protocol."""
         pass
 
     def stop(self) -> None:
+        """Stops the engine. Depends on the protocol."""
         pass
 
     def get_pid(self) -> str:
@@ -473,9 +480,13 @@ class EngineWrapper:
 
 
 class UCIEngine(EngineWrapper):
+    """The class used to communicate with UCI engines."""
+
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
         """
+        The class used to communicate with UCI engines.
+
         :param commands: The engine path and commands to send to the engine. e.g. ["engines/engine.exe", "--option1=value1"]
         :param options: The options to send to the engine.
         :param stderr: Whether we should silence the stderr.
@@ -494,8 +505,8 @@ class UCIEngine(EngineWrapper):
     def get_opponent_info(self, game: model.Game) -> None:
         """Gets the opponents info and sends it to the engine."""
         name = game.opponent.name
-        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol) and
-                "UCI_Opponent" in self.engine.protocol.config):
+        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol)
+                and "UCI_Opponent" in self.engine.protocol.config):
             rating = game.opponent.rating or "none"
             title = game.opponent.title or "none"
             player_type = "computer" if title == "BOT" else "human"
@@ -508,9 +519,13 @@ class UCIEngine(EngineWrapper):
 
 
 class XBoardEngine(EngineWrapper):
+    """The class used to communicate with XBoard engines."""
+
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, **popen_args: str) -> None:
         """
+        The class used to communicate with XBoard engines.
+
         :param commands: The engine path and commands to send to the engine. e.g. ["engines/engine.exe", "--option1=value1"]
         :param options: The options to send to the engine.
         :param stderr: Whether we should silence the stderr.
@@ -551,8 +566,8 @@ class XBoardEngine(EngineWrapper):
 
     def get_opponent_info(self, game: model.Game) -> None:
         """Gets the opponents info and sends it to the engine."""
-        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and
-                self.engine.protocol.features.get("name", True)):
+        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol)
+                and self.engine.protocol.features.get("name", True)):
             title = f"{game.opponent.title} " if game.opponent.title else ""
             self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
         if game.me.rating and game.opponent.rating:
@@ -563,7 +578,7 @@ class XBoardEngine(EngineWrapper):
 
 class MinimalEngine(EngineWrapper):
     """
-    Subclass this to prevent a few random errors
+    Subclass this to prevent a few random errors.
 
     Even though MinimalEngine extends EngineWrapper,
     you don't have to actually wrap an engine.
@@ -572,9 +587,12 @@ class MinimalEngine(EngineWrapper):
     however you can also change other methods like
     `notify`, `first_search`, `get_time_control`, etc.
     """
+
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
                  draw_or_resign: Configuration, name: Optional[str] = None, **popen_args: str) -> None:
         """
+        An engine that all homemade engines inherit.
+
         :param options: The options to send to the engine.
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         """
@@ -591,7 +609,7 @@ class MinimalEngine(EngineWrapper):
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
                root_moves: MOVE) -> chess.engine.PlayResult:
         """
-        The method to be implemented in your homemade engine
+        The method to be implemented in your homemade engine.
 
         NOTE: This method must return an instance of "chess.engine.PlayResult"
         """
@@ -600,6 +618,7 @@ class MinimalEngine(EngineWrapper):
     def notify(self, method_name: str, *args: Any, **kwargs: Any) -> None:
         """
         The EngineWrapper class sometimes calls methods on "self.engine".
+
         "self.engine" is a filler property that notifies <self>
         whenever an attribute is called.
 
@@ -619,7 +638,9 @@ class FillerEngine:
     This is only used to provide the property "self.engine"
     in "MinimalEngine" which extends "EngineWrapper"
     """
+
     def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
+        """:param name: The name to send to the chat."""
         self.id: Dict[str, str] = {
             "name": name
         }
@@ -627,6 +648,7 @@ class FillerEngine:
         self.main_engine = main_engine
 
     def __getattr__(self, method_name: str) -> Any:
+        """Provides the property `self.engine`."""
         main_engine = self.main_engine
 
         def method(*args: Any, **kwargs: Any) -> Any:
@@ -640,6 +662,7 @@ class FillerEngine:
 def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
     """
     Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `strategies.RandomMove`.
+
     :param name: The name of the homemade engine.
     :return: The engine with this name.
     """
@@ -652,6 +675,7 @@ def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game
                      move_overhead: int, ponder: bool, draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
     """
     Tells the engine to search in correspondence games.
+
     :param engine: The engine.
     :param board: The current positions.
     :param game: The game that the bot is playing.
@@ -676,6 +700,7 @@ def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Gam
                       draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
     """
     Tells the engine to search for the first move in the game.
+
     :param engine: The engine.
     :param board: The current positions.
     :param game: The game that the bot is playing.
@@ -693,6 +718,7 @@ def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, pon
                 start_time: int, move_overhead: int, root_moves: MOVE) -> chess.engine.PlayResult:
     """
     Gets the move to play by the engine.
+
     :param engine: The engine.
     :param board: The current positions.
     :param game: The game that the bot is playing.
@@ -762,6 +788,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
                     draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
     """
     Get a move from an online source.
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     online_egtb_cfg = online_moves_cfg.online_egtb
@@ -908,6 +935,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
                          online_egtb_cfg: config.Configuration) -> Tuple[Union[str, List[str], None], int]:
     """
     Gets a move from an online egtb (either by lichess or chessdb).
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     use_online_egtb = online_egtb_cfg.enabled
@@ -944,6 +972,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
                   draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
     """
     Gets a move from a local egtb.
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     best_move, wdl = get_syzygy(board, game, lichess_bot_tbs.syzygy)
@@ -969,6 +998,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                           variant: str) -> Tuple[Union[str, List[str], None], int]:
     """
     Gets a move from lichess's egtb.
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     name_to_wld = {"loss": -2,
@@ -1035,6 +1065,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                           quality: str) -> Tuple[Union[str, List[str], None], int]:
     """
     Gets a move from chessdb's egtb.
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     def score_to_wdl(score: int) -> int:
@@ -1098,6 +1129,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
                syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
     """
     Gets a move from local syzygy egtbs.
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     if (not syzygy_cfg.enabled
@@ -1163,6 +1195,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
                 gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
     """
     Gets a move from local gaviota egtbs.
+
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     if (not gaviota_cfg.enabled
@@ -1235,6 +1268,7 @@ def good_enough_gaviota_moves(good_moves: List[Tuple[chess.Move, int]], best_dtm
                               min_dtm_to_consider_as_wdl_1: int) -> List[Tuple[chess.Move, int]]:
     """
     Gets the moves that are good enough to consider.
+
     :param good_moves: All the moves to choose from.
     :param best_dtm: The best DTM score of a move.
     :param min_dtm_to_consider_as_wdl_1: The minimum DTM score to consider as WDL=1.
@@ -1263,13 +1297,11 @@ def good_enough_gaviota_moves(good_moves: List[Tuple[chess.Move, int]], best_dtm
 
 
 def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int, position: int) -> int:
-    """ Returns a value according to a position argument
+    """
+    Returns a value according to a position argument.
+
     This function is meant to replace if-elif-else blocks that turn ranges into discrete values. For
-    example,
-
-    piecewise_function([(-20001, 2), (-1, -1), (0, 0), (20000, 1)], 2, score)
-
-    is equivalent to:
+    example, `piecewise_function([(-20001, 2), (-1, -1), (0, 0), (20000, 1)], 2, score)` is equivalent to:
 
     if score < -20000:
         return -2
@@ -1281,7 +1313,6 @@ def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int
         return 1
     else:
         return 2
-
     Note: We use -20001 and not -20000, because we use <= and not <.
 
     Arguments:
@@ -1297,6 +1328,7 @@ def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int
         return this value.
     position:
         The value that will be compared to the first element of the range_definitions tuples.
+
     """
     for border, value in range_definitions:
         if position <= border:

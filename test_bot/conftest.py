@@ -1,3 +1,4 @@
+"""Removes files created when testing lichess-bot."""
 import shutil
 import os
 from typing import Any

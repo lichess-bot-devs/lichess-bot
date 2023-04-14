@@ -1,3 +1,4 @@
+"""The main module that controls lichess-bot."""
 # mypy: disable-error-code=valid-type
 import argparse
 import chess
@@ -98,9 +99,9 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> None:
     """
     Tells the engine to check the correspondence games.
+
     :param period: How many seconds to wait before sending a correspondence ping.
     """
-
     while not terminated:
         time.sleep(period)
         control_queue.put_nowait({"type": "correspondence_ping"})  # type: ignore[attr-defined]
@@ -109,6 +110,7 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> No
 def logging_configurer(level: int, filename: Optional[str]) -> None:
     """
     Configures the logger.
+
     :param level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
     """
@@ -131,7 +133,9 @@ def logging_configurer(level: int, filename: Optional[str]) -> None:
 
 def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str]) -> None:
     """
-    Handles events from the logging queue. This allows the logs from inside a thread to be printed.
+    Handles events from the logging queue.
+
+    This allows the logs from inside a thread to be printed.
     They are added to the queue, so they are printed outside the thread.
     """
     logging_configurer(level, log_filename)
@@ -163,6 +167,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
           log_filename: Optional[str], one_game: bool = False) -> None:
     """
     Starts lichess-bot.
+
     :param li: Provides communication with lichess.org.
     :param user_profile: Information on our bot.
     :param config: The config that the bot will use.
@@ -211,6 +216,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
 def log_proc_count(change: str, active_games: Set[str]) -> None:
     """
     Logs the number of active games and their IDs.
+
     :param change: Either "Freed", "Used", or "Queued".
     :param active_games: A set containing the IDs of the active games.
     """
@@ -229,6 +235,7 @@ def lichess_bot_main(li: lichess.Lichess,
                      one_game: bool) -> None:
     """
     Handles all the games and challenges.
+
     :param li: Provides communication with lichess.org.
     :param user_profile: Information on our bot.
     :param config: The config that the bot will use.
@@ -409,6 +416,7 @@ def check_online_status(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, la
 def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config: Configuration) -> None:
     """
     Sorts the challenges.
+
     They can be sorted either by rating (the best challenger is accepted first),
     or by time (the first challenger is accepted first).
     """
@@ -439,6 +447,7 @@ def start_game(event: EVENT_TYPE,
                low_time_games: List[EVENT_GETATTR_GAME_TYPE]) -> None:
     """
     Starts a game.
+
     :param event: The gameStart event.
     :param pool: The pool that the game is added to, so they can be run asynchronously.
     :param play_game_args: The args passed to `play_game`.
@@ -510,6 +519,7 @@ def play_game(li: lichess.Lichess,
               logging_level: int) -> None:
     """
     Plays a game.
+
     :param li: Provides communication with lichess.org.
     :param game_id: The id of the game.
     :param control_queue: The control queue that contains events (adds `local_game_done` to the queue).
@@ -520,7 +530,6 @@ def play_game(li: lichess.Lichess,
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
     :param logging_level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     """
-
     game_logging_configurer(logging_queue, logging_level)
     logger = logging.getLogger(__name__)
 
@@ -549,7 +558,7 @@ def play_game(li: lichess.Lichess,
         ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
         can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
         move_overhead = config.move_overhead
-        delay_seconds = config.rate_limiting_delay/1000
+        delay_seconds = config.rate_limiting_delay / 1000
 
         keyword_map: DefaultDict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
@@ -641,7 +650,7 @@ def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -
 
 
 def print_move_number(board: chess.Board) -> None:
-    """Logs the move number"""
+    """Logs the move number."""
     logger.info("")
     logger.info(f"move: {len(board.move_stack) // 2 + 1}")
 
@@ -770,6 +779,7 @@ def try_print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: 
                               engine: engine_wrapper.EngineWrapper) -> None:
     """
     Calls `print_pgn_game_record` to write the game to a PGN file and handles errors raised by it.
+
     :param li: Provides communication with lichess.org.
     :param config: The config that the bot will use.
     :param game: Contains information about the game (e.g. the players' names).
@@ -789,6 +799,7 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
                           engine: engine_wrapper.EngineWrapper) -> None:
     """
     Writes the game to a PGN file.
+
     :param li: Provides communication with lichess.org.
     :param config: The config that the bot will use.
     :param game: Contains information about the game (e.g. the players' names).
@@ -846,6 +857,7 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
     """
     Fills the headers missing by the lichess.org PGN with local headers from `game`.
+
     :param game_record: A `chess.pgn.Game` object containing information about the game lichess.org's PGN file.
     :param game: Contains information about the game (e.g. the players' names), which is used to get the local headers.
     """
@@ -859,6 +871,7 @@ def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> N
 def get_headers(game: model.Game) -> Dict[str, Union[str, int]]:
     """
     Creates local headers to be written in the PGN file.
+
     :param game: Contains information about the game (e.g. the players' names).
     :return: The headers in a dict.
     """
@@ -892,6 +905,7 @@ def get_headers(game: model.Game) -> Dict[str, Union[str, int]]:
 
 
 def intro() -> str:
+    """Returns the intro string."""
     return fr"""
     .   _/|
     .  // o\
@@ -933,9 +947,7 @@ def start_lichess_bot() -> None:
 
 
 def check_python_version() -> None:
-    """
-    Checks the current python version and raises a warning or an exception if the version isn't supported or is deprecated.
-    """
+    """Raises a warning or an exception if the version isn't supported or is deprecated."""
     def version_numeric(version_str: str) -> List[int]:
         return [int(n) for n in version_str.split(".")]
 

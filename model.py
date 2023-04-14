@@ -1,3 +1,4 @@
+"""Stores information about a challenge, game or player in a class."""
 import math
 from urllib.parse import urljoin
 import logging
@@ -11,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class Challenge:
+    """Stores information about a challenge."""
+
     def __init__(self, challenge_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
+        """:param user_profile: Information about our bot."""
         self.id = challenge_info["id"]
         self.rated = challenge_info["rated"]
         self.variant = challenge_info["variant"]["key"]
@@ -68,6 +72,13 @@ class Challenge:
                 or len(recent_bot_challenges[self.challenger.name]) < max_recent_challenges)
 
     def decline_due_to(self, requirement_met: bool, decline_reason: str) -> str:
+        """
+        The reason lichess-bot declined an incoming challenge.
+
+        :param requirement_met: Whether a requirement is met.
+        :param decline_reason: The reason we declined the challenge if the requirement wasn't met.
+        :return: `decline_reason` if `requirement_met` is false else returns an empty string.
+        """
         return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
@@ -104,14 +115,17 @@ class Challenge:
         return "rated" if self.rated else "casual"
 
     def __str__(self) -> str:
+        """A string representation of `Challenge`."""
         return f"{self.perf_name} {self.mode()} challenge from {self.challenger} ({self.id})"
 
     def __repr__(self) -> str:
+        """A string representation of `Challenge`."""
         return self.__str__()
 
 
 class Termination(str, Enum):
     """The possible game terminations."""
+
     MATE = "mate"
     TIMEOUT = "outoftime"
     RESIGN = "resign"
@@ -120,7 +134,10 @@ class Termination(str, Enum):
 
 
 class Game:
+    """Stores information about a game."""
+
     def __init__(self, game_info: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
+        """:param abort_time: How long to wait before aborting the game."""
         self.username = username
         self.id: str = game_info["id"]
         self.speed = game_info.get("speed")
@@ -141,7 +158,7 @@ class Game:
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
-        self.game_start = datetime.datetime.fromtimestamp(game_info["createdAt"]/1000, tz=datetime.timezone.utc)
+        self.game_start = datetime.datetime.fromtimestamp(game_info["createdAt"] / 1000, tz=datetime.timezone.utc)
         self.abort_time = Timer(abort_time)
         self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
         self.disconnect_time = Timer(0)
@@ -174,6 +191,7 @@ class Game:
     def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
         """
         Tells the bot when to abort, terminate, and disconnect from a game.
+
         :param abort_in: How many seconds to wait before aborting.
         :param terminate_in: How many seconds to wait before terminating.
         :param disconnect_in: How many seconds to wait before disconnecting.
@@ -224,17 +242,19 @@ class Game:
         return result.value
 
     def __str__(self) -> str:
+        """A string representation of `Game`."""
         return f"{self.url()} {self.perf_name} vs {self.opponent} ({self.id})"
 
     def __repr__(self) -> str:
+        """A string representation of `Game`."""
         return self.__str__()
 
 
 class Player:
+    """Stores information about a player."""
+
     def __init__(self, player_info: Dict[str, Any]) -> None:
-        """
-        :param player_info: Contains information about a player.
-        """
+        """:param player_info: Contains information about a player."""
         self.name: str = player_info.get("name", "")
         self.title = player_info.get("title")
         self.is_bot = self.title == "BOT"
@@ -243,6 +263,7 @@ class Player:
         self.aiLevel = player_info.get("aiLevel")
 
     def __str__(self) -> str:
+        """A string representation of `Player`."""
         if self.aiLevel:
             return f"AI level {self.aiLevel}"
         else:
@@ -250,4 +271,5 @@ class Player:
             return f'{self.title or ""} {self.name} ({rating})'.strip()
 
     def __repr__(self) -> str:
+        """A string representation of `Player`."""
         return self.__str__()

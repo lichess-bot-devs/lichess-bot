@@ -1,11 +1,16 @@
+"""A timer for use in lichess-bot."""
 import time
 import datetime
 from typing import Optional
 
 
 class Timer:
+    """A timer for use in lichess-bot."""
+
     def __init__(self, duration: float = 0, backdated_start: Optional[datetime.datetime] = None) -> None:
         """
+        A timer for use in lichess-bot.
+
         :param duration: The duration of the timer.
         :param backdated_start: When the timer started. Used to keep the timers between sessions.
         """

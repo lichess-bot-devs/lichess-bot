@@ -1,3 +1,4 @@
+"""Tests lichess-bot."""
 import pytest
 import zipfile
 import requests

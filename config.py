@@ -1,3 +1,4 @@
+"""Code related to the config that lichess-bot uses."""
 import yaml
 import os
 import os.path
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class FilterType(str, Enum):
     """What to do if the opponent declines our challenge."""
+
     NONE = "none"
     """Will still challenge the opponent."""
     COARSE = "coarse"
@@ -23,15 +25,15 @@ class FilterType(str, Enum):
 
 class Configuration:
     """The config or a sub-config that the bot uses."""
+
     def __init__(self, parameters: CONFIG_DICT_TYPE) -> None:
-        """
-        :param parameters: A `dict` containing the config for the bot.
-        """
+        """:param parameters: A `dict` containing the config for the bot."""
         self.config = parameters
 
     def __getattr__(self, name: str) -> Any:
         """
         Enables the use of `config.key1.key2`.
+
         :param name: The key to get its value.
         :return: The value of the key.
         """
@@ -40,6 +42,7 @@ class Configuration:
     def lookup(self, name: str) -> Any:
         """
         Gets the value of a key.
+
         :param name: The key to get its value.
         :return: `Configuration` if the value is a `dict` else returns the value.
         """
@@ -47,25 +50,24 @@ class Configuration:
         return Configuration(data) if isinstance(data, dict) else data
 
     def items(self) -> Any:
-        """
-        :return: All the key-value pairs in this config.
-        """
+        """:return: All the key-value pairs in this config."""
         return self.config.items()
 
     def __bool__(self) -> bool:
+        """Whether `self.config` is empty."""
         return bool(self.config)
 
     def __getstate__(self) -> CONFIG_DICT_TYPE:
+        """Get `self.config`."""
         return self.config
 
     def __setstate__(self, d: CONFIG_DICT_TYPE) -> None:
+        """Set `self.config`."""
         self.config = d
 
 
 def config_assert(assertion: bool, error_message: str) -> None:
-    """
-    :raises: An exception if an assertion is false.
-    """
+    """:raises: An exception if an assertion is false."""
     if not assertion:
         raise Exception(error_message)
 
@@ -73,6 +75,7 @@ def config_assert(assertion: bool, error_message: str) -> None:
 def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: ABCMeta, subsection: str = "") -> None:
     """
     Checks the validity of a config section.
+
     :param config: The config section.
     :param data_name: The key to check its value.
     :param data_type: The expected data type.
@@ -90,7 +93,8 @@ def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: AB
 def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, default: Any,
                        force_empty_values: bool = False) -> CONFIG_DICT_TYPE:
     """
-    Fill the a specific config key with the default value if it is missing.
+    Fill a specific config key with the default value if it is missing.
+
     :param config: The bot's config.
     :param sections: The sections that the key is in.
     :param key: The key to set.
@@ -114,6 +118,7 @@ def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, defau
 def change_value_to_list(config: CONFIG_DICT_TYPE, *sections: str, key: str) -> None:
     """
     Changes a single value to a list. e.g. 60 becomes [60]. Used to maintain backwards compatibility.
+
     :param config: The bot's config.
     :param sections: The sections that the key is in.
     :param key: The key to set.
@@ -130,6 +135,7 @@ def change_value_to_list(config: CONFIG_DICT_TYPE, *sections: str, key: str) -> 
 def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     """
     Inserts the default values of most keys to the config if they are missing.
+
     :param CONFIG: The bot's config.
     """
     set_config_default(CONFIG, key="abort_time", default=20)
@@ -219,6 +225,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
 def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     """
     Log the config to make debugging easier.
+
     :param CONFIG: The bot's config.
     """
     logger_config = CONFIG.copy()
@@ -228,9 +235,7 @@ def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
 
 def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
-    """
-    Checks if the config is valid.
-    """
+    """Checks if the config is valid."""
     check_config_section(CONFIG, "token", str)
     check_config_section(CONFIG, "url", str)
     check_config_section(CONFIG, "engine", dict)
@@ -271,6 +276,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 def load_config(config_file: str) -> Configuration:
     """
     Reads the config.
+
     :param config_file: The filename of the config (usually `config.yml`).
     :return: A `Configuration` object containing the config.
     """

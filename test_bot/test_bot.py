@@ -25,6 +25,7 @@ stockfish_path = f"./TEMP/sf{file_extension}"
 
 
 def download_sf() -> None:
+    """Downloads Stockfish 14.1."""
     windows_or_linux = "win" if platform == "win32" else "linux"
     base_name = f"stockfish_14.1_{windows_or_linux}_x64"
     zip_link = f"https://stockfishchess.org/files/{base_name}.zip"
@@ -40,6 +41,7 @@ def download_sf() -> None:
 
 
 def download_lc0() -> None:
+    """Downloads Leela Chess Zero 0.29.0."""
     response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.29.0/lc0-v0.29.0-windows-cpu-dnnl.zip",
                             allow_redirects=True)
     with open("./TEMP/lc0_zip.zip", "wb") as file:
@@ -49,6 +51,7 @@ def download_lc0() -> None:
 
 
 def download_sjeng() -> None:
+    """Downloads Sjeng."""
     response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
     with open("./TEMP/sjeng_zip.zip", "wb") as file:
         file.write(response.content)
@@ -70,6 +73,7 @@ lichess_bot.logger.info("Downloaded engines")
 
 
 def thread_for_test() -> None:
+    """Plays the moves for the opponent of lichess-bot."""
     open("./logs/events.txt", "w").close()
     open("./logs/states.txt", "w").close()
     open("./logs/result.txt", "w").close()
@@ -160,6 +164,7 @@ def thread_for_test() -> None:
 
 
 def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
+    """Starts lichess-bot."""
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
     lichess_bot.logger.info(lichess_bot.intro())
@@ -184,6 +189,7 @@ def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
 
 @pytest.mark.timeout(150, method="thread")
 def test_sf() -> None:
+    """Tests lichess-bot with Stockfish (UCI)."""
     if platform != "linux" and platform != "win32":
         assert True
         return
@@ -207,6 +213,7 @@ def test_sf() -> None:
 
 @pytest.mark.timeout(150, method="thread")
 def test_lc0() -> None:
+    """Tests lichess-bot with Leela Chess Zero (UCI)."""
     if platform != "win32":
         assert True
         return
@@ -233,6 +240,7 @@ def test_lc0() -> None:
 
 @pytest.mark.timeout(150, method="thread")
 def test_sjeng() -> None:
+    """Tests lichess-bot with Sjeng (XBoard)."""
     if platform != "win32":
         assert True
         return
@@ -258,6 +266,7 @@ def test_sjeng() -> None:
 
 @pytest.mark.timeout(150, method="thread")
 def test_homemade() -> None:
+    """Tests lichess-bot with a homemade engine running Stockfish (Homemade)."""
     if platform != "linux" and platform != "win32":
         assert True
         return

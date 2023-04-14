@@ -764,6 +764,14 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
 
 def try_print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
                               engine: engine_wrapper.EngineWrapper) -> None:
+    """
+    Calls `print_pgn_game_record` to write the game to a PGN file and handles errors raised by it.
+    :param li: Provides communication with lichess.org.
+    :param config: The config that the bot will use.
+    :param game: Contains information about the game (e.g. the players' names).
+    :param board: The board. Contains the moves.
+    :param engine: The engine. Contains information about the moves (e.g. eval, PV, depth).
+    """
     if board is None:
         return
 
@@ -775,6 +783,14 @@ def try_print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: 
 
 def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
                           engine: engine_wrapper.EngineWrapper) -> None:
+    """
+    Writes the game to a PGN file.
+    :param li: Provides communication with lichess.org.
+    :param config: The config that the bot will use.
+    :param game: Contains information about the game (e.g. the players' names).
+    :param board: The board. Contains the moves.
+    :param engine: The engine. Contains information about the moves (e.g. eval, PV, depth).
+    """
     if not config.pgn_directory:
         return
 
@@ -824,6 +840,11 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
+    """
+    Fills the headers missing by the lichess.org PGN with local headers from `game`.
+    :param game_record: A `chess.pgn.Game` object containing information about the game lichess.org's PGN file.
+    :param game: Contains information about the game (e.g. the players' names), which is used to get the local headers.
+    """
     local_headers = get_headers(game)
     for header, game_value in local_headers.items():
         record_value = game_record.headers.get(header)
@@ -832,6 +853,11 @@ def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> N
 
 
 def get_headers(game: model.Game) -> Dict[str, Union[str, int]]:
+    """
+    Creates local headers to be written in the PGN file.
+    :param game: Contains information about the game (e.g. the players' names).
+    :return: The headers in a dict.
+    """
     headers: Dict[str, Union[str, int]] = {}
     headers["Event"] = game.pgn_event()
     headers["Site"] = game.short_url()
@@ -872,6 +898,7 @@ def intro() -> str:
 
 
 def start_lichess_bot() -> None:
+    """Parses arguments passed to lichess-bot.py and starts lichess-bot."""
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
     parser.add_argument("-u", action="store_true", help="Upgrade your account to a bot account.")
     parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.")
@@ -902,6 +929,9 @@ def start_lichess_bot() -> None:
 
 
 def check_python_version() -> None:
+    """
+    Checks the current python version and raises a warning or an exception if the version isn't supported or is deprecated.
+    """
     def version_numeric(version_str: str) -> List[int]:
         return [int(n) for n in version_str.split(".")]
 

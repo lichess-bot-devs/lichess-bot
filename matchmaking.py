@@ -10,6 +10,7 @@ from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
+DAILY_TIMERS_TYPE = List[Timer]
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,9 @@ timestamp_format = "%Y-%m-%d %H:%M:%S\n"
 one_day_seconds = datetime.timedelta(days=1).total_seconds()
 
 
-def read_daily_challenges() -> List[Timer]:
+def read_daily_challenges() -> DAILY_TIMERS_TYPE:
     """Reads the challenges we have created in the past 24 hours from a text file."""
-    timers: List[Timer] = []
+    timers: DAILY_TIMERS_TYPE = []
     try:
         with open(daily_challenges_file_name) as file:
             for line in file:
@@ -31,7 +32,7 @@ def read_daily_challenges() -> List[Timer]:
     return [timer for timer in timers if not timer.is_expired()]
 
 
-def write_daily_challenges(daily_challenges: List[Timer]) -> None:
+def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
     """Writes the challenges we have created in the past 24 hours to a text file."""
     with open(daily_challenges_file_name, "w") as file:
         for timer in daily_challenges:
@@ -50,7 +51,7 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.daily_challenges: List[Timer] = read_daily_challenges()
+        self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
         # game aspect is the one the challenged bot objects to and is one of:
@@ -204,7 +205,11 @@ class Matchmaking:
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
-        """Challenges an opponent."""
+        """
+        Challenges an opponent.
+        :param active_games: The games that the bot is playing.
+        :param challenge_queue: The queue containing the challenges.
+        """
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 
@@ -282,7 +287,15 @@ class Matchmaking:
 
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
-    """The game type (e.g. bullet, blitz, atomic, correspondence)."""
+    """
+    The game type (e.g. bullet, blitz, atomic, correspondence).
+    Lichess has one rating for every variant regardless of time control.
+    :param variant: The game's variant.
+    :param base_time: The base time in seconds.
+    :param increment: The increment in seconds.
+    :param days: If the game is correspondence, we have some days to play the move.
+    :return: The game category.
+    """
     game_duration = base_time + increment * 40
     if variant != "standard":
         return variant

@@ -10,9 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Conversation:
-    """
-    Enables the bot to communicate with its opponent and the spectators.
-    """
+    """Enables the bot to communicate with its opponent and the spectators."""
     def __init__(self, game: model.Game, engine: EngineWrapper, xhr: Lichess, version: str,
                  challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         """
@@ -85,9 +83,7 @@ class Conversation:
 
 
 class ChatLine:
-    """
-    Information about the message.
-    """
+    """Information about the message."""
     def __init__(self, json: Dict[str, str]) -> None:
         self.room = json["room"]
         """Whether the message was sent in the chat room or in the spectator room."""

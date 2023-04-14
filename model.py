@@ -11,17 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 class Challenge:
-    def __init__(self, c_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
-        self.id = c_info["id"]
-        self.rated = c_info["rated"]
-        self.variant = c_info["variant"]["key"]
-        self.perf_name = c_info["perf"]["name"]
-        self.speed = c_info["speed"]
-        self.increment: int = c_info.get("timeControl", {}).get("increment")
-        self.base: int = c_info.get("timeControl", {}).get("limit")
-        self.days: int = c_info.get("timeControl", {}).get("daysPerTurn")
-        self.challenger = Player(c_info.get("challenger") or {})
-        self.opponent = Player(c_info.get("destUser") or {})
+    def __init__(self, challenge_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
+        self.id = challenge_info["id"]
+        self.rated = challenge_info["rated"]
+        self.variant = challenge_info["variant"]["key"]
+        self.perf_name = challenge_info["perf"]["name"]
+        self.speed = challenge_info["speed"]
+        self.increment: int = challenge_info.get("timeControl", {}).get("increment")
+        self.base: int = challenge_info.get("timeControl", {}).get("limit")
+        self.days: int = challenge_info.get("timeControl", {}).get("daysPerTurn")
+        self.challenger = Player(challenge_info.get("challenger") or {})
+        self.opponent = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
@@ -57,7 +57,7 @@ class Challenge:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
-        """Checks whether we have played a lot of games with this bot recently."""
+        """Checks whether we have played a lot of games with this opponent recently. Only used when the oppoennt is a BOT."""
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger.name]
@@ -120,28 +120,28 @@ class Termination(str, Enum):
 
 
 class Game:
-    def __init__(self, json: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
+    def __init__(self, game_info: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         self.username = username
-        self.id: str = json["id"]
-        self.speed = json.get("speed")
-        clock = json.get("clock") or {}
+        self.id: str = game_info["id"]
+        self.speed = game_info.get("speed")
+        clock = game_info.get("clock") or {}
         ten_years_in_ms = 1000 * 3600 * 24 * 365 * 10
         self.clock_initial = clock.get("initial", ten_years_in_ms)
         self.clock_increment = clock.get("increment", 0)
-        self.perf_name = (json.get("perf") or {}).get("name", "{perf?}")
-        self.variant_name = json["variant"]["name"]
-        self.mode = "rated" if json.get("rated") else "casual"
-        self.white = Player(json["white"])
-        self.black = Player(json["black"])
-        self.initial_fen = json.get("initialFen")
-        self.state: Dict[str, Any] = json["state"]
+        self.perf_name = (game_info.get("perf") or {}).get("name", "{perf?}")
+        self.variant_name = game_info["variant"]["name"]
+        self.mode = "rated" if game_info.get("rated") else "casual"
+        self.white = Player(game_info["white"])
+        self.black = Player(game_info["black"])
+        self.initial_fen = game_info.get("initialFen")
+        self.state: Dict[str, Any] = game_info["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
-        self.game_start = datetime.datetime.fromtimestamp(json["createdAt"]/1000, tz=datetime.timezone.utc)
+        self.game_start = datetime.datetime.fromtimestamp(game_info["createdAt"]/1000, tz=datetime.timezone.utc)
         self.abort_time = Timer(abort_time)
         self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
         self.disconnect_time = Timer(0)
@@ -172,7 +172,12 @@ class Game:
         return " " not in self.state["moves"]
 
     def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
-        """Tells the bot when to abort, terminate, and disconnect froma game."""
+        """
+        Tells the bot when to abort, terminate, and disconnect from a game.
+        :param abort_in: How many seconds to wait before aborting.
+        :param terminate_in: How many seconds to wait before terminating.
+        :param disconnect_in: How many seconds to wait before disconnecting.
+        """
         if self.is_abortable():
             self.abort_time = Timer(abort_in)
         self.terminate_time = Timer(terminate_in)
@@ -226,13 +231,16 @@ class Game:
 
 
 class Player:
-    def __init__(self, json: Dict[str, Any]) -> None:
-        self.name: str = json.get("name", "")
-        self.title = json.get("title")
+    def __init__(self, player_info: Dict[str, Any]) -> None:
+        """
+        :param player_info: Contains information about a player.
+        """
+        self.name: str = player_info.get("name", "")
+        self.title = player_info.get("title")
         self.is_bot = self.title == "BOT"
-        self.rating = json.get("rating")
-        self.provisional = json.get("provisional")
-        self.aiLevel = json.get("aiLevel")
+        self.rating = player_info.get("rating")
+        self.provisional = player_info.get("provisional")
+        self.aiLevel = player_info.get("aiLevel")
 
     def __str__(self) -> str:
         if self.aiLevel:

@@ -6,6 +6,7 @@ from typing import Dict, Union, List, Optional, Generator
 
 
 class GameStream:
+    """Imitates lichess.org's GameStream. Used in tests."""
     def __init__(self) -> None:
         self.moves_sent = ""
 
@@ -34,10 +35,10 @@ class GameStream:
              "type": "gameFull",
              "state": {"type": "gameState",
                        "moves": "",
-                       "wtime": 60000,
-                       "btime": 60000,
-                       "winc": 2000,
-                       "binc": 2000,
+                       "wtime": 10000,
+                       "btime": 10000,
+                       "winc": 100,
+                       "binc": 100,
                        "status": "started"}}).encode("utf-8")
         time.sleep(1)
         while True:
@@ -66,8 +67,8 @@ class GameStream:
                               "moves": moves,
                               "wtime": int(wtime_int * 1000),
                               "btime": int(wtime_int * 1000),
-                              "winc": 2000,
-                              "binc": 2000}
+                              "winc": 100,
+                              "binc": 100}
             if event == "end":
                 new_game_state["status"] = "outoftime"
                 new_game_state["winner"] = "black"
@@ -79,6 +80,7 @@ class GameStream:
 
 
 class EventStream:
+    """Imitates lichess.org's EventStream. Used in tests."""
     def __init__(self, sent_game: bool = False) -> None:
         self.sent_game = sent_game
 
@@ -97,6 +99,7 @@ class EventStream:
 
 # docs: https://lichess.org/api
 class Lichess:
+    """Imitates communication with lichess.org."""
     def __init__(self, token: str, url: str, version: str) -> None:
         self.baseUrl = url
         self.game_accepted = False
@@ -107,6 +110,7 @@ class Lichess:
         return
 
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
+        """Writes a move to `./logs/states.txt`, to be read by the opponent."""
         self.moves.append(move)
         uci_move = move.move.uci() if move.move else "error"
         with open("./logs/states.txt") as file:

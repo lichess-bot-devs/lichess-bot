@@ -336,6 +336,8 @@ class EngineWrapper:
     def comment_for_board_index(self, index: int) -> MOVE_INFO_TYPE:
         """
         Gets the engine comments for a specific move.
+        :param index: The move number.
+        :return: The move comments.
         """
         no_info: MOVE_INFO_TYPE = {}
         comment_index = self.comment_index(index)
@@ -348,6 +350,11 @@ class EngineWrapper:
             return no_info
 
     def add_comment(self, move: chess.engine.PlayResult, board: chess.Board) -> None:
+        """
+        Stores the move's comments.
+        :param move: The move. Contains the comments in `move.info`.
+        :param board: The current position.
+        """
         if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
         move_info: MOVE_INFO_TYPE = dict(move.info.copy()) if move.info else {}
@@ -360,16 +367,12 @@ class EngineWrapper:
         self.move_commentary.append(move_info)
 
     def print_stats(self) -> None:
-        """
-        Prints the engine stats.
-        """
+        """Prints the engine stats."""
         for line in self.get_stats():
             logger.info(line)
 
     def readable_score(self, relative_score: chess.engine.PovScore) -> str:
-        """
-        Converts the score to a more human-readable format.
-        """
+        """Converts the score to a more human-readable format."""
         score = relative_score.relative
         cp_score = score.score()
         if cp_score is None:
@@ -379,16 +382,12 @@ class EngineWrapper:
         return str_score
 
     def readable_wdl(self, wdl: chess.engine.PovWdl) -> str:
-        """
-        Converts the WDL score to a percentage, so it is more human-readable.
-        """
+        """Converts the WDL score to a percentage, so it is more human-readable."""
         wdl_percentage = round(wdl.relative.expectation() * 100, 1)
         return f"{wdl_percentage}%"
 
     def readable_number(self, number: int) -> str:
-        """
-        Converts number to a more human-readable format. e.g. 123456789 -> 123M.
-        """
+        """Converts number to a more human-readable format. e.g. 123456789 -> 123M."""
         if number >= 1e9:
             return f"{round(number / 1e9, 1)}B"
         elif number >= 1e6:

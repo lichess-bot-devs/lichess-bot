@@ -17,28 +17,28 @@ class ExampleEngine(MinimalEngine):
 # Strategy names and ideas from tom7's excellent eloWorld video
 
 class RandomMove(ExampleEngine):
-    """Gets a random move."""
+    """Get a random move."""
 
     def search(self, board: chess.Board, *args: Any) -> PlayResult:
-        """Chooses a random move."""
+        """Choose a random move."""
         return PlayResult(random.choice(list(board.legal_moves)), None)
 
 
 class Alphabetical(ExampleEngine):
-    """Gets the first move when sorted by san representation."""
+    """Get the first move when sorted by san representation."""
 
     def search(self, board: chess.Board, *args: Any) -> PlayResult:
-        """Chooses the first move alphabetically."""
+        """Choose the first move alphabetically."""
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
         return PlayResult(moves[0], None)
 
 
 class FirstMove(ExampleEngine):
-    """Gets the first move when sorted by uci representation."""
+    """Get the first move when sorted by uci representation."""
 
     def search(self, board: chess.Board, *args: Any) -> PlayResult:
-        """Chooses the first move alphabetically in uci representation."""
+        """Choose the first move alphabetically in uci representation."""
         moves = list(board.legal_moves)
         moves.sort(key=str)
         return PlayResult(moves[0], None)

@@ -1,4 +1,4 @@
-"""Imitates `lichess.py`. Used in tests."""
+"""Imitate `lichess.py`. Used in tests."""
 import time
 import chess
 import chess.engine
@@ -7,14 +7,14 @@ from typing import Dict, Union, List, Optional, Generator
 
 
 class GameStream:
-    """Imitates lichess.org's GameStream. Used in tests."""
+    """Imitate lichess.org's GameStream. Used in tests."""
 
     def __init__(self) -> None:
-        """Initializes `self.moves_sent` to an empty string. It stores the moves that we have already sent."""
+        """Initialize `self.moves_sent` to an empty string. It stores the moves that we have already sent."""
         self.moves_sent = ""
 
     def iter_lines(self) -> Generator[bytes, None, None]:
-        """Sends the game events to lichess-bot."""
+        """Send the game events to lichess-bot."""
         yield json.dumps(
             {"id": "zzzzzzzz",
              "variant": {"key": "standard",
@@ -84,14 +84,14 @@ class GameStream:
 
 
 class EventStream:
-    """Imitates lichess.org's EventStream. Used in tests."""
+    """Imitate lichess.org's EventStream. Used in tests."""
 
     def __init__(self, sent_game: bool = False) -> None:
         """:param sent_game: If we have already sent the `gameStart` event, so we don't send it again."""
         self.sent_game = sent_game
 
     def iter_lines(self) -> Generator[bytes, None, None]:
-        """Sends the events to lichess-bot."""
+        """Send the events to lichess-bot."""
         if self.sent_game:
             yield b''
             time.sleep(1)
@@ -106,7 +106,7 @@ class EventStream:
 
 # Docs: https://lichess.org/api.
 class Lichess:
-    """Imitates communication with lichess.org."""
+    """Imitate communication with lichess.org."""
 
     def __init__(self, token: str, url: str, version: str) -> None:
         """Has the same parameters as `lichess.Lichess` to be able to be used in its placed without any modification."""
@@ -120,7 +120,7 @@ class Lichess:
         return
 
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
-        """Writes a move to `./logs/states.txt`, to be read by the opponent."""
+        """Write a move to `./logs/states.txt`, to be read by the opponent."""
         self.moves.append(move)
         uci_move = move.move.uci() if move.move else "error"
         with open("./logs/states.txt") as file:
@@ -138,17 +138,17 @@ class Lichess:
         return
 
     def get_event_stream(self) -> EventStream:
-        """Sends the `EventStream`."""
+        """Send the `EventStream`."""
         events = EventStream(self.sent_game)
         self.sent_game = True
         return events
 
     def get_game_stream(self, game_id: str) -> GameStream:
-        """Sends the `GameStream`."""
+        """Send the `GameStream`."""
         return GameStream()
 
     def accept_challenge(self, challenge_id: str) -> None:
-        """Sets `self.game_accepted` to true."""
+        """Set `self.game_accepted` to true."""
         self.game_accepted = True
 
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> None:
@@ -156,7 +156,7 @@ class Lichess:
         return
 
     def get_profile(self) -> Dict[str, Union[str, bool, Dict[str, str]]]:
-        """Returns a simple profile for the bot that lichess-bot uses when testing."""
+        """Return a simple profile for the bot that lichess-bot uses when testing."""
         return {"id": "b",
                 "username": "b",
                 "online": True,
@@ -169,7 +169,7 @@ class Lichess:
                 "perfs": {}}
 
     def get_ongoing_games(self) -> List[str]:
-        """Returns that the bot isn't playing a game."""
+        """Return that the bot isn't playing a game."""
         return []
 
     def resign(self, game_id: str) -> None:
@@ -177,7 +177,7 @@ class Lichess:
         return
 
     def get_game_pgn(self, game_id: str) -> str:
-        """Returns a simple PGN."""
+        """Return a simple PGN."""
         return """
 [Event "Test game"]
 [Site "pytest"]
@@ -191,7 +191,7 @@ class Lichess:
 """
 
     def get_online_bots(self) -> List[Dict[str, Union[str, bool]]]:
-        """Returns that the only bot online is us."""
+        """Return that the only bot online is us."""
         return [{"username": "b", "online": True}]
 
     def challenge(self, username: str, params: Dict[str, str]) -> None:
@@ -207,5 +207,5 @@ class Lichess:
         return
 
     def is_online(self, user_id: str) -> bool:
-        """Returns that a bot is online."""
+        """Return that a bot is online."""
         return True

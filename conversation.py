@@ -76,7 +76,7 @@ class Conversation:
 
     def send_reply(self, line: ChatLine, reply: str) -> None:
         """
-        Sends the reply to the chat.
+        Send the reply to the chat.
 
         :param line: Information about the original message that we reply to.
         :param reply: The reply to send.

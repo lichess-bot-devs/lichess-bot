@@ -32,7 +32,7 @@ class Configuration:
 
     def __getattr__(self, name: str) -> Any:
         """
-        Enables the use of `config.key1.key2`.
+        Enable the use of `config.key1.key2`.
 
         :param name: The key to get its value.
         :return: The value of the key.
@@ -41,7 +41,7 @@ class Configuration:
 
     def lookup(self, name: str) -> Any:
         """
-        Gets the value of a key.
+        Get the value of a key.
 
         :param name: The key to get its value.
         :return: `Configuration` if the value is a `dict` else returns the value.
@@ -67,14 +67,14 @@ class Configuration:
 
 
 def config_assert(assertion: bool, error_message: str) -> None:
-    """:raises: An exception if an assertion is false."""
+    """Raise an exception if an assertion is false."""
     if not assertion:
         raise Exception(error_message)
 
 
 def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: ABCMeta, subsection: str = "") -> None:
     """
-    Checks the validity of a config section.
+    Check the validity of a config section.
 
     :param config: The config section.
     :param data_name: The key to check its value.
@@ -117,7 +117,7 @@ def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, defau
 
 def change_value_to_list(config: CONFIG_DICT_TYPE, *sections: str, key: str) -> None:
     """
-    Changes a single value to a list. e.g. 60 becomes [60]. Used to maintain backwards compatibility.
+    Change a single value to a list. e.g. 60 becomes [60]. Used to maintain backwards compatibility.
 
     :param config: The bot's config.
     :param sections: The sections that the key is in.
@@ -134,7 +134,7 @@ def change_value_to_list(config: CONFIG_DICT_TYPE, *sections: str, key: str) -> 
 
 def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     """
-    Inserts the default values of most keys to the config if they are missing.
+    Insert the default values of most keys to the config if they are missing.
 
     :param CONFIG: The bot's config.
     """
@@ -235,7 +235,7 @@ def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
 
 def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
-    """Checks if the config is valid."""
+    """Check if the config is valid."""
     check_config_section(CONFIG, "token", str)
     check_config_section(CONFIG, "url", str)
     check_config_section(CONFIG, "engine", dict)
@@ -275,7 +275,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
 def load_config(config_file: str) -> Configuration:
     """
-    Reads the config.
+    Read the config.
 
     :param config_file: The filename of the config (usually `config.yml`).
     :return: A `Configuration` object containing the config.

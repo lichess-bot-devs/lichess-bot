@@ -1,4 +1,4 @@
-"""Stores information about a challenge, game or player in a class."""
+"""Store information about a challenge, game or player in a class."""
 import math
 from urllib.parse import urljoin
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Challenge:
-    """Stores information about a challenge."""
+    """Store information about a challenge."""
 
     def __init__(self, challenge_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
         """:param user_profile: Information about our bot."""
@@ -29,11 +29,11 @@ class Challenge:
         self.from_self = self.challenger.name == user_profile["username"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
-        """Checks whether the variant is supported."""
+        """Check whether the variant is supported."""
         return self.variant in challenge_cfg.variants
 
     def is_supported_time_control(self, challenge_cfg: Configuration) -> bool:
-        """Checks whether the time control is supported."""
+        """Check whether the time control is supported."""
         speeds = challenge_cfg.time_controls
         increment_max: int = challenge_cfg.max_increment
         increment_min: int = challenge_cfg.min_increment
@@ -57,11 +57,11 @@ class Challenge:
             return days_max == math.inf
 
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
-        """Checks whether the mode is supported."""
+        """Check whether the mode is supported."""
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
-        """Checks whether we have played a lot of games with this opponent recently. Only used when the oppoennt is a BOT."""
+        """Check whether we have played a lot of games with this opponent recently. Only used when the oppoennt is a BOT."""
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger.name]
@@ -73,7 +73,7 @@ class Challenge:
 
     def decline_due_to(self, requirement_met: bool, decline_reason: str) -> str:
         """
-        The reason lichess-bot declined an incoming challenge.
+        Get the reason lichess-bot declined an incoming challenge.
 
         :param requirement_met: Whether a requirement is met.
         :param decline_reason: The reason we declined the challenge if the requirement wasn't met.
@@ -103,7 +103,7 @@ class Challenge:
             return False, "generic"
 
     def score(self) -> int:
-        """Gives a rating estimate to the opponent."""
+        """Give a rating estimate to the opponent."""
         rated_bonus = 200 if self.rated else 0
         challenger_master_title = self.challenger.title if not self.challenger.is_bot else None
         titled_bonus = 200 if challenger_master_title else 0
@@ -111,15 +111,15 @@ class Challenge:
         return challenger_rating_int + rated_bonus + titled_bonus
 
     def mode(self) -> str:
-        """The mode of the challenge (rated or casual)."""
+        """Get the mode of the challenge (rated or casual)."""
         return "rated" if self.rated else "casual"
 
     def __str__(self) -> str:
-        """A string representation of `Challenge`."""
+        """Get a string representation of `Challenge`."""
         return f"{self.perf_name} {self.mode()} challenge from {self.challenger} ({self.id})"
 
     def __repr__(self) -> str:
-        """A string representation of `Challenge`."""
+        """Get a string representation of `Challenge`."""
         return self.__str__()
 
 
@@ -134,7 +134,7 @@ class Termination(str, Enum):
 
 
 class Game:
-    """Stores information about a game."""
+    """Store information about a game."""
 
     def __init__(self, game_info: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         """:param abort_time: How long to wait before aborting the game."""
@@ -164,22 +164,22 @@ class Game:
         self.disconnect_time = Timer(0)
 
     def url(self) -> str:
-        """The url of the game."""
+        """Get the url of the game."""
         return f"{self.short_url()}/{self.my_color}"
 
     def short_url(self) -> str:
-        """The short url of the game."""
+        """Get the short url of the game."""
         return urljoin(self.base_url, self.id)
 
     def pgn_event(self) -> str:
-        """The event to write in the PGN file."""
+        """Get the event to write in the PGN file."""
         if self.variant_name in ["Standard", "From Position"]:
             return f"{self.mode.title()} {self.perf_name.title()} game"
         else:
             return f"{self.mode.title()} {self.variant_name} game"
 
     def time_control(self) -> str:
-        """The time control of the game."""
+        """Get the time control of the game."""
         return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
 
     def is_abortable(self) -> bool:
@@ -190,7 +190,7 @@ class Game:
 
     def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
         """
-        Tells the bot when to abort, terminate, and disconnect from a game.
+        Tell the bot when to abort, terminate, and disconnect from a game.
 
         :param abort_in: How many seconds to wait before aborting.
         :param terminate_in: How many seconds to wait before terminating.
@@ -220,7 +220,7 @@ class Game:
         return (wtime if self.is_white else btime) / 1000
 
     def result(self) -> str:
-        """The result of the game."""
+        """Get the result of the game."""
         class GameEnding(str, Enum):
             WHITE_WINS = "1-0"
             BLACK_WINS = "0-1"
@@ -242,16 +242,16 @@ class Game:
         return result.value
 
     def __str__(self) -> str:
-        """A string representation of `Game`."""
+        """Get a string representation of `Game`."""
         return f"{self.url()} {self.perf_name} vs {self.opponent} ({self.id})"
 
     def __repr__(self) -> str:
-        """A string representation of `Game`."""
+        """Get a string representation of `Game`."""
         return self.__str__()
 
 
 class Player:
-    """Stores information about a player."""
+    """Store information about a player."""
 
     def __init__(self, player_info: Dict[str, Any]) -> None:
         """:param player_info: Contains information about a player."""
@@ -263,7 +263,7 @@ class Player:
         self.aiLevel = player_info.get("aiLevel")
 
     def __str__(self) -> str:
-        """A string representation of `Player`."""
+        """Get a string representation of `Player`."""
         if self.aiLevel:
             return f"AI level {self.aiLevel}"
         else:
@@ -271,5 +271,5 @@ class Player:
             return f'{self.title or ""} {self.name} ({rating})'.strip()
 
     def __repr__(self) -> str:
-        """A string representation of `Player`."""
+        """Get a string representation of `Player`."""
         return self.__str__()

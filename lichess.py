@@ -53,7 +53,7 @@ def is_final(exception: Exception) -> bool:
     return isinstance(exception, HTTPError) and exception.response.status_code < 500
 
 
-# docs: https://lichess.org/api
+# Docs: https://lichess.org/api.
 class Lichess:
     def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
         """

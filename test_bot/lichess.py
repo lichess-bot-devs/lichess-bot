@@ -97,7 +97,7 @@ class EventStream:
                                      "board": True}}}).encode("utf-8")
 
 
-# docs: https://lichess.org/api
+# Docs: https://lichess.org/api.
 class Lichess:
     """Imitates communication with lichess.org."""
     def __init__(self, token: str, url: str, version: str) -> None:

@@ -120,7 +120,7 @@ def thread_for_test() -> None:
             with open("./logs/states.txt", "w") as file:
                 file.write(state_str)
 
-        else:  # lichess-bot move
+        else:  # lichess-bot move.
             start_time = time.perf_counter_ns()
             state2 = state_str
             moves_are_correct = False

@@ -47,7 +47,7 @@ class Matchmaking:
         self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
         self.last_game_ended_delay = Timer(self.matchmaking_cfg.challenge_timeout * 60)
-        self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
+        self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes.
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
@@ -169,7 +169,7 @@ class Matchmaking:
             return (bot["username"] != self.username()
                     and bot["username"] not in self.block_list
                     and not bot.get("disabled")
-                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
+                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 

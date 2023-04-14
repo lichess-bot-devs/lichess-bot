@@ -535,7 +535,7 @@ class XBoardEngine(EngineWrapper):
 
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         """Send the game result to the engine."""
-        # Send final moves, if any, to engine
+        # Send final moves, if any, to engine.
         if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
             self.engine.protocol._new(board, None, {})
 
@@ -683,7 +683,7 @@ def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Gam
     :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
     :return: The move to play.
     """
-    # need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
+    # Need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time} for game {game.id}")
     return engine.first_search(board, search_time, draw_offered, root_moves)
@@ -748,7 +748,7 @@ def get_book_move(board: chess.Board, game: model.Game,
                 elif selection == "best_move":
                     move = reader.find(board, minimum_weight=min_weight).move
             except IndexError:
-                # python-chess raises "IndexError" if no entries found
+                # python-chess raises "IndexError" if no entries found.
                 move = None
 
         if move is not None:

@@ -209,7 +209,11 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
 
 
 def log_proc_count(change: str, active_games: Set[str]) -> None:
-    """Logs the number of active games and their IDs."""
+    """
+    Logs the number of active games and their IDs.
+    :param change: Either "Freed", "Used", or "Queued".
+    :param active_games: A set containing the IDs of the active games.
+    """
     symbol = "+++" if change == "Freed" else "---"
     logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games or None}")
 
@@ -523,7 +527,7 @@ def play_game(li: lichess.Lichess,
     response = li.get_game_stream(game_id)
     lines = response.iter_lines()
 
-    # Initial response of stream will be the full game info. Store it
+    # Initial response of stream will be the full game info. Store it.
     initial_state = json.loads(next(lines).decode("utf-8"))
     logger.debug(f"Initial state: {initial_state}")
     abort_time = config.abort_time

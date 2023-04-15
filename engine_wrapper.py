@@ -163,8 +163,6 @@ class EngineWrapper:
                                         start_time,
                                         move_overhead,
                                         best_move)
-        else:
-            self.stop()
 
         self.add_comment(best_move, board)
         self.print_stats()

@@ -55,7 +55,6 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
     try:
         yield engine
     finally:
-        engine.stop()
         engine.ping()
         engine.quit()
 
@@ -353,9 +352,6 @@ class EngineWrapper:
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         pass
 
-    def stop(self) -> None:
-        pass
-
     def get_pid(self) -> str:
         pid = "?"
         if self.engine.transport is not None:
@@ -377,9 +373,6 @@ class UCIEngine(EngineWrapper):
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
                                                           **popen_args)
         self.engine.configure(options)
-
-    def stop(self) -> None:
-        self.engine.protocol.send_line("stop")
 
     def get_opponent_info(self, game: model.Game) -> None:
         name = game.opponent.name
@@ -424,9 +417,6 @@ class XBoardEngine(EngineWrapper):
             endgame_message = " {" + endgame_message + "}"
 
         self.engine.protocol.send_line(f"result {game.result()}{endgame_message}")
-
-    def stop(self) -> None:
-        self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game: model.Game) -> None:
         if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and

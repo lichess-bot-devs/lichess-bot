@@ -296,7 +296,7 @@ class Matchmaking:
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
     """
-    Get the game type (e.g. bullet, atomic, correspondence). Lichess has one rating for every variant regardless of time control.
+    Get the game type (e.g. bullet, atomic, classical). Lichess has one rating for every variant regardless of time control.
 
     :param variant: The game's variant.
     :param base_time: The base time in seconds.

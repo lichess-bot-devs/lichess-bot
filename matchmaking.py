@@ -68,6 +68,7 @@ class Matchmaking:
             self.li.cancel(self.challenge_id)
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.challenge_id = ""
+            self.show_earliest_challenge_time()
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
@@ -92,6 +93,7 @@ class Matchmaking:
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)
+                self.show_earliest_challenge_time()
             return challenge_id
         except Exception as e:
             logger.warning("Could not create challenge")
@@ -235,7 +237,6 @@ class Matchmaking:
         if not challenge.from_self or self.challenge_filter == FilterType.NONE:
             return
 
-        # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
         decline_details: Dict[str, str] = {"generic": "",
                                            "later": "",

@@ -349,9 +349,6 @@ class EngineWrapper:
         name: str = engine_info["name"]
         return name
 
-    def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        pass
-
     def get_pid(self) -> str:
         pid = "?"
         if self.engine.transport is not None:
@@ -383,10 +380,6 @@ class UCIEngine(EngineWrapper):
             player_type = "computer" if title == "BOT" else "human"
             self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
-    def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        if isinstance(self.engine.protocol, chess.engine.UciProtocol):
-            self.engine.protocol._position(board)
-
 
 class XBoardEngine(EngineWrapper):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
@@ -406,17 +399,6 @@ class XBoardEngine(EngineWrapper):
                 else:
                     logger.debug(f"No paths found for egt type: {egt_type}.")
         self.engine.configure(options)
-
-    def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        # Send final moves, if any, to engine
-        if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
-            self.engine.protocol._new(board, None, {})
-
-        endgame_message = translate_termination(game, board)
-        if endgame_message:
-            endgame_message = " {" + endgame_message + "}"
-
-        self.engine.protocol.send_line(f"result {game.result()}{endgame_message}")
 
     def get_opponent_info(self, game: model.Game) -> None:
         if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and

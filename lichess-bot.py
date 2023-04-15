@@ -505,7 +505,6 @@ def play_game(li: lichess.Lichess,
                                          engine_cfg)
                         time.sleep(delay_seconds)
                     elif is_game_over(game):
-                        engine.report_game_result(game, board)
                         tell_user_game_result(game, board)
                         conversation.send_message("player", goodbye)
                         conversation.send_message("spectator", goodbye_spectators)

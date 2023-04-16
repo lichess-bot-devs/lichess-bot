@@ -398,16 +398,6 @@ class XBoardEngine(EngineWrapper):
                     logger.debug(f"No paths found for egt type: {egt_type}.")
         self.engine.configure(options)
 
-    def get_opponent_info(self, game: model.Game) -> None:
-        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol) and
-                self.engine.protocol.features.get("name", True)):
-            title = f"{game.opponent.title} " if game.opponent.title else ""
-            self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
-        if game.me.rating and game.opponent.rating:
-            self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
-        if game.opponent.title == "BOT":
-            self.engine.protocol.send_line("computer")
-
 
 class MinimalEngine(EngineWrapper):
     """

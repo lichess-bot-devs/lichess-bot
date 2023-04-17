@@ -18,9 +18,12 @@ class FilterType(str, Enum):
     NONE = "none"
     """Will still challenge the opponent."""
     COARSE = "coarse"
-    """Won't challenge the opponent for some time."""
+    """Won't challenge the opponent again."""
     FINE = "fine"
-    """Won't challenge the opponent to a game of the same mode, speed, and variant for some time."""
+    """
+    Won't challenge the opponent to a game of the same mode, speed, and variant
+    based on the reason for the opponent declining the challenge.
+    """
 
 
 class Configuration:

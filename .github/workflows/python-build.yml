@@ -42,5 +42,4 @@ jobs:
         flake8-markdown "*.md"
     - name: Lint with flake8-docstrings
       run: |
-        # D212 and D213 conflict with other warni
         flake8 . --count --exit-zero --max-line-length=127 --statistics --select=D

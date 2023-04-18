@@ -110,8 +110,9 @@ class Matchmaking:
 
     def update_daily_challenge_record(self) -> None:
         """
-        As the number of challenges in a day increase, the minimum wait time between challenges increases.
+        Record timestamp of latest challenge and update minimum wait time.
 
+        As the number of challenges in a day increase, the minimum wait time between challenges increases.
         0   -  49 challenges --> 1 minute
         50  -  99 challenges --> 2 minutes
         100 - 149 challenges --> 3 minutes

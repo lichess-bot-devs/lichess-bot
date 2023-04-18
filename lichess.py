@@ -143,7 +143,7 @@ class Lichess:
     def api_get_raw(self, endpoint_name: str, *template_args: str,
                     params: Optional[Dict[str, str]] = None, ) -> str:
         """
-        Send a GET to lichess.org.
+        Send a GET to lichess.org that returns plain text (UTF-8).
 
         :param endpoint_name: The name of the endpoint.
         :param template_args: The values that go in the url (e.g. the challenge id if `endpoint_name` is `accept`).
@@ -310,7 +310,7 @@ class Lichess:
         self.session.headers.update(self.header)
 
     def get_game_pgn(self, game_id: str) -> str:
-        """Get the pgn of a game."""
+        """Get the PGN (Portable Game Notation) record of a game."""
         try:
             return self.api_get_raw("export", game_id)
         except Exception:

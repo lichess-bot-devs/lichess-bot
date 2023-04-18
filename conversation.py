@@ -34,7 +34,7 @@ class Conversation:
 
     def react(self, line: ChatLine, game: model.Game) -> None:
         """
-        Reacts to the messages sent.
+        React to a received message.
 
         :param line: Information about the message.
         :param game: The game that the command came from.

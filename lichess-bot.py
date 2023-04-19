@@ -275,6 +275,7 @@ def lichess_bot_main(li: lichess.Lichess,
                       "logging_level": logging_level}
 
     recent_bot_challenges: DefaultDict[str, List[Timer]] = defaultdict(list)
+    one_game = True
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
@@ -449,7 +450,7 @@ def start_game(event: EVENT_TYPE,
     Start a game.
 
     :param event: The gameStart event.
-    :param pool: The pool that the game is added to, so they can be run asynchronously.
+    :param pool: The thread pool that the game is added to, so they can be run asynchronously.
     :param play_game_args: The args passed to `play_game`.
     :param config: The config the bot will use.
     :param matchmaker: The matchmaker that challenges other bots.
@@ -716,7 +717,11 @@ def should_exit_game(board: chess.Board, game: model.Game, prior_game: Optional[
 
 def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                         game: model.Game, is_correspondence: bool) -> None:
-    """Log the game that ended or we disconnected from, and sends a `local_game_done` for the game."""
+    """
+    Log the game that ended or we disconnected from, and sends a `local_game_done` for the game.
+
+     If this is an unfinished correspondence game, put it in a queue to resume later.
+    """
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
         correspondence_queue.put_nowait(game.id)  # type: ignore[attr-defined]
@@ -778,7 +783,7 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
 def try_print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
                               engine: engine_wrapper.EngineWrapper) -> None:
     """
-    Call `print_pgn_game_record` to write the game to a PGN file and handles errors raised by it.
+    Call `print_pgn_game_record` to write the game to a PGN file and handle errors raised by it.
 
     :param li: Provides communication with lichess.org.
     :param config: The config that the bot will use.
@@ -856,7 +861,7 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
     """
-    Fill the headers missing by the lichess.org PGN with local headers from `game`.
+    Fill in any missing headers in the PGN record provided by lichess.org with information from `game`.
 
     :param game_record: A `chess.pgn.Game` object containing information about the game lichess.org's PGN file.
     :param game: Contains information about the game (e.g. the players' names), which is used to get the local headers.

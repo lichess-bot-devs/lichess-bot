@@ -33,6 +33,8 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
     """
     Create the engine.
 
+    Use in a with-block to automatically close the engine when exiting the game.
+
     :param engine_config: The options for the engine.
     :return: An engine. Either UCI, XBoard, or Homemade.
     """
@@ -503,7 +505,7 @@ class UCIEngine(EngineWrapper):
         self.engine.protocol.send_line("stop")
 
     def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponents info and sends it to the engine."""
+        """Get the opponent's info and sends it to the engine."""
         name = game.opponent.name
         if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol)
                 and "UCI_Opponent" in self.engine.protocol.config):
@@ -565,7 +567,7 @@ class XBoardEngine(EngineWrapper):
         self.engine.protocol.send_line("?")
 
     def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponents info and sends it to the engine."""
+        """Get the opponent's info and sends it to the engine."""
         if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol)
                 and self.engine.protocol.features.get("name", True)):
             title = f"{game.opponent.title} " if game.opponent.title else ""

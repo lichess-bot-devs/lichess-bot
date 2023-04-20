@@ -275,7 +275,6 @@ def lichess_bot_main(li: lichess.Lichess,
                       "logging_level": logging_level}
 
     recent_bot_challenges: DefaultDict[str, List[Timer]] = defaultdict(list)
-    one_game = True
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):

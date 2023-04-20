@@ -3,7 +3,7 @@ import logging
 import model
 from engine_wrapper import EngineWrapper
 from lichess import Lichess
-from typing import Dict, Sequence
+from collections.abc import Sequence
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class Conversation:
 
 
 class ChatLine:
-    def __init__(self, json: Dict[str, str]) -> None:
+    def __init__(self, json: dict[str, str]) -> None:
         self.room = json["room"]
         self.username = json["username"]
         self.text = json["text"]

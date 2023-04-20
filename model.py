@@ -5,13 +5,14 @@ import datetime
 from enum import Enum
 from timer import Timer
 from config import Configuration
-from typing import Dict, Any, Tuple, List, DefaultDict
+from typing import Any
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
 
 class Challenge:
-    def __init__(self, c_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
+    def __init__(self, c_info: dict[str, Any], user_profile: dict[str, Any]) -> None:
         self.id = c_info["id"]
         self.rated = c_info["rated"]
         self.variant = c_info["variant"]["key"]
@@ -53,7 +54,7 @@ class Challenge:
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
+    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]]) -> bool:
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger.name]
@@ -67,7 +68,7 @@ class Challenge:
         return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
-                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, str]:
+                     recent_bot_challenges: defaultdict[str, list[Timer]]) -> tuple[bool, str]:
         try:
             if self.from_self:
                 return True, ""
@@ -112,7 +113,7 @@ class Termination(str, Enum):
 
 
 class Game:
-    def __init__(self, json: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
+    def __init__(self, json: dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         self.username = username
         self.id: str = json["id"]
         self.speed = json.get("speed")
@@ -126,7 +127,7 @@ class Game:
         self.white = Player(json["white"])
         self.black = Player(json["black"])
         self.initial_fen = json.get("initialFen")
-        self.state: Dict[str, Any] = json["state"]
+        self.state: dict[str, Any] = json["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
@@ -207,7 +208,7 @@ class Game:
 
 
 class Player:
-    def __init__(self, json: Dict[str, Any]) -> None:
+    def __init__(self, json: dict[str, Any]) -> None:
         self.name: str = json.get("name", "")
         self.title = json.get("title")
         self.is_bot = self.title == "BOT"

@@ -26,15 +26,16 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
 from collections import defaultdict
+from collections.abc import Iterator, MutableSequence
 from http.client import RemoteDisconnected
 from queue import Queue
 from multiprocessing.pool import Pool
-from typing import Dict, Any, Optional, Set, List, Iterator, DefaultDict, Union, MutableSequence
-USER_PROFILE_TYPE = Dict[str, Any]
-EVENT_TYPE = Dict[str, Any]
-PLAY_GAME_ARGS_TYPE = Dict[str, Any]
-EVENT_GETATTR_GAME_TYPE = Dict[str, Any]
-GAME_EVENT_TYPE = Dict[str, Any]
+from typing import Any, Optional, Union
+USER_PROFILE_TYPE = dict[str, Any]
+EVENT_TYPE = dict[str, Any]
+PLAY_GAME_ARGS_TYPE = dict[str, Any]
+EVENT_GETATTR_GAME_TYPE = dict[str, Any]
+GAME_EVENT_TYPE = dict[str, Any]
 CONTROL_QUEUE_TYPE = Queue[EVENT_TYPE]
 CORRESPONDENCE_QUEUE_TYPE = Queue[str]
 LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
@@ -105,7 +106,7 @@ def logging_configurer(level: int, filename: Optional[str]) -> None:
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_formatter)
-    all_handlers: List[logging.Handler] = [console_handler]
+    all_handlers: list[logging.Handler] = [console_handler]
 
     if filename:
         file_handler = logging.FileHandler(filename, delay=True)
@@ -183,7 +184,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
         logging_listener.join()
 
 
-def log_proc_count(change: str, active_games: Set[str]) -> None:
+def log_proc_count(change: str, active_games: set[str]) -> None:
     symbol = "+++" if change == "Freed" else "---"
     logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games or None}")
 
@@ -210,7 +211,7 @@ def lichess_bot_main(li: lichess.Lichess,
     active_games = set(game["gameId"]
                        for game in all_games
                        if game["gameId"] not in startup_correspondence_games)
-    low_time_games: List[EVENT_GETATTR_GAME_TYPE] = []
+    low_time_games: list[EVENT_GETATTR_GAME_TYPE] = []
 
     last_check_online_time = Timer(60 * 60)  # one hour interval
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
@@ -225,7 +226,7 @@ def lichess_bot_main(li: lichess.Lichess,
                       "logging_queue": logging_queue,
                       "logging_level": logging_level}
 
-    recent_bot_challenges: DefaultDict[str, List[Timer]] = defaultdict(list)
+    recent_bot_challenges: defaultdict[str, list[Timer]] = defaultdict(list)
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
@@ -302,7 +303,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
                                      correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                                      play_game_args: PLAY_GAME_ARGS_TYPE,
-                                     active_games: Set[str],
+                                     active_games: set[str],
                                      max_games: int) -> None:
     global correspondence_games_to_start
 
@@ -321,7 +322,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
-def start_low_time_games(low_time_games: List[EVENT_GETATTR_GAME_TYPE], active_games: Set[str], max_games: int,
+def start_low_time_games(low_time_games: list[EVENT_GETATTR_GAME_TYPE], active_games: set[str], max_games: int,
                          pool: POOL_TYPE, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
@@ -329,7 +330,7 @@ def start_low_time_games(low_time_games: List[EVENT_GETATTR_GAME_TYPE], active_g
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
-def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: Set[str],
+def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: set[str],
                       max_games: int) -> None:
     while len(active_games) < max_games and challenge_queue:
         chlng = challenge_queue.pop(0)
@@ -366,7 +367,7 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
         challenge_queue[:] = list_c
 
 
-def start_game_thread(active_games: Set[str], game_id: str, play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
+def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
     active_games.add(game_id)
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
@@ -380,10 +381,10 @@ def start_game(event: EVENT_TYPE,
                play_game_args: PLAY_GAME_ARGS_TYPE,
                config: Configuration,
                matchmaker: matchmaking.Matchmaking,
-               startup_correspondence_games: List[str],
+               startup_correspondence_games: list[str],
                correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
-               active_games: Set[str],
-               low_time_games: List[EVENT_GETATTR_GAME_TYPE]) -> None:
+               active_games: set[str],
+               low_time_games: list[EVENT_GETATTR_GAME_TYPE]) -> None:
     game_id = event["game"]["id"]
     if matchmaker.challenge_id == game_id:
         matchmaker.challenge_id = ""
@@ -408,7 +409,7 @@ def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:
 
 def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      challenge_config: Configuration, user_profile: USER_PROFILE_TYPE,
-                     matchmaker: matchmaking.Matchmaking, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> None:
+                     matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict[str, list[Timer]]) -> None:
     chlng = model.Challenge(event["challenge"], user_profile)
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
@@ -471,7 +472,7 @@ def play_game(li: lichess.Lichess,
         move_overhead = config.move_overhead
         delay_seconds = config.rate_limiting_delay/1000
 
-        keyword_map: DefaultDict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
+        keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
         goodbye = get_greeting("goodbye", config.greeting, keyword_map)
         hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
@@ -480,7 +481,7 @@ def play_game(li: lichess.Lichess,
         disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
         prior_game = None
         board = chess.Board()
-        upd: Dict[str, Any] = game.state
+        upd: dict[str, Any] = game.state
         while not terminated:
             move_attempted = False
             try:
@@ -538,7 +539,7 @@ def play_game(li: lichess.Lichess,
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
 
 
-def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: DefaultDict[str, str]) -> str:
+def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict[str, str]) -> str:
     greeting_text: str = greeting_cfg.lookup(greeting)
     return greeting_text.format_map(keyword_map)
 
@@ -743,8 +744,8 @@ def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> N
             game_record.headers[header] = str(game_value)
 
 
-def get_headers(game: model.Game) -> Dict[str, Union[str, int]]:
-    headers: Dict[str, Union[str, int]] = {}
+def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
+    headers: dict[str, Union[str, int]] = {}
     headers["Event"] = game.pgn_event()
     headers["Site"] = game.short_url()
     headers["Date"] = game.game_start.strftime("%Y.%m.%d")
@@ -814,7 +815,7 @@ def start_lichess_bot() -> None:
 
 
 def check_python_version() -> None:
-    def version_numeric(version_str: str) -> List[int]:
+    def version_numeric(version_str: str) -> list[int]:
         return [int(n) for n in version_str.split(".")]
 
     python_deprecated_version = version_numeric(versioning_info["deprecated_python_version"])
@@ -822,7 +823,7 @@ def check_python_version() -> None:
     version_change_date = versioning_info["deprecation_date"]
     this_python_version = list(sys.version_info[0:2])
 
-    def version_str(version: List[int]) -> str:
+    def version_str(version: list[int]) -> str:
         return f"Python {'.'.join(str(n) for n in version)}"
 
     upgrade_request = (f"You are currently running {version_str(this_python_version)}. "

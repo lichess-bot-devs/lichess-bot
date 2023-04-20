@@ -3,12 +3,13 @@ import logging
 import model
 from timer import Timer
 from collections import defaultdict
+from collections.abc import Sequence
 import lichess
 import datetime
 from config import Configuration, FilterType
-from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Sequence
-USER_PROFILE_TYPE = Dict[str, Any]
-EVENT_TYPE = Dict[str, Any]
+from typing import Any, Optional
+USER_PROFILE_TYPE = dict[str, Any]
+EVENT_TYPE = dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
@@ -18,9 +19,9 @@ timestamp_format = "%Y-%m-%d %H:%M:%S\n"
 one_day_seconds = datetime.timedelta(days=1).total_seconds()
 
 
-def read_daily_challenges() -> List[Timer]:
+def read_daily_challenges() -> list[Timer]:
     try:
-        timers: List[Timer] = []
+        timers: list[Timer] = []
         with open(daily_challenges_file_name) as file:
             for line in file:
                 timers.append(Timer(one_day_seconds, datetime.datetime.strptime(line, timestamp_format)))
@@ -30,7 +31,7 @@ def read_daily_challenges() -> List[Timer]:
     return [timer for timer in timers if not timer.is_expired()]
 
 
-def write_daily_challenges(daily_challenges: List[Timer]) -> None:
+def write_daily_challenges(daily_challenges: list[Timer]) -> None:
     with open(daily_challenges_file_name, "w") as file:
         for timer in daily_challenges:
             file.write(timer.starting_timestamp().strftime(timestamp_format))
@@ -48,7 +49,7 @@ class Matchmaking:
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
         self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.daily_challenges: List[Timer] = read_daily_challenges()
+        self.daily_challenges: list[Timer] = read_daily_challenges()
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
         # game aspect is the one the challenged bot objects to and is one of:
@@ -56,7 +57,7 @@ class Matchmaking:
         #   - variant (standard, horde, etc.)
         #   - casual/rated
         #   - empty string (if no other reason is given or self.filter_type is COARSE)
-        self.challenge_type_acceptable: DefaultDict[Tuple[str, str], bool] = defaultdict(lambda: True)
+        self.challenge_type_acceptable: defaultdict[tuple[str, str], bool] = defaultdict(lambda: True)
         self.challenge_filter = self.matchmaking_cfg.challenge_filter
 
     def should_create_challenge(self) -> bool:
@@ -110,8 +111,8 @@ class Matchmaking:
         self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 
-    def perf(self) -> Dict[str, Dict[str, Any]]:
-        user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
+    def perf(self) -> dict[str, dict[str, Any]]:
+        user_perf: dict[str, dict[str, Any]] = self.user_profile["perfs"]
         return user_perf
 
     def username(self) -> str:
@@ -126,7 +127,7 @@ class Matchmaking:
             except Exception:
                 pass
 
-    def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
+    def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
@@ -188,11 +189,11 @@ class Matchmaking:
 
         return bot_username, base_time, increment, days, variant, mode
 
-    def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
+    def get_random_config_value(self, parameter: str, choices: list[str]) -> str:
         value: str = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 
@@ -237,7 +238,7 @@ class Matchmaking:
 
         # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
-        decline_details: Dict[str, str] = {"generic": "",
+        decline_details: dict[str, str] = {"generic": "",
                                            "later": "",
                                            "nobot": "",
                                            "toofast": challenge.speed,

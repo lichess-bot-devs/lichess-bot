@@ -54,7 +54,6 @@ class Matchmaking:
         self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes.
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
-        self.block_list = self.matchmaking_cfg.block_list.copy()
         self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
@@ -65,6 +64,9 @@ class Matchmaking:
         #   - empty string (if no other reason is given or self.filter_type is COARSE)
         self.challenge_type_acceptable: DefaultDict[Tuple[str, str], bool] = defaultdict(lambda: True)
         self.challenge_filter = self.matchmaking_cfg.challenge_filter
+
+        for name in self.matchmaking_cfg.block_list:
+            self.add_to_block_list(name)
 
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""
@@ -173,7 +175,7 @@ class Matchmaking:
         def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
-                    and bot["username"] not in self.block_list
+                    and not self.in_block_list(bot["username"])
                     and not bot.get("disabled")
                     and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
                     and perf.get("games", 0) > 0
@@ -183,8 +185,8 @@ class Matchmaking:
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
-            aspects = ["", variant, game_type, mode] if self.challenge_filter == FilterType.FINE else [""]
-            return all(self.challenge_type_acceptable[(bot["username"], aspect)] for aspect in aspects)
+            aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []
+            return all(self.should_accept_challenge(bot["username"], aspect) for aspect in aspects)
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
@@ -245,8 +247,32 @@ class Matchmaking:
 
     def add_to_block_list(self, username: str) -> None:
         """Add a bot to the blocklist."""
-        logger.info(f"Will not challenge {username} again during this session.")
-        self.block_list.append(username)
+        self.add_challenge_filter(username, "")
+
+    def in_block_list(self, username: str) -> bool:
+        """Check if an opponent is in the block list to prevent future challenges."""
+        return not self.should_accept_challenge(username, "")
+
+    def add_challenge_filter(self, username: str, game_aspect: str) -> None:
+        """
+        Prevent creating another challenge when an opponent has decline a challenge.
+
+        :param username: The name of the opponent.
+        :param game_aspect: The aspect of a game (time control, chess variant, etc.)
+        that caused the opponent to decline a challenge. If the parameter is empty,
+        that is equivalent to adding the opponent to the block list.
+        """
+        self.challenge_type_acceptable[(username, game_aspect)] = False
+
+    def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
+        """
+        Whether a bot is likely to accept a challenge to a game.
+
+        :param username: The name of the opponent.
+        :param game_aspect: A category of the challenge type (time control, chess variant, etc.) to test for acceptance.
+        If game_aspect is empty, this is equivalent to checking if the opponent is in the block list.
+        """
+        return self.challenge_type_acceptable[(username, game_aspect)]
 
     def accepted_challenge(self, event: EVENT_TYPE) -> None:
         """
@@ -289,7 +315,7 @@ class Matchmaking:
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
-        self.challenge_type_acceptable[(opponent.name, game_problem)] = False
+        self.add_challenge_filter(opponent.name, game_problem)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game.")
 
         self.show_earliest_challenge_time()

@@ -247,7 +247,6 @@ class Matchmaking:
 
     def add_to_block_list(self, username: str) -> None:
         """Add a bot to the blocklist."""
-        logger.info(f"Will not challenge {username} again during this session.")
         self.add_challenge_filter(username, "")
 
     def in_block_list(self, username: str) -> bool:

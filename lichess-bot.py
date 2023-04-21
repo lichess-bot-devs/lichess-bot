@@ -55,6 +55,7 @@ restart = True
 
 
 def disable_restart() -> None:
+    """Disable restarting lichess-bot when errors occur. Used during testing."""
     global restart
     restart = False
 

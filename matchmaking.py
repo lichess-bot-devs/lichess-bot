@@ -253,8 +253,8 @@ class Matchmaking:
     def in_block_list(self, username: str) -> bool:
         return not self.should_accept_challenge(username, "")
 
-    def add_challenge_filter(self, username: str, reason: str) -> None:
-        self.challenge_type_acceptable[(username, reason)] = False
+    def add_challenge_filter(self, username: str, game_aspect: str) -> None:
+        self.challenge_type_acceptable[(username, game_aspect)] = False
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
         return self.challenge_type_acceptable[(username, game_aspect)]

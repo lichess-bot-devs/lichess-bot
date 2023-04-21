@@ -1,3 +1,4 @@
+"""Automatically updates the lichess-bot version."""
 import yaml
 import datetime
 

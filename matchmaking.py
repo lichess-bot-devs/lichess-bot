@@ -251,12 +251,28 @@ class Matchmaking:
         self.add_challenge_filter(username, "")
 
     def in_block_list(self, username: str) -> bool:
+        """Check if an opponent is in the block list to prevent future challenges."""
         return not self.should_accept_challenge(username, "")
 
     def add_challenge_filter(self, username: str, game_aspect: str) -> None:
+        """
+        Prevent creating another challenge when an opponent has decline a challenge.
+
+        :param username: The name of the opponent.
+        :param game_aspect: The aspect of a game (time control, chess variant, etc.)
+        that caused the opponent to decline a challenge. If the parameter is empty,
+        that is equivalent to adding the opponent to the block list.
+        """
         self.challenge_type_acceptable[(username, game_aspect)] = False
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
+        """
+        Whether a bot is likely to accept a challenge to a game.
+
+        :param username: The name of the opponent.
+        :param game_aspect: A category of the challenge type (time control, chess variant, etc.) to test for acceptance.
+        If game_aspect is empty, this is equivalent to checking if the opponent is in the block list.
+        """
         return self.challenge_type_acceptable[(username, game_aspect)]
 
     def accepted_challenge(self, event: EVENT_TYPE) -> None:

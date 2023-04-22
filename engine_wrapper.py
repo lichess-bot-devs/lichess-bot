@@ -207,55 +207,6 @@ class EngineWrapper:
         else:
             li.make_move(game.id, best_move)
 
-    def search_for(self, board: chess.Board, movetime: int, ponder: bool, draw_offered: bool,
-                   root_moves: MOVE) -> chess.engine.PlayResult:
-        """
-        Tell the engine to search for `movetime` time.
-
-        :param board: The current position.
-        :param movetime: The time to search for.
-        :param ponder: Whether the engine can ponder.
-        :param draw_offered: Whether the bot was offered a draw.
-        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
-        :return: The move to play.
-        """
-        return self.search(board, chess.engine.Limit(time=movetime / 1000), ponder, draw_offered, root_moves)
-
-    def first_search(self, board: chess.Board, movetime: int, draw_offered: bool,
-                     root_moves: MOVE) -> chess.engine.PlayResult:
-        """
-        Tell the engine to search for the first move in the game.
-
-        :param board: The current position.
-        :param movetime: The time to search for.
-        :param draw_offered: Whether the bot was offered a draw.
-        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
-        :return: The move to play.
-        """
-        # No pondering after the first move since a different clock is used afterwards.
-        return self.search_for(board, movetime, False, draw_offered, root_moves)
-
-    def search_with_ponder(self, board: chess.Board, wtime: int, btime: int, winc: int, binc: int, ponder: bool,
-                           draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
-        """
-        Get the move to play by the engine.
-
-        :param board: The current position.
-        :param wtime: The time white has.
-        :param btime: The time black has.
-        :param winc: The increment white has. `winc` is equal to `binc`.
-        :param binc: The increment black has. `winc` is equal to `binc`.
-        :param ponder: Whether the engine can ponder.
-        :param draw_offered: Whether the bot was offered a draw.
-        :param root_moves: If it is a list, the engine will only play a move that is in `root_moves`.
-        :return: The move to play.
-        """
-        time_limit = chess.engine.Limit(white_clock=wtime / 1000,
-                                        black_clock=btime / 1000,
-                                        white_inc=winc / 1000,
-                                        black_inc=binc / 1000)
-        return self.search(board, time_limit, ponder, draw_offered, root_moves)
-
     def add_go_commands(self, time_limit: chess.engine.Limit) -> chess.engine.Limit:
         """Add extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10."""
         movetime = self.go_commands.movetime
@@ -698,7 +649,7 @@ def choose_move_time(engine: EngineWrapper, board: chess.Board, game: model.Game
     clock_time = max(0, game.state[f"{wb}time"] - overhead)
     search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {search_time} for game {game.id}")
-    return engine.search_for(board, search_time, ponder, draw_offered, root_moves)
+    return engine.search(board, chess.engine.Limit(time=search_time / 1000), ponder, draw_offered, root_moves)
 
 
 def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Game,
@@ -716,7 +667,9 @@ def choose_first_move(engine: EngineWrapper, board: chess.Board, game: model.Gam
     # Need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time} for game {game.id}")
-    return engine.first_search(board, search_time, draw_offered, root_moves)
+
+    # No pondering after the first move since a different clock is used afterwards.
+    return engine.search(board, chess.engine.Limit(time=search_time / 1000), False, draw_offered, root_moves)
 
 
 def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, ponder: bool, draw_offered: bool,
@@ -739,14 +692,11 @@ def choose_move(engine: EngineWrapper, board: chess.Board, game: model.Game, pon
     wb = "w" if board.turn == chess.WHITE else "b"
     game.state[f"{wb}time"] = max(0, game.state[f"{wb}time"] - overhead)
     logger.info("Searching for wtime {wtime} btime {btime}".format_map(game.state) + f" for game {game.id}")
-    return engine.search_with_ponder(board,
-                                     game.state["wtime"],
-                                     game.state["btime"],
-                                     game.state["winc"],
-                                     game.state["binc"],
-                                     ponder,
-                                     draw_offered,
-                                     root_moves)
+    time_limit = chess.engine.Limit(white_clock=game.state["wtime"] / 1000,
+                                    black_clock=game.state["btime"] / 1000,
+                                    white_inc=game.state["winc"] / 1000,
+                                    black_inc=game.state["binc"] / 1000)
+    return engine.search(board, time_limit, ponder, draw_offered, root_moves)
 
 
 def check_for_draw_offer(game: model.Game) -> bool:

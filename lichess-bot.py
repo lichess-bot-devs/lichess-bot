@@ -334,7 +334,8 @@ def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
         return {}
 
     if "type" not in event:
-        log_bad_event(event)
+        logger.warning("Unable to handle response from lichess.org:")
+        logger.warning(event)
         control_queue.task_done()  # type: ignore[attr-defined]
         return {}
 
@@ -497,14 +498,6 @@ def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MU
             recent_bot_challenges[chlng.challenger.name].append(Timer(time_window))
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
-
-
-def log_bad_event(event: EVENT_TYPE) -> None:
-    """Log a bad event."""
-    logger.warning("Unable to handle response from lichess.org:")
-    logger.warning(event)
-    if event.get("error") == "Missing scope":
-        logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)  # type: ignore[arg-type]

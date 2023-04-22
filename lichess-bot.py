@@ -765,6 +765,7 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
         draw_results = [(board.is_fifty_moves(), "Game drawn by 50-move rule."),
                         (board.is_repetition(), "Game drawn by threefold repetition."),
                         (board.is_insufficient_material(), "Game drawn from insufficient material."),
+                        (board.is_stalemate(), "Game drawn by stalemate."),
                         (True, "Game drawn by agreement.")]
         messages = [draw_message for is_result, draw_message in draw_results if is_result]
         logger.info(messages[0])

@@ -262,7 +262,6 @@ class EngineWrapper:
         :return: The move to play.
         """
         time_limit = self.add_go_commands(time_limit)
-        result: chess.engine.PlayResult
         result = self.engine.play(board,
                                   time_limit,
                                   info=chess.engine.INFO_ALL,

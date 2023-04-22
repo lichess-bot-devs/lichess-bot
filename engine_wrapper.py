@@ -76,33 +76,6 @@ def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
-def translate_termination(game: model.Game, board: chess.Board) -> str:
-    """Get a human-readable string with the result of the game."""
-    winner_color = game.state.get("winner", "")
-    termination: Optional[str] = game.state.get("status")
-
-    if termination == model.Termination.MATE:
-        return f"{winner_color.title()} mates"
-    elif termination == model.Termination.TIMEOUT:
-        return "Time forfeiture" if winner_color else "Timeout with insufficient material"
-    elif termination == model.Termination.RESIGN:
-        resigner = "black" if winner_color == "white" else "white"
-        return f"{resigner.title()} resigns"
-    elif termination == model.Termination.ABORT:
-        return "Game aborted"
-    elif termination == model.Termination.DRAW:
-        if board.is_fifty_moves():
-            return "50-move rule"
-        elif board.is_repetition():
-            return "Threefold repetition"
-        else:
-            return "Draw by agreement"
-    elif termination:
-        return termination
-    else:
-        return ""
-
-
 PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
 
 

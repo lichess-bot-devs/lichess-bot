@@ -766,6 +766,8 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
             logger.info("Game drawn by 50-move rule.")
         elif board.is_repetition():
             logger.info("Game drawn by threefold repetition.")
+        elif board.is_insufficient_material():
+            logger.info("Game drawn from insufficient material.")
         else:
             logger.info("Game drawn by agreement.")
     elif termination == model.Termination.TIMEOUT:

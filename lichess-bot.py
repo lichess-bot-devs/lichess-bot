@@ -762,14 +762,12 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
     if termination in simple_endings:
         logger.info(simple_endings[termination])
     elif termination == model.Termination.DRAW:
-        if board.is_fifty_moves():
-            logger.info("Game drawn by 50-move rule.")
-        elif board.is_repetition():
-            logger.info("Game drawn by threefold repetition.")
-        elif board.is_insufficient_material():
-            logger.info("Game drawn from insufficient material.")
-        else:
-            logger.info("Game drawn by agreement.")
+        draw_results = [(board.is_fifty_moves(), "Game drawn by 50-move rule."),
+                        (board.is_repetition(), "Game drawn by threefold repetition."),
+                        (board.is_insufficient_material(), "Game drawn from insufficient material."),
+                        (True, "Game drawn by agreement.")]
+        messages = [draw_message for is_result, draw_message in draw_results if is_result]
+        logger.info(messages[0])
     elif termination == model.Termination.TIMEOUT:
         if winner:
             logger.info(f"{losing_name} forfeited on time.")

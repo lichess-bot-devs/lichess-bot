@@ -751,7 +751,7 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
     if winner is not None:
         logger.info(f"{winning_name} won!")
     elif termination in [model.Termination.DRAW, model.Termination.TIMEOUT]:
-        logger.info("Game ended in draw.")
+        logger.info("Game ended in a draw.")
     else:
         logger.info("Game adjourned.")
 

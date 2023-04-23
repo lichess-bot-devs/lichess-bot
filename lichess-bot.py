@@ -334,7 +334,8 @@ def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
         return {}
 
     if "type" not in event:
-        log_bad_event(event)
+        logger.warning("Unable to handle response from lichess.org:")
+        logger.warning(event)
         control_queue.task_done()  # type: ignore[attr-defined]
         return {}
 
@@ -497,14 +498,6 @@ def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MU
             recent_bot_challenges[chlng.challenger.name].append(Timer(time_window))
     elif chlng.id != matchmaker.challenge_id:
         li.decline_challenge(chlng.id, reason=decline_reason)
-
-
-def log_bad_event(event: EVENT_TYPE) -> None:
-    """Log a bad event."""
-    logger.warning("Unable to handle response from lichess.org:")
-    logger.warning(event)
-    if event.get("error") == "Missing scope":
-        logger.warning('Please check that the API access token for your bot has the scope "Play games with the bot API".')
 
 
 @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final)  # type: ignore[arg-type]
@@ -750,7 +743,7 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
     if winner is not None:
         logger.info(f"{winning_name} won!")
     elif termination in [model.Termination.DRAW, model.Termination.TIMEOUT]:
-        logger.info("Game ended in draw.")
+        logger.info("Game ended in a draw.")
     else:
         logger.info("Game adjourned.")
 
@@ -761,12 +754,13 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
     if termination in simple_endings:
         logger.info(simple_endings[termination])
     elif termination == model.Termination.DRAW:
-        if board.is_fifty_moves():
-            logger.info("Game drawn by 50-move rule.")
-        elif board.is_repetition():
-            logger.info("Game drawn by threefold repetition.")
-        else:
-            logger.info("Game drawn by agreement.")
+        draw_results = [(board.is_fifty_moves(), "Game drawn by 50-move rule."),
+                        (board.is_repetition(), "Game drawn by threefold repetition."),
+                        (board.is_insufficient_material(), "Game drawn from insufficient material."),
+                        (board.is_stalemate(), "Game drawn by stalemate."),
+                        (True, "Game drawn by agreement.")]
+        messages = [draw_message for is_result, draw_message in draw_results if is_result]
+        logger.info(messages[0])
     elif termination == model.Termination.TIMEOUT:
         if winner:
             logger.info(f"{losing_name} forfeited on time.")

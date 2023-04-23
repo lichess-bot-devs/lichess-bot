@@ -30,7 +30,8 @@ ENDPOINTS = {
     "challenge": "/api/challenge/{}",
     "cancel": "/api/challenge/{}/cancel",
     "status": "/api/users/status",
-    "public_data": "/api/user/{}"
+    "public_data": "/api/user/{}",
+    "token_test": "/api/token/test"
 }
 
 
@@ -81,6 +82,19 @@ class Lichess:
         self.logging_level = logging_level
         self.max_retries = max_retries
         self.rate_limit_timers: defaultdict[str, Timer] = defaultdict(Timer)
+
+        # Confirm that the OAuth token has the proper permission to play on lichess
+        token_info = self.api_post("token_test", data=token)[token]
+
+        if not token_info:
+            raise RuntimeError("Token in config file is not recognized by lichess. "
+                               "Please check that it was copied correctly into your configuration file.")
+
+        scopes = token_info["scopes"].split(",")
+        if "bot:play" not in scopes:
+            raise RuntimeError("Please use an API access token for your bot that "
+                               'has the scope "Play games with the bot API (bot:play)". '
+                               f"The current token has: {scopes}.")
 
     @backoff.on_exception(backoff.constant,
                           (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),

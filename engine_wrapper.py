@@ -97,6 +97,8 @@ def translate_termination(game: model.Game, board: chess.Board) -> str:
             return "50-move rule"
         elif board.is_repetition():
             return "Threefold repetition"
+        elif board.is_insufficient_material():
+            return "Insufficient material"
         else:
             return "Draw by agreement"
     elif termination:

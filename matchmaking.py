@@ -1,50 +1,88 @@
+"""Challenge other bots."""
 import random
 import logging
 import model
 from timer import Timer
 from collections import defaultdict
 import lichess
-from config import Configuration, DelayType
-from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict, Union
+import datetime
+from config import Configuration, FilterType
+from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
 USER_PROFILE_TYPE = Dict[str, Any]
 EVENT_TYPE = Dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
+DAILY_TIMERS_TYPE = List[Timer]
 
 logger = logging.getLogger(__name__)
 
+daily_challenges_file_name = "daily_challenge_times.txt"
+timestamp_format = "%Y-%m-%d %H:%M:%S\n"
+one_day_seconds = datetime.timedelta(days=1).total_seconds()
+
+
+def read_daily_challenges() -> DAILY_TIMERS_TYPE:
+    """Read the challenges we have created in the past 24 hours from a text file."""
+    timers: DAILY_TIMERS_TYPE = []
+    try:
+        with open(daily_challenges_file_name) as file:
+            for line in file:
+                timers.append(Timer(one_day_seconds, datetime.datetime.strptime(line, timestamp_format)))
+    except FileNotFoundError:
+        pass
+
+    return [timer for timer in timers if not timer.is_expired()]
+
+
+def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
+    """Write the challenges we have created in the past 24 hours to a text file."""
+    with open(daily_challenges_file_name, "w") as file:
+        for timer in daily_challenges:
+            file.write(timer.starting_timestamp().strftime(timestamp_format))
+
 
 class Matchmaking:
+    """Challenge other bots."""
+
     def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
+        """Initialize values needed for matchmaking."""
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
         self.matchmaking_cfg = config.matchmaking
         self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
         self.last_game_ended_delay = Timer(self.matchmaking_cfg.challenge_timeout * 60)
-        self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes
+        self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes.
         self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
         self.challenge_id: str = ""
-        self.block_list = self.matchmaking_cfg.block_list.copy()
-        self.delay_timers: DefaultDict[Union[str, Tuple[str, str, str, str]], Timer] = defaultdict(Timer)
-        delay_option = "delay_after_decline"
-        self.delay_type = self.matchmaking_cfg.lookup(delay_option)
-        if self.delay_type not in DelayType.__members__.values():
-            raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
-                             f" Choices are: {', '.join(DelayType)}.")
+        self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
+
+        # (opponent name, game aspect) --> other bot is likely to accept challenge
+        # game aspect is the one the challenged bot objects to and is one of:
+        #   - game speed (bullet, blitz, etc.)
+        #   - variant (standard, horde, etc.)
+        #   - casual/rated
+        #   - empty string (if no other reason is given or self.filter_type is COARSE)
+        self.challenge_type_acceptable: DefaultDict[Tuple[str, str], bool] = defaultdict(lambda: True)
+        self.challenge_filter = self.matchmaking_cfg.challenge_filter
+
+        for name in self.matchmaking_cfg.block_list:
+            self.add_to_block_list(name)
 
     def should_create_challenge(self) -> bool:
+        """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         time_has_passed = self.last_game_ended_delay.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
             self.li.cancel(self.challenge_id)
-            logger.debug(f"Challenge id {self.challenge_id} cancelled.")
+            logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.challenge_id = ""
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
+        """Create a challenge."""
         params = {"rated": mode == "rated", "variant": variant}
 
         if days:
@@ -58,25 +96,47 @@ class Matchmaking:
             return ""
 
         try:
+            self.update_daily_challenge_record()
+            self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
             challenge_id: str = response.get("challenge", {}).get("id", "")
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)
             return challenge_id
-        except Exception:
-            logger.exception("Could not create challenge")
+        except Exception as e:
+            logger.warning("Could not create challenge")
+            logger.debug(e, exc_info=e)
+            self.show_earliest_challenge_time()
             return ""
 
+    def update_daily_challenge_record(self) -> None:
+        """
+        Record timestamp of latest challenge and update minimum wait time.
+
+        As the number of challenges in a day increase, the minimum wait time between challenges increases.
+        0   -  49 challenges --> 1 minute
+        50  -  99 challenges --> 2 minutes
+        100 - 149 challenges --> 3 minutes
+        etc.
+        """
+        self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
+        self.daily_challenges.append(Timer(one_day_seconds))
+        self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
+        write_daily_challenges(self.daily_challenges)
+
     def perf(self) -> Dict[str, Dict[str, Any]]:
+        """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""
         user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
         return user_perf
 
     def username(self) -> str:
+        """Our username."""
         username: str = self.user_profile["username"]
         return username
 
     def update_user_profile(self) -> None:
+        """Update our user profile data, to get our latest rating."""
         if self.last_user_profile_update_time.is_expired():
             self.last_user_profile_update_time.reset()
             try:
@@ -85,6 +145,7 @@ class Matchmaking:
                 pass
 
     def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
+        """Choose an opponent."""
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
 
@@ -114,9 +175,9 @@ class Matchmaking:
         def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
-                    and bot["username"] not in self.block_list
+                    and not self.in_block_list(bot["username"])
                     and not bot.get("disabled")
-                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service
+                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 
@@ -124,7 +185,8 @@ class Matchmaking:
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
-            return self.get_delay_timer(bot["username"], variant, game_type, mode).is_expired()
+            aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []
+            return all(self.should_accept_challenge(bot["username"], aspect) for aspect in aspects)
 
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
@@ -146,10 +208,17 @@ class Matchmaking:
         return bot_username, base_time, increment, days, variant, mode
 
     def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
+        """Choose a random value from `choices` if the parameter value in the config is `random`."""
         value: str = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+        """
+        Challenge an opponent.
+
+        :param active_games: The games that the bot is playing.
+        :param challenge_queue: The queue containing the challenges.
+        """
         if active_games or challenge_queue or not self.should_create_challenge():
             return
 
@@ -159,50 +228,109 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
         logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")
-        self.last_challenge_created_delay.reset()
         self.challenge_id = challenge_id
 
+    def game_done(self) -> None:
+        """Reset the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
+        self.last_game_ended_delay.reset()
+        self.show_earliest_challenge_time()
+
+    def show_earliest_challenge_time(self) -> None:
+        """Show the earliest that the next challenge will be created."""
+        postgame_timeout = self.last_game_ended_delay.time_until_expiration()
+        time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
+        time_left = max(postgame_timeout, time_to_next_challenge)
+        earliest_challenge_time = datetime.datetime.now() + datetime.timedelta(seconds=time_left)
+        challenges = "challenge" + ("" if len(self.daily_challenges) == 1 else "s")
+        logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')} "
+                    f"({len(self.daily_challenges)} {challenges} in last 24 hours)")
+
     def add_to_block_list(self, username: str) -> None:
-        logger.info(f"Will not challenge {username} again during this session.")
-        self.block_list.append(username)
+        """Add a bot to the blocklist."""
+        self.add_challenge_filter(username, "")
+
+    def in_block_list(self, username: str) -> bool:
+        """Check if an opponent is in the block list to prevent future challenges."""
+        return not self.should_accept_challenge(username, "")
+
+    def add_challenge_filter(self, username: str, game_aspect: str) -> None:
+        """
+        Prevent creating another challenge when an opponent has decline a challenge.
+
+        :param username: The name of the opponent.
+        :param game_aspect: The aspect of a game (time control, chess variant, etc.)
+        that caused the opponent to decline a challenge. If the parameter is empty,
+        that is equivalent to adding the opponent to the block list.
+        """
+        self.challenge_type_acceptable[(username, game_aspect)] = False
+
+    def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
+        """
+        Whether a bot is likely to accept a challenge to a game.
+
+        :param username: The name of the opponent.
+        :param game_aspect: A category of the challenge type (time control, chess variant, etc.) to test for acceptance.
+        If game_aspect is empty, this is equivalent to checking if the opponent is in the block list.
+        """
+        return self.challenge_type_acceptable[(username, game_aspect)]
 
     def accepted_challenge(self, event: EVENT_TYPE) -> None:
+        """
+        Set the challenge id to an empty string, if the challenge was accepted.
+
+        Otherwise, we would attempt to cancel the challenge later.
+        """
         if self.challenge_id == event["game"]["id"]:
             self.challenge_id = ""
 
     def declined_challenge(self, event: EVENT_TYPE) -> None:
+        """
+        Handle a challenge that was declined by the opponent.
+
+        Depends on whether `FilterType` is `NONE`, `COARSE`, or `FINE`.
+        """
         challenge = model.Challenge(event["challenge"], self.user_profile)
         opponent = challenge.opponent
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
         if self.challenge_id == challenge.id:
             self.challenge_id = ""
-        if not challenge.from_self or self.delay_type == DelayType.NONE:
+        if not challenge.from_self or self.challenge_filter == FilterType.NONE:
             return
 
         # Add one hour to delay each time a challenge is declined.
         mode = "rated" if challenge.rated else "casual"
-        delay_timer = self.get_delay_timer(opponent.name,
-                                           challenge.variant,
-                                           challenge.speed,
-                                           mode)
-        delay_timer.duration += 3600
-        delay_timer.reset()
-        hours = "hours" if delay_timer.duration > 3600 else "hour"
-        if self.delay_type == DelayType.FINE:
-            logger.info(f"Will not challenge {opponent} to a {mode} {challenge.speed} "
-                        f"{challenge.variant} game for {int(delay_timer.duration/3600)} {hours}.")
-        else:
-            logger.info(f"Will not challenge {opponent} for {int(delay_timer.duration/3600)} {hours}.")
+        decline_details: Dict[str, str] = {"generic": "",
+                                           "later": "",
+                                           "nobot": "",
+                                           "toofast": challenge.speed,
+                                           "tooslow": challenge.speed,
+                                           "timecontrol": challenge.speed,
+                                           "rated": mode,
+                                           "casual": mode,
+                                           "standard": challenge.variant,
+                                           "variant": challenge.variant}
 
-    def get_delay_timer(self, opponent_name: str, variant: str, time_control: str, rated_mode: str) -> Timer:
-        if self.delay_type == DelayType.FINE:
-            return self.delay_timers[(opponent_name, variant, time_control, rated_mode)]
-        else:
-            return self.delay_timers[opponent_name]
+        reason_key = event["challenge"]["declineReasonKey"].lower()
+        if reason_key not in decline_details:
+            logger.warning(f"Unknown decline reason received: {reason_key}")
+        game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
+        self.add_challenge_filter(opponent.name, game_problem)
+        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game.")
+
+        self.show_earliest_challenge_time()
 
 
 def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
+    """
+    Get the game type (e.g. bullet, atomic, classical). Lichess has one rating for every variant regardless of time control.
+
+    :param variant: The game's variant.
+    :param base_time: The base time in seconds.
+    :param increment: The increment in seconds.
+    :param days: If the game is correspondence, we have some days to play the move.
+    :return: The game category.
+    """
     game_duration = base_time + increment * 40
     if variant != "standard":
         return variant

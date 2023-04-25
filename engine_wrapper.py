@@ -5,6 +5,7 @@ import chess.engine
 import chess.polyglot
 import chess.syzygy
 import chess.gaviota
+import chess
 import subprocess
 import logging
 import time
@@ -436,6 +437,35 @@ class EngineWrapper:
     def ping(self) -> None:
         """Ping the engine."""
         self.engine.ping()
+
+    def send_game_result(self, game: model.Game, board: chess.Board) -> None:
+        """
+        Inform engine of the game ending.
+
+        :param game: The final game state from lichess.
+        :param board: The final board state.
+        """
+        termination = game.state.get("status")
+        winner = game.state.get("winner")
+        winning_color = chess.WHITE if winner == "white" else chess.BLACK
+
+        if termination == model.Termination.MATE:
+            self.engine.send_game_result(board)
+        elif termination == model.Termination.RESIGN:
+            resigner = "White" if winner == "black" else "Black"
+            self.engine.send_game_result(board, winning_color, f"{resigner} resigned")
+        elif termination == model.Termination.ABORT:
+            self.engine.send_game_result(board, None, "Game aborted", False)
+        elif termination == model.Termination.DRAW:
+            draw_reason = None if board.is_game_over(claim_draw=True) else "Draw by agreement"
+            self.engine.send_game_result(board, None, draw_reason)
+        elif termination == model.Termination.TIMEOUT:
+            if winner:
+                self.engine.send_game_result(board, winning_color, "Time forfeiture")
+            else:
+                self.engine.send_game_result(board, None, "Time out with insufficient material")
+        else:
+            self.engine.send_game_result(board, None, termination)
 
     def quit(self) -> None:
         """Close the engine."""

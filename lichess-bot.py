@@ -592,6 +592,7 @@ def play_game(li: lichess.Lichess,
                         time.sleep(delay_seconds)
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
+                        engine.send_game_result(game, board)
                         conversation.send_message("player", goodbye)
                         conversation.send_message("spectator", goodbye_spectators)
 

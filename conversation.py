@@ -4,8 +4,8 @@ import logging
 import model
 from engine_wrapper import EngineWrapper
 from lichess import Lichess
-from typing import Dict, List
-MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
+from collections.abc import Sequence
+MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class Conversation:
 class ChatLine:
     """Information about the message."""
 
-    def __init__(self, message_info: Dict[str, str]) -> None:
+    def __init__(self, message_info: dict[str, str]) -> None:
         """Information about the message."""
         self.room = message_info["room"]
         """Whether the message was sent in the chat room or in the spectator room."""

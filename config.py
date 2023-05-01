@@ -6,8 +6,8 @@ import logging
 import math
 from abc import ABCMeta
 from enum import Enum
-from typing import Dict, Any
-CONFIG_DICT_TYPE = Dict[str, Any]
+from typing import Any
+CONFIG_DICT_TYPE = dict[str, Any]
 
 logger = logging.getLogger(__name__)
 

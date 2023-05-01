@@ -4,14 +4,15 @@ import logging
 import model
 from timer import Timer
 from collections import defaultdict
+from collections.abc import Sequence
 import lichess
 import datetime
 from config import Configuration, FilterType
-from typing import Dict, Any, Set, Optional, Tuple, List, DefaultDict
-USER_PROFILE_TYPE = Dict[str, Any]
-EVENT_TYPE = Dict[str, Any]
-MULTIPROCESSING_LIST_TYPE = List[model.Challenge]
-DAILY_TIMERS_TYPE = List[Timer]
+from typing import Any, Optional
+USER_PROFILE_TYPE = dict[str, Any]
+EVENT_TYPE = dict[str, Any]
+MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
+DAILY_TIMERS_TYPE = list[Timer]
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class Matchmaking:
         #   - variant (standard, horde, etc.)
         #   - casual/rated
         #   - empty string (if no other reason is given or self.filter_type is COARSE)
-        self.challenge_type_acceptable: DefaultDict[Tuple[str, str], bool] = defaultdict(lambda: True)
+        self.challenge_type_acceptable: defaultdict[tuple[str, str], bool] = defaultdict(lambda: True)
         self.challenge_filter = self.matchmaking_cfg.challenge_filter
 
         for name in self.matchmaking_cfg.block_list:
@@ -127,9 +128,9 @@ class Matchmaking:
         self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 
-    def perf(self) -> Dict[str, Dict[str, Any]]:
+    def perf(self) -> dict[str, dict[str, Any]]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""
-        user_perf: Dict[str, Dict[str, Any]] = self.user_profile["perfs"]
+        user_perf: dict[str, dict[str, Any]] = self.user_profile["perfs"]
         return user_perf
 
     def username(self) -> str:
@@ -146,7 +147,7 @@ class Matchmaking:
             except Exception:
                 pass
 
-    def choose_opponent(self) -> Tuple[Optional[str], int, int, int, str, str]:
+    def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         """Choose an opponent."""
         variant = self.get_random_config_value("challenge_variant", self.variants)
         mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
@@ -209,12 +210,12 @@ class Matchmaking:
 
         return bot_username, base_time, increment, days, variant, mode
 
-    def get_random_config_value(self, parameter: str, choices: List[str]) -> str:
+    def get_random_config_value(self, parameter: str, choices: list[str]) -> str:
         """Choose a random value from `choices` if the parameter value in the config is `random`."""
         value: str = self.matchmaking_cfg.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: Set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         """
         Challenge an opponent.
 
@@ -301,7 +302,7 @@ class Matchmaking:
             return
 
         mode = "rated" if challenge.rated else "casual"
-        decline_details: Dict[str, str] = {"generic": "",
+        decline_details: dict[str, str] = {"generic": "",
                                            "later": "",
                                            "nobot": "",
                                            "toofast": challenge.speed,

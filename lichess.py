@@ -8,10 +8,10 @@ import backoff
 import logging
 from collections import defaultdict
 from timer import Timer
-from typing import Optional, Dict, Union, Any, List, DefaultDict
+from typing import Optional, Union, Any
 import chess.engine
-JSON_REPLY_TYPE = Dict[str, Any]
-REQUESTS_PAYLOAD_TYPE = Dict[str, Any]
+JSON_REPLY_TYPE = dict[str, Any]
+REQUESTS_PAYLOAD_TYPE = dict[str, Any]
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -81,7 +81,7 @@ class Lichess:
         self.set_user_agent("?")
         self.logging_level = logging_level
         self.max_retries = max_retries
-        self.rate_limit_timers: DefaultDict[str, Timer] = defaultdict(Timer)
+        self.rate_limit_timers: defaultdict[str, Timer] = defaultdict(Timer)
 
         # Confirm that the OAuth token has the proper permission to play on lichess
         token_info = self.api_post("token_test", data=token)[token]
@@ -104,7 +104,7 @@ class Lichess:
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
     def api_get(self, endpoint_name: str, *template_args: str,
-                params: Optional[Dict[str, str]] = None) -> requests.Response:
+                params: Optional[dict[str, str]] = None) -> requests.Response:
         """
         Send a GET to lichess.org.
 
@@ -127,7 +127,7 @@ class Lichess:
         return response
 
     def api_get_json(self, endpoint_name: str, *template_args: str,
-                     params: Optional[Dict[str, str]] = None) -> JSON_REPLY_TYPE:
+                     params: Optional[dict[str, str]] = None) -> JSON_REPLY_TYPE:
         """
         Send a GET to the lichess.org endpoints that return a JSON.
 
@@ -141,7 +141,7 @@ class Lichess:
         return json_response
 
     def api_get_list(self, endpoint_name: str, *template_args: str,
-                     params: Optional[Dict[str, str]] = None) -> List[JSON_REPLY_TYPE]:
+                     params: Optional[dict[str, str]] = None) -> list[JSON_REPLY_TYPE]:
         """
         Send a GET to the lichess.org endpoints that return a list containing JSON.
 
@@ -151,11 +151,11 @@ class Lichess:
         :return: lichess.org's response in a list of dicts.
         """
         response = self.api_get(endpoint_name, *template_args, params=params)
-        json_response: List[JSON_REPLY_TYPE] = response.json()
+        json_response: list[JSON_REPLY_TYPE] = response.json()
         return json_response
 
     def api_get_raw(self, endpoint_name: str, *template_args: str,
-                    params: Optional[Dict[str, str]] = None, ) -> str:
+                    params: Optional[dict[str, str]] = None, ) -> str:
         """
         Send a GET to lichess.org that returns plain text (UTF-8).
 
@@ -177,9 +177,9 @@ class Lichess:
     def api_post(self,
                  endpoint_name: str,
                  *template_args: Any,
-                 data: Union[str, Dict[str, str], None] = None,
-                 headers: Optional[Dict[str, str]] = None,
-                 params: Optional[Dict[str, str]] = None,
+                 data: Union[str, dict[str, str], None] = None,
+                 headers: Optional[dict[str, str]] = None,
+                 params: Optional[dict[str, str]] = None,
                  payload: Optional[REQUESTS_PAYLOAD_TYPE] = None,
                  raise_for_status: bool = True) -> JSON_REPLY_TYPE:
         """
@@ -305,9 +305,9 @@ class Lichess:
         self.set_user_agent(profile["username"])
         return profile
 
-    def get_ongoing_games(self) -> List[Dict[str, Any]]:
+    def get_ongoing_games(self) -> list[dict[str, Any]]:
         """Get the bot's ongoing games."""
-        ongoing_games: List[Dict[str, Any]] = []
+        ongoing_games: list[dict[str, Any]] = []
         try:
             ongoing_games = self.api_get_json("playing")["nowPlaying"]
         except Exception:
@@ -330,7 +330,7 @@ class Lichess:
         except Exception:
             return ""
 
-    def get_online_bots(self) -> List[Dict[str, Any]]:
+    def get_online_bots(self) -> list[dict[str, Any]]:
         """Get a list of bots that are online."""
         try:
             online_bots_str = self.api_get_raw("online_bots")
@@ -347,7 +347,7 @@ class Lichess:
         """Cancel a challenge."""
         return self.api_post("cancel", challenge_id, raise_for_status=False)
 
-    def online_book_get(self, path: str, params: Optional[Dict[str, Any]] = None) -> JSON_REPLY_TYPE:
+    def online_book_get(self, path: str, params: Optional[dict[str, Any]] = None) -> JSON_REPLY_TYPE:
         """Get an external move from online sources (chessdb or lichess.org)."""
         @backoff.on_exception(backoff.constant,
                               (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),

@@ -6,7 +6,8 @@ import datetime
 from enum import Enum
 from timer import Timer
 from config import Configuration
-from typing import Dict, Any, Tuple, List, DefaultDict
+from typing import Any
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Challenge:
     """Store information about a challenge."""
 
-    def __init__(self, challenge_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
+    def __init__(self, challenge_info: dict[str, Any], user_profile: dict[str, Any]) -> None:
         """:param user_profile: Information about our bot."""
         self.id = challenge_info["id"]
         self.rated = challenge_info["rated"]
@@ -60,7 +61,7 @@ class Challenge:
         """Check whether the mode is supported."""
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
+    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]]) -> bool:
         """Check whether we have played a lot of games with this opponent recently. Only used when the oppoennt is a BOT."""
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
@@ -82,7 +83,7 @@ class Challenge:
         return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
-                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, str]:
+                     recent_bot_challenges: defaultdict[str, list[Timer]]) -> tuple[bool, str]:
         """Whether the challenge is supported."""
         try:
             if self.from_self:
@@ -136,7 +137,7 @@ class Termination(str, Enum):
 class Game:
     """Store information about a game."""
 
-    def __init__(self, game_info: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
+    def __init__(self, game_info: dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
         self.id: str = game_info["id"]
@@ -151,7 +152,7 @@ class Game:
         self.white = Player(game_info["white"])
         self.black = Player(game_info["black"])
         self.initial_fen = game_info.get("initialFen")
-        self.state: Dict[str, Any] = game_info["state"]
+        self.state: dict[str, Any] = game_info["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
@@ -253,7 +254,7 @@ class Game:
 class Player:
     """Store information about a player."""
 
-    def __init__(self, player_info: Dict[str, Any]) -> None:
+    def __init__(self, player_info: dict[str, Any]) -> None:
         """:param player_info: Contains information about a player."""
         self.name: str = player_info.get("name", "")
         self.title = player_info.get("title")

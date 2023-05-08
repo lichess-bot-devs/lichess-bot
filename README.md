@@ -12,7 +12,7 @@ A bridge between [Lichess Bot API](https://lichess.org/api#tag/Bot) and bots.
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
 - Install pip: `apt install python3-pip`.
   - In non-Ubuntu distros, replace `apt` with the correct package manager (`pacman` in Arch, `dnf` in Fedora, `brew` in Mac, etc.), package name, and installation command.
-- Install virtualenv: `pip install virtualenv`.
+- Install virtualenv: `apt install python3-virtualenv`.
 - Setup virtualenv: `apt install python3-venv`.
 ```
 python3 -m venv venv # If this fails you probably need to add Python3 to your PATH.

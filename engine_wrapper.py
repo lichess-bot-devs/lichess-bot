@@ -40,7 +40,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
     :return: An engine. Either UCI, XBoard, or Homemade.
     """
     cfg = engine_config.engine
-    engine_path = os.path.join(cfg.dir, cfg.name)
+    engine_path = os.path.abspath(os.path.join(cfg.dir, cfg.name))
     engine_type = cfg.protocol
     commands = [engine_path]
     if cfg.engine_options:

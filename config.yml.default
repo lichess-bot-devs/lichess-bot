@@ -43,7 +43,6 @@ engine:                      # Engine settings.
       min_time: 20
       move_quality: "good"   # One of "all", "good", "best".
       min_depth: 20          # Only for move_quality: "best".
-      contribute: true
     lichess_cloud_analysis:
       enabled: false
       min_time: 20

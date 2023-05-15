@@ -103,8 +103,6 @@ Besides the above, there are many possible options within `config.yml` for confi
             - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned. Can't be used with XBoard engines.
     - Configurations only in `chessdb_book` and `lichess_cloud_analysis`:
         - `min_depth`: The minimum search depth for a move evaluation for a database move to be accepted.
-    - Configurations only in `chessdb_book`:
-        - `contribute`: Send the current board position to chessdb for later analysis.
     - Configurations only in `lichess_cloud_analysis`:
         - `max_score_difference`: When `move_quality` is set to `"good"`, this option specifies the maximum difference between the top scoring move and any other move that will make up the set from which a move will be chosen randomly. If this option is set to 25 and the top move in a position has a score of 100, no move with a score of less than 75 will be returned.
         - `min_knodes`: The minimum number of kilonodes to search. The minimum number of nodes to search is this value times 1000.

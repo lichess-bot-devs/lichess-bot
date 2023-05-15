@@ -793,9 +793,6 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn for game {game.id}")
 
-        if chessdb_cfg.contribute:
-            params["action"] = "queue"
-            li.online_book_get(site, params=params)
     except Exception:
         pass
 

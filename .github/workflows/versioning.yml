@@ -6,6 +6,7 @@ on:
 
 jobs:
   versioning:
+      if: "!contains(github.event.head_commit.message, 'Auto update version')"
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v3

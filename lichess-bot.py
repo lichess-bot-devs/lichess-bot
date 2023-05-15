@@ -63,7 +63,7 @@ def disable_restart() -> None:
 def signal_handler(signal: int, frame: Any) -> None:
     """Terminate lichess-bot."""
     global terminated
-    logger.debug("Recieved SIGINT. Terminating client.")
+    logger.debug("Received SIGINT. Terminating client.")
     terminated = True
 
 
@@ -80,7 +80,7 @@ def upgrade_account(li: lichess.Lichess) -> bool:
     if li.upgrade_to_bot_account() is None:
         return False
 
-    logger.info("Succesfully upgraded to Bot Account!")
+    logger.info("Successfully upgraded to Bot Account!")
     return True
 
 

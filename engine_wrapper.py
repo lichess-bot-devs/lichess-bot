@@ -792,7 +792,6 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
             else:
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn for game {game.id}")
-
     except Exception:
         pass
 

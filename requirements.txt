@@ -2,7 +2,7 @@ chess==1.9.4
 PyYAML==6.0
 requests==2.31.0
 backoff==2.2.1
-rich==13.3.5
+rich==13.4.0
 
 # Requirements for tests
 pytest==7.3.1

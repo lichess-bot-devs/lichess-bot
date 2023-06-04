@@ -20,6 +20,7 @@ import copy
 import math
 import sys
 import yaml
+import datetime
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -113,12 +114,13 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> No
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def logging_configurer(level: int, filename: Optional[str]) -> None:
+def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str]) -> None:
     """
     Configure the logger.
 
     :param level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
+    :param auto_log_filename: The filename for the automatic logger. If it is `None` then the logs aren't written to a file.
     """
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
@@ -132,19 +134,44 @@ def logging_configurer(level: int, filename: Optional[str]) -> None:
         file_handler.setFormatter(file_formatter)
         all_handlers.append(file_handler)
 
+    if auto_log_filename:
+        if not os.path.isdir("./log/"):
+            os.mkdir("./log/")
+
+        # Clear old logs.
+        seven_days = 7 * 24 * 60 * 60
+        for file in os.listdir("./log/"):
+            path = os.path.join("./log/", file)
+            if os.path.getmtime(path) * seven_days < time.time():
+                os.remove(path)
+
+        # Set up automatic logging.
+        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True)
+        auto_file_handler.setLevel(logging.NOTSET)
+
+        def handler_filter(record: logging.LogRecord) -> bool:
+            return "currmove" not in record.getMessage() and "score" not in record.getMessage()
+
+        FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
+        file_formatter = logging.Formatter(FORMAT)
+        auto_file_handler.setFormatter(file_formatter)
+        auto_file_handler.addFilter(handler_filter)
+        all_handlers.append(auto_file_handler)
+
     logging.basicConfig(level=level,
                         handlers=all_handlers,
                         force=True)
 
 
-def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str]) -> None:
+def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str],
+                          auto_log_filename: Optional[str]) -> None:
     """
     Handle events from the logging queue.
 
     This allows the logs from inside a thread to be printed.
     They are added to the queue, so they are printed outside the thread.
     """
-    logging_configurer(level, log_filename)
+    logging_configurer(level, log_filename, auto_log_filename)
     logger = logging.getLogger()
     while not terminated:
         task = queue.get()
@@ -170,7 +197,7 @@ def game_error_handler(error: BaseException) -> None:
 
 
 def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configuration, logging_level: int,
-          log_filename: Optional[str], one_game: bool = False) -> None:
+          log_filename: Optional[str], auto_log_filename: Optional[str], one_game: bool = False) -> None:
     """
     Start lichess-bot.
 
@@ -179,6 +206,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     :param config: The config that the bot will use.
     :param logging_level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param log_filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
+    :param auto_log_filename: The filename for the automatic logger. If it is `None` then the logs aren't written to a file.
     :param one_game: Whether the bot should play only one game. Only used in `test_bot/test_bot.py` to test lichess-bot.
     """
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
@@ -197,7 +225,8 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
                                                args=(logging_queue,
                                                      logging_level,
-                                                     log_filename))
+                                                     log_filename,
+                                                     auto_log_filename))
     logging_listener.start()
 
     try:
@@ -926,10 +955,15 @@ def start_lichess_bot() -> None:
     parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.")
     parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml).")
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
+    parser.add_argument("--disable_auto_logging", action="store_true", help="Disable automatic logging.")
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
-    logging_configurer(logging_level, args.logfile)
+    auto_log_filename = None
+    if not args.disable_auto_logging:
+        now = datetime.datetime.now()
+        auto_log_filename = f"./log/{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}-{now.second}.txt"
+    logging_configurer(logging_level, args.logfile, auto_log_filename)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
     max_retries = CONFIG.engine.online_moves.max_retries
@@ -945,7 +979,7 @@ def start_lichess_bot() -> None:
         is_bot = upgrade_account(li)
 
     if is_bot:
-        start(li, user_profile, CONFIG, logging_level, args.logfile)
+        start(li, user_profile, CONFIG, logging_level, args.logfile, auto_log_filename)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
 

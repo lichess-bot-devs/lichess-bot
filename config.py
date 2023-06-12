@@ -270,9 +270,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     matchmaking = CONFIG.get("matchmaking") or {}
     matchmaking_enabled = matchmaking.get("enabled") or False
-    matchmaking_has_values = (matchmaking.get("challenge_initial_time")[0] is not None and 
-                              matchmaking.get("challenge_increment")[0] is not None or
-                              matchmaking.get("challenge_days")[0] is not None)
+    # `, []` is there only for mypy. It isn't used.
+    matchmaking_has_values = (matchmaking.get("challenge_initial_time", [])[0] is not None and 
+                              matchmaking.get("challenge_increment", [])[0] is not None or
+                              matchmaking.get("challenge_days", [])[0] is not None)
     config_assert(not matchmaking_enabled or matchmaking_has_values,
                   "The time control to challenge other bots isn't set.")
     

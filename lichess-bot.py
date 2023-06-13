@@ -135,27 +135,23 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
         all_handlers.append(file_handler)
 
     if auto_log_filename:
-        if not os.path.isdir("./log/"):
-            os.mkdir("./log/")
+        os.makedirs(os.path.dirname(auto_log_filename), exist_ok=True)
 
         # Clear old logs.
-        seven_days = 7 * 24 * 60 * 60
-        for file in os.listdir("./log/"):
-            path = os.path.join("./log/", file)
-            if os.path.getmtime(path) * seven_days < time.time():
+        seven_days = datetime.timedelta(days=7).total_seconds()
+        for file in os.listdir(os.path.dirname(auto_log_filename)):
+            path = os.path.join(os.path.dirname(auto_log_filename), file)
+            if os.path.getmtime(path) + seven_days < time.time():
                 os.remove(path)
 
         # Set up automatic logging.
-        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True)
+        auto_file_handler = logging.handlers.RotatingFileHandler(auto_log_filename, maxBytes=100*1024*1024,
+                                                                 backupCount=1, delay=True)
         auto_file_handler.setLevel(logging.NOTSET)
-
-        def handler_filter(record: logging.LogRecord) -> bool:
-            return "currmove" not in record.getMessage() and "score" not in record.getMessage()
 
         FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
         file_formatter = logging.Formatter(FORMAT)
         auto_file_handler.setFormatter(file_formatter)
-        auto_file_handler.addFilter(handler_filter)
         all_handlers.append(auto_file_handler)
 
     logging.basicConfig(level=level,
@@ -962,7 +958,7 @@ def start_lichess_bot() -> None:
     auto_log_filename = None
     if not args.disable_auto_logging:
         now = datetime.datetime.now()
-        auto_log_filename = f"./log/{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}-{now.second}.txt"
+        auto_log_filename = now.strftime("./lichess_bot_weekly_logs/%Y-%m-%d_%H-%M-%S.log")
     logging_configurer(logging_level, args.logfile, auto_log_filename)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")

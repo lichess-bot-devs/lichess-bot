@@ -275,7 +275,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                               matchmaking.get("challenge_increment", [])[0] is not None or
                               matchmaking.get("challenge_days", [])[0] is not None)
     config_assert(not matchmaking_enabled or matchmaking_has_values,
-                  "The time control to challenge other bots isn't set.")
+                  "The time control to challenge other bots is not set. Either lists of challenge_initial_time and "
+                  "challenge_increment is required, or a list of challenge_days, or both.")
     
     filter_option = "challenge_filter"
     filter_type = (CONFIG.get("matchmaking") or {}).get(filter_option)

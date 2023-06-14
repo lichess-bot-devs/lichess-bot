@@ -69,7 +69,7 @@ if platform == "win32":
     download_lc0()
     download_sjeng()
 logging_level = lichess_bot.logging.DEBUG
-lichess_bot.logging_configurer(logging_level, None, None)
+lichess_bot.logging_configurer(logging_level, None)
 lichess_bot.logger.info("Downloaded engines")
 
 
@@ -180,7 +180,7 @@ def run_bot(raw_config: dict[str, Any], logging_level: int) -> str:
 
     thr = threading.Thread(target=thread_for_test)
     thr.start()
-    lichess_bot.start(li, user_profile, CONFIG, logging_level, None, None, one_game=True)
+    lichess_bot.start(li, user_profile, CONFIG, logging_level, None, one_game=True)
     thr.join()
 
     with open("./logs/result.txt") as file:

@@ -13,7 +13,7 @@ import stat
 import shutil
 import importlib
 import config
-from typing import Dict, Any
+from typing import Any
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 shutil.copyfile("lichess.py", "correct_lichess.py")
@@ -69,7 +69,7 @@ if platform == "win32":
     download_lc0()
     download_sjeng()
 logging_level = lichess_bot.logging.DEBUG
-lichess_bot.logging_configurer(logging_level, None)
+lichess_bot.logging_configurer(logging_level, None, None)
 lichess_bot.logger.info("Downloaded engines")
 
 
@@ -164,7 +164,7 @@ def thread_for_test() -> None:
         file.write("1" if win else "0")
 
 
-def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
+def run_bot(raw_config: dict[str, Any], logging_level: int) -> str:
     """Start lichess-bot."""
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
@@ -180,7 +180,7 @@ def run_bot(raw_config: Dict[str, Any], logging_level: int) -> str:
 
     thr = threading.Thread(target=thread_for_test)
     thr.start()
-    lichess_bot.start(li, user_profile, CONFIG, logging_level, None, one_game=True)
+    lichess_bot.start(li, user_profile, CONFIG, logging_level, None, None, one_game=True)
     thr.join()
 
     with open("./logs/result.txt") as file:

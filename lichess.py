@@ -13,6 +13,7 @@ from typing import Optional, Union, Any
 import chess.engine
 JSON_REPLY_TYPE = dict[str, Any]
 REQUESTS_PAYLOAD_TYPE = dict[str, Any]
+BACKOFF_DETAILS_TYPE = dict[str, Any]
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -57,7 +58,7 @@ def is_final(exception: Exception) -> bool:
     return isinstance(exception, HTTPError) and exception.response.status_code < 500
 
 
-def backoff_handler(details):
+def backoff_handler(details: BACKOFF_DETAILS_TYPE) -> None:
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
     logger.debug(f"Exception: {traceback.format_exc()}")

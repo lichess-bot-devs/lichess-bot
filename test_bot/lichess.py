@@ -6,12 +6,11 @@ import json
 import logging
 import traceback
 from typing import Union, Any, Optional, Generator
-BACKOFF_DETAILS_TYPE = dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
 
-def backoff_handler(details: BACKOFF_DETAILS_TYPE) -> None:
+def backoff_handler(details: Any) -> None:
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
     logger.debug(f"Exception: {traceback.format_exc()}")

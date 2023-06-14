@@ -6,6 +6,7 @@ from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
 from http.client import RemoteDisconnected
 import backoff
 import logging
+import traceback
 from collections import defaultdict
 from timer import Timer
 from typing import Optional, Union, Any
@@ -56,6 +57,12 @@ def is_final(exception: Exception) -> bool:
     return isinstance(exception, HTTPError) and exception.response.status_code < 500
 
 
+def backoff_handler(details):
+    logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
+                 "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
+    logger.debug(f"Exception: {traceback.format_exc()}")
+
+
 # Docs: https://lichess.org/api.
 class Lichess:
     """Communication with lichess.org (and chessdb.cn for getting moves)."""
@@ -101,6 +108,7 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final,
+                          on_backoff=backoff_handler,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
     def api_get(self, endpoint_name: str, *template_args: str,
@@ -172,6 +180,7 @@ class Lichess:
                           max_time=60,
                           interval=0.1,
                           giveup=is_final,
+                          on_backoff=backoff_handler,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
     def api_post(self,
@@ -355,6 +364,7 @@ class Lichess:
                               max_tries=self.max_retries,
                               interval=0.1,
                               giveup=is_final,
+                              on_backoff=backoff_handler,
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> JSON_REPLY_TYPE:

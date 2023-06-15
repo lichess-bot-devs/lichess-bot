@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def backoff_handler(details: Any) -> None:
+    """Log exceptions inside functions with the backoff decorator."""
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
     logger.debug(f"Exception: {traceback.format_exc()}")

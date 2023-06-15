@@ -119,8 +119,8 @@ def handle_old_logs(auto_log_filename: str) -> None:
     """Remove logs older than 7 days, and compress the rest."""
     directory = os.path.dirname(auto_log_filename)
     seven_days = datetime.timedelta(days=7).total_seconds()
-    for file in os.listdir(directory):
-        path = os.path.join(directory, file)
+    for filename in os.listdir(directory):
+        path = os.path.join(directory, filename)
         if os.path.getmtime(path) + seven_days < time.time():
             os.remove(path)
         elif not path.endswith(".compressed_log") and not path.endswith(".decompressed_log") and path != auto_log_filename:

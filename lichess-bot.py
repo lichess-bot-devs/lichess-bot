@@ -21,6 +21,7 @@ import math
 import sys
 import yaml
 import datetime
+import gzip
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -114,6 +115,22 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> No
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
+def handle_old_logs(auto_log_filename: str) -> None:
+    """Remove logs older than 7 days, and compress the rest."""
+    directory = os.path.dirname(auto_log_filename)
+    seven_days = datetime.timedelta(days=7).total_seconds()
+    for file in os.listdir(directory):
+        path = os.path.join(directory, file)
+        if os.path.getmtime(path) + seven_days < time.time():
+            os.remove(path)
+        elif not path.endswith(".compressed_log") and not path.endswith(".decompressed_log") and path != auto_log_filename:
+            with open(path) as file:
+                contents = file.read()
+            with gzip.open(f"{path}.compressed_log", "w") as file:
+                file.write(contents.encode("utf-8"))
+            os.remove(path)
+
+
 def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str]) -> None:
     """
     Configure the logger.
@@ -138,14 +155,10 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
         os.makedirs(os.path.dirname(auto_log_filename), exist_ok=True)
 
         # Clear old logs.
-        seven_days = datetime.timedelta(days=7).total_seconds()
-        for file in os.listdir(os.path.dirname(auto_log_filename)):
-            path = os.path.join(os.path.dirname(auto_log_filename), file)
-            if os.path.getmtime(path) + seven_days < time.time():
-                os.remove(path)
+        handle_old_logs(auto_log_filename)
 
         # Set up automatic logging.
-        auto_file_handler = logging.handlers.RotatingFileHandler(auto_log_filename, maxBytes=100*1024*1024,
+        auto_file_handler = logging.handlers.RotatingFileHandler(auto_log_filename, maxBytes=100 * 1024 * 1024,
                                                                  backupCount=1, delay=True)
         auto_file_handler.setLevel(logging.NOTSET)
 

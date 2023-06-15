@@ -90,7 +90,7 @@ class Lichess:
             raise RuntimeError("Token in config file is not recognized by lichess. "
                                "Please check that it was copied correctly into your configuration file.")
 
-        scopes = token_info["scopes"].split(",")
+        scopes = token_info["scopes"]
         if "bot:play" not in scopes:
             raise RuntimeError("Please use an API access token for your bot that "
                                'has the scope "Play games with the bot API (bot:play)". '

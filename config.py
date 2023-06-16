@@ -269,7 +269,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
     matchmaking = CONFIG.get("matchmaking") or {}
-    matchmaking_enabled = matchmaking.get("enabled") or False
+    matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
     # `, []` is there only for mypy. It isn't used.
     matchmaking_has_values = (matchmaking.get("challenge_initial_time", [])[0] is not None
                               and matchmaking.get("challenge_increment", [])[0] is not None

@@ -123,7 +123,7 @@ def handle_old_logs(auto_log_filename: str) -> None:
         os.rename(auto_log_filename, old_path)
 
 
-def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str]) -> None:
+def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str], delete_old_logs: bool) -> None:
     """
     Configure the logger.
 
@@ -134,6 +134,7 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(level)
     all_handlers: list[logging.Handler] = [console_handler]
 
     if filename:
@@ -141,24 +142,26 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
         FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
         file_formatter = logging.Formatter(FORMAT)
         file_handler.setFormatter(file_formatter)
+        file_handler.setLevel(level)
         all_handlers.append(file_handler)
 
     if auto_log_filename:
         os.makedirs(os.path.dirname(auto_log_filename), exist_ok=True)
 
         # Clear old logs.
-        handle_old_logs(auto_log_filename)
+        if delete_old_logs:
+            handle_old_logs(auto_log_filename)
 
         # Set up automatic logging.
         auto_file_handler = logging.FileHandler(auto_log_filename, delay=True)
-        auto_file_handler.setLevel(logging.NOTSET)
+        auto_file_handler.setLevel(logging.DEBUG)
 
         FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
         file_formatter = logging.Formatter(FORMAT)
         auto_file_handler.setFormatter(file_formatter)
         all_handlers.append(auto_file_handler)
 
-    logging.basicConfig(level=level,
+    logging.basicConfig(level=logging.DEBUG,
                         handlers=all_handlers,
                         force=True)
 
@@ -171,7 +174,7 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
     This allows the logs from inside a thread to be printed.
     They are added to the queue, so they are printed outside the thread.
     """
-    logging_configurer(level, log_filename, auto_log_filename)
+    logging_configurer(level, log_filename, auto_log_filename, False)
     logger = logging.getLogger()
     while not terminated:
         task = queue.get()
@@ -963,7 +966,7 @@ def start_lichess_bot() -> None:
     auto_log_filename = None
     if not args.disable_auto_logging:
         auto_log_filename = "./lichess_bot_auto_logs/recent.log"
-    logging_configurer(logging_level, args.logfile, auto_log_filename)
+    logging_configurer(logging_level, args.logfile, auto_log_filename, True)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
     max_retries = CONFIG.engine.online_moves.max_retries

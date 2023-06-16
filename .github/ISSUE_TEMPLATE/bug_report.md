@@ -19,7 +19,7 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Logs**
-Upload `lichess_bot_auto_logs\old.log` and `lichess_bot_auto_logs\recent.log`.
+Upload `lichess_bot_auto_logs\old.log`, `lichess_bot_auto_logs\recent.log`, and other logs/screenshots of the error.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows]

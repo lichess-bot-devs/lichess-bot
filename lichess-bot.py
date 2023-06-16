@@ -20,8 +20,6 @@ import copy
 import math
 import sys
 import yaml
-import datetime
-import gzip
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -116,19 +114,13 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> No
 
 
 def handle_old_logs(auto_log_filename: str) -> None:
-    """Remove logs older than 7 days, and compress the rest."""
+    """Remove old logs."""
     directory = os.path.dirname(auto_log_filename)
-    seven_days = datetime.timedelta(days=7).total_seconds()
-    for filename in os.listdir(directory):
-        path = os.path.join(directory, filename)
-        if os.path.getmtime(path) + seven_days < time.time():
-            os.remove(path)
-        elif not path.endswith(".compressed_log") and not path.endswith(".decompressed_log") and path != auto_log_filename:
-            with open(path) as file:
-                contents = file.read()
-            with gzip.open(f"{path}.compressed_log", "w") as file:
-                file.write(contents.encode("utf-8"))
-            os.remove(path)
+    old_path = os.path.join(directory, "old.log")
+    if os.path.exists(old_path):
+        os.remove(old_path)
+    if os.path.exists(auto_log_filename):
+        os.rename(auto_log_filename, old_path)
 
 
 def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str]) -> None:
@@ -158,8 +150,7 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
         handle_old_logs(auto_log_filename)
 
         # Set up automatic logging.
-        auto_file_handler = logging.handlers.RotatingFileHandler(auto_log_filename, maxBytes=100 * 1024 * 1024,
-                                                                 backupCount=1, delay=True)
+        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True)
         auto_file_handler.setLevel(logging.NOTSET)
 
         FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
@@ -971,8 +962,7 @@ def start_lichess_bot() -> None:
     logging_level = logging.DEBUG if args.v else logging.INFO
     auto_log_filename = None
     if not args.disable_auto_logging:
-        now = datetime.datetime.now()
-        auto_log_filename = now.strftime("./lichess_bot_weekly_logs/%Y-%m-%d_%H-%M-%S.log")
+        auto_log_filename = "./lichess_bot_auto_logs/recent.log"
     logging_configurer(logging_level, args.logfile, auto_log_filename)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")

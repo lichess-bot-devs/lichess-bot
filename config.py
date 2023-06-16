@@ -203,9 +203,9 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     default_filter = (CONFIG.get("matchmaking") or {}).get("delay_after_decline") or FilterType.NONE.value
     set_config_default(CONFIG, "matchmaking", key="challenge_filter", default=default_filter, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
-    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[60], force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="challenge_initial_time", default=[None], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_initial_time")
-    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[2], force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="challenge_increment", default=[None], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_increment")
     set_config_default(CONFIG, "matchmaking", key="challenge_days", default=[None], force_empty_values=True)
     change_value_to_list(CONFIG, "matchmaking", key="challenge_days")
@@ -268,6 +268,16 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
             config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
+    matchmaking = CONFIG.get("matchmaking") or {}
+    matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
+    # `, []` is there only for mypy. It isn't used.
+    matchmaking_has_values = (matchmaking.get("challenge_initial_time", [])[0] is not None
+                              and matchmaking.get("challenge_increment", [])[0] is not None
+                              or matchmaking.get("challenge_days", [])[0] is not None)
+    config_assert(not matchmaking_enabled or matchmaking_has_values,
+                  "The time control to challenge other bots is not set. Either lists of challenge_initial_time and "
+                  "challenge_increment is required, or a list of challenge_days, or both.")
+
     filter_option = "challenge_filter"
     filter_type = (CONFIG.get("matchmaking") or {}).get(filter_option)
     config_assert(filter_type is None or filter_type in FilterType.__members__.values(),
@@ -294,7 +304,6 @@ def load_config(config_file: str) -> Configuration:
     if "LICHESS_BOT_TOKEN" in os.environ:
         CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
 
-    validate_config(CONFIG)
     insert_default_values(CONFIG)
     log_config(CONFIG)
     validate_config(CONFIG)

@@ -139,7 +139,7 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
 
     if filename:
         file_handler = logging.FileHandler(filename, delay=True)
-        FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
+        FORMAT = "%(asctime)s %(name)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s"
         file_formatter = logging.Formatter(FORMAT)
         file_handler.setFormatter(file_formatter)
         file_handler.setLevel(level)

@@ -876,7 +876,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
 
     quality = online_egtb_cfg.move_quality
     if quality == "good":
-        raise DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon.")
+        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
     try:
@@ -1061,7 +1061,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
     move: Union[chess.Move, list[chess.Move]]
     move_quality = syzygy_cfg.move_quality
     if move_quality == "good":
-        raise DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon.")
+        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
         for path in syzygy_cfg.paths[1:]:
             tablebase.add_directory(path)
@@ -1130,7 +1130,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
     move: Union[chess.Move, list[chess.Move]]
     move_quality = gaviota_cfg.move_quality
     if move_quality == "good":
-        raise DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon.")
+        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
     # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and

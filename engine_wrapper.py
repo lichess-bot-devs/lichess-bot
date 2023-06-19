@@ -718,6 +718,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     online_egtb_cfg = online_moves_cfg.online_egtb
     chessdb_cfg = online_moves_cfg.chessdb_book
     lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
+    opening_explorer_cfg = online_moves_cfg.lichess_opening_explorer
     max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
     offer_draw = False
     resign = False
@@ -741,6 +742,9 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
 
     if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move, comment = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
+
+    if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
+        best_move = get_opening_explorer_move(li, board, game, opening_explorer_cfg)
 
     if best_move:
         if isinstance(best_move, str):
@@ -849,6 +853,52 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
         pass
 
     return move, comment
+
+
+def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+                              opening_explorer_cfg: config.Configuration) -> Optional[str]:
+    wb = "w" if board.turn == chess.WHITE else "b"
+    time_left = game.state[f"{wb}time"]
+    min_time = opening_explorer_cfg.min_time * 1000
+    source = opening_explorer_cfg.source
+    if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":
+        return None
+
+    move = None
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    try:
+        if source == "masters":
+            params = {"fen": board.fen(), "moves": 100}
+            response = li.online_book_get("https://explorer.lichess.ovh/masters", params)
+        elif source == "player":
+            player = opening_explorer_cfg.player_name
+            if not player:
+                player = game.username
+            params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
+                      "recentGames": 0, "color": "white" if wb == "w" else "black"}
+            print(params)
+            response = li.online_book_get("https://explorer.lichess.ovh/player", params, True)
+        else:
+            params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
+            response = li.online_book_get("https://explorer.lichess.ovh/lichess", params)
+        moves = []
+        for move in response["moves"]:
+            games_played = move["white"] + move["black"] + move["draws"]
+            winrate = (move["white"] + move["draws"] * .5) / games_played
+            if games_played >= opening_explorer_cfg.min_games:
+                # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
+                # the second one will be used.
+                moves.append((winrate if opening_explorer_cfg.sort == "winrate" else games_played,
+                              games_played if opening_explorer_cfg.sort == "winrate" else winrate, move["uci"]))
+        moves.sort(reverse=True)
+        print(moves)
+        move = moves[0][2]
+        logger.info(f"Got move {move} from lichess opening explorer ({opening_explorer_cfg.sort}: {moves[0][0]})"
+                    f" for game {game.id}")
+    except Exception as e:
+        raise e
+
+    return move
 
 
 def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,

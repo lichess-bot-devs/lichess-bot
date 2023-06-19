@@ -113,38 +113,68 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> No
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
-def logging_configurer(level: int, filename: Optional[str]) -> None:
+def handle_old_logs(auto_log_filename: str) -> None:
+    """Remove old logs."""
+    directory = os.path.dirname(auto_log_filename)
+    old_path = os.path.join(directory, "old.log")
+    if os.path.exists(old_path):
+        os.remove(old_path)
+    if os.path.exists(auto_log_filename):
+        os.rename(auto_log_filename, old_path)
+
+
+def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str], delete_old_logs: bool) -> None:
     """
     Configure the logger.
 
     :param level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
+    :param auto_log_filename: The filename for the automatic logger. If it is `None` then the logs aren't written to a file.
     """
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(level)
     all_handlers: list[logging.Handler] = [console_handler]
 
     if filename:
         file_handler = logging.FileHandler(filename, delay=True)
-        FORMAT = "%(asctime)s %(name)s %(levelname)s %(message)s"
+        FORMAT = "%(asctime)s %(name)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s"
         file_formatter = logging.Formatter(FORMAT)
         file_handler.setFormatter(file_formatter)
+        file_handler.setLevel(level)
         all_handlers.append(file_handler)
 
-    logging.basicConfig(level=level,
+    if auto_log_filename:
+        os.makedirs(os.path.dirname(auto_log_filename), exist_ok=True)
+
+        # Clear old logs.
+        if delete_old_logs:
+            handle_old_logs(auto_log_filename)
+
+        # Set up automatic logging.
+        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True)
+        auto_file_handler.setLevel(logging.DEBUG)
+
+        FORMAT = "%(asctime)s %(name)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s"
+        file_formatter = logging.Formatter(FORMAT)
+        auto_file_handler.setFormatter(file_formatter)
+        all_handlers.append(auto_file_handler)
+
+    logging.basicConfig(level=logging.DEBUG,
                         handlers=all_handlers,
                         force=True)
 
 
-def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str]) -> None:
+def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str],
+                          auto_log_filename: Optional[str]) -> None:
     """
     Handle events from the logging queue.
 
     This allows the logs from inside a thread to be printed.
     They are added to the queue, so they are printed outside the thread.
     """
-    logging_configurer(level, log_filename)
+    logging_configurer(level, log_filename, auto_log_filename, False)
     logger = logging.getLogger()
     while not terminated:
         task = queue.get()
@@ -155,13 +185,13 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
         queue.task_done()
 
 
-def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE], level: int) -> None:
+def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE]) -> None:
     """Configure the game logger."""
     h = logging.handlers.QueueHandler(queue)
     root = logging.getLogger()
     root.handlers.clear()
     root.addHandler(h)
-    root.setLevel(level)
+    root.setLevel(logging.DEBUG)
 
 
 def game_error_handler(error: BaseException) -> None:
@@ -170,7 +200,7 @@ def game_error_handler(error: BaseException) -> None:
 
 
 def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configuration, logging_level: int,
-          log_filename: Optional[str], one_game: bool = False) -> None:
+          log_filename: Optional[str], auto_log_filename: Optional[str], one_game: bool = False) -> None:
     """
     Start lichess-bot.
 
@@ -179,6 +209,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     :param config: The config that the bot will use.
     :param logging_level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param log_filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
+    :param auto_log_filename: The filename for the automatic logger. If it is `None` then the logs aren't written to a file.
     :param one_game: Whether the bot should play only one game. Only used in `test_bot/test_bot.py` to test lichess-bot.
     """
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
@@ -197,14 +228,14 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     logging_listener = multiprocessing.Process(target=logging_listener_proc,
                                                args=(logging_queue,
                                                      logging_level,
-                                                     log_filename))
+                                                     log_filename,
+                                                     auto_log_filename))
     logging_listener.start()
 
     try:
         lichess_bot_main(li,
                          user_profile,
                          config,
-                         logging_level,
                          challenge_queue,
                          control_queue,
                          correspondence_queue,
@@ -233,7 +264,6 @@ def log_proc_count(change: str, active_games: set[str]) -> None:
 def lichess_bot_main(li: lichess.Lichess,
                      user_profile: USER_PROFILE_TYPE,
                      config: Configuration,
-                     logging_level: int,
                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      control_queue: CONTROL_QUEUE_TYPE,
                      correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
@@ -245,7 +275,6 @@ def lichess_bot_main(li: lichess.Lichess,
     :param li: Provides communication with lichess.org.
     :param user_profile: Information on our bot.
     :param config: The config that the bot will use.
-    :param logging_level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param challenge_queue: The queue containing the challenges.
     :param control_queue: The queue containing all the events.
     :param correspondence_queue: The queue containing the correspondence games.
@@ -277,8 +306,7 @@ def lichess_bot_main(li: lichess.Lichess,
                       "config": config,
                       "challenge_queue": challenge_queue,
                       "correspondence_queue": correspondence_queue,
-                      "logging_queue": logging_queue,
-                      "logging_level": logging_level}
+                      "logging_queue": logging_queue}
 
     recent_bot_challenges: defaultdict[str, list[Timer]] = defaultdict(list)
 
@@ -515,8 +543,7 @@ def play_game(li: lichess.Lichess,
               config: Configuration,
               challenge_queue: MULTIPROCESSING_LIST_TYPE,
               correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
-              logging_queue: LOGGING_QUEUE_TYPE,
-              logging_level: int) -> None:
+              logging_queue: LOGGING_QUEUE_TYPE) -> None:
     """
     Play a game.
 
@@ -528,9 +555,8 @@ def play_game(li: lichess.Lichess,
     :param challenge_queue: The queue containing the challenges.
     :param correspondence_queue: The queue containing the correspondence games.
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
-    :param logging_level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     """
-    game_logging_configurer(logging_queue, logging_level)
+    game_logging_configurer(logging_queue)
     logger = logging.getLogger(__name__)
 
     response = li.get_game_stream(game_id)
@@ -927,10 +953,14 @@ def start_lichess_bot() -> None:
     parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.")
     parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml).")
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
+    parser.add_argument("--disable_auto_logging", action="store_true", help="Disable automatic logging.")
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
-    logging_configurer(logging_level, args.logfile)
+    auto_log_filename = None
+    if not args.disable_auto_logging:
+        auto_log_filename = "./lichess_bot_auto_logs/recent.log"
+    logging_configurer(logging_level, args.logfile, auto_log_filename, True)
     logger.info(intro(), extra={"highlighter": None})
     CONFIG = load_config(args.config or "./config.yml")
     max_retries = CONFIG.engine.online_moves.max_retries
@@ -946,7 +976,7 @@ def start_lichess_bot() -> None:
         is_bot = upgrade_account(li)
 
     if is_bot:
-        start(li, user_profile, CONFIG, logging_level, args.logfile)
+        start(li, user_profile, CONFIG, logging_level, args.logfile, auto_log_filename)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
 

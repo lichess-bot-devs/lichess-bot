@@ -32,7 +32,7 @@ ENDPOINTS = {
     "cancel": "/api/challenge/{}/cancel",
     "status": "/api/users/status",
     "public_data": "/api/user/{}",
-    "token_test": "/api/token/test",
+    "token_test": "/api/token/test"
 }
 
 

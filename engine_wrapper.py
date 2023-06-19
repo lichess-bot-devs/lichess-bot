@@ -897,6 +897,8 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
+    if lichess_bot_tbs.syzygy.move_quality == "good" or lichess_bot_tbs.gaviota.move_quality == "good":
+        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     best_move, wdl = get_syzygy(board, game, lichess_bot_tbs.syzygy)
     if best_move is None:
         best_move, wdl = get_gaviota(board, game, lichess_bot_tbs.gaviota)
@@ -1060,8 +1062,6 @@ def get_syzygy(board: chess.Board, game: model.Game,
         return None, -3
     move: Union[chess.Move, list[chess.Move]]
     move_quality = syzygy_cfg.move_quality
-    if move_quality == "good":
-        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
         for path in syzygy_cfg.paths[1:]:
             tablebase.add_directory(path)
@@ -1129,8 +1129,6 @@ def get_gaviota(board: chess.Board, game: model.Game,
         return None, -3
     move: Union[chess.Move, list[chess.Move]]
     move_quality = gaviota_cfg.move_quality
-    if move_quality == "good":
-        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
     # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and

@@ -273,7 +273,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                                 ("lichess_bot_tbs", "gaviota")):
         online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
         if online_section.get("move_quality") == "good":
-            logger.warning(DeprecationWarning(f"`move_quality` `good` in {subsection} is deprecated and will be removed soon."))
+            logger.warning(
+                DeprecationWarning(f"`move_quality` `good` in {subsection} is deprecated and will be removed soon."))
 
     matchmaking = CONFIG.get("matchmaking") or {}
     matchmaking_enabled = matchmaking.get("allow_matchmaking") or False

@@ -804,7 +804,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
 
 def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                            lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
-    """Get the move from the lichess's cloud analysis."""
+    """Get a move from the lichess's cloud analysis."""
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
     min_time = lichess_cloud_cfg.min_time * 1000
@@ -857,6 +857,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
 
 def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                               opening_explorer_cfg: config.Configuration) -> Optional[str]:
+    """Get a move from lichess's opening explorer."""
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
     min_time = opening_explorer_cfg.min_time * 1000
@@ -876,27 +877,25 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
                 player = game.username
             params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
                       "recentGames": 0, "color": "white" if wb == "w" else "black"}
-            print(params)
             response = li.online_book_get("https://explorer.lichess.ovh/player", params, True)
         else:
             params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
             response = li.online_book_get("https://explorer.lichess.ovh/lichess", params)
         moves = []
-        for move in response["moves"]:
-            games_played = move["white"] + move["black"] + move["draws"]
-            winrate = (move["white"] + move["draws"] * .5) / games_played
+        for possible_move in response["moves"]:
+            games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
+            winrate = (possible_move["white"] + possible_move["draws"] * .5) / games_played
             if games_played >= opening_explorer_cfg.min_games:
                 # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
                 # the second one will be used.
                 moves.append((winrate if opening_explorer_cfg.sort == "winrate" else games_played,
-                              games_played if opening_explorer_cfg.sort == "winrate" else winrate, move["uci"]))
+                              games_played if opening_explorer_cfg.sort == "winrate" else winrate, possible_move["uci"]))
         moves.sort(reverse=True)
-        print(moves)
         move = moves[0][2]
         logger.info(f"Got move {move} from lichess opening explorer ({opening_explorer_cfg.sort}: {moves[0][0]})"
                     f" for game {game.id}")
-    except Exception as e:
-        raise e
+    except Exception:
+        pass
 
     return move
 

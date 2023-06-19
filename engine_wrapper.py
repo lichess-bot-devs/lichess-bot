@@ -875,6 +875,8 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
         return None, -3
 
     quality = online_egtb_cfg.move_quality
+    if quality == "good":
+        raise DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon.")
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
     try:
@@ -1058,6 +1060,8 @@ def get_syzygy(board: chess.Board, game: model.Game,
         return None, -3
     move: Union[chess.Move, list[chess.Move]]
     move_quality = syzygy_cfg.move_quality
+    if move_quality == "good":
+        raise DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon.")
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
         for path in syzygy_cfg.paths[1:]:
             tablebase.add_directory(path)
@@ -1076,24 +1080,25 @@ def get_syzygy(board: chess.Board, game: model.Game,
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             else:
+                # There can be multiple moves with the same dtz.
                 best_dtz = min([dtz for chess_move, dtz in good_moves])
                 best_moves = [chess_move for chess_move, dtz in good_moves if dtz == best_dtz]
                 move = random.choice(best_moves)
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz}) for game {game.id}")
                 return move, best_wdl
         except KeyError:
-            # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
+            # Attempt to only get the WDL score. It returns a move of quality="suggest", even if quality is set to "best".
             try:
                 moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
                 best_wdl = max(moves.values())
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
-                logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
+                logger.debug("Found a move using 'move_quality'='suggest'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
-                if move_quality == "suggest" and len(good_chess_moves) > 1:
+                if len(good_chess_moves) > 1:
                     move = good_chess_moves
                     logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 else:
-                    move = random.choice(good_chess_moves)
+                    move = good_chess_moves[0]
                     logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             except KeyError:
@@ -1124,6 +1129,8 @@ def get_gaviota(board: chess.Board, game: model.Game,
         return None, -3
     move: Union[chess.Move, list[chess.Move]]
     move_quality = gaviota_cfg.move_quality
+    if move_quality == "good":
+        raise DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon.")
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
     # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and

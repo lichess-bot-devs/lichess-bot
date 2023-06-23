@@ -291,8 +291,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                          "lichess_bot_tbs":        ["good", "best", "suggest"]}
     for db_name, valid_selections in selection_choices.items():
         is_online = db_name not in ["polyglot", "lichess_bot_tbs"]
-        subsection = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
-        db_config = subsection.get(db_name) or {}
+        db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
+        db_config = db_section.get(db_name) or {}
         if db_config.get("enabled"):
             select_key = "selection" if db_name == "polyglot" else "move_quality"
             selection = db_config.get(select_key)

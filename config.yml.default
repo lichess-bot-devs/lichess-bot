@@ -51,7 +51,7 @@ engine:                      # Engine settings.
       min_depth: 20
       min_knodes: 0
     lichess_opening_explorer:
-      enabled: true
+      enabled: false
       min_time: 20
       source: "masters"      # One of "lichess", "masters", "player"
       player_name: ""        # The lichess username. Leave empty for the bot's username to be used. Used only when source is "player".

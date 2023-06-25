@@ -875,8 +875,6 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
         return None, -3
 
     quality = online_egtb_cfg.move_quality
-    if quality == "good":
-        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
     try:
@@ -897,8 +895,6 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
-    if lichess_bot_tbs.syzygy.move_quality == "good" or lichess_bot_tbs.gaviota.move_quality == "good":
-        logger.warning(DeprecationWarning("`move_quality` `good` is deprecated and will be removed soon."))
     best_move, wdl = get_syzygy(board, game, lichess_bot_tbs.syzygy)
     if best_move is None:
         best_move, wdl = get_gaviota(board, game, lichess_bot_tbs.gaviota)

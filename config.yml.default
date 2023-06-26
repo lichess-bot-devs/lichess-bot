@@ -1,4 +1,4 @@
-token: "lip_yourtokenherexxxxx"    # Lichess OAuth2 Token.
+token: "xxxxxxxxxxxxxxxxxxxxxx"    # Lichess OAuth2 Token.
 url: "https://lichess.org/"        # Lichess base URL.
 
 engine:                            # Engine settings.
@@ -21,8 +21,8 @@ engine:                            # Engine settings.
 #     etc.
 #     Use the same pattern for 'giveaway' (antichess), 'crazyhouse', 'horde', 'kingofthehill', 'racingkings' and '3check' as well.
     min_weight: 1                  # Does not select moves with weight below min_weight (min 0, max: 65535).
-    selection: "best_move" # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
-#   max_depth: 8                   # How many moves from the start to take from the book.
+    selection: "weighted_random"   # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
+    max_depth: 20                  # How many moves from the start to take from the book.
 
   draw_or_resign:
     resign_enabled: false          # Whether or not the bot should resign.
@@ -39,37 +39,37 @@ engine:                            # Engine settings.
     max_out_of_book_moves: 10      # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.
     max_retries: 2                 # The maximum amount of retries when getting an online move.
     chessdb_book:
-      enabled: false
-      min_time: 20
+      enabled: false               # Whether or not to use chessdb book.
+      min_time: 20                 # Minimum time (in seconds) to use chessdb book.
       move_quality: "good"         # One of "all", "good", "best".
       min_depth: 20                # Only for move_quality: "best".
     lichess_cloud_analysis:
-      enabled: false
-      min_time: 20
-      move_quality: "good"         # One of "good", "best".
+      enabled: false               # Whether or not to use lichess cloud analysis.
+      min_time: 20                 # Minimum time (in seconds) the bot must have to use cloud analysis.
+      move_quality: "best"         # One of "good", "best".
       max_score_difference: 50     # Only for move_quality: "good". The maximum score difference (in cp) between the best move and the other moves.
       min_depth: 20
       min_knodes: 0
     online_egtb:
-      enabled: true
-      min_time: 20
-      max_pieces: 7
+      enabled: false               # Whether or not to enable online endgame tablebases.
+      min_time: 20                 # Minimum time (in seconds) the bot must have to use online EGTBs.
+      max_pieces: 7                # Maximum number of pieces on the board to use endgame tablebases.
       source: "lichess"            # One of "lichess", "chessdb".
       move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
 
   lichess_bot_tbs:                 # The tablebases list here will be read by lichess-bot, not the engine.
     syzygy:
-      enabled: false
+      enabled: false               # Whether or not to use local syzygy endgame tablebases.
       paths:                       # Paths to Syzygy endgame tablebases.
         - "engines/syzygy"
-      max_pieces: 5                # Maximum number of pieces in the endgame tablebase.
+      max_pieces: 7                # Maximum number of pieces in the endgame tablebase.
       move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
     gaviota:
-      enabled: false
+      enabled: false               # Whether or not to use local gaviota endgame tablebases.
       paths:
         - "engines/gaviota"
       max_pieces: 5
-      min_dtm_to_consider_as_wdl_1: 120  # The minimum dtm to consider as syzygy wdl=1/-1. Set to 100 to disable.
+      min_dtm_to_consider_as_wdl_1: 120  # The minimum DTM to consider as syzygy WDL=1/-1. Set to 100 to disable.
       move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
 
 # engine_options:                  # Any custom command line params to pass to the engine.
@@ -120,7 +120,7 @@ challenge:                         # Incoming challenges.
   only_bot: false                  # Accept challenges by bots only.
   max_increment: 20                # Maximum amount of increment to accept a challenge in seconds. The max is 180. Set to 0 for no increment.
   min_increment: 0                 # Minimum amount of increment to accept a challenge in seconds.
-  max_base: 180                    # Maximum amount of base time to accept a challenge in seconds. The max is 315360000 (10 years).
+  max_base: 1800                   # Maximum amount of base time to accept a challenge in seconds. The max is 315360000 (10 years).
   min_base: 0                      # Minimum amount of base time to accept a challenge in seconds.
   max_days: 14                     # Maximum number of days per move to accept a challenge for a correspondence game.
                                    # Unlimited games can be accepted by removing this field or specifying .inf
@@ -143,7 +143,7 @@ challenge:                         # Incoming challenges.
     - classical
 #   - correspondence
   modes:                           # Game modes to accept.
-#   - casual                       # Unrated games.
+    - casual                       # Unrated games.
     - rated                        # Rated games - must comment if the engine doesn't try to win.
 # block_list:                      # List of users from which the challenges are always declined.
 #   - user1
@@ -157,14 +157,14 @@ greeting:
   #   {me} to insert bot's name
   # Any other words in curly braces will be removed.
   hello: "Hi! I'm {me}. Good luck! Type !help for a list of commands I can respond to." # Message to send to opponent chat at the start of a game
-  goodbye: "Good game, well played!" # Message to send to opponent chat at the end of a game
-  hello_spectators: "Hi! I'm {me} and I'm playing against {opponent}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
+  goodbye: "Good game!" # Message to send to opponent chat at the end of a game
+  hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
   goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 
 # pgn_directory: "game_records" # A directory where PGN-format records of the bot's games are kept
 
 matchmaking:
-  allow_matchmaking: true          # Set it to 'true' to challenge other bots.
+  allow_matchmaking: true          # Set it to 'false' to not challenge other bots.
   challenge_variant: "random"      # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
   challenge_timeout: 30            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
@@ -173,15 +173,14 @@ matchmaking:
   challenge_increment:             # Increment in seconds of the challenge (to be chosen at random).
     - 1
     - 2
-    - 0
 #  challenge_days:                 # Days for correspondence challenge (to be chosen at random).
 #    - 1
 #    - 2
 # opponent_min_rating: 600         # Opponents rating should be above this value (600 is the minimum rating in lichess).
 # opponent_max_rating: 4000        # Opponents rating should be below this value (4000 is the maximum rating in lichess).
   opponent_rating_difference: 300  # The maximum difference in rating between the bot's rating and opponent's rating.
-  opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
-  challenge_mode: "standard"       # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
+  opponent_allow_tos_violation: false # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
+  challenge_mode: "random"         # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
   challenge_filter: none           # If a bot declines a challenge, do not issue a similar challenge to that bot. Possible options are 'none', 'coarse', and 'fine'.
 # block_list:                      # The list of bots that will not be challenged
 #   - user1

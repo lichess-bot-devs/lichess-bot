@@ -99,7 +99,7 @@ class Lichess:
                                "Please check that it was copied correctly into your configuration file.")
 
         scopes = token_info["scopes"]
-        if "bot:play" not in scopes:
+        if "bot:play" not in scopes.split(","):
             raise RuntimeError("Please use an API access token for your bot that "
                                'has the scope "Play games with the bot API (bot:play)". '
                                f"The current token has: {scopes}.")

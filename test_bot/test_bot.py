@@ -26,10 +26,10 @@ stockfish_path = f"./TEMP/sf{file_extension}"
 
 
 def download_sf() -> None:
-    """Download Stockfish 15"""
+    """Download Stockfish 15."""
     windows_or_linux = "win" if platform == "win32" else "linux"
     base_name = f"stockfish_15_{windows_or_linux}_x64"
-    exec_name = f"stockfish_15_x64"
+    exec_name = "stockfish_15_x64"
     zip_link = f"https://files.stockfishchess.org/files/{base_name}.zip"
     response = requests.get(zip_link, allow_redirects=True)
     with open("./TEMP/sf_zip.zip", "wb") as file:

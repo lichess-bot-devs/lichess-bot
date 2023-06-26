@@ -307,6 +307,16 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                           f"'{selection}' is not a valid 'engine:{select}' value. "
                           f"Please choose from {valid_selections}.")
 
+    explorer_choices = {"source": ["lichess", "masters", "player"],
+                        "sort": ["winrate", "games_played"]}
+    for parameter, choice_list in explorer_choices.items():
+        explorer_config = (CONFIG["engine"].get("online_moves") or {}).get("lichess_opening_explorer") or {}
+        if explorer_config.get("enabled"):
+            explorer_choice = explorer_config.get(parameter)
+            config_assert(explorer_choice in choice_list,
+                          f"`{explorer_choice}` is not a valid `engine:online_moves:lichess_opening_explorer:{parameter}`"
+                          f" value. Please choose from {choice_list}.")
+
 
 def load_config(config_file: str) -> Configuration:
     """

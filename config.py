@@ -251,8 +251,6 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     check_config_section(CONFIG, "dir", str, "engine")
     check_config_section(CONFIG, "name", str, "engine")
 
-    config_assert(CONFIG["token"] != "xxxxxxxxxxxxxxxx",
-                  "Your config.yml has the default Lichess API token. This is probably wrong.")
     config_assert(os.path.isdir(CONFIG["engine"]["dir"]),
                   f'Your engine directory `{CONFIG["engine"]["dir"]}` is not a directory.')
 

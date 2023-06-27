@@ -1125,24 +1125,25 @@ def get_syzygy(board: chess.Board, game: model.Game,
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             else:
+                # There can be multiple moves with the same dtz.
                 best_dtz = min([dtz for chess_move, dtz in good_moves])
                 best_moves = [chess_move for chess_move, dtz in good_moves if dtz == best_dtz]
                 move = random.choice(best_moves)
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz}) for game {game.id}")
                 return move, best_wdl
         except KeyError:
-            # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
+            # Attempt to only get the WDL score. It returns moves of quality="suggest", even if quality is set to "best".
             try:
                 moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
                 best_wdl = max(moves.values())
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
-                logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
+                logger.debug("Found moves using 'move_quality'='suggest'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
-                if move_quality == "suggest" and len(good_chess_moves) > 1:
+                if len(good_chess_moves) > 1:
                     move = good_chess_moves
                     logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 else:
-                    move = random.choice(good_chess_moves)
+                    move = good_chess_moves[0]
                     logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             except KeyError:

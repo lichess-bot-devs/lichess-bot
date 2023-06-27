@@ -272,6 +272,14 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
             config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
+    for section, subsection in (("online_moves", "online_egtb"),
+                                ("lichess_bot_tbs", "syzygy"),
+                                ("lichess_bot_tbs", "gaviota")):
+        online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
+        if online_section.get("move_quality") == "good":
+            logger.warning(
+                DeprecationWarning(f"`move_quality` `good` in {subsection} is deprecated and will be removed soon."))
+
     matchmaking = CONFIG.get("matchmaking") or {}
     matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
     # `, []` is there only for mypy. It isn't used.

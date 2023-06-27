@@ -26,16 +26,17 @@ stockfish_path = f"./TEMP/sf{file_extension}"
 
 
 def download_sf() -> None:
-    """Download Stockfish 14.1."""
+    """Download Stockfish 15"""
     windows_or_linux = "win" if platform == "win32" else "linux"
-    base_name = f"stockfish_14.1_{windows_or_linux}_x64"
-    zip_link = f"https://stockfishchess.org/files/{base_name}.zip"
+    base_name = f"stockfish_15_{windows_or_linux}_x64"
+    exec_name = f"stockfish_15_x64"
+    zip_link = f"https://files.stockfishchess.org/files/{base_name}.zip"
     response = requests.get(zip_link, allow_redirects=True)
     with open("./TEMP/sf_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/sf_zip.zip", "r") as zip_ref:
         zip_ref.extractall("./TEMP/")
-    shutil.copyfile(f"./TEMP/{base_name}/{base_name}{file_extension}", stockfish_path)
+    shutil.copyfile(f"./TEMP/{base_name}/{exec_name}{file_extension}", stockfish_path)
     if windows_or_linux == "linux":
         st = os.stat(stockfish_path)
         os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)

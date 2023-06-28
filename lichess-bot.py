@@ -20,6 +20,7 @@ import copy
 import math
 import sys
 import yaml
+import traceback
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -97,6 +98,7 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                 else:
                     control_queue.put_nowait({"type": "ping"})
         except Exception:
+            logger.debug(f"Exception: {traceback.format_exc()}")
             break
 
     control_queue.put_nowait({"type": "terminated"})
@@ -979,6 +981,7 @@ def start_lichess_bot() -> None:
         start(li, user_profile, CONFIG, logging_level, args.logfile, auto_log_filename)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
+    logging.shutdown()
 
 
 def check_python_version() -> None:

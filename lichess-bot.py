@@ -20,7 +20,6 @@ import copy
 import math
 import sys
 import yaml
-import traceback
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer

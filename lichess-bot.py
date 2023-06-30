@@ -86,6 +86,7 @@ def upgrade_account(li: lichess.Lichess) -> bool:
 
 def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess) -> None:
     """Put the events in a queue."""
+    error = None
     while not terminated:
         try:
             response = li.get_event_stream()
@@ -96,10 +97,11 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                     control_queue.put_nowait(event)
                 else:
                     control_queue.put_nowait({"type": "ping"})
-        except Exception:
+        except Exception as err:
+            error = err
             break
 
-    control_queue.put_nowait({"type": "terminated"})
+    control_queue.put_nowait({"type": "terminated", "error": error})
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> None:
@@ -318,6 +320,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 restart = True
+                logger.debug("Terminating exception:", exc_info=event["error"])
                 control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
@@ -979,6 +982,7 @@ def start_lichess_bot() -> None:
         start(li, user_profile, CONFIG, logging_level, args.logfile, auto_log_filename)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
+    logging.shutdown()
 
 
 def check_python_version() -> None:

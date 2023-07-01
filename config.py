@@ -290,10 +290,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                   f"{filter_type} is not a valid value for {filter_option} (formerly delay_after_decline) parameter. "
                   f"Choices are: {', '.join(FilterType)}.")
 
-    selection_choices = {"polyglot":               ["weighted_random", "uniform_random", "best_move"],
-                         "chessdb_book":           ["all", "good", "best"],
+    selection_choices = {"polyglot": ["weighted_random", "uniform_random", "best_move"],
+                         "chessdb_book": ["all", "good", "best"],
                          "lichess_cloud_analysis": ["good", "best"],
-                         "online_egtb":            ["good", "best", "suggest"]}
+                         "online_egtb": ["good", "best", "suggest"]}
     for db_name, valid_selections in selection_choices.items():
         is_online = db_name != "polyglot"
         db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]

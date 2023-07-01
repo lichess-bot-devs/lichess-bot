@@ -28,6 +28,20 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+    - name: Restore engines
+      id: cache-temp-restore
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          TEMP
+        key: ${{ matrix.os }}-primes
     - name: Test with pytest
       run: |
         pytest
+    - name: Save engines
+      id: cache-temp-save
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          TEMP
+        key: ${{ steps.cache-temp-restore.outputs.cache-primary-key }}

@@ -37,7 +37,7 @@ jobs:
         key: ${{ matrix.os }}-engines
     - name: Test with pytest
       run: |
-        pytest
+        pytest --log-cli-level=10
     - name: Save engines
       id: cache-temp-save
       uses: actions/cache/save@v3

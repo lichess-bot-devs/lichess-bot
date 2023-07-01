@@ -19,18 +19,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install PyYAML
       - name: Update version
+        id: new-version
         run: python .github/workflows/update_version.py
-      - name: Get version
-        id: yaml-data
-        uses: jbutcher5/read-yaml@main
-        with:
-          file: 'versioning.yml'
-          key-path: '["lichess_bot_version"]'
       - name: Auto update version
         run: |
           git config --global user.email "123640915+Version-BOT@users.noreply.github.com"
           git config --global user.name "Version-BOT"
           git remote set-url origin ${{ secrets.version_bot_ssh }}
           git add versioning.yml
-          git commit -m "Auto update version to ${{ steps.yaml-data.outputs.data }}"
+          git commit -m "Auto update version to ${{ steps.new-version.outputs.new_version }}"
           git push origin HEAD:master

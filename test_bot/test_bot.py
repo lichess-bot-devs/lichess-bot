@@ -68,9 +68,8 @@ def download_sjeng() -> None:
     shutil.copyfile("./TEMP/Release/Sjeng112.exe", "./TEMP/sjeng.exe")
 
 
-if os.path.exists("TEMP"):
-    shutil.rmtree("TEMP")
-os.mkdir("TEMP")
+if not os.path.exists("TEMP"):
+    os.mkdir("TEMP")
 download_sf()
 if platform == "win32":
     download_lc0()

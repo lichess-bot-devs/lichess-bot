@@ -109,7 +109,7 @@ def set_config_default(config: CONFIG_DICT_TYPE, *sections: str, key: str, defau
     for section in sections:
         subconfig = subconfig.setdefault(section, {})
         if not isinstance(subconfig, dict):
-            raise Exception(f'The {section} section in {sections} should hold a set of key-value pairs, not a value.')
+            raise Exception(f"The {section} section in {sections} should hold a set of key-value pairs, not a value.")
     if force_empty_values:
         if subconfig.get(key) in [None, ""]:
             subconfig[key] = default
@@ -295,6 +295,40 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(filter_type is None or filter_type in FilterType.__members__.values(),
                   f"{filter_type} is not a valid value for {filter_option} (formerly delay_after_decline) parameter. "
                   f"Choices are: {', '.join(FilterType)}.")
+
+    selection_choices = {"polyglot": ["weighted_random", "uniform_random", "best_move"],
+                         "chessdb_book": ["all", "good", "best"],
+                         "lichess_cloud_analysis": ["good", "best"],
+                         "online_egtb": ["good", "best", "suggest"]}
+    for db_name, valid_selections in selection_choices.items():
+        is_online = db_name != "polyglot"
+        db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
+        db_config = db_section.get(db_name)
+        select_key = "selection" if db_name == "polyglot" else "move_quality"
+        selection = db_config.get(select_key)
+        select = f"{'online_moves:' if is_online else ''}{db_name}:{select_key}"
+        config_assert(selection in valid_selections,
+                      f"`{selection}` is not a valid `engine:{select}` value. "
+                      f"Please choose from {valid_selections}.")
+
+    lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
+    quality_selections = ["good", "best", "suggest"]
+    for tb in ["syzygy", "gaviota"]:
+        selection = (lichess_tbs_config.get(tb) or {}).get("move_quality")
+        config_assert(selection in quality_selections,
+                      f"`{selection}` is not a valid choice for `engine:lichess_bot_tbs:{tb}:move_quality`. "
+                      f"Please choose from {quality_selections}.")
+
+    explorer_choices = {"source": ["lichess", "masters", "player"],
+                        "sort": ["winrate", "games_played"]}
+    explorer_config = (CONFIG["engine"].get("online_moves") or {}).get("lichess_opening_explorer")
+    if explorer_config:
+        for parameter, choice_list in explorer_choices.items():
+            explorer_choice = explorer_config.get(parameter)
+            config_assert(explorer_choice in choice_list,
+                          f"`{explorer_choice}` is not a valid"
+                          f" `engine:online_moves:lichess_opening_explorer:{parameter}`"
+                          f" value. Please choose from {choice_list}.")
 
 
 def load_config(config_file: str) -> Configuration:

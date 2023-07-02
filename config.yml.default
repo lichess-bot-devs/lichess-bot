@@ -127,7 +127,7 @@ challenge:                         # Incoming challenges.
   only_bot: false                  # Accept challenges by bots only.
   max_increment: 20                # Maximum amount of increment to accept a challenge in seconds. The max is 180. Set to 0 for no increment.
   min_increment: 0                 # Minimum amount of increment to accept a challenge in seconds.
-  max_base: 1800                   # Maximum amount of base time to accept a challenge in seconds. The max is 315360000 (10 years).
+  max_base: 1800                   # Maximum amount of base time to accept a challenge in seconds. The max is 10800 (3 hours).
   min_base: 0                      # Minimum amount of base time to accept a challenge in seconds.
   max_days: 14                     # Maximum number of days per move to accept a challenge for a correspondence game.
                                    # Unlimited games can be accepted by removing this field or specifying .inf

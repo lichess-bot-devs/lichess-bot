@@ -89,7 +89,7 @@ class Challenge:
             if self.from_self:
                 return True, ""
 
-            allowed_opponents = list(filter(None, config.allow_list)) or [self.challenger.name]
+            allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")
                               or self.decline_due_to(not config.only_bot or self.challenger.is_bot, "onlyBot")
                               or self.decline_due_to(self.is_supported_time_control(config), "timeControl")

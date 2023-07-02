@@ -96,7 +96,7 @@ class Challenge:
                               or self.decline_due_to(self.is_supported_variant(config), "variant")
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
-                              or self.decline_due_to(self.challenger.name in config.allow_list, "generic")
+                              or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
             return not decline_reason, decline_reason

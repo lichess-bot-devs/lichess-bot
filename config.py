@@ -302,7 +302,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         selection = db_config.get(select_key)
         select = f"{'online_moves:' if is_online else ''}{db_name}:{select_key}"
         config_assert(selection in valid_selections,
-                      f"'{selection}' is not a valid 'engine:{select}' value. "
+                      f"`{selection}` is not a valid `engine:{select}` value. "
                       f"Please choose from {valid_selections}.")
 
     lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
@@ -310,7 +310,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     for tb in ["syzygy", "gaviota"]:
         selection = (lichess_tbs_config.get(tb) or {}).get("move_quality")
         config_assert(selection in quality_selections,
-                      f"`{selection}` is not a valid choice for `engine:lichess_bot_tbs:{tb}:move_quality. "
+                      f"`{selection}` is not a valid choice for `engine:lichess_bot_tbs:{tb}:move_quality`. "
                       f"Please choose from {quality_selections}.")
 
     explorer_choices = {"source": ["lichess", "masters", "player"],

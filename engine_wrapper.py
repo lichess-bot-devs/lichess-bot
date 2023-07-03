@@ -684,10 +684,9 @@ def get_book_move(board: chess.Board, game: model.Game,
 
     if board.chess960:
         variant = "chess960"
-    elif board.uci_variant == "chess":
-        variant = "standard"
     else:
-        str(board.uci_variant)
+        variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
+
     config.change_value_to_list(polyglot_cfg.config, "book", key=variant)
     books = polyglot_cfg.book.lookup(variant)
 

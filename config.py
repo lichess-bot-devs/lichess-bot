@@ -200,6 +200,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "challenge", key="max_days", default=math.inf)
     set_config_default(CONFIG, "challenge", key="min_days", default=1)
     set_config_default(CONFIG, "challenge", key="block_list", default=[], force_empty_values=True)
+    set_config_default(CONFIG, "challenge", key="allow_list", default=[], force_empty_values=True)
     set_config_default(CONFIG, "correspondence", key="checkin_period", default=600)
     set_config_default(CONFIG, "correspondence", key="move_time", default=60, force_empty_values=True)
     set_config_default(CONFIG, "correspondence", key="disconnect_time", default=300)

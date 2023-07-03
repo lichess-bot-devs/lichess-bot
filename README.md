@@ -7,7 +7,7 @@ A bridge between [Lichess Bot API](https://lichess.org/api#tag/Bot) and bots.
 
 ## Features
 Supports:
-- Evry variant and time control
+- Every variant and time control
 - UCI, XBoard, and Homemade engines
 - Matchmaking
 - Offering Draw / Resigning
@@ -16,6 +16,9 @@ Supports:
 - Online Opening Books
 - Endgame Tablebases
 - Online Endgame Tablebases
+
+# Basic Setup
+For more information see the [wiki](https://github.com/AttackingOrDefending/lichess-bot/wiki).
 
 ## How to Install
 ### Mac/Linux:
@@ -71,7 +74,6 @@ Within the file `config.yml`:
 - If you want the engine to run in a different directory (e.g., if the engine needs to read or write files at a certain location), enter that directory in the `engine: working_dir` field.
   - If this field is blank or missing, the current directory will be used.
   - IMPORTANT NOTE: If this field is used, the running engine will look for files and directories (Syzygy tablebases, for example) relative to this path, not the directory where lichess-bot was launched. Files and folders specified with absolute paths are unaffected.
-- Leave the `weights` field empty or see [LeelaChessZero section](#leelachesszero) for Neural Nets
 
 As an optional convenience, there is a folder named `engines` within the lichess-bot folder where you can copy your engine and all the files it needs. This is the default executable location in the `config.yml.default` file.
 

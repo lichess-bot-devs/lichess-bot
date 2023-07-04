@@ -32,33 +32,31 @@ class Conversation:
 
     command_prefix = "!"
 
-    def react(self, line: ChatLine, game: model.Game) -> None:
+    def react(self, line: ChatLine) -> None:
         """
         React to a received message.
 
         :param line: Information about the message.
-        :param game: The game that the command came from.
         """
         logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")!r}')
         if line.text[0] == self.command_prefix:
-            self.command(line, game, line.text[1:].lower())
+            self.command(line, line.text[1:].lower())
 
-    def command(self, line: ChatLine, game: model.Game, cmd: str) -> None:
+    def command(self, line: ChatLine, cmd: str) -> None:
         """
         Reacts to the specific commands in the chat.
 
         :param line: Information about the message.
-        :param game: The game that the command came from.
         :param cmd: The command to react to.
         """
         from_self = line.username == self.game.username
         if cmd == "commands" or cmd == "help":
             self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
-        elif cmd == "wait" and game.is_abortable():
-            game.ping(60, 120, 120)
+        elif cmd == "wait" and self.game.is_abortable():
+            self.game.ping(60, 120, 120)
             self.send_reply(line, "Waiting 60 seconds...")
         elif cmd == "name":
-            name = game.me.name
+            name = self.game.me.name
             self.send_reply(line, f"{name} running {self.engine.name()} (lichess-bot v{self.version})")
         elif cmd == "howto":
             self.send_reply(line, "How to run: Check out 'Lichess Bot API'")

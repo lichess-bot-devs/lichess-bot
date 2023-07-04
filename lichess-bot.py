@@ -605,7 +605,7 @@ def play_game(li: lichess.Lichess,
                 upd = upd or next_update(lines)
                 u_type = upd["type"] if upd else "ping"
                 if u_type == "chatLine":
-                    conversation.react(ChatLine(upd), game)
+                    conversation.react(ChatLine(upd))
                 elif u_type == "gameState":
                     game.state = upd
                     board = setup_board(game)

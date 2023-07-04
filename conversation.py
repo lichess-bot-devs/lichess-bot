@@ -13,20 +13,20 @@ logger = logging.getLogger(__name__)
 class Conversation:
     """Enables the bot to communicate with its opponent and the spectators."""
 
-    def __init__(self, game: model.Game, engine: EngineWrapper, xhr: Lichess, version: str,
+    def __init__(self, game: model.Game, engine: EngineWrapper, li: Lichess, version: str,
                  challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         """
         Communication between lichess-bot and the game chats.
 
         :param game: The game that the bot will send messages to.
         :param engine: The engine playing the game.
-        :param xhr: A class that is used for communication with lichess.
+        :param li: A class that is used for communication with lichess.
         :param version: The lichess-bot version.
         :param challenge_queue: The active challenges the bot has.
         """
         self.game = game
         self.engine = engine
-        self.xhr = xhr
+        self.li = li
         self.version = version
         self.challengers = challenge_queue
 
@@ -80,7 +80,7 @@ class Conversation:
         :param reply: The reply to send.
         """
         logger.info(f'*** {self.game.url()} [{line.room}] {self.game.username}: {reply}')
-        self.xhr.chat(self.game.id, line.room, reply)
+        self.li.chat(self.game.id, line.room, reply)
 
     def send_message(self, room: str, message: str) -> None:
         """Send the message to the chat."""

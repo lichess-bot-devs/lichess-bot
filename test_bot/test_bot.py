@@ -27,6 +27,8 @@ stockfish_path = f"./TEMP/sf{file_extension}"
 
 def download_sf() -> None:
     """Download Stockfish 15."""
+    if os.path.exists(stockfish_path):
+        return
     windows_or_linux = "win" if platform == "win32" else "linux"
     base_name = f"stockfish_15_{windows_or_linux}_x64"
     exec_name = "stockfish_15_x64"
@@ -44,6 +46,8 @@ def download_sf() -> None:
 
 def download_lc0() -> None:
     """Download Leela Chess Zero 0.29.0."""
+    if os.path.exists("./TEMP/lc0.exe"):
+        return
     response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.29.0/lc0-v0.29.0-windows-cpu-dnnl.zip",
                             allow_redirects=True)
     with open("./TEMP/lc0_zip.zip", "wb") as file:
@@ -54,6 +58,8 @@ def download_lc0() -> None:
 
 def download_sjeng() -> None:
     """Download Sjeng."""
+    if os.path.exists("./TEMP/sjeng.exe"):
+        return
     response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
     with open("./TEMP/sjeng_zip.zip", "wb") as file:
         file.write(response.content)
@@ -62,9 +68,8 @@ def download_sjeng() -> None:
     shutil.copyfile("./TEMP/Release/Sjeng112.exe", "./TEMP/sjeng.exe")
 
 
-if os.path.exists("TEMP"):
-    shutil.rmtree("TEMP")
-os.mkdir("TEMP")
+if not os.path.exists("TEMP"):
+    os.mkdir("TEMP")
 download_sf()
 if platform == "win32":
     download_lc0()

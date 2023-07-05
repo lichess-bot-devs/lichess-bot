@@ -12,10 +12,8 @@ Supports:
 - Matchmaking
 - Offering Draw / Resigning
 - Saving games as PGN
-- Opening Books
-- Online Opening Books
-- Endgame Tablebases
-- Online Endgame Tablebases
+- Local & Online Opening Books
+- Local & Online Endgame Tablebases
 
 # Basic Setup
 For more information see the [wiki](https://github.com/lichess-bot-devs/lichess-bot/wiki).

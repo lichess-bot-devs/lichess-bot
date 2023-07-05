@@ -18,9 +18,17 @@ Supports:
 - Online Endgame Tablebases
 
 # Basic Setup
-For more information see the [wiki](https://github.com/AttackingOrDefending/lichess-bot/wiki).
+For more information see the [wiki](https://github.com/lichess-bot-devs/lichess-bot/wiki).
 
-## How to Install
+## Steps
+1. [Install lichess-bot](#How-to-Install)
+2. [Create a lichess OAuth token](#Lichess-OAuth)
+3. [Upgrade to a BOT account](#Lichess-Upgrade-to-Bot-Account) (Only needs to be done once)
+4. [Setup the engine](#Setup-Engine)
+5. [Configure lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot)
+6. [Run lichess-bot](#To-Run)
+
+## How to Install<a name="How-to-Install"></a>
 ### Mac/Linux:
 - **NOTE: Only Python 3.9 or later is supported!**
 - Download the repo into lichess-bot directory.
@@ -60,14 +68,14 @@ PowerShell note: If the `activate` command does not work in PowerShell, execute 
 - Copy `config.yml.default` to `config.yml`.
 - Edit the variants: `supported_variants` and time controls: `supported_tc` from the `config.yml` file as necessary (use "#" to disable certain ones).
 
-## Lichess OAuth
+## Lichess OAuth<a name="Lichess-OAuth"></a>
 - Create an account for your bot on [Lichess.org](https://lichess.org/signup).
 - **NOTE: If you have previously played games on an existing account, you will not be able to use it as a bot account.**
 - Once your account has been created and you are logged in, [create a personal OAuth2 token with the "Play games with the bot API" (`bot:play`) scope](https://lichess.org/account/oauth/token/create?scopes[]=bot:play&description=lichess-bot) selected and a description added.
 - A `token` (e.g. `xxxxxxxxxxxxxxxx`) will be displayed. Store this in the `config.yml` file as the `token` field. You can also set the token in the environment variable `$LICHESS_BOT_TOKEN`.
 - **NOTE: You won't see this token again on Lichess, so do save it.**
 
-## Setup Engine
+## Setup Engine<a name="Setup-Engine"></a>
 Within the file `config.yml`:
 - Enter the directory containing the engine executable in the `engine: dir` field.
 - Enter the executable name in the `engine: name` field (In Windows you may need to type a name with ".exe", like "lczero.exe")
@@ -78,13 +86,13 @@ Within the file `config.yml`:
 As an optional convenience, there is a folder named `engines` within the lichess-bot folder where you can copy your engine and all the files it needs. This is the default executable location in the `config.yml.default` file.
 
 ### Engine Configuration
-See the [lichess-bot wiki](https://github.com/AttackingOrDefending/lichess-bot/wiki/Configure-lichess-bot)
+See the [lichess-bot wiki](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot)
 
-## Lichess Upgrade to Bot Account
+## Lichess Upgrade to Bot Account<a name="Lichess-Upgrade-to-Bot-Account"></a>
 **WARNING: This is irreversible. [Read more about upgrading to bot account](https://lichess.org/api#operation/botAccountUpgrade).**
 - run `python3 lichess-bot.py -u`.
 
-## To Run
+## To Run<a name="To-Run"></a>
 After activating the virtual environment created in the installation steps (the `source` line for Linux and Macs or the `activate` script for Windows), run
 ```
 python3 lichess-bot.py

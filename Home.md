@@ -12,10 +12,8 @@ Supports:
 - Matchmaking
 - Offering Draw / Resigning
 - Saving games as PGN
-- Opening Books
-- Online Opening Books
-- Endgame Tablebases
-- Online Endgame Tablebases
+- Local & Online Opening Books
+- Local & Online Endgame Tablebases
 
 ## Steps
 1. [Install lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-Install)

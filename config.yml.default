@@ -160,6 +160,7 @@ challenge:                         # Incoming challenges.
 #   - user4
 # recent_bot_challenge_age: 60     # Maximum age of a bot challenge to be considered recent in seconds
 # max_recent_bot_challenges: 2     # Maximum number of recent challenges that can be accepted from the same bot
+  bullet_requires_increment: False # Require that bullet game challenges have a non-zero increment
 
 greeting:
   # Optional substitution keywords (include curly braces):

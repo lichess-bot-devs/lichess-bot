@@ -19,7 +19,7 @@ engine:                            # Engine settings.
 #       - engines/atomicbook1.bin
 #       - engines/atomicbook2.bin
 #     etc.
-#     Use the same pattern for 'giveaway' (antichess), 'crazyhouse', 'horde', 'kingofthehill', 'racingkings' and '3check' as well.
+#     Use the same pattern for 'chess960', 'giveaway' (antichess), 'crazyhouse', 'horde', 'kingofthehill', 'racingkings' and '3check' as well.
     min_weight: 1                  # Does not select moves with weight below min_weight (min 0, max: 65535).
     selection: "weighted_random"   # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
     max_depth: 20                  # How many moves from the start to take from the book.
@@ -53,10 +53,10 @@ engine:                            # Engine settings.
     lichess_opening_explorer:
       enabled: false
       min_time: 20
-      source: "masters"      # One of "lichess", "masters", "player"
-      player_name: ""        # The lichess username. Leave empty for the bot's username to be used. Used only when source is "player".
-      sort: "winrate"        # One of "winrate", "games_played"
-      min_games: 10          # Minimum number of times a move must have been played to be chosen.
+      source: "masters"            # One of "lichess", "masters", "player"
+      player_name: ""              # The lichess username. Leave empty for the bot's username to be used. Used only when source is "player".
+      sort: "winrate"              # One of "winrate", "games_played"
+      min_games: 10                # Minimum number of times a move must have been played to be chosen.
     online_egtb:
       enabled: false               # Whether or not to enable online endgame tablebases.
       min_time: 20                 # Minimum time (in seconds) the bot must have to use online EGTBs.
@@ -76,7 +76,7 @@ engine:                            # Engine settings.
       paths:
         - "engines/gaviota"
       max_pieces: 5
-      min_dtm_to_consider_as_wdl_1: 120  # The minimum DTM to consider as syzygy WDL=1/-1. Set to 100 to disable.
+      min_dtm_to_consider_as_wdl_1: 120 # The minimum DTM to consider as syzygy WDL=1/-1. Set to 100 to disable.
       move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
 
 # engine_options:                  # Any custom command line params to pass to the engine.
@@ -155,11 +155,11 @@ challenge:                         # Incoming challenges.
 # block_list:                      # List of users from which the challenges are always declined.
 #   - user1
 #   - user2
-# allow_list:                # List of users from which challenges are exclusively accepted, all others being declined. If empty, challenges from all users may be accepted.
+# allow_list:                      # List of users from which challenges are exclusively accepted, all others being declined. If empty, challenges from all users may be accepted.
 #   - user3
 #   - user4
-# recent_bot_challenge_age: 60 # Maximum age of a bot challenge to be considered recent in seconds
-# max_recent_bot_challenges: 2 # Maximum number of recent challenges that can be accepted from the same bot
+# recent_bot_challenge_age: 60     # Maximum age of a bot challenge to be considered recent in seconds
+# max_recent_bot_challenges: 2     # Maximum number of recent challenges that can be accepted from the same bot
 
 greeting:
   # Optional substitution keywords (include curly braces):
@@ -171,7 +171,7 @@ greeting:
   hello_spectators: "Hi! I'm {me}. Type !help for a list of commands I can respond to." # Message to send to spectator chat at the start of a game
   goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 
-# pgn_directory: "game_records" # A directory where PGN-format records of the bot's games are kept
+# pgn_directory: "game_records"    # A directory where PGN-format records of the bot's games are kept
 
 matchmaking:
   allow_matchmaking: false         # Set it to 'true' to challenge other bots.

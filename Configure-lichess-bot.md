@@ -158,6 +158,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `only_bot`: Whether to only accept challenges from other bots.
   - `max_increment`: The maximum value of time increment.
   - `min_increment`: The minimum value of time increment.
+  - `bullet_requires_increment`: Require that bullet game challenges from bots have a non-zero increment. This can be useful if a bot often loses on time in short games due to spotty network connections or other sources of delay.
   - `max_base`: The maximum base time for a game.
   - `min_base`: The minimum base time for a game.
   - `max_days`: The maximum number of days for a correspondence game.

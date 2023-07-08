@@ -46,7 +46,9 @@ class Challenge:
         if self.speed not in speeds:
             return False
 
-        require_non_zero_increment = self.speed == "bullet" and challenge_cfg.bullet_requires_increment
+        require_non_zero_increment = (self.challenger.is_bot
+                                      and self.speed == "bullet"
+                                      and challenge_cfg.bullet_requires_increment)
         increment_min = max(increment_min, 1 if require_non_zero_increment else 0)
 
         if self.base is not None and self.increment is not None:

@@ -57,11 +57,24 @@ class FirstMove(ExampleEngine):
 
 
 class ComboEngine(ExampleEngine):
-    """Get a move using multiple different methods."""
+    """
+    Get a move using multiple different methods.
+
+    This engine demonstrates how one can use `time_limit`, `draw_offered`, and `root_moves`.
+    """
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
                root_moves: MOVE) -> chess.engine.PlayResult:
-        """Choose a move using multiple different methods."""
+        """
+        Choose a move using multiple different methods.
+
+        :param board: The current position.
+        :param time_limit: Conditions for how long the engine can search (e.g. we have 10 seconds and search up to depth 10).
+        :param ponder: Whether the engine can ponder after playing a move.
+        :param draw_offered: Whether the bot was offered a draw.
+        :param root_moves: If it is a list, the engine should only play a move that is in `root_moves`.
+        :return: The move to play.
+        """
         if isinstance(time_limit.time, int):
             my_time = time_limit.time
             my_inc = 0

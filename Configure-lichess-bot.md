@@ -82,7 +82,6 @@ One last option is `go_commands`. Beneath this option, commands prior to the `go
 ```
 will precede the `go` command to start thinking with `sd 5`. The other `go_commands` list above for UCI engines (`nodes` and `movetime`) are not valid for XBoard engines and will detrimentally affect their time control.
 
-
 ## External moves
 - `polyglot`: Tell lichess-bot whether your bot should use an opening book. Multiple books can be specified for each chess variant.
     - `enabled`: Whether to use the book at all.
@@ -90,16 +89,6 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - `min_weight`: The minimum weight or quality a move must have if it is to have a chance of being selected. If a move cannot be found that has at least this weight, no move will be selected.
     - `selection`: The method for selecting a move. The choices are: `"weighted_random"` where moves with a higher weight/quality have a higher probability of being chosen, `"uniform_random"` where all moves of sufficient quality have an equal chance of being chosen, and `"best_move"` where the move with the highest weight is always chosen.
     - `max_depth`: The maximum number of moves a bot plays before it stops consulting the book. If `max_depth` is 3, then the bot will stop consulting the book after its third move.
-- `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine. XBoard engines can resign and offer/accept draw without this feature enabled.
-    - `resign_enabled`: Whether the bot is allowed to resign based on the evaluation.
-    - `resign_score`: The engine evaluation has to be less than or equal to `resign_score` for the bot to resign.
-    - `resign_for_egtb_minus_two`: If true the bot will resign in positions where the online_egtb returns a wdl of -2.
-    - `resign_moves`: The evaluation has to be less than or equal to `resign_score` for `resign_moves` amount of moves for the bot to resign.
-    - `offer_draw_enabled`: Whether the bot is allowed to offer/accept draw based on the evaluation.
-    - `offer_draw_score`: The absolute value of the engine evaluation has to be less than or equal to `offer_draw_score` for the bot to offer/accept draw.
-    - `offer_draw_for_egtb_zero`: If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
-    - `offer_draw_moves`: The absolute value of the evaluation has to be less than or equal to `offer_draw_score` for `offer_draw_moves` amount of moves for the bot to offer/accept draw.
-    - `offer_draw_pieces`: The bot only offers/accepts draws if the position has less than or equal to `offer_draw_pieces` pieces.
 - `online_moves`: This section gives your bot access to various online resources for choosing moves like opening books and endgame tablebases. This can be a supplement or a replacement for chess databases stored on your computer. There are four sections that correspond to four different online databases:
     1. `chessdb_book`: Consults a [Chinese chess position database](https://www.chessdb.cn/), which also hosts a xiangqi database.
     2. `lichess_cloud_analysis`: Consults [Lichess's own position analysis database](https://lichess.org/api#operation/apiCloudEval).
@@ -141,6 +130,18 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
             - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned. Can't be used with XBoard engines.
     - Configurations only in `gaviota`:
         - `min_dtm_to_consider_as_wdl_1`: The minimum DTM to consider as syzygy WDL=1/-1. Setting it to 100 will disable it.
+
+## Offering draw and resigning
+- `draw_or_resign`: This section allows your bot to resign or offer/accept draw based on the evaluation by the engine. XBoard engines can resign and offer/accept draw without this feature enabled.
+    - `resign_enabled`: Whether the bot is allowed to resign based on the evaluation.
+    - `resign_score`: The engine evaluation has to be less than or equal to `resign_score` for the bot to resign.
+    - `resign_for_egtb_minus_two`: If true the bot will resign in positions where the online_egtb returns a wdl of -2.
+    - `resign_moves`: The evaluation has to be less than or equal to `resign_score` for `resign_moves` amount of moves for the bot to resign.
+    - `offer_draw_enabled`: Whether the bot is allowed to offer/accept draw based on the evaluation.
+    - `offer_draw_score`: The absolute value of the engine evaluation has to be less than or equal to `offer_draw_score` for the bot to offer/accept draw.
+    - `offer_draw_for_egtb_zero`: If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
+    - `offer_draw_moves`: The absolute value of the evaluation has to be less than or equal to `offer_draw_score` for `offer_draw_moves` amount of moves for the bot to offer/accept draw.
+    - `offer_draw_pieces`: The bot only offers/accepts draws if the position has less than or equal to `offer_draw_pieces` pieces.
 
 ## Options for correspondence games
 - `correspondence` These options control how the engine behaves during correspondence games.

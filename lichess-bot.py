@@ -187,7 +187,7 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
         queue.task_done()
 
 
-def game_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE]) -> None:
+def thread_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE]) -> None:
     """Configure the game logger."""
     h = logging.handlers.QueueHandler(queue)
     root = logging.getLogger()
@@ -233,6 +233,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
                                                      log_filename,
                                                      auto_log_filename))
     logging_listener.start()
+    thread_logging_configurer(logging_queue)
 
     try:
         lichess_bot_main(li,
@@ -559,7 +560,7 @@ def play_game(li: lichess.Lichess,
     :param correspondence_queue: The queue containing the correspondence games.
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
     """
-    game_logging_configurer(logging_queue)
+    thread_logging_configurer(logging_queue)
     logger = logging.getLogger(__name__)
 
     response = li.get_game_stream(game_id)

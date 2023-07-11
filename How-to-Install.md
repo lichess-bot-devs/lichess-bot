@@ -14,6 +14,8 @@ python3 -m pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`.
 
+**Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)
+
 ### Windows
 - **NOTE: Only Python 3.9 or later is supported!**
 - If needed, install Python:
@@ -34,3 +36,5 @@ pip install -r requirements.txt
 ```
 PowerShell note: If the `activate` command does not work in PowerShell, execute `Set-ExecutionPolicy RemoteSigned` first and choose `Y` there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with `Set-ExecutionPolicy Restricted` and pressing `Y`.
 - Copy `config.yml.default` to `config.yml`.
+
+**Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)

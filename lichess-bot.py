@@ -843,10 +843,7 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     if not config.pgn_directory:
         return
 
-    try:
-        os.mkdir(config.pgn_directory)
-    except FileExistsError:
-        pass
+    os.makedirs(config.pgn_directory, exist_ok=True)
 
     game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')

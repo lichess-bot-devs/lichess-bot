@@ -262,6 +262,6 @@ matchmaking:
   challenge_filter: none
 ```
 
-**Next step**: [Run lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-Run-lichess-bot)
+**Next step**: [Run lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-Run-lichess%E2%80%90bot)
 
 **Previous step**: [Setup the engine](https://github.com/lichess-bot-devs/lichess-bot/wiki/Setup-the-engine)

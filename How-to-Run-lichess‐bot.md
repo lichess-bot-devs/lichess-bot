@@ -48,3 +48,5 @@ WantedBy=multi-user.target
 ## Quitting
 - Press `CTRL+C`.
 - It may take some time to quit.
+
+**Previous step**: [Configure lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot)

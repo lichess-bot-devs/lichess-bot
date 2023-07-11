@@ -13,7 +13,6 @@ source ./venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```
 - Copy `config.yml.default` to `config.yml`.
-- Edit the variants: `supported_variants` and time controls: `supported_tc` from the `config.yml` file as necessary.
 
 ### Windows
 - **NOTE: Only Python 3.9 or later is supported!**
@@ -35,4 +34,3 @@ pip install -r requirements.txt
 ```
 PowerShell note: If the `activate` command does not work in PowerShell, execute `Set-ExecutionPolicy RemoteSigned` first and choose `Y` there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with `Set-ExecutionPolicy Restricted` and pressing `Y`.
 - Copy `config.yml.default` to `config.yml`.
-- Edit the variants: `supported_variants` and time controls: `supported_tc` from the `config.yml` file as necessary (use "#" to disable certain ones).

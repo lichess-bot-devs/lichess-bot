@@ -26,3 +26,7 @@ As an optional convenience, there is a folder named `engines` within the lichess
 - The `lc0.exe` should be doubleclicked and the windows safesearch warning about it being unsigned should be cleared (be careful and be sure you have the genuine file).
 - Change the `engine.name` key in the `config.yml` file to `lc0.exe`, no need to edit the `config.yml` file concerning the weights file as the `lc0.exe` will use whatever `*.pb.gz` is in the same folder (have only one `*pb.gz` file in the `engines` directory).
 - To start: `python3 lichess-bot.py`.
+
+**Next step**: [Configure lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot)
+
+**Previous step**: [Upgrade to a BOT accout](https://github.com/lichess-bot-devs/lichess-bot/wiki/Upgrade-to-a-BOT-account)

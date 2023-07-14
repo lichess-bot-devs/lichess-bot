@@ -24,10 +24,10 @@ python3 -m pip install -r requirements.txt
   - If the Python version is at least 3.10, a default local install works.
   - If the Python version is 3.9, choose "Custom installation", keep the defaults on the Optional Features page, and choose "Install for all users" in the Advanced Options page.
 - Start Terminal, PowerShell, cmd, or your preferred command prompt.
-- Upgrade pip: `python -m pip install --upgrade pip`.
+- Upgrade pip: `py -m pip install --upgrade pip`.
 - Download the repo into lichess-bot directory.
 - Navigate to the directory: `cd [folder's address]` (for example, `cd C:\Users\username\repos\lichess-bot`).
-- Install virtualenv: `pip install virtualenv`.
+- Install virtualenv: `py -m pip install virtualenv`.
 - Setup virtualenv:
 ```
 python -m venv venv # If this fails you probably need to add Python3 to your PATH.

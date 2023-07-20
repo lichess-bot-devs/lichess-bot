@@ -30,7 +30,7 @@ python3 -m pip install -r requirements.txt
 - Install virtualenv: `py -m pip install virtualenv`.
 - Setup virtualenv:
 ```
-python -m venv venv # If this fails you probably need to add Python3 to your PATH.
+py -m venv venv # If this fails you probably need to add Python3 to your PATH.
 venv\Scripts\activate
 pip install -r requirements.txt
 ```

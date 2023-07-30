@@ -1,6 +1,7 @@
 """Automatically updates the lichess-bot version."""
 import yaml
 import datetime
+import os
 
 with open("versioning.yml") as version_file:
     versioning_info = yaml.safe_load(version_file)
@@ -20,3 +21,6 @@ versioning_info["lichess_bot_version"] = new_version
 
 with open("versioning.yml", "w") as version_file:
     yaml.dump(versioning_info, version_file, sort_keys=False)
+
+with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+    print(f"new_version={new_version}", file=fh)

@@ -10,18 +10,19 @@ import logging
 import time
 import random
 from collections import Counter
+from collections.abc import Generator, Callable
 from contextlib import contextmanager
 import config
 import model
 import lichess
 from config import Configuration
-from typing import Dict, Any, List, Optional, Union, Tuple, Generator, Callable, Type
-OPTIONS_TYPE = Dict[str, Any]
-MOVE_INFO_TYPE = Dict[str, Any]
-COMMANDS_TYPE = List[str]
-LICHESS_EGTB_MOVE = Dict[str, Any]
-CHESSDB_EGTB_MOVE = Dict[str, Any]
-MOVE = Union[chess.engine.PlayResult, List[chess.Move]]
+from typing import Any, Optional, Union
+OPTIONS_TYPE = dict[str, Any]
+MOVE_INFO_TYPE = dict[str, Any]
+COMMANDS_TYPE = list[str]
+LICHESS_EGTB_MOVE = dict[str, Any]
+CHESSDB_EGTB_MOVE = dict[str, Any]
+MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
     :return: An engine. Either UCI, XBoard, or Homemade.
     """
     cfg = engine_config.engine
-    engine_path = os.path.join(cfg.dir, cfg.name)
+    engine_path = os.path.abspath(os.path.join(cfg.dir, cfg.name))
     engine_type = cfg.protocol
     commands = [engine_path]
     if cfg.engine_options:
@@ -48,7 +49,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
-    Engine: Union[Type[UCIEngine], Type[XBoardEngine], Type[MinimalEngine]]
+    Engine: Union[type[UCIEngine], type[XBoardEngine], type[MinimalEngine]]
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
@@ -120,10 +121,10 @@ class EngineWrapper:
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         """
         self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
-        self.scores: List[chess.engine.PovScore] = []
+        self.scores: list[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
-        self.move_commentary: List[MOVE_INFO_TYPE] = []
+        self.move_commentary: list[MOVE_INFO_TYPE] = []
         self.comment_start_index = -1
 
     def play_move(self,
@@ -337,7 +338,7 @@ class EngineWrapper:
             return f"{round(number / 1e3, 1)}K"
         return str(number)
 
-    def get_stats(self, for_chat: bool = False) -> List[str]:
+    def get_stats(self, for_chat: bool = False) -> list[str]:
         """
         Get the stats returned by the engine.
 
@@ -347,7 +348,7 @@ class EngineWrapper:
         info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
         def to_readable_value(stat: str, info: MOVE_INFO_TYPE) -> str:
-            readable: Dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
+            readable: dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
                                                          "hashfull": lambda x: f"{round(x / 10, 1)}%",
                                                          "nodes": self.readable_number,
                                                          "nps": lambda x: f"{self.readable_number(x)}nps",
@@ -388,7 +389,7 @@ class EngineWrapper:
 
     def name(self) -> str:
         """Get the name of the engine."""
-        engine_info: Dict[str, str] = dict(self.engine.id)
+        engine_info: dict[str, str] = dict(self.engine.id)
         name: str = engine_info["name"]
         return name
 
@@ -582,7 +583,7 @@ class FillerEngine:
 
     def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
         """:param name: The name to send to the chat."""
-        self.id: Dict[str, str] = {
+        self.id: dict[str, str] = {
             "name": name
         }
         self.name = name
@@ -600,7 +601,7 @@ class FillerEngine:
         return method
 
 
-def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
+def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     """
     Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `strategies.RandomMove`.
 
@@ -608,7 +609,7 @@ def getHomemadeEngine(name: str) -> Type[MinimalEngine]:
     :return: The engine with this name.
     """
     import strategies
-    engine: Type[MinimalEngine] = getattr(strategies, name)
+    engine: type[MinimalEngine] = getattr(strategies, name)
     return engine
 
 
@@ -682,7 +683,11 @@ def get_book_move(board: chess.Board, game: model.Game,
     if not use_book or len(board.move_stack) > max_game_length:
         return no_book_move
 
-    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
+    if board.chess960:
+        variant = "chess960"
+    else:
+        variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
+
     config.change_value_to_list(polyglot_cfg.config, "book", key=variant)
     books = polyglot_cfg.book.lookup(variant)
 
@@ -709,7 +714,7 @@ def get_book_move(board: chess.Board, game: model.Game,
 
 
 def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: config.Configuration,
-                    draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
+                    draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
     """
     Get a move from an online source.
 
@@ -718,6 +723,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     online_egtb_cfg = online_moves_cfg.online_egtb
     chessdb_cfg = online_moves_cfg.chessdb_book
     lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
+    opening_explorer_cfg = online_moves_cfg.lichess_opening_explorer
     max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
     offer_draw = False
     resign = False
@@ -742,6 +748,9 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move, comment = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
+    if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
+        best_move = get_opening_explorer_move(li, board, game, opening_explorer_cfg)
+
     if best_move:
         if isinstance(best_move, str):
             return chess.engine.PlayResult(chess.Move.from_uci(best_move),
@@ -751,14 +760,14 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
                                            resigned=resign)
         return [chess.Move.from_uci(move) for move in best_move]
     out_of_online_opening_book_moves[game.id] += 1
-    used_opening_books = chessdb_cfg.enabled or lichess_cloud_cfg.enabled
+    used_opening_books = chessdb_cfg.enabled or lichess_cloud_cfg.enabled or opening_explorer_cfg.enabled
     if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:
         logger.info(f"Will stop using online opening books for game {game.id}.")
     return chess.engine.PlayResult(None, None)
 
 
 def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                     chessdb_cfg: config.Configuration) -> Tuple[Optional[str], Optional[chess.engine.InfoDict]]:
+                     chessdb_cfg: config.Configuration) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
     """Get a move from chessdb.cn's opening book."""
     wb = "w" if board.turn == chess.WHITE else "b"
     use_chessdb = chessdb_cfg.enabled
@@ -792,10 +801,6 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
             else:
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn for game {game.id}")
-
-        if chessdb_cfg.contribute:
-            params["action"] = "queue"
-            li.online_book_get(site, params=params)
     except Exception:
         pass
 
@@ -803,8 +808,8 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
 
 
 def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                           lichess_cloud_cfg: config.Configuration) -> Tuple[Optional[str], Optional[chess.engine.InfoDict]]:
-    """Get the move from the lichess's cloud analysis."""
+                           lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
+    """Get a move from the lichess's cloud analysis."""
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
     min_time = lichess_cloud_cfg.min_time * 1000
@@ -855,8 +860,53 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
     return move, comment
 
 
+def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+                              opening_explorer_cfg: config.Configuration) -> Optional[str]:
+    """Get a move from lichess's opening explorer."""
+    wb = "w" if board.turn == chess.WHITE else "b"
+    time_left = game.state[f"{wb}time"]
+    min_time = opening_explorer_cfg.min_time * 1000
+    source = opening_explorer_cfg.source
+    if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":
+        return None
+
+    move = None
+    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    try:
+        if source == "masters":
+            params = {"fen": board.fen(), "moves": 100}
+            response = li.online_book_get("https://explorer.lichess.ovh/masters", params)
+        elif source == "player":
+            player = opening_explorer_cfg.player_name
+            if not player:
+                player = game.username
+            params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
+                      "recentGames": 0, "color": "white" if wb == "w" else "black"}
+            response = li.online_book_get("https://explorer.lichess.ovh/player", params, True)
+        else:
+            params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
+            response = li.online_book_get("https://explorer.lichess.ovh/lichess", params)
+        moves = []
+        for possible_move in response["moves"]:
+            games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
+            winrate = (possible_move["white"] + possible_move["draws"] * .5) / games_played
+            if games_played >= opening_explorer_cfg.min_games:
+                # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
+                # the second one will be used.
+                moves.append((winrate if opening_explorer_cfg.sort == "winrate" else games_played,
+                              games_played if opening_explorer_cfg.sort == "winrate" else winrate, possible_move["uci"]))
+        moves.sort(reverse=True)
+        move = moves[0][2]
+        logger.info(f"Got move {move} from lichess opening explorer ({opening_explorer_cfg.sort}: {moves[0][0]})"
+                    f" for game {game.id}")
+    except Exception:
+        pass
+
+    return move
+
+
 def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                         online_egtb_cfg: config.Configuration) -> Tuple[Union[str, List[str], None], int]:
+                         online_egtb_cfg: config.Configuration) -> tuple[Union[str, list[str], None], int]:
     """
     Get a move from an online egtb (either by lichess or chessdb).
 
@@ -893,7 +943,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
 
 
 def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.Configuration,
-                  draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, List[chess.Move]]:
+                  draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
     """
     Get a move from a local egtb.
 
@@ -919,7 +969,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
 
 def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
-                          variant: str) -> Tuple[Union[str, List[str], None], int]:
+                          variant: str) -> tuple[Union[str, list[str], None], int]:
     """
     Get a move from lichess's egtb.
 
@@ -986,7 +1036,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
 
 
 def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
-                          quality: str) -> Tuple[Union[str, List[str], None], int]:
+                          quality: str) -> tuple[Union[str, list[str], None], int]:
     """
     Get a move from chessdb's egtb.
 
@@ -1050,7 +1100,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
 
 
 def get_syzygy(board: chess.Board, game: model.Game,
-               syzygy_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
+               syzygy_cfg: config.Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
     """
     Get a move from local syzygy egtbs.
 
@@ -1060,7 +1110,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
             or chess.popcount(board.occupied) > syzygy_cfg.max_pieces
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
         return None, -3
-    move: Union[chess.Move, List[chess.Move]]
+    move: Union[chess.Move, list[chess.Move]]
     move_quality = syzygy_cfg.move_quality
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
         for path in syzygy_cfg.paths[1:]:
@@ -1080,24 +1130,25 @@ def get_syzygy(board: chess.Board, game: model.Game,
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             else:
+                # There can be multiple moves with the same dtz.
                 best_dtz = min([dtz for chess_move, dtz in good_moves])
                 best_moves = [chess_move for chess_move, dtz in good_moves if dtz == best_dtz]
                 move = random.choice(best_moves)
                 logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz}) for game {game.id}")
                 return move, best_wdl
         except KeyError:
-            # Attempt to only get the WDL score. It returns a move of quality="good", even if quality is set to "best".
+            # Attempt to only get the WDL score. It returns moves of quality="suggest", even if quality is set to "best".
             try:
                 moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
                 best_wdl = max(moves.values())
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
-                logger.debug("Found a move using 'move_quality'='good'. We didn't find an '.rtbz' file for this endgame."
+                logger.debug("Found moves using 'move_quality'='suggest'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
-                if move_quality == "suggest" and len(good_chess_moves) > 1:
+                if len(good_chess_moves) > 1:
                     move = good_chess_moves
                     logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 else:
-                    move = random.choice(good_chess_moves)
+                    move = good_chess_moves[0]
                     logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
             except KeyError:
@@ -1116,7 +1167,7 @@ def dtz_to_wdl(dtz: int) -> int:
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
-                gaviota_cfg: config.Configuration) -> Tuple[Union[chess.Move, List[chess.Move], None], int]:
+                gaviota_cfg: config.Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
     """
     Get a move from local gaviota egtbs.
 
@@ -1126,7 +1177,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
             or chess.popcount(board.occupied) > gaviota_cfg.max_pieces
             or board.uci_variant != "chess"):
         return None, -3
-    move: Union[chess.Move, List[chess.Move]]
+    move: Union[chess.Move, list[chess.Move]]
     move_quality = gaviota_cfg.move_quality
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
@@ -1188,8 +1239,8 @@ def dtm_to_wdl(dtm: int, min_dtm_to_consider_as_wdl_1: int) -> int:
     return piecewise_function([(-100, -1), (-1, -2), (0, 0), (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
 
 
-def good_enough_gaviota_moves(good_moves: List[Tuple[chess.Move, int]], best_dtm: int,
-                              min_dtm_to_consider_as_wdl_1: int) -> List[Tuple[chess.Move, int]]:
+def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm: int,
+                              min_dtm_to_consider_as_wdl_1: int) -> list[tuple[chess.Move, int]]:
     """
     Get the moves that are good enough to consider.
 
@@ -1220,7 +1271,7 @@ def good_enough_gaviota_moves(good_moves: List[Tuple[chess.Move, int]], best_dtm
         return good_moves
 
 
-def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int, position: int) -> int:
+def piecewise_function(range_definitions: list[tuple[int, int]], last_value: int, position: int) -> int:
     """
     Return a value according to a position argument.
 
@@ -1261,7 +1312,7 @@ def piecewise_function(range_definitions: List[Tuple[int, int]], last_value: int
 
 
 def score_syzygy_moves(board: chess.Board, scorer: Callable[[chess.syzygy.Tablebase, chess.Board], int],
-                       tablebase: chess.syzygy.Tablebase) -> Dict[chess.Move, int]:
+                       tablebase: chess.syzygy.Tablebase) -> dict[chess.Move, int]:
     """Score all the moves using syzygy egtbs."""
     moves = {}
     for move in board.legal_moves:
@@ -1275,7 +1326,7 @@ def score_gaviota_moves(board: chess.Board,
                         scorer: Callable[[Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase],
                                           chess.Board], int],
                         tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase]
-                        ) -> Dict[chess.Move, int]:
+                        ) -> dict[chess.Move, int]:
     """Score all the moves using gaviota egtbs."""
     moves = {}
     for move in board.legal_moves:

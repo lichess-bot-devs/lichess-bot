@@ -263,17 +263,17 @@ class Player:
 
     def __init__(self, player_info: dict[str, Any]) -> None:
         """:param player_info: Contains information about a player."""
-        self.name: str = player_info.get("name", "")
         self.title = player_info.get("title")
-        self.is_bot = self.title == "BOT"
         self.rating = player_info.get("rating")
         self.provisional = player_info.get("provisional")
         self.aiLevel = player_info.get("aiLevel")
+        self.is_bot = self.title == "BOT" or self.aiLevel is not None
+        self.name: str = f"AI level {self.aiLevel}" if self.aiLevel else player_info.get("name", "")
 
     def __str__(self) -> str:
         """Get a string representation of `Player`."""
         if self.aiLevel:
-            return f"AI level {self.aiLevel}"
+            return self.name
         else:
             rating = f'{self.rating}{"?" if self.provisional else ""}'
             return f'{self.title or ""} {self.name} ({rating})'.strip()

@@ -384,8 +384,12 @@ class EngineWrapper:
         return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponent's information and sends it to the engine. Depends on the protocol."""
-        pass
+        """Get the opponent's information and sends it to the engine."""
+        opponent = chess.engine.Opponent(name=game.opponent.name,
+                                         title=game.opponent.title,
+                                         rating=game.opponent.rating,
+                                         is_engine=game.opponent.is_bot)
+        self.engine.send_opponent_information(opponent=opponent, engine_rating=game.me.rating)
 
     def name(self) -> str:
         """Get the name of the engine."""
@@ -441,16 +445,6 @@ class UCIEngine(EngineWrapper):
         """Tell the engine to stop searching."""
         self.engine.protocol.send_line("stop")
 
-    def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponent's info and send it to the engine."""
-        name = game.opponent.name
-        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol)
-                and "UCI_Opponent" in self.engine.protocol.config):
-            rating = game.opponent.rating or "none"
-            title = game.opponent.title or "none"
-            player_type = "computer" if title == "BOT" else "human"
-            self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
-
     def report_game_result(self, game: model.Game, board: chess.Board) -> None:
         """Send the game result to the engine."""
         if isinstance(self.engine.protocol, chess.engine.UciProtocol):
@@ -502,17 +496,6 @@ class XBoardEngine(EngineWrapper):
     def stop(self) -> None:
         """Tell the engine to stop searching."""
         self.engine.protocol.send_line("?")
-
-    def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponent's info and send it to the engine."""
-        if (game.opponent.name and isinstance(self.engine.protocol, chess.engine.XBoardProtocol)
-                and self.engine.protocol.features.get("name", True)):
-            title = f"{game.opponent.title} " if game.opponent.title else ""
-            self.engine.protocol.send_line(f"name {title}{game.opponent.name}")
-        if game.me.rating and game.opponent.rating:
-            self.engine.protocol.send_line(f"rating {game.me.rating} {game.opponent.rating}")
-        if game.opponent.title == "BOT":
-            self.engine.protocol.send_line("computer")
 
 
 class MinimalEngine(EngineWrapper):

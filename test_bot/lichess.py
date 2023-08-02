@@ -3,7 +3,18 @@ import time
 import chess
 import chess.engine
 import json
-from typing import Dict, Union, List, Optional, Generator
+import logging
+import traceback
+from typing import Union, Any, Optional, Generator
+
+logger = logging.getLogger(__name__)
+
+
+def backoff_handler(details: Any) -> None:
+    """Log exceptions inside functions with the backoff decorator."""
+    logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
+                 "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
+    logger.debug(f"Exception: {traceback.format_exc()}")
 
 
 class GameStream:
@@ -112,7 +123,7 @@ class Lichess:
         """Has the same parameters as `lichess.Lichess` to be able to be used in its placed without any modification."""
         self.baseUrl = url
         self.game_accepted = False
-        self.moves: List[chess.engine.PlayResult] = []
+        self.moves: list[chess.engine.PlayResult] = []
         self.sent_game = False
 
     def upgrade_to_bot_account(self) -> None:
@@ -155,7 +166,7 @@ class Lichess:
         """Isn't used in tests."""
         return
 
-    def get_profile(self) -> Dict[str, Union[str, bool, Dict[str, str]]]:
+    def get_profile(self) -> dict[str, Union[str, bool, dict[str, str]]]:
         """Return a simple profile for the bot that lichess-bot uses when testing."""
         return {"id": "b",
                 "username": "b",
@@ -168,7 +179,7 @@ class Lichess:
                 "followsYou": False,
                 "perfs": {}}
 
-    def get_ongoing_games(self) -> List[str]:
+    def get_ongoing_games(self) -> list[str]:
         """Return that the bot isn't playing a game."""
         return []
 
@@ -190,11 +201,11 @@ class Lichess:
 *
 """
 
-    def get_online_bots(self) -> List[Dict[str, Union[str, bool]]]:
+    def get_online_bots(self) -> list[dict[str, Union[str, bool]]]:
         """Return that the only bot online is us."""
         return [{"username": "b", "online": True}]
 
-    def challenge(self, username: str, params: Dict[str, str]) -> None:
+    def challenge(self, username: str, params: dict[str, str]) -> None:
         """Isn't used in tests."""
         return
 
@@ -202,7 +213,7 @@ class Lichess:
         """Isn't used in tests."""
         return
 
-    def online_book_get(self, path: str, params: Optional[Dict[str, str]] = None) -> None:
+    def online_book_get(self, path: str, params: Optional[dict[str, str]] = None) -> None:
         """Isn't used in tests."""
         return
 

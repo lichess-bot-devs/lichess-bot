@@ -6,7 +6,8 @@ import datetime
 from enum import Enum
 from timer import Timer
 from config import Configuration
-from typing import Dict, Any, Tuple, List, DefaultDict
+from typing import Any
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Challenge:
     """Store information about a challenge."""
 
-    def __init__(self, challenge_info: Dict[str, Any], user_profile: Dict[str, Any]) -> None:
+    def __init__(self, challenge_info: dict[str, Any], user_profile: dict[str, Any]) -> None:
         """:param user_profile: Information about our bot."""
         self.id = challenge_info["id"]
         self.rated = challenge_info["rated"]
@@ -45,6 +46,11 @@ class Challenge:
         if self.speed not in speeds:
             return False
 
+        require_non_zero_increment = (self.challenger.is_bot
+                                      and self.speed == "bullet"
+                                      and challenge_cfg.bullet_requires_increment)
+        increment_min = max(increment_min, 1 if require_non_zero_increment else 0)
+
         if self.base is not None and self.increment is not None:
             # Normal clock game
             return (increment_min <= self.increment <= increment_max
@@ -60,7 +66,7 @@ class Challenge:
         """Check whether the mode is supported."""
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
-    def is_supported_recent(self, config: Configuration, recent_bot_challenges: DefaultDict[str, List[Timer]]) -> bool:
+    def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]]) -> bool:
         """Check whether we have played a lot of games with this opponent recently. Only used when the oppoennt is a BOT."""
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
@@ -82,18 +88,20 @@ class Challenge:
         return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration,
-                     recent_bot_challenges: DefaultDict[str, List[Timer]]) -> Tuple[bool, str]:
+                     recent_bot_challenges: defaultdict[str, list[Timer]]) -> tuple[bool, str]:
         """Whether the challenge is supported."""
         try:
             if self.from_self:
                 return True, ""
 
+            allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")
                               or self.decline_due_to(not config.only_bot or self.challenger.is_bot, "onlyBot")
                               or self.decline_due_to(self.is_supported_time_control(config), "timeControl")
                               or self.decline_due_to(self.is_supported_variant(config), "variant")
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
+                              or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
 
             return not decline_reason, decline_reason
@@ -136,7 +144,7 @@ class Termination(str, Enum):
 class Game:
     """Store information about a game."""
 
-    def __init__(self, game_info: Dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
+    def __init__(self, game_info: dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
         self.id: str = game_info["id"]
@@ -151,7 +159,7 @@ class Game:
         self.white = Player(game_info["white"])
         self.black = Player(game_info["black"])
         self.initial_fen = game_info.get("initialFen")
-        self.state: Dict[str, Any] = game_info["state"]
+        self.state: dict[str, Any] = game_info["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
@@ -253,19 +261,19 @@ class Game:
 class Player:
     """Store information about a player."""
 
-    def __init__(self, player_info: Dict[str, Any]) -> None:
+    def __init__(self, player_info: dict[str, Any]) -> None:
         """:param player_info: Contains information about a player."""
-        self.name: str = player_info.get("name", "")
         self.title = player_info.get("title")
-        self.is_bot = self.title == "BOT"
         self.rating = player_info.get("rating")
         self.provisional = player_info.get("provisional")
         self.aiLevel = player_info.get("aiLevel")
+        self.is_bot = self.title == "BOT" or self.aiLevel is not None
+        self.name: str = f"AI level {self.aiLevel}" if self.aiLevel else player_info.get("name", "")
 
     def __str__(self) -> str:
         """Get a string representation of `Player`."""
         if self.aiLevel:
-            return f"AI level {self.aiLevel}"
+            return self.name
         else:
             rating = f'{self.rating}{"?" if self.provisional else ""}'
             return f'{self.title or ""} {self.name} ({rating})'.strip()

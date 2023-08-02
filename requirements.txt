@@ -2,12 +2,12 @@ chess==1.10.0
 PyYAML==6.0.1
 requests==2.31.0
 backoff==2.2.1
-rich==13.4.2
+rich==13.5.1
 
 # Requirements for tests
 pytest==7.4.0
 pytest-timeout==2.1.0
-flake8==6.0.0
+flake8==6.1.0
 flake8-markdown==0.4.0
 flake8-docstrings==1.7.0
 mypy==1.4.1

@@ -353,8 +353,12 @@ class EngineWrapper:
         return [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponent's information and sends it to the engine. Depends on the protocol."""
-        pass
+        """Get the opponent's information and sends it to the engine."""
+        opponent = chess.engine.Opponent(name=game.opponent.name,
+                                         title=game.opponent.title,
+                                         rating=game.opponent.rating,
+                                         is_engine=game.opponent.is_bot)
+        self.engine.send_opponent_information(opponent=opponent, engine_rating=game.me.rating)
 
     def name(self) -> str:
         """Get the name of the engine."""
@@ -426,16 +430,6 @@ class UCIEngine(EngineWrapper):
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
                                                           **popen_args)
         self.engine.configure(options)
-
-    def get_opponent_info(self, game: model.Game) -> None:
-        """Get the opponent's info and send it to the engine."""
-        name = game.opponent.name
-        if (name and isinstance(self.engine.protocol, chess.engine.UciProtocol)
-                and "UCI_Opponent" in self.engine.protocol.config):
-            rating = game.opponent.rating or "none"
-            title = game.opponent.title or "none"
-            player_type = "computer" if title == "BOT" else "human"
-            self.engine.configure({"UCI_Opponent": f"{title} {rating} {player_type} {name}"})
 
 
 class XBoardEngine(EngineWrapper):
@@ -585,7 +579,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: int,
     clock_time = max(0, game.state[f"{wb}time"] - overhead)
     search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {search_time} for game {game.id}")
-    return chess.engine.Limit(time=search_time / 1000)
+    return chess.engine.Limit(time=search_time / 1000, clock_id="correspondence")
 
 
 def first_move_time(game: model.Game) -> chess.engine.Limit:
@@ -598,7 +592,7 @@ def first_move_time(game: model.Game) -> chess.engine.Limit:
     # Need to hardcode first movetime (10000 ms) since Lichess has 30 sec limit.
     search_time = 10000
     logger.info(f"Searching for time {search_time} for game {game.id}")
-    return chess.engine.Limit(time=search_time / 1000)
+    return chess.engine.Limit(time=search_time / 1000, clock_id="first move")
 
 
 def game_clock_time(board: chess.Board, game: model.Game, start_time: int, move_overhead: int) -> chess.engine.Limit:
@@ -619,7 +613,8 @@ def game_clock_time(board: chess.Board, game: model.Game, start_time: int, move_
     return chess.engine.Limit(white_clock=game.state["wtime"] / 1000,
                               black_clock=game.state["btime"] / 1000,
                               white_inc=game.state["winc"] / 1000,
-                              black_inc=game.state["binc"] / 1000)
+                              black_inc=game.state["binc"] / 1000,
+                              clock_id="real time")
 
 
 def check_for_draw_offer(game: model.Game) -> bool:

@@ -5,6 +5,7 @@ import chess.engine
 import chess.polyglot
 import chess.syzygy
 import chess.gaviota
+import chess
 import subprocess
 import logging
 import time
@@ -65,7 +66,6 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
     try:
         yield engine
     finally:
-        engine.stop()
         engine.ping()
         engine.quit()
 
@@ -76,35 +76,6 @@ def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
         return chess.engine.Option(key, "", None, None, None, None).is_managed()
 
     return {name: value for (name, value) in config.items() if not is_managed(name)}
-
-
-def translate_termination(game: model.Game, board: chess.Board) -> str:
-    """Get a human-readable string with the result of the game."""
-    winner_color = game.state.get("winner", "")
-    termination: Optional[str] = game.state.get("status")
-
-    if termination == model.Termination.MATE:
-        return f"{winner_color.title()} mates"
-    elif termination == model.Termination.TIMEOUT:
-        return "Time forfeiture" if winner_color else "Timeout with insufficient material"
-    elif termination == model.Termination.RESIGN:
-        resigner = "black" if winner_color == "white" else "white"
-        return f"{resigner.title()} resigns"
-    elif termination == model.Termination.ABORT:
-        return "Game aborted"
-    elif termination == model.Termination.DRAW:
-        if board.is_fifty_moves():
-            return "50-move rule"
-        elif board.is_repetition():
-            return "Threefold repetition"
-        elif board.is_insufficient_material():
-            return "Insufficient material"
-        else:
-            return "Draw by agreement"
-    elif termination:
-        return termination
-    else:
-        return ""
 
 
 PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
@@ -184,8 +155,6 @@ class EngineWrapper:
                 time_limit = game_clock_time(board, game, start_time, move_overhead)
 
             best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
-        else:
-            self.stop()
 
         self.add_comment(best_move, board)
         self.print_stats()
@@ -397,14 +366,6 @@ class EngineWrapper:
         name: str = engine_info["name"]
         return name
 
-    def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        """Report the game result to the engine. Depends on the protocol."""
-        pass
-
-    def stop(self) -> None:
-        """Stop the engine. Depends on the protocol."""
-        pass
-
     def get_pid(self) -> str:
         """Get the pid of the engine."""
         pid = "?"
@@ -415,6 +376,35 @@ class EngineWrapper:
     def ping(self) -> None:
         """Ping the engine."""
         self.engine.ping()
+
+    def send_game_result(self, game: model.Game, board: chess.Board) -> None:
+        """
+        Inform engine of the game ending.
+
+        :param game: The final game state from lichess.
+        :param board: The final board state.
+        """
+        termination = game.state.get("status")
+        winner = game.state.get("winner")
+        winning_color = chess.WHITE if winner == "white" else chess.BLACK
+
+        if termination == model.Termination.MATE:
+            self.engine.send_game_result(board)
+        elif termination == model.Termination.RESIGN:
+            resigner = "White" if winner == "black" else "Black"
+            self.engine.send_game_result(board, winning_color, f"{resigner} resigned")
+        elif termination == model.Termination.ABORT:
+            self.engine.send_game_result(board, None, "Game aborted", False)
+        elif termination == model.Termination.DRAW:
+            draw_reason = None if board.is_game_over(claim_draw=True) else "Draw by agreement"
+            self.engine.send_game_result(board, None, draw_reason)
+        elif termination == model.Termination.TIMEOUT:
+            if winner:
+                self.engine.send_game_result(board, winning_color, "Time forfeiture")
+            else:
+                self.engine.send_game_result(board, None, "Time out with insufficient material")
+        else:
+            self.engine.send_game_result(board, None, termination)
 
     def quit(self) -> None:
         """Close the engine."""
@@ -440,15 +430,6 @@ class UCIEngine(EngineWrapper):
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
                                                           **popen_args)
         self.engine.configure(options)
-
-    def stop(self) -> None:
-        """Tell the engine to stop searching."""
-        self.engine.protocol.send_line("stop")
-
-    def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        """Send the game result to the engine."""
-        if isinstance(self.engine.protocol, chess.engine.UciProtocol):
-            self.engine.protocol._position(board)
 
 
 class XBoardEngine(EngineWrapper):
@@ -480,22 +461,6 @@ class XBoardEngine(EngineWrapper):
                 else:
                     logger.debug(f"No paths found for egt type: {egt_type}.")
         self.engine.configure(options)
-
-    def report_game_result(self, game: model.Game, board: chess.Board) -> None:
-        """Send the game result to the engine."""
-        # Send final moves, if any, to engine.
-        if isinstance(self.engine.protocol, chess.engine.XBoardProtocol):
-            self.engine.protocol._new(board, None, {})
-
-        endgame_message = translate_termination(game, board)
-        if endgame_message:
-            endgame_message = " {" + endgame_message + "}"
-
-        self.engine.protocol.send_line(f"result {game.result()}{endgame_message}")
-
-    def stop(self) -> None:
-        """Tell the engine to stop searching."""
-        self.engine.protocol.send_line("?")
 
 
 class MinimalEngine(EngineWrapper):

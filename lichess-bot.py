@@ -673,9 +673,9 @@ def say_hello(conversation: Conversation, hello: str, hello_spectators: str, boa
 def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -> None:
     """Wait some time before starting to search for a move."""
     if config.fake_think_time and len(board.move_stack) > 9:
-        delay = min(game.clock_initial, game.my_remaining_seconds()) * 0.015
-        accel = 1 - max(0, min(100, len(board.move_stack) - 20)) / 150
-        sleep = min(5, delay * accel)
+        delay = game.my_remaining_seconds() * 0.025
+        accel = 0.99 ** (len(board.move_stack) - 10)
+        sleep = delay * accel
         time.sleep(sleep)
 
 

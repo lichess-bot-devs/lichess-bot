@@ -614,7 +614,6 @@ def play_game(li: lichess.Lichess,
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
                         start_time = time.perf_counter_ns()
-                        fake_thinking(config, board, game)
                         print_move_number(board)
                         move_attempted = True
                         engine.play_move(board,
@@ -625,7 +624,8 @@ def play_game(li: lichess.Lichess,
                                          can_ponder,
                                          is_correspondence,
                                          correspondence_move_time,
-                                         engine_cfg)
+                                         engine_cfg,
+                                         fake_thinking(config, board, game))
                         time.sleep(delay_seconds)
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
@@ -670,13 +670,17 @@ def say_hello(conversation: Conversation, hello: str, hello_spectators: str, boa
         conversation.send_message("spectator", hello_spectators)
 
 
-def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -> None:
-    """Wait some time before starting to search for a move."""
+def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -> float:
+    """Calculate how much time we should wait for fake_think_time."""
+    sleep = 0.0
+
     if config.fake_think_time and len(board.move_stack) > 9:
-        delay = game.my_remaining_seconds() * 0.025
+        remaining = max(0, game.my_remaining_seconds() - config.move_overhead / 1000)
+        delay = remaining * 0.025
         accel = 0.99 ** (len(board.move_stack) - 10)
-        sleep = delay * accel
-        time.sleep(sleep)
+        sleep = min(delay * accel, remaining)
+
+    return sleep
 
 
 def print_move_number(board: chess.Board) -> None:

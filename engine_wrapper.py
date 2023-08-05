@@ -107,7 +107,8 @@ class EngineWrapper:
                   can_ponder: bool,
                   is_correspondence: bool,
                   correspondence_move_time: int,
-                  engine_cfg: config.Configuration) -> None:
+                  engine_cfg: config.Configuration,
+                  min_time: float) -> None:
         """
         Play a move.
 
@@ -120,6 +121,7 @@ class EngineWrapper:
         :param is_correspondence: Whether this is a correspondence or unlimited game.
         :param correspondence_move_time: The time the engine will think if `is_correspondence` is true.
         :param engine_cfg: Options for external moves (e.g. from an opening book), and for engine resignation and draw offers.
+        :param min_time: minimum time to spend, in seconds.
         :return: The move to play.
         """
         polyglot_cfg = engine_cfg.polyglot
@@ -155,6 +157,11 @@ class EngineWrapper:
                 time_limit = game_clock_time(board, game, start_time, move_overhead)
 
             best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
+
+        # Heed min_time
+        elapsed = (time.perf_counter_ns() - start_time) / 1e9
+        if elapsed < min_time:
+            time.sleep(min_time - elapsed)
 
         self.add_comment(best_move, board)
         self.print_stats()

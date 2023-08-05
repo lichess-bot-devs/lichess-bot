@@ -676,7 +676,6 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
     offer_draw = False
     resign = False
-    comment: Optional[chess.engine.InfoDict] = None
     best_move, wdl, comment = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
@@ -989,7 +988,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 dtm *= -1
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
 
-        return move, wdl, {"source": "Lichess Online EGTB"}
+        return move, wdl, {"source": "Lichess EGTB"}
     return None, -3, None
 
 

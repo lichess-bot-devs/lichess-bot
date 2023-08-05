@@ -227,6 +227,7 @@ class EngineWrapper:
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
+        result.info["source"] = "Engine"
         result = self.offer_draw_or_resign(result, board)
         return result
 
@@ -334,7 +335,7 @@ class EngineWrapper:
             stat = readable.get(stat, stat)
             return stat.title()
 
-        stats = ["score", "wdl", "depth", "nodes", "nps", "ponderpv"]
+        stats = ["source", "score", "wdl", "depth", "nodes", "nps", "ponderpv"]
         if for_chat and "ponderpv" in info:
             bot_stats = [f"{to_readable_key(stat)}: {to_readable_value(stat, info)}"
                          for stat in stats if stat in info and stat != "ponderpv"]
@@ -656,7 +657,7 @@ def get_book_move(board: chess.Board, game: model.Game,
 
         if move is not None:
             logger.info(f"Got move {move} from book {book} for game {game.id}")
-            return chess.engine.PlayResult(move, None)
+            return chess.engine.PlayResult(move, None, {"source": "Opening Book"})
 
     return no_book_move
 
@@ -689,7 +690,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
             resign = True
 
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
-        comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
+        comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn), "source": "Online EGTB"}
     elif out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move, comment = get_chessdb_move(li, board, game, chessdb_cfg)
 
@@ -698,6 +699,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
 
     if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move = get_opening_explorer_move(li, board, game, opening_explorer_cfg)
+        comment = {"source": "Lichess Opening Explorer"}
 
     if best_move:
         if isinstance(best_move, str):
@@ -745,6 +747,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                     comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
                     comment["depth"] = data["depth"]
                     comment["pv"] = list(map(chess.Move.from_uci, data["pv"]))
+                    comment["source"] = "ChessDB"
                     logger.info(f"Got move {move} from chessdb.cn (depth: {depth}, score: {score}) for game {game.id}")
             else:
                 move = data["move"]
@@ -800,6 +803,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
                 comment["depth"] = data["depth"]
                 comment["nodes"] = data["knodes"] * 1000
                 comment["pv"] = list(map(chess.Move.from_uci, pv["moves"].split()))
+                comment["source"] = "Lichess Cloud Analysis"
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})"
                             f" for game {game.id}")
     except Exception:
@@ -909,7 +913,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
         resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
-        comment: chess.engine.InfoDict = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)}
+        comment: chess.engine.InfoDict = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn), "source": "Local EGTB"}
         if isinstance(best_move, chess.Move):
             return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
         return best_move

@@ -78,7 +78,7 @@ def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
     return {name: value for (name, value) in config.items() if not is_managed(name)}
 
 
-PONDERPV_CHARACTERS = 6  # The length of ", PV: ".
+PONDERPV_CHARACTERS = 6  # The length of ", Pv: ".
 
 
 class EngineWrapper:
@@ -342,22 +342,22 @@ class EngineWrapper:
         if "Source" not in info:
             info["Source"] = "Engine"
 
-        stats = ["Source", "Evaluation", "Winrate", "Depth", "Nodes", "Speed", "PV"]
-        if for_chat and "PV" in info:
+        stats = ["Source", "Evaluation", "Winrate", "Depth", "Nodes", "Speed", "Pv"]
+        if for_chat and "Pv" in info:
             bot_stats = [f"{stat}: {to_readable_value(stat, info)}"
-                         for stat in stats if stat in info and stat != "PV"]
+                         for stat in stats if stat in info and stat != "Pv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
-            ponder_pv = info["PV"].split()
+            ponder_pv = info["Pv"].split()
             try:
                 while len(" ".join(ponder_pv)) + len_bot_stats > lichess.MAX_CHAT_MESSAGE_LEN:
                     ponder_pv.pop()
                 if ponder_pv[-1].endswith("."):
                     ponder_pv.pop()
-                info["PV"] = " ".join(ponder_pv)
+                info["Pv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-            if not info["PV"]:
-                info.pop("PV")
+            if not info["Pv"]:
+                info.pop("Pv")
         return [f"{stat}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:

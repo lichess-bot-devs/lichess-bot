@@ -307,6 +307,19 @@ class EngineWrapper:
             return f"{round(number / 1e3, 1)}K"
         return str(number)
 
+    def to_readable_value(self, stat: str, info: MOVE_INFO_TYPE) -> str:
+        readable: dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
+                                                     "hashfull": lambda x: f"{round(x / 10, 1)}%",
+                                                     "nodes": self.readable_number,
+                                                     "nps": lambda x: f"{self.readable_number(x)}nps",
+                                                     "tbhits": self.readable_number,
+                                                     "cpuload": lambda x: f"{round(x / 10, 1)}%"}
+
+        def identity(x: Any) -> str:
+            return str(x)
+
+        return str(readable.get(stat, identity)(info[stat]))
+
     def get_stats(self, for_chat: bool = False) -> list[str]:
         """
         Get the stats returned by the engine.
@@ -315,19 +328,6 @@ class EngineWrapper:
         """
         can_index = self.move_commentary and self.move_commentary[-1]
         info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
-
-        def to_readable_value(stat: str, info: MOVE_INFO_TYPE) -> str:
-            readable: dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
-                                                         "hashfull": lambda x: f"{round(x / 10, 1)}%",
-                                                         "nodes": self.readable_number,
-                                                         "nps": lambda x: f"{self.readable_number(x)}nps",
-                                                         "tbhits": self.readable_number,
-                                                         "cpuload": lambda x: f"{round(x / 10, 1)}%"}
-
-            def identity(x: Any) -> str:
-                return str(x)
-
-            return str(readable.get(stat, identity)(info[stat]))
 
         def to_readable_key(stat: str, value: Any) -> str:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
@@ -344,7 +344,7 @@ class EngineWrapper:
 
         stats = ["Source", "Evaluation", "Winrate", "Depth", "Nodes", "Speed", "Pv"]
         if for_chat and "Pv" in info:
-            bot_stats = [f"{stat}: {to_readable_value(stat, info)}"
+            bot_stats = [f"{stat}: {self.to_readable_value(stat, info)}"
                          for stat in stats if stat in info and stat != "Pv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = info["Pv"].split()
@@ -358,7 +358,7 @@ class EngineWrapper:
                 pass
             if not info["Pv"]:
                 info.pop("Pv")
-        return [f"{stat}: {to_readable_value(stat, info)}" for stat in stats if stat in info]
+        return [f"{stat}: {self.to_readable_value(stat, info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
         """Get the opponent's information and sends it to the engine."""

@@ -588,6 +588,7 @@ def play_game(li: lichess.Lichess,
         ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
         can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
         move_overhead = config.move_overhead
+        delay_seconds = config.rate_limiting_delay / 1000
 
         keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
@@ -613,6 +614,7 @@ def play_game(li: lichess.Lichess,
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
                         start_time = time.perf_counter_ns()
+                        fake_thinking(config, board, game)
                         print_move_number(board)
                         move_attempted = True
                         engine.play_move(board,
@@ -624,8 +626,7 @@ def play_game(li: lichess.Lichess,
                                          is_correspondence,
                                          correspondence_move_time,
                                          engine_cfg)
-                        consumed_sec = (time.perf_counter_ns() - start_time) / 1e9
-                        speed_bump(config, board, game, consumed_sec)
+                        time.sleep(delay_seconds)
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
                         engine.send_game_result(game, board)
@@ -669,18 +670,13 @@ def say_hello(conversation: Conversation, hello: str, hello_spectators: str, boa
         conversation.send_message("spectator", hello_spectators)
 
 
-def speed_bump(config: Configuration, board: chess.Board, game: model.Game, consumed_sec: float) -> None:
-    """Heed the various delay features, while accounting for the time already consumed."""
-    fake_think_time = 0.0
+def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -> None:
+    """Wait some time before starting to search for a move."""
     if config.fake_think_time and len(board.move_stack) > 9:
         delay = game.my_remaining_seconds() * 0.025
         accel = 0.99 ** (len(board.move_stack) - 10)
-        fake_think_time = delay * accel
-
-    rate_limiting_delay = config.rate_limiting_delay / 1000
-    combined_delay = max(fake_think_time, rate_limiting_delay, consumed_sec) - consumed_sec
-    if combined_delay > 0:
-        time.sleep(combined_delay)
+        sleep = delay * accel
+        time.sleep(sleep)
 
 
 def print_move_number(board: chess.Board) -> None:

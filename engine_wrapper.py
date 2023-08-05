@@ -677,7 +677,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     offer_draw = False
     resign = False
     comment: Optional[chess.engine.InfoDict] = None
-    best_move, wdl = get_online_egtb_move(li, board, game, online_egtb_cfg)
+    best_move, wdl, comment = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
@@ -690,7 +690,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
             resign = True
 
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
-        comment = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn), "source": "Online EGTB"}
+        comment["score"] = chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)
     elif out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
         best_move, comment = get_chessdb_move(li, board, game, chessdb_cfg)
 
@@ -698,8 +698,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
         best_move, comment = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
 
     if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
-        best_move = get_opening_explorer_move(li, board, game, opening_explorer_cfg)
-        comment = {"source": "Lichess Opening Explorer"}
+        best_move, comment = get_opening_explorer_move(li, board, game, opening_explorer_cfg)
 
     if best_move:
         if isinstance(best_move, str):
@@ -813,21 +812,24 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
 
 
 def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                              opening_explorer_cfg: config.Configuration) -> Optional[str]:
+                              opening_explorer_cfg: config.Configuration
+                              ) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
     """Get a move from lichess's opening explorer."""
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = game.state[f"{wb}time"]
     min_time = opening_explorer_cfg.min_time * 1000
     source = opening_explorer_cfg.source
     if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":
-        return None
+        return None, None
 
     move = None
+    comment = None
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
     try:
         if source == "masters":
             params = {"fen": board.fen(), "moves": 100}
             response = li.online_book_get("https://explorer.lichess.ovh/masters", params)
+            comment = {"source": "Lichess Opening Explorer (Masters)"}
         elif source == "player":
             player = opening_explorer_cfg.player_name
             if not player:
@@ -835,9 +837,11 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
             params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
                       "recentGames": 0, "color": "white" if wb == "w" else "black"}
             response = li.online_book_get("https://explorer.lichess.ovh/player", params, True)
+            comment = {"source": "Lichess Opening Explorer (Player)"}
         else:
             params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
             response = li.online_book_get("https://explorer.lichess.ovh/lichess", params)
+            comment = {"source": "Lichess Opening Explorer (Lichess)"}
         moves = []
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
@@ -854,11 +858,11 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     except Exception:
         pass
 
-    return move
+    return move, comment
 
 
-def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                         online_egtb_cfg: config.Configuration) -> tuple[Union[str, list[str], None], int]:
+def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_egtb_cfg: config.Configuration
+                         ) -> tuple[Union[str, list[str], None], int, Optional[chess.engine.InfoDict]]:
     """
     Get a move from an online egtb (either by lichess or chessdb).
 
@@ -878,7 +882,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
             or pieces > online_egtb_cfg.max_pieces
             or board.castling_rights):
 
-        return None, -3
+        return None, -3, None
 
     quality = online_egtb_cfg.move_quality
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
@@ -891,7 +895,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     except Exception:
         pass
 
-    return None, -3
+    return None, -3, None
 
 
 def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.Configuration,
@@ -902,8 +906,10 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     best_move, wdl = get_syzygy(board, game, lichess_bot_tbs.syzygy)
+    source = "Syzygy EGTB"
     if best_move is None:
         best_move, wdl = get_gaviota(board, game, lichess_bot_tbs.gaviota)
+        source = "Gaviota EGTB"
     if best_move:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
@@ -913,7 +919,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
         resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
         resign = bool(can_resign and resign_on_egtb_loss and wdl == -2)
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
-        comment: chess.engine.InfoDict = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn), "source": "Local EGTB"}
+        comment: chess.engine.InfoDict = {"score": chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn), "source": source}
         if isinstance(best_move, chess.Move):
             return chess.engine.PlayResult(best_move, None, comment, draw_offered=offer_draw, resigned=resign)
         return best_move
@@ -921,7 +927,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
 
 def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
-                          variant: str) -> tuple[Union[str, list[str], None], int]:
+                          variant: str) -> tuple[Union[str, list[str], None], int, Optional[chess.engine.InfoDict]]:
     """
     Get a move from lichess's egtb.
 
@@ -983,12 +989,12 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 dtm *= -1
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
 
-        return move, wdl
-    return None, -3
+        return move, wdl, {"source": "Lichess Online EGTB"}
+    return None, -3, None
 
 
 def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
-                          quality: str) -> tuple[Union[str, list[str], None], int]:
+                          quality: str) -> tuple[Union[str, list[str], None], int, Optional[chess.engine.InfoDict]]:
     """
     Get a move from chessdb's egtb.
 
@@ -1047,8 +1053,8 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             dtz = score_to_dtz(score)
             logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
-        return move, wdl
-    return None, -3
+        return move, wdl, {"source": "ChessDB EGTB"}
+    return None, -3, None
 
 
 def get_syzygy(board: chess.Board, game: model.Game,

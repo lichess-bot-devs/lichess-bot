@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 daily_challenges_file_name = "daily_challenge_times.txt"
 timestamp_format = "%Y-%m-%d %H:%M:%S\n"
-one_day_seconds = datetime.timedelta(days=1).total_seconds()
 
 
 def read_daily_challenges() -> DAILY_TIMERS_TYPE:
@@ -27,7 +26,7 @@ def read_daily_challenges() -> DAILY_TIMERS_TYPE:
     try:
         with open(daily_challenges_file_name) as file:
             for line in file:
-                timers.append(Timer(one_day_seconds, datetime.datetime.strptime(line, timestamp_format)))
+                timers.append(Timer(datetime.timedelta(days=1), datetime.datetime.strptime(line, timestamp_format)))
     except FileNotFoundError:
         pass
 
@@ -50,10 +49,10 @@ class Matchmaking:
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
         self.matchmaking_cfg = config.matchmaking
         self.user_profile = user_profile
-        self.last_challenge_created_delay = Timer(25)  # The challenge expires 20 seconds after creating it.
-        self.last_game_ended_delay = Timer(self.matchmaking_cfg.challenge_timeout * 60)
-        self.last_user_profile_update_time = Timer(5 * 60)  # 5 minutes.
-        self.min_wait_time = 60  # Wait 60 seconds before creating a new challenge to avoid hitting the api rate limits.
+        self.last_challenge_created_delay = Timer(datetime.timedelta(seconds=25))  # Challenges expire after 20 seconds.
+        self.last_game_ended_delay = Timer(datetime.timedelta(minutes=self.matchmaking_cfg.challenge_timeout))
+        self.last_user_profile_update_time = Timer(datetime.timedelta(minutes=5))
+        self.min_wait_time = datetime.timedelta(seconds=60)  # Wait before new challenge to avoid api rate limits.
         self.challenge_id: str = ""
         self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 
@@ -124,8 +123,8 @@ class Matchmaking:
         etc.
         """
         self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
-        self.daily_challenges.append(Timer(one_day_seconds))
-        self.min_wait_time = 60 * ((len(self.daily_challenges) // 50) + 1)
+        self.daily_challenges.append(Timer(datetime.timedelta(days=1)))
+        self.min_wait_time = datetime.timedelta(seconds=60) * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 
     def perf(self) -> dict[str, dict[str, Any]]:
@@ -244,7 +243,7 @@ class Matchmaking:
             postgame_timeout = self.last_game_ended_delay.time_until_expiration()
             time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
             time_left = max(postgame_timeout, time_to_next_challenge)
-            earliest_challenge_time = datetime.datetime.now() + datetime.timedelta(seconds=time_left)
+            earliest_challenge_time = datetime.datetime.now() + time_left
             challenges = "challenge" + ("" if len(self.daily_challenges) == 1 else "s")
             logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')} "
                         f"({len(self.daily_challenges)} {challenges} in last 24 hours)")

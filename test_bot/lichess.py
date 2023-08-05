@@ -68,7 +68,7 @@ class GameStream:
                     board = chess.Board()
                     for move in moves.split():
                         board.push_uci(move)
-                    wtime, btime = state[1].split(",")
+                    wtime, btime = [float(n) for n in state[1].split(",")]
                     if len(moves) <= len(self.moves_sent) and not event:
                         time.sleep(0.001)
                         continue
@@ -76,12 +76,11 @@ class GameStream:
                     break
                 except (IndexError, ValueError):
                     pass
-            wtime_int, wtime_int = float(wtime), float(btime)
             time.sleep(0.1)
             new_game_state = {"type": "gameState",
                               "moves": moves,
-                              "wtime": int(wtime_int * 1000),
-                              "btime": int(wtime_int * 1000),
+                              "wtime": int(wtime * 1000),
+                              "btime": int(wtime * 1000),
                               "winc": 100,
                               "binc": 100}
             if event == "end":

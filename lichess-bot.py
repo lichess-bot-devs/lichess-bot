@@ -13,6 +13,7 @@ import multiprocessing
 import matchmaking
 import signal
 import time
+import datetime
 import backoff
 import os
 import io
@@ -104,14 +105,14 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
     control_queue.put_nowait({"type": "terminated", "error": error})
 
 
-def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: int) -> None:
+def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.timedelta) -> None:
     """
     Tell the engine to check the correspondence games.
 
     :param period: How many seconds to wait before sending a correspondence ping.
     """
     while not terminated:
-        time.sleep(period)
+        time.sleep(period.total_seconds())
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
@@ -222,7 +223,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     control_stream.start()
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=(control_queue,
-                                                          config.correspondence.checkin_period))
+                                                          datetime.timedelta(seconds=config.correspondence.checkin_period)))
     correspondence_pinger.start()
     correspondence_queue: CORRESPONDENCE_QUEUE_TYPE = manager.Queue()
 
@@ -299,7 +300,7 @@ def lichess_bot_main(li: lichess.Lichess,
                        if game["gameId"] not in startup_correspondence_games)
     low_time_games: list[EVENT_GETATTR_GAME_TYPE] = []
 
-    last_check_online_time = Timer(60 * 60)  # one hour interval
+    last_check_online_time = Timer(datetime.timedelta(hours=1))
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
     matchmaker.show_earliest_challenge_time()
 
@@ -581,14 +582,14 @@ def play_game(li: lichess.Lichess,
 
         is_correspondence = game.speed == "correspondence"
         correspondence_cfg = config.correspondence
-        correspondence_move_time = correspondence_cfg.move_time * 1000
+        correspondence_move_time = datetime.timedelta(seconds=correspondence_cfg.move_time)
         correspondence_disconnect_time = correspondence_cfg.disconnect_time
 
         engine_cfg = config.engine
         ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
         can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
-        move_overhead = config.move_overhead
-        delay_seconds = config.rate_limiting_delay / 1000
+        move_overhead = datetime.timedelta(milliseconds=config.move_overhead)
+        delay_seconds = datetime.timedelta(milliseconds=config.rate_limiting_delay)
 
         keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
@@ -613,7 +614,7 @@ def play_game(li: lichess.Lichess,
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
-                        start_time = time.perf_counter_ns()
+                        start_time = datetime.datetime.now()
                         fake_thinking(config, board, game)
                         print_move_number(board)
                         move_attempted = True
@@ -626,7 +627,7 @@ def play_game(li: lichess.Lichess,
                                          is_correspondence,
                                          correspondence_move_time,
                                          engine_cfg)
-                        time.sleep(delay_seconds)
+                        time.sleep(delay_seconds.total_seconds())
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
                         engine.send_game_result(game, board)
@@ -634,7 +635,8 @@ def play_game(li: lichess.Lichess,
                         conversation.send_message("spectator", goodbye_spectators)
 
                     wb = "w" if board.turn == chess.WHITE else "b"
-                    terminate_time = (upd[f"{wb}time"] + upd[f"{wb}inc"]) / 1000 + 60
+                    terminate_time = int((datetime.timedelta(milliseconds=upd[f"{wb}time"] + upd[f"{wb}inc"])
+                                          + datetime.timedelta(seconds=60)).total_seconds())
                     game.ping(abort_time, terminate_time, disconnect_time)
                     prior_game = copy.deepcopy(game)
                 elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):

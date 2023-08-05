@@ -3,6 +3,7 @@ import pytest
 import zipfile
 import requests
 import time
+import datetime
 import yaml
 import chess
 import chess.engine
@@ -85,15 +86,15 @@ def thread_for_test() -> None:
     open("./logs/states.txt", "w").close()
     open("./logs/result.txt", "w").close()
 
-    start_time = 10.
-    increment = 0.1
+    start_time = datetime.timedelta(seconds=10)
+    increment = datetime.timedelta(seconds=0.1)
 
     board = chess.Board()
     wtime = start_time
     btime = start_time
 
     with open("./logs/states.txt", "w") as file:
-        file.write(f"\n{wtime},{btime}")
+        file.write(f"\n{wtime.total_seconds()},{btime.total_seconds()}")
 
     engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
     engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False})
@@ -105,13 +106,13 @@ def thread_for_test() -> None:
                                    chess.engine.Limit(time=1),
                                    ponder=False)
             else:
-                start_time = time.perf_counter_ns()
+                move_start_time = datetime.datetime.now()
                 move = engine.play(board,
-                                   chess.engine.Limit(white_clock=wtime - 2,
-                                                      white_inc=increment),
+                                   chess.engine.Limit(white_clock=wtime.total_seconds() - 2,
+                                                      white_inc=increment.total_seconds()),
                                    ponder=False)
-                end_time = time.perf_counter_ns()
-                wtime -= (end_time - start_time) / 1e9
+                move_end_time = datetime.datetime.now()
+                wtime -= (move_end_time - move_start_time)
                 wtime += increment
             engine_move = move.move
             if engine_move is None:
@@ -128,7 +129,7 @@ def thread_for_test() -> None:
                 file.write(state_str)
 
         else:  # lichess-bot move.
-            start_time = time.perf_counter_ns()
+            move_start_time = datetime.datetime.now()
             state2 = state_str
             moves_are_correct = False
             while state2 == state_str or not moves_are_correct:
@@ -145,9 +146,9 @@ def thread_for_test() -> None:
                         moves_are_correct = False
             with open("./logs/states.txt") as states:
                 state2 = states.read()
-            end_time = time.perf_counter_ns()
+            move_end_time = datetime.datetime.now()
             if len(board.move_stack) > 1:
-                btime -= (end_time - start_time) / 1e9
+                btime -= (move_end_time - move_start_time)
                 btime += increment
             move_str = state2.split("\n")[0].split(" ")[-1]
             board.push_uci(move_str)
@@ -156,7 +157,7 @@ def thread_for_test() -> None:
         with open("./logs/states.txt") as states:
             state_str = states.read()
         state = state_str.split("\n")
-        state[1] = f"{wtime},{btime}"
+        state[1] = f"{wtime.total_seconds()},{btime.total_seconds()}"
         state_str = "\n".join(state)
         with open("./logs/states.txt", "w") as file:
             file.write(state_str)

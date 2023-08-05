@@ -150,7 +150,7 @@ class Game:
         self.id: str = game_info["id"]
         self.speed = game_info.get("speed")
         clock = game_info.get("clock") or {}
-        ten_years_in_ms = 1000 * 3600 * 24 * 365 * 10
+        ten_years_in_ms = 10 * datetime.timedelta(days=365) / datetime.timedelta(milliseconds=1)
         self.clock_initial = clock.get("initial", ten_years_in_ms)
         self.clock_increment = clock.get("increment", 0)
         self.perf_name = (game_info.get("perf") or {}).get("name", "{perf?}")
@@ -223,9 +223,9 @@ class Game:
 
     def my_remaining_seconds(self) -> float:
         """How many seconds we have left."""
-        wtime: int = self.state["wtime"]
-        btime: int = self.state["btime"]
-        return (wtime if self.is_white else btime) / 1000
+        wtime = datetime.timedelta(milliseconds=self.state["wtime"])
+        btime = datetime.timedelta(milliseconds=self.state["btime"])
+        return (wtime if self.is_white else btime).total_seconds()
 
     def result(self) -> str:
         """Get the result of the game."""

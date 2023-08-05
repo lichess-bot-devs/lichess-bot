@@ -308,6 +308,7 @@ class EngineWrapper:
         return str(number)
 
     def to_readable_value(self, stat: str, info: MOVE_INFO_TYPE) -> str:
+        """Change a value to a more human-readable format."""
         readable: dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
                                                      "hashfull": lambda x: f"{round(x / 10, 1)}%",
                                                      "nodes": self.readable_number,

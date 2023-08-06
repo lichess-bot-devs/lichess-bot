@@ -625,7 +625,7 @@ def play_game(li: lichess.Lichess,
                                          is_correspondence,
                                          correspondence_move_time,
                                          engine_cfg,
-                                         fake_thinking(config, board, game))
+                                         fake_think_time(config, board, game))
                         time.sleep(delay_seconds)
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
@@ -670,7 +670,7 @@ def say_hello(conversation: Conversation, hello: str, hello_spectators: str, boa
         conversation.send_message("spectator", hello_spectators)
 
 
-def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -> float:
+def fake_think_time(config: Configuration, board: chess.Board, game: model.Game) -> float:
     """Calculate how much time we should wait for fake_think_time."""
     sleep = 0.0
 

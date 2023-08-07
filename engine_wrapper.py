@@ -309,12 +309,12 @@ class EngineWrapper:
 
     def to_readable_value(self, stat: str, info: MOVE_INFO_TYPE) -> str:
         """Change a value to a more human-readable format."""
-        readable: dict[str, Callable[[Any], str]] = {"score": self.readable_score, "wdl": self.readable_wdl,
-                                                     "hashfull": lambda x: f"{round(x / 10, 1)}%",
-                                                     "nodes": self.readable_number,
-                                                     "nps": lambda x: f"{self.readable_number(x)}nps",
-                                                     "tbhits": self.readable_number,
-                                                     "cpuload": lambda x: f"{round(x / 10, 1)}%"}
+        readable: dict[str, Callable[[Any], str]] = {"Evaluation": self.readable_score, "Winrate": self.readable_wdl,
+                                                     "Hashfull": lambda x: f"{round(x / 10, 1)}%",
+                                                     "Nodes": self.readable_number,
+                                                     "Speed": lambda x: f"{self.readable_number(x)}nps",
+                                                     "Tbhits": self.readable_number,
+                                                     "Cpuload": lambda x: f"{round(x / 10, 1)}%"}
 
         def identity(x: Any) -> str:
             return str(x)
@@ -330,16 +330,15 @@ class EngineWrapper:
         can_index = self.move_commentary and self.move_commentary[-1]
         info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
-        def to_readable_key(stat: str, value: Any) -> str:
+        def to_readable_item(stat: str, value: Any) -> tuple[str, Any]:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
             stat = readable.get(stat, stat)
-            if stat == "string" and value in ["Opening Book", "Lichess Opening Explorer (Masters)",
-                                              "Lichess Opening Explorer (Player)", "Lichess Opening Explorer (Lichess)",
-                                              "Lichess EGTB", "ChessDB EGTB", "Lichess Cloud Analysis", "ChessDB"]:
+            if stat == "string" and value.startswith("lichess-bot-source:"):
                 stat = "source"
-            return stat.title()
+                value = value.split(":", 1)[1]
+            return stat.title(), value
 
-        info = {to_readable_key(key, value): value for (key, value) in info.items()}
+        info = dict(to_readable_item(key, value) for (key, value) in info.items())
         if "Source" not in info:
             info["Source"] = "Engine"
 
@@ -665,7 +664,7 @@ def get_book_move(board: chess.Board, game: model.Game,
 
         if move is not None:
             logger.info(f"Got move {move} from book {book} for game {game.id}")
-            return chess.engine.PlayResult(move, None, {"string": "Opening Book"})
+            return chess.engine.PlayResult(move, None, {"string": "lichess-bot-source:Opening Book"})
 
     return no_book_move
 
@@ -753,7 +752,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                     comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
                     comment["depth"] = data["depth"]
                     comment["pv"] = list(map(chess.Move.from_uci, data["pv"]))
-                    comment["string"] = "ChessDB"
+                    comment["string"] = "lichess-bot-source:ChessDB"
                     logger.info(f"Got move {move} from chessdb.cn (depth: {depth}, score: {score}) for game {game.id}")
             else:
                 move = data["move"]
@@ -809,7 +808,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
                 comment["depth"] = data["depth"]
                 comment["nodes"] = data["knodes"] * 1000
                 comment["pv"] = list(map(chess.Move.from_uci, pv["moves"].split()))
-                comment["string"] = "Lichess Cloud Analysis"
+                comment["string"] = "lichess-bot-source:Lichess Cloud Analysis"
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})"
                             f" for game {game.id}")
     except Exception:
@@ -836,7 +835,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
         if source == "masters":
             params = {"fen": board.fen(), "moves": 100}
             response = li.online_book_get("https://explorer.lichess.ovh/masters", params)
-            comment = {"string": "Lichess Opening Explorer (Masters)"}
+            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Masters)"}
         elif source == "player":
             player = opening_explorer_cfg.player_name
             if not player:
@@ -844,11 +843,11 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
             params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
                       "recentGames": 0, "color": "white" if wb == "w" else "black"}
             response = li.online_book_get("https://explorer.lichess.ovh/player", params, True)
-            comment = {"string": "Lichess Opening Explorer (Player)"}
+            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
         else:
             params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
             response = li.online_book_get("https://explorer.lichess.ovh/lichess", params)
-            comment = {"string": "Lichess Opening Explorer (Lichess)"}
+            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
         moves = []
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
@@ -913,10 +912,10 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     best_move, wdl = get_syzygy(board, game, lichess_bot_tbs.syzygy)
-    source = "Syzygy EGTB"
+    source = "lichess-bot-source:Syzygy EGTB"
     if best_move is None:
         best_move, wdl = get_gaviota(board, game, lichess_bot_tbs.gaviota)
-        source = "Gaviota EGTB"
+        source = "lichess-bot-source:Gaviota EGTB"
     if best_move:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
@@ -997,7 +996,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 dtm *= -1
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
 
-        return move, wdl, {"string": "Lichess EGTB"}
+        return move, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
     return None, -3, None
 
 
@@ -1061,7 +1060,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             dtz = score_to_dtz(score)
             logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
-        return move, wdl, {"string": "ChessDB EGTB"}
+        return move, wdl, {"string": "lichess-bot-source:ChessDB EGTB"}
     return None, -3, None
 
 

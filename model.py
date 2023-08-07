@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 import logging
 import datetime
 from enum import Enum
-from timer import Timer, msec, seconds, days
+from timer import Timer, msec, seconds, days, sec_str
 from config import Configuration
 from typing import Any
 from collections import defaultdict
@@ -189,7 +189,7 @@ class Game:
 
     def time_control(self) -> str:
         """Get the time control of the game."""
-        return f"{int(self.clock_initial.total_seconds())}+{int(self.clock_increment.total_seconds())}"
+        return f"{sec_str(self.clock_initial)}+{sec_str(self.clock_increment)}"
 
     def is_abortable(self) -> bool:
         """Whether the game can be aborted."""

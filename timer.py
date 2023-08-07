@@ -9,9 +9,19 @@ def msec(time_in_msec: float) -> datetime.timedelta:
     return datetime.timedelta(milliseconds=time_in_msec)
 
 
+def msec_str(duration: datetime.timedelta) -> str:
+    """Return a string with the duration value in whole number milliseconds."""
+    return f"{round(duration/msec(1))}"
+
+
 def seconds(time_in_sec: float) -> datetime.timedelta:
     """Create a timedelta duration in seconds."""
     return datetime.timedelta(seconds=time_in_sec)
+
+
+def sec_str(duration: datetime.timedelta) -> str:
+    """Return a string with the duration value in whole number seconds."""
+    return f"{round(duration.total_seconds())}"
 
 
 def minutes(time_in_minutes: float) -> datetime.timedelta:

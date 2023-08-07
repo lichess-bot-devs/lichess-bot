@@ -9,7 +9,7 @@ import logging
 import traceback
 from collections import defaultdict
 import datetime
-from timer import Timer, seconds
+from timer import Timer, seconds, sec_str
 from typing import Optional, Union, Any
 import chess.engine
 JSON_REPLY_TYPE = dict[str, Any]
@@ -232,7 +232,7 @@ class Lichess:
         path_template = ENDPOINTS[endpoint_name]
         if self.is_rate_limited(path_template):
             raise RateLimited(f"{path_template} is rate-limited. "
-                              f"Will retry in {self.rate_limit_time_left(path_template).total_seconds()} seconds.")
+                              f"Will retry in {sec_str(self.rate_limit_time_left(path_template))} seconds.")
         return path_template
 
     def set_rate_limit_delay(self, path_template: str, delay_time: datetime.timedelta) -> None:

@@ -2,7 +2,7 @@
 import random
 import logging
 import model
-from timer import Timer
+from timer import Timer, seconds, minutes, days
 from collections import defaultdict
 from collections.abc import Sequence
 import lichess
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 daily_challenges_file_name = "daily_challenge_times.txt"
 
+
 def read_daily_challenges() -> DAILY_TIMERS_TYPE:
     """Read the challenges we have created in the past 24 hours from a text file."""
     timers: DAILY_TIMERS_TYPE = []
@@ -28,7 +29,7 @@ def read_daily_challenges() -> DAILY_TIMERS_TYPE:
                     timestamp = float(line)
                 except ValueError:
                     timestamp = None
-                timers.append(Timer(datetime.timedelta(days=1), timestamp))
+                timers.append(Timer(days(1), timestamp))
     except FileNotFoundError:
         pass
 
@@ -51,10 +52,10 @@ class Matchmaking:
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
         self.matchmaking_cfg = config.matchmaking
         self.user_profile = user_profile
-        self.last_challenge_created_delay = Timer(datetime.timedelta(seconds=25))  # Challenges expire after 20 seconds.
-        self.last_game_ended_delay = Timer(datetime.timedelta(minutes=self.matchmaking_cfg.challenge_timeout))
-        self.last_user_profile_update_time = Timer(datetime.timedelta(minutes=5))
-        self.min_wait_time = datetime.timedelta(seconds=60)  # Wait before new challenge to avoid api rate limits.
+        self.last_challenge_created_delay = Timer(seconds(25))  # Challenges expire after 20 seconds.
+        self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
+        self.last_user_profile_update_time = Timer(minutes(5))
+        self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
         self.challenge_id: str = ""
         self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 
@@ -125,8 +126,8 @@ class Matchmaking:
         etc.
         """
         self.daily_challenges = [timer for timer in self.daily_challenges if not timer.is_expired()]
-        self.daily_challenges.append(Timer(datetime.timedelta(days=1)))
-        self.min_wait_time = datetime.timedelta(seconds=60) * ((len(self.daily_challenges) // 50) + 1)
+        self.daily_challenges.append(Timer(days(1)))
+        self.min_wait_time = seconds(60) * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 
     def perf(self) -> dict[str, dict[str, Any]]:

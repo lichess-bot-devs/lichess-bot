@@ -17,6 +17,7 @@ import config
 import model
 import lichess
 from config import Configuration
+from timer import msec, seconds
 from typing import Any, Optional, Union
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
@@ -165,11 +166,11 @@ class EngineWrapper:
 
     def add_go_commands(self, time_limit: chess.engine.Limit) -> chess.engine.Limit:
         """Add extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10."""
-        movetime = self.go_commands.movetime
-        if movetime is not None:
-            movetime_sec = datetime.timedelta(seconds=movetime) / datetime.timedelta(milliseconds=1)
-            if time_limit.time is None or time_limit.time > movetime_sec:
-                time_limit.time = movetime_sec
+        movetime_cfg = self.go_commands.movetime
+        if movetime_cfg is not None:
+            movetime = msec(movetime_cfg)
+            if time_limit.time is None or seconds(time_limit.time) > movetime:
+                time_limit.time = movetime.total_seconds()
         time_limit.depth = self.go_commands.depth
         time_limit.nodes = self.go_commands.nodes
         return time_limit
@@ -576,7 +577,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     pre_move_time = datetime.datetime.now() - start_time
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
-    clock_time = max(datetime.timedelta(), datetime.timedelta(milliseconds=game.state[f"{wb}time"]) - overhead)
+    clock_time = max(msec(0), msec(game.state[f"{wb}time"]) - overhead)
     search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {search_time.total_seconds()} seconds for game {game.id}")
     return chess.engine.Limit(time=search_time.total_seconds(), clock_id="correspondence")
@@ -589,10 +590,10 @@ def first_move_time(game: model.Game) -> chess.engine.Limit:
     :param game: The game that the bot is playing.
     :return: The time to choose the first move.
     """
-    # Need to hardcode first movetime (10 s) since Lichess has 30 sec limit.
-    search_time = 10
+    # Need to hardcode first movetime since Lichess has 30 sec limit.
+    search_time = seconds(10)
     logger.info(f"Searching for time {search_time} seconds for game {game.id}")
-    return chess.engine.Limit(time=search_time, clock_id="first move")
+    return chess.engine.Limit(time=search_time.total_seconds(), clock_id="first move")
 
 
 def game_clock_time(board: chess.Board,
@@ -610,13 +611,14 @@ def game_clock_time(board: chess.Board,
     """
     pre_move_time = datetime.datetime.now() - start_time
     overhead = pre_move_time + move_overhead
+    times = {side: msec(game.state[side]) for side in ["wtime", "btime"]}
     wb = "w" if board.turn == chess.WHITE else "b"
-    game.state[f"{wb}time"] = max(0., game.state[f"{wb}time"] - overhead / datetime.timedelta(milliseconds=1))
-    logger.info("Searching for wtime {wtime} btime {btime}".format_map(game.state) + f" for game {game.id}")
-    return chess.engine.Limit(white_clock=game.state["wtime"] / 1000,
-                              black_clock=game.state["btime"] / 1000,
-                              white_inc=game.state["winc"] / 1000,
-                              black_inc=game.state["binc"] / 1000,
+    times[f"{wb}time"] = max(msec(0), times[f"{wb}time"] - overhead)
+    logger.info("Searching for wtime {wtime} btime {btime}".format_map(times) + f" for game {game.id}")
+    return chess.engine.Limit(white_clock=times["wtime"].total_seconds(),
+                              black_clock=times["btime"].total_seconds(),
+                              white_inc=msec(game.state["winc"]).total_seconds(),
+                              black_inc=msec(game.state["binc"]).total_seconds(),
                               clock_id="real time")
 
 
@@ -722,8 +724,8 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
     """Get a move from chessdb.cn's opening book."""
     wb = "w" if board.turn == chess.WHITE else "b"
     use_chessdb = chessdb_cfg.enabled
-    time_left = datetime.timedelta(milliseconds=game.state[f"{wb}time"])
-    min_time = datetime.timedelta(seconds=chessdb_cfg.min_time)
+    time_left = msec(game.state[f"{wb}time"])
+    min_time = seconds(chessdb_cfg.min_time)
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
         return None, None
 
@@ -762,8 +764,8 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
                            lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
     """Get a move from the lichess's cloud analysis."""
     wb = "w" if board.turn == chess.WHITE else "b"
-    time_left = datetime.timedelta(milliseconds=game.state[f"{wb}time"])
-    min_time = datetime.timedelta(seconds=lichess_cloud_cfg.min_time)
+    time_left = msec(game.state[f"{wb}time"])
+    min_time = seconds(lichess_cloud_cfg.min_time)
     use_lichess_cloud = lichess_cloud_cfg.enabled
     if not use_lichess_cloud or time_left < min_time:
         return None, None
@@ -815,8 +817,8 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
                               opening_explorer_cfg: config.Configuration) -> Optional[str]:
     """Get a move from lichess's opening explorer."""
     wb = "w" if board.turn == chess.WHITE else "b"
-    time_left = datetime.timedelta(milliseconds=game.state[f"{wb}time"])
-    min_time = datetime.timedelta(seconds=opening_explorer_cfg.min_time)
+    time_left = msec(game.state[f"{wb}time"])
+    min_time = seconds(opening_explorer_cfg.min_time)
     source = opening_explorer_cfg.source
     if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":
         return None
@@ -867,9 +869,9 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     wb = "w" if board.turn == chess.WHITE else "b"
     pieces = chess.popcount(board.occupied)
     source = online_egtb_cfg.source
-    minimum_time = datetime.timedelta(seconds=online_egtb_cfg.min_time)
+    minimum_time = seconds(online_egtb_cfg.min_time)
     if (not use_online_egtb
-            or datetime.timedelta(milliseconds=game.state[f"{wb}time"]) < minimum_time
+            or msec(game.state[f"{wb}time"]) < minimum_time
             or board.uci_variant not in ["chess", "antichess", "atomic"]
             and source == "lichess"
             or board.uci_variant != "chess"

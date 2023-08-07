@@ -1,13 +1,38 @@
 """A timer for use in lichess-bot."""
 import time
 import datetime
-from typing import Optional, Union
+from typing import Optional
+
+
+def msec(time_in_msec: float) -> datetime.timedelta:
+    """Create a timedelta duration in milliseconds."""
+    return datetime.timedelta(milliseconds=time_in_msec)
+
+
+def seconds(time_in_sec: float) -> datetime.timedelta:
+    """Create a timedelta duration in seconds."""
+    return datetime.timedelta(seconds=time_in_sec)
+
+
+def minutes(time_in_minutes: float) -> datetime.timedelta:
+    """Create a timedelta duration in minutes."""
+    return datetime.timedelta(minutes=time_in_minutes)
+
+
+def hours(time_in_hours: float) -> datetime.timedelta:
+    """Create a timedelta duration in hours."""
+    return datetime.timedelta(minutes=time_in_hours)
+
+
+def days(time_in_days: float) -> datetime.timedelta:
+    """Create a timedelta duration in minutes."""
+    return datetime.timedelta(days=time_in_days)
 
 
 class Timer:
     """A timer for use in lichess-bot."""
 
-    def __init__(self, duration: Union[datetime.timedelta, float] = 0,
+    def __init__(self, duration: datetime.timedelta = seconds(0),
                  backdated_timestamp: Optional[float] = None) -> None:
         """
         Start the timer.
@@ -15,7 +40,7 @@ class Timer:
         :param duration: The duration of the timer. If duration is a float, then the unit is seconds.
         :param backdated_timestamp: When the timer started. Used to keep the timers between sessions.
         """
-        self.duration = duration if isinstance(duration, datetime.timedelta) else datetime.timedelta(seconds=duration)
+        self.duration = duration
         self.reset()
         if backdated_timestamp is not None:
             time_already_used = time.time() - backdated_timestamp
@@ -31,11 +56,11 @@ class Timer:
 
     def time_since_reset(self) -> datetime.timedelta:
         """How much time has passed."""
-        return datetime.timedelta(seconds=time.time() - self.starting_time)
+        return seconds(time.time() - self.starting_time)
 
     def time_until_expiration(self) -> datetime.timedelta:
         """How much time is left until it expires."""
-        return max(datetime.timedelta(), self.duration - self.time_since_reset())
+        return max(seconds(0), self.duration - self.time_since_reset())
 
     def starting_timestamp(self) -> float:
         """When the timer started."""

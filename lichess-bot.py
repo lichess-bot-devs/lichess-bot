@@ -23,7 +23,7 @@ import sys
 import yaml
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
-from timer import Timer
+from timer import Timer, seconds, msec, hours
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
@@ -223,7 +223,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
     control_stream.start()
     correspondence_pinger = multiprocessing.Process(target=do_correspondence_ping,
                                                     args=(control_queue,
-                                                          datetime.timedelta(seconds=config.correspondence.checkin_period)))
+                                                          seconds(config.correspondence.checkin_period)))
     correspondence_pinger.start()
     correspondence_queue: CORRESPONDENCE_QUEUE_TYPE = manager.Queue()
 
@@ -300,7 +300,7 @@ def lichess_bot_main(li: lichess.Lichess,
                        if game["gameId"] not in startup_correspondence_games)
     low_time_games: list[EVENT_GETATTR_GAME_TYPE] = []
 
-    last_check_online_time = Timer(datetime.timedelta(hours=1))
+    last_check_online_time = Timer(hours(1))
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
     matchmaker.show_earliest_challenge_time()
 
@@ -570,7 +570,7 @@ def play_game(li: lichess.Lichess,
     # Initial response of stream will be the full game info. Store it.
     initial_state = json.loads(next(lines).decode("utf-8"))
     logger.debug(f"Initial state: {initial_state}")
-    abort_time = config.abort_time
+    abort_time = seconds(config.abort_time)
     game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
 
     with engine_wrapper.create_engine(config) as engine:
@@ -582,14 +582,14 @@ def play_game(li: lichess.Lichess,
 
         is_correspondence = game.speed == "correspondence"
         correspondence_cfg = config.correspondence
-        correspondence_move_time = datetime.timedelta(seconds=correspondence_cfg.move_time)
-        correspondence_disconnect_time = correspondence_cfg.disconnect_time
+        correspondence_move_time = seconds(correspondence_cfg.move_time)
+        correspondence_disconnect_time = seconds(correspondence_cfg.disconnect_time)
 
         engine_cfg = config.engine
         ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
         can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
-        move_overhead = datetime.timedelta(milliseconds=config.move_overhead)
-        delay_seconds = datetime.timedelta(milliseconds=config.rate_limiting_delay)
+        move_overhead = msec(config.move_overhead)
+        delay_seconds = msec(config.rate_limiting_delay)
 
         keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
@@ -597,7 +597,7 @@ def play_game(li: lichess.Lichess,
         hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
         goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
 
-        disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else 0
+        disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else seconds(0)
         prior_game = None
         board = chess.Board()
         upd: dict[str, Any] = game.state
@@ -635,8 +635,7 @@ def play_game(li: lichess.Lichess,
                         conversation.send_message("spectator", goodbye_spectators)
 
                     wb = "w" if board.turn == chess.WHITE else "b"
-                    terminate_time = int((datetime.timedelta(milliseconds=upd[f"{wb}time"] + upd[f"{wb}inc"])
-                                          + datetime.timedelta(seconds=60)).total_seconds())
+                    terminate_time = msec(upd[f"{wb}time"]) + msec(upd[f"{wb}inc"]) + seconds(60)
                     game.ping(abort_time, terminate_time, disconnect_time)
                     prior_game = copy.deepcopy(game)
                 elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):

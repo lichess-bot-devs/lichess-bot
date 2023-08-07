@@ -9,7 +9,7 @@ import logging
 import traceback
 from collections import defaultdict
 import datetime
-from timer import Timer
+from timer import Timer, seconds
 from typing import Optional, Union, Any
 import chess.engine
 JSON_REPLY_TYPE = dict[str, Any]
@@ -132,7 +132,7 @@ class Lichess:
         response = self.session.get(url, params=params, timeout=timeout, stream=stream)
 
         if is_new_rate_limit(response):
-            delay = datetime.timedelta(seconds=1 if endpoint_name == "move" else 60)
+            delay = seconds(1 if endpoint_name == "move" else 60)
             self.set_rate_limit_delay(path_template, delay)
 
         response.raise_for_status()
@@ -214,7 +214,7 @@ class Lichess:
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
         if is_new_rate_limit(response):
-            self.set_rate_limit_delay(path_template, datetime.timedelta(seconds=60))
+            self.set_rate_limit_delay(path_template, seconds(60))
 
         if raise_for_status:
             response.raise_for_status()

@@ -121,7 +121,7 @@ class EngineWrapper:
         :param is_correspondence: Whether this is a correspondence or unlimited game.
         :param correspondence_move_time: The time the engine will think if `is_correspondence` is true.
         :param engine_cfg: Options for external moves (e.g. from an opening book), and for engine resignation and draw offers.
-        :param min_time: minimum time to spend, in seconds.
+        :param min_time: Minimum time to spend, in seconds.
         :return: The move to play.
         """
         polyglot_cfg = engine_cfg.polyglot

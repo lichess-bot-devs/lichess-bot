@@ -20,6 +20,7 @@ import copy
 import math
 import sys
 import yaml
+import traceback
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer
@@ -97,8 +98,8 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                     control_queue.put_nowait(event)
                 else:
                     control_queue.put_nowait({"type": "ping"})
-        except Exception as err:
-            error = err
+        except Exception:
+            error = traceback.format_exc()
             break
 
     control_queue.put_nowait({"type": "terminated", "error": error})
@@ -321,7 +322,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 restart = True
-                logger.debug("Terminating exception:", exc_info=event["error"])
+                logger.debug(f"Terminating exception:\n{event['error']}")
                 control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:

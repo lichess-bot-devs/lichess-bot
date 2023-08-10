@@ -48,7 +48,7 @@ class Timer:
     method time_until_expiration() gives the amount of time left until the timer
     expires.
 
-    Regardless of the initial duration (event if it's zero), a timer can be used
+    Regardless of the initial duration (even if it's zero), a timer can be used
     as a stopwatch by calling time_since_reset() to get the amount of time since
     the timer was created or since it was last reset.
     """

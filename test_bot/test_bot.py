@@ -14,6 +14,7 @@ import stat
 import shutil
 import importlib
 import config
+from timer import Timer
 from typing import Any
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
@@ -106,13 +107,12 @@ def thread_for_test() -> None:
                                    chess.engine.Limit(time=1),
                                    ponder=False)
             else:
-                move_start_time = datetime.datetime.now()
+                move_timer = Timer()
                 move = engine.play(board,
                                    chess.engine.Limit(white_clock=wtime.total_seconds() - 2,
                                                       white_inc=increment.total_seconds()),
                                    ponder=False)
-                move_end_time = datetime.datetime.now()
-                wtime -= (move_end_time - move_start_time)
+                wtime -= move_timer.time_since_reset()
                 wtime += increment
             engine_move = move.move
             if engine_move is None:
@@ -129,7 +129,7 @@ def thread_for_test() -> None:
                 file.write(state_str)
 
         else:  # lichess-bot move.
-            move_start_time = datetime.datetime.now()
+            move_timer = Timer()
             state2 = state_str
             moves_are_correct = False
             while state2 == state_str or not moves_are_correct:
@@ -146,9 +146,8 @@ def thread_for_test() -> None:
                         moves_are_correct = False
             with open("./logs/states.txt") as states:
                 state2 = states.read()
-            move_end_time = datetime.datetime.now()
             if len(board.move_stack) > 1:
-                btime -= (move_end_time - move_start_time)
+                btime -= move_timer.time_since_reset()
                 btime += increment
             move_str = state2.split("\n")[0].split(" ")[-1]
             board.push_uci(move_str)

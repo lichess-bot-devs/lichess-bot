@@ -54,7 +54,7 @@ class Timer:
     """
 
     def __init__(self, duration: datetime.timedelta = seconds(0),
-                 backdated_timestamp: Optional[float] = None) -> None:
+                 backdated_timestamp: Optional[datetime.datetime] = None) -> None:
         """
         Start the timer.
 
@@ -73,11 +73,11 @@ class Timer:
 
     def reset(self) -> None:
         """Reset the timer."""
-        self.starting_time = time.time()
+        self.starting_time = time.monotonic()
 
     def time_since_reset(self) -> datetime.timedelta:
         """How much time has passed."""
-        return seconds(time.time() - self.starting_time)
+        return seconds(time.monotonic() - self.starting_time)
 
     def time_until_expiration(self) -> datetime.timedelta:
         """How much time is left until it expires."""

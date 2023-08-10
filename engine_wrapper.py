@@ -18,7 +18,7 @@ import config
 import model
 import lichess
 from config import Configuration
-from timer import msec, seconds, msec_str, sec_str
+from timer import Timer, msec, seconds, msec_str, sec_str
 from typing import Any, Optional, Union
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
@@ -104,7 +104,7 @@ class EngineWrapper:
                   board: chess.Board,
                   game: model.Game,
                   li: lichess.Lichess,
-                  start_time: float,
+                  setup_timer: Timer,
                   move_overhead: datetime.timedelta,
                   can_ponder: bool,
                   is_correspondence: bool,
@@ -154,14 +154,14 @@ class EngineWrapper:
                 time_limit = first_move_time(game)
                 can_ponder = False  # No pondering after the first move since a new clock starts afterwards.
             elif is_correspondence:
-                time_limit = single_move_time(board, game, correspondence_move_time, start_time, move_overhead)
+                time_limit = single_move_time(board, game, correspondence_move_time, setup_timer, move_overhead)
             else:
-                time_limit = game_clock_time(board, game, start_time, move_overhead)
+                time_limit = game_clock_time(board, game, setup_timer, move_overhead)
 
             best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
 
         # Heed min_time
-        elapsed = seconds(time.perf_counter() - start_time)
+        elapsed = setup_timer.time_since_reset()
         if elapsed < min_time:
             time.sleep((min_time - elapsed).total_seconds())
 
@@ -579,7 +579,7 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
 
 
 def single_move_time(board: chess.Board, game: model.Game, search_time: datetime.timedelta,
-                     start_time: float, move_overhead: datetime.timedelta) -> chess.engine.Limit:
+                     setup_timer: Timer, move_overhead: datetime.timedelta) -> chess.engine.Limit:
     """
     Calculate time to search in correspondence games.
 
@@ -590,7 +590,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     :param move_overhead: The time it takes to communicate between the engine and lichess-bot.
     :return: The time to choose a move.
     """
-    pre_move_time = seconds(time.perf_counter() - start_time)
+    pre_move_time = setup_timer.time_since_reset()
     overhead = pre_move_time + move_overhead
     wb = "w" if board.turn == chess.WHITE else "b"
     clock_time = max(msec(0), msec(game.state[f"{wb}time"]) - overhead)
@@ -614,7 +614,7 @@ def first_move_time(game: model.Game) -> chess.engine.Limit:
 
 def game_clock_time(board: chess.Board,
                     game: model.Game,
-                    start_time: float,
+                    setup_timer: Timer,
                     move_overhead: datetime.timedelta) -> chess.engine.Limit:
     """
     Get the time to play by the engine in realtime games.
@@ -625,7 +625,7 @@ def game_clock_time(board: chess.Board,
     :param move_overhead: The time it takes to communicate between the engine and lichess-bot.
     :return: The time to play a move.
     """
-    pre_move_time = seconds(time.perf_counter() - start_time)
+    pre_move_time = setup_timer.time_since_reset()
     overhead = pre_move_time + move_overhead
     times = {side: msec(game.state[side]) for side in ["wtime", "btime"]}
     wb = "w" if board.turn == chess.WHITE else "b"

@@ -616,13 +616,13 @@ def play_game(li: lichess.Lichess,
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
-                        start_time = time.perf_counter()
+                        setup_timer = Timer()
                         print_move_number(board)
                         move_attempted = True
                         engine.play_move(board,
                                          game,
                                          li,
-                                         start_time,
+                                         setup_timer,
                                          move_overhead,
                                          can_ponder,
                                          is_correspondence,

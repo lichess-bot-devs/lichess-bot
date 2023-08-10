@@ -17,6 +17,7 @@ DAILY_TIMERS_TYPE = list[Timer]
 logger = logging.getLogger(__name__)
 
 daily_challenges_file_name = "daily_challenge_times.txt"
+timestamp_format = "%Y-%m-%d %H:%M:%S\n"
 
 
 def read_daily_challenges() -> DAILY_TIMERS_TYPE:
@@ -25,11 +26,7 @@ def read_daily_challenges() -> DAILY_TIMERS_TYPE:
     try:
         with open(daily_challenges_file_name) as file:
             for line in file:
-                try:
-                    timestamp = float(line)
-                except ValueError:
-                    timestamp = None
-                timers.append(Timer(days(1), timestamp))
+                timers.append(Timer(days(1), datetime.datetime.strptime(line, timestamp_format)))
     except FileNotFoundError:
         pass
 
@@ -40,7 +37,7 @@ def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
     """Write the challenges we have created in the past 24 hours to a text file."""
     with open(daily_challenges_file_name, "w") as file:
         for timer in daily_challenges:
-            file.write(f"{timer.starting_timestamp()}\n")
+            file.write(f"{timer.starting_timestamp(timestamp_format)}\n")
 
 
 class Matchmaking:

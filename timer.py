@@ -83,6 +83,6 @@ class Timer:
         """How much time is left until it expires."""
         return max(seconds(0), self.duration - self.time_since_reset())
 
-    def starting_timestamp(self) -> float:
+    def starting_timestamp(self, format: str) -> str:
         """When the timer started."""
-        return time.time() - self.time_since_reset().total_seconds()
+        return (datetime.datetime.now() - self.time_since_reset()).strftime(format)

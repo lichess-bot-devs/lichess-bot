@@ -21,6 +21,7 @@ import copy
 import math
 import sys
 import yaml
+import traceback
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
 from timer import Timer, seconds, msec, hours
@@ -98,8 +99,8 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                     control_queue.put_nowait(event)
                 else:
                     control_queue.put_nowait({"type": "ping"})
-        except Exception as err:
-            error = err
+        except Exception:
+            error = traceback.format_exc()
             break
 
     control_queue.put_nowait({"type": "terminated", "error": error})
@@ -250,6 +251,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
         control_stream.join()
         correspondence_pinger.terminate()
         correspondence_pinger.join()
+        logging_configurer(logging_level, log_filename, auto_log_filename, False)
         logging_listener.terminate()
         logging_listener.join()
 
@@ -322,7 +324,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 restart = True
-                logger.debug("Terminating exception:", exc_info=event["error"])
+                logger.debug(f"Terminating exception:\n{event['error']}")
                 control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
@@ -615,7 +617,6 @@ def play_game(li: lichess.Lichess,
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
                         start_time = datetime.datetime.now()
-                        fake_thinking(config, board, game)
                         print_move_number(board)
                         move_attempted = True
                         engine.play_move(board,
@@ -626,8 +627,9 @@ def play_game(li: lichess.Lichess,
                                          can_ponder,
                                          is_correspondence,
                                          correspondence_move_time,
-                                         engine_cfg)
-                        time.sleep(delay_seconds.total_seconds())
+                                         engine_cfg,
+                                         fake_think_time(config, board, game))
+                        time.sleep(delay_seconds)
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
                         engine.send_game_result(game, board)
@@ -671,13 +673,17 @@ def say_hello(conversation: Conversation, hello: str, hello_spectators: str, boa
         conversation.send_message("spectator", hello_spectators)
 
 
-def fake_thinking(config: Configuration, board: chess.Board, game: model.Game) -> None:
-    """Wait some time before starting to search for a move."""
+def fake_think_time(config: Configuration, board: chess.Board, game: model.Game) -> float:
+    """Calculate how much time we should wait for fake_think_time."""
+    sleep = 0.0
+
     if config.fake_think_time and len(board.move_stack) > 9:
-        delay = game.my_remaining_seconds() * 0.025
+        remaining = max(0, game.my_remaining_seconds() - config.move_overhead / 1000)
+        delay = remaining * 0.025
         accel = 0.99 ** (len(board.move_stack) - 10)
         sleep = delay * accel
-        time.sleep(sleep)
+
+    return sleep
 
 
 def print_move_number(board: chess.Board) -> None:

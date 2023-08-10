@@ -5,6 +5,7 @@ import chess.engine
 import json
 import logging
 import traceback
+from timer import msec, seconds
 from typing import Union, Any, Optional, Generator
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ class GameStream:
                     board = chess.Board()
                     for move in moves.split():
                         board.push_uci(move)
-                    wtime, btime = [float(n) for n in state[1].split(",")]
+                    wtime, btime = [seconds(float(n)) for n in state[1].split(",")]
                     if len(moves) <= len(self.moves_sent) and not event:
                         time.sleep(0.001)
                         continue
@@ -79,8 +80,8 @@ class GameStream:
             time.sleep(0.1)
             new_game_state = {"type": "gameState",
                               "moves": moves,
-                              "wtime": int(wtime * 1000),
-                              "btime": int(wtime * 1000),
+                              "wtime": int(wtime / msec(1)),
+                              "btime": int(btime / msec(1)),
                               "winc": 100,
                               "binc": 100}
             if event == "end":

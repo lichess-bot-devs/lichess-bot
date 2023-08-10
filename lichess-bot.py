@@ -591,7 +591,7 @@ def play_game(li: lichess.Lichess,
         ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
         can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
         move_overhead = msec(config.move_overhead)
-        delay_seconds = msec(config.rate_limiting_delay)
+        delay = msec(config.rate_limiting_delay)
 
         keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
@@ -629,7 +629,7 @@ def play_game(li: lichess.Lichess,
                                          correspondence_move_time,
                                          engine_cfg,
                                          fake_think_time(config, board, game))
-                        time.sleep(delay_seconds.total_seconds())
+                        time.sleep(delay.total_seconds())
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
                         engine.send_game_result(game, board)

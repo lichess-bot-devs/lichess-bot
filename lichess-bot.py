@@ -629,7 +629,7 @@ def play_game(li: lichess.Lichess,
                                          correspondence_move_time,
                                          engine_cfg,
                                          fake_think_time(config, board, game))
-                        time.sleep(delay_seconds)
+                        time.sleep(delay_seconds.total_seconds())
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
                         engine.send_game_result(game, board)
@@ -673,12 +673,12 @@ def say_hello(conversation: Conversation, hello: str, hello_spectators: str, boa
         conversation.send_message("spectator", hello_spectators)
 
 
-def fake_think_time(config: Configuration, board: chess.Board, game: model.Game) -> float:
+def fake_think_time(config: Configuration, board: chess.Board, game: model.Game) -> datetime.timedelta:
     """Calculate how much time we should wait for fake_think_time."""
-    sleep = 0.0
+    sleep = seconds(0.0)
 
     if config.fake_think_time and len(board.move_stack) > 9:
-        remaining = max(0, game.my_remaining_seconds() - config.move_overhead / 1000)
+        remaining = max(seconds(0), game.my_remaining_seconds() - msec(config.move_overhead))
         delay = remaining * 0.025
         accel = 0.99 ** (len(board.move_stack) - 10)
         sleep = delay * accel

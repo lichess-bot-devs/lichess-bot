@@ -9,6 +9,7 @@ import chess
 import subprocess
 import logging
 import datetime
+import time
 import random
 from collections import Counter
 from collections.abc import Generator, Callable
@@ -109,7 +110,7 @@ class EngineWrapper:
                   is_correspondence: bool,
                   correspondence_move_time: datetime.timedelta,
                   engine_cfg: config.Configuration,
-                  min_time: float) -> None:
+                  min_time: datetime.timedelta) -> None:
         """
         Play a move.
 
@@ -160,9 +161,9 @@ class EngineWrapper:
             best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
 
         # Heed min_time
-        elapsed = (time.perf_counter_ns() - start_time) / 1e9
+        elapsed = datetime.datetime.now() - start_time
         if elapsed < min_time:
-            time.sleep(min_time - elapsed)
+            time.sleep((min_time - elapsed).total_seconds())
 
         self.add_comment(best_move, board)
         self.print_stats()

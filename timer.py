@@ -40,7 +40,18 @@ def days(time_in_days: float) -> datetime.timedelta:
 
 
 class Timer:
-    """A timer for use in lichess-bot."""
+    """
+    A timer for use in lichess-bot. An instance of timer can be used both as a countdown timer and a stopwatch.
+
+    If the duration argument in the __init__() method is greater than zero, then
+    the method is_expired() indicates when the intial duration has passed. The
+    method time_until_expiration() gives the amount of time left until the timer
+    expires.
+
+    Regardless of the initial duration (event if it's zero), a timer can be used
+    as a stopwatch by calling time_since_reset() to get the amount of time since
+    the timer was created or since it was last reset.
+    """
 
     def __init__(self, duration: datetime.timedelta = seconds(0),
                  backdated_timestamp: Optional[float] = None) -> None:

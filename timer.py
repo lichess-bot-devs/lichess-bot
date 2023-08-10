@@ -64,8 +64,8 @@ class Timer:
         self.duration = duration
         self.reset()
         if backdated_timestamp is not None:
-            time_already_used = time.time() - backdated_timestamp
-            self.starting_time -= time_already_used
+            time_already_used = datetime.datetime.now() - backdated_timestamp
+            self.starting_time -= time_already_used.total_seconds()
 
     def is_expired(self) -> bool:
         """Check if a timer is expired."""
@@ -73,11 +73,11 @@ class Timer:
 
     def reset(self) -> None:
         """Reset the timer."""
-        self.starting_time = time.monotonic()
+        self.starting_time = time.perf_counter()
 
     def time_since_reset(self) -> datetime.timedelta:
         """How much time has passed."""
-        return seconds(time.monotonic() - self.starting_time)
+        return seconds(time.perf_counter() - self.starting_time)
 
     def time_until_expiration(self) -> datetime.timedelta:
         """How much time is left until it expires."""

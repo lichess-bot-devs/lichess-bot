@@ -616,7 +616,7 @@ def play_game(li: lichess.Lichess,
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
-                        start_time = datetime.datetime.now()
+                        start_time = time.perf_counter()
                         print_move_number(board)
                         move_attempted = True
                         engine.play_move(board,

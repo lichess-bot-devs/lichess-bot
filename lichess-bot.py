@@ -678,7 +678,7 @@ def fake_think_time(config: Configuration, board: chess.Board, game: model.Game)
     sleep = seconds(0.0)
 
     if config.fake_think_time and len(board.move_stack) > 9:
-        remaining = max(seconds(0), game.my_remaining_seconds() - msec(config.move_overhead))
+        remaining = max(seconds(0), game.my_remaining_time() - msec(config.move_overhead))
         delay = remaining * 0.025
         accel = 0.99 ** (len(board.move_stack) - 10)
         sleep = delay * accel

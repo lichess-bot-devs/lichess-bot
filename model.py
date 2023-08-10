@@ -222,7 +222,7 @@ class Game:
         """Whether we should disconnect form the game."""
         return self.disconnect_time.is_expired()
 
-    def my_remaining_seconds(self) -> datetime.timedelta:
+    def my_remaining_time(self) -> datetime.timedelta:
         """How many seconds we have left."""
         wtime = msec(self.state["wtime"])
         btime = msec(self.state["btime"])

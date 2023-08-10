@@ -58,8 +58,8 @@ class Timer:
         """
         Start the timer.
 
-        :param duration: The duration of the timer. If duration is a float, then the unit is seconds.
-        :param backdated_timestamp: When the timer started. Used to keep the timers between sessions.
+        :param duration: The duration of time before Timer.is_expired() returns True.
+        :param backdated_timestamp: When the timer should have started. Used to keep the timers between sessions.
         """
         self.duration = duration
         self.reset()

@@ -9,9 +9,14 @@ def msec(time_in_msec: float) -> datetime.timedelta:
     return datetime.timedelta(milliseconds=time_in_msec)
 
 
+def to_msec(duration: datetime.timedelta) -> float:
+    """Return a bare number representing the length of the duration in milliseconds."""
+    return duration / msec(1)
+
+
 def msec_str(duration: datetime.timedelta) -> str:
     """Return a string with the duration value in whole number milliseconds."""
-    return f"{round(duration/msec(1))}"
+    return f"{round(to_msec(duration))}"
 
 
 def seconds(time_in_sec: float) -> datetime.timedelta:
@@ -19,9 +24,14 @@ def seconds(time_in_sec: float) -> datetime.timedelta:
     return datetime.timedelta(seconds=time_in_sec)
 
 
+def to_seconds(duration: datetime.timedelta) -> float:
+    """Return a bare number representing the length of the duration in seconds."""
+    return duration.total_seconds()
+
+
 def sec_str(duration: datetime.timedelta) -> str:
     """Return a string with the duration value in whole number seconds."""
-    return f"{round(duration.total_seconds())}"
+    return f"{round(to_seconds(duration))}"
 
 
 def minutes(time_in_minutes: float) -> datetime.timedelta:
@@ -37,6 +47,11 @@ def hours(time_in_hours: float) -> datetime.timedelta:
 def days(time_in_days: float) -> datetime.timedelta:
     """Create a timedelta duration in minutes."""
     return datetime.timedelta(days=time_in_days)
+
+
+def years(time_in_years: float) -> datetime.timedelta:
+    """Create a timedelta duration in median years--i.e., 365 days."""
+    return days(365 * time_in_years)
 
 
 class Timer:
@@ -65,7 +80,7 @@ class Timer:
         self.reset()
         if backdated_timestamp is not None:
             time_already_used = datetime.datetime.now() - backdated_timestamp
-            self.starting_time -= time_already_used.total_seconds()
+            self.starting_time -= to_seconds(time_already_used)
 
     def is_expired(self) -> bool:
         """Check if a timer is expired."""

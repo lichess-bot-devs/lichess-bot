@@ -18,7 +18,7 @@ import config
 import model
 import lichess
 from config import Configuration
-from timer import Timer, msec, seconds, msec_str, sec_str
+from timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from typing import Any, Optional, Union
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
@@ -163,7 +163,7 @@ class EngineWrapper:
         # Heed min_time
         elapsed = setup_timer.time_since_reset()
         if elapsed < min_time:
-            time.sleep((min_time - elapsed).total_seconds())
+            time.sleep(to_seconds(min_time - elapsed))
 
         self.add_comment(best_move, board)
         self.print_stats()
@@ -178,7 +178,7 @@ class EngineWrapper:
         if movetime_cfg is not None:
             movetime = msec(movetime_cfg)
             if time_limit.time is None or seconds(time_limit.time) > movetime:
-                time_limit.time = movetime.total_seconds()
+                time_limit.time = to_seconds(movetime)
         time_limit.depth = self.go_commands.depth
         time_limit.nodes = self.go_commands.nodes
         return time_limit
@@ -596,7 +596,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     clock_time = max(msec(0), msec(game.state[f"{wb}time"]) - overhead)
     search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {sec_str(search_time)} seconds for game {game.id}")
-    return chess.engine.Limit(time=search_time.total_seconds(), clock_id="correspondence")
+    return chess.engine.Limit(time=to_seconds(search_time), clock_id="correspondence")
 
 
 def first_move_time(game: model.Game) -> chess.engine.Limit:
@@ -609,7 +609,7 @@ def first_move_time(game: model.Game) -> chess.engine.Limit:
     # Need to hardcode first movetime since Lichess has 30 sec limit.
     search_time = seconds(10)
     logger.info(f"Searching for time {sec_str(search_time)} seconds for game {game.id}")
-    return chess.engine.Limit(time=search_time.total_seconds(), clock_id="first move")
+    return chess.engine.Limit(time=to_seconds(search_time), clock_id="first move")
 
 
 def game_clock_time(board: chess.Board,
@@ -631,10 +631,10 @@ def game_clock_time(board: chess.Board,
     wb = "w" if board.turn == chess.WHITE else "b"
     times[f"{wb}time"] = max(msec(0), times[f"{wb}time"] - overhead)
     logger.info(f"Searching for wtime {msec_str(times['wtime'])} btime {msec_str(times['btime'])} for game {game.id}")
-    return chess.engine.Limit(white_clock=times["wtime"].total_seconds(),
-                              black_clock=times["btime"].total_seconds(),
-                              white_inc=msec(game.state["winc"]).total_seconds(),
-                              black_inc=msec(game.state["binc"]).total_seconds(),
+    return chess.engine.Limit(white_clock=to_seconds(times["wtime"]),
+                              black_clock=to_seconds(times["btime"]),
+                              white_inc=to_seconds(msec(game.state["winc"])),
+                              black_inc=to_seconds(msec(game.state["binc"])),
                               clock_id="real time")
 
 

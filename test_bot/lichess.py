@@ -5,7 +5,7 @@ import chess.engine
 import json
 import logging
 import traceback
-from timer import msec, seconds
+from timer import seconds, to_msec
 from typing import Union, Any, Optional, Generator
 
 logger = logging.getLogger(__name__)
@@ -80,8 +80,8 @@ class GameStream:
             time.sleep(0.1)
             new_game_state = {"type": "gameState",
                               "moves": moves,
-                              "wtime": int(wtime / msec(1)),
-                              "btime": int(btime / msec(1)),
+                              "wtime": int(to_msec(wtime)),
+                              "btime": int(to_msec(btime)),
                               "winc": 100,
                               "binc": 100}
             if event == "end":

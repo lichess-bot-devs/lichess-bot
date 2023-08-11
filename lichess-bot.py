@@ -24,7 +24,7 @@ import yaml
 import traceback
 from config import load_config, Configuration
 from conversation import Conversation, ChatLine
-from timer import Timer, seconds, msec, hours
+from timer import Timer, seconds, msec, hours, to_seconds
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
@@ -113,7 +113,7 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.t
     :param period: How many seconds to wait before sending a correspondence ping.
     """
     while not terminated:
-        time.sleep(period.total_seconds())
+        time.sleep(to_seconds(period))
         control_queue.put_nowait({"type": "correspondence_ping"})
 
 
@@ -629,7 +629,7 @@ def play_game(li: lichess.Lichess,
                                          correspondence_move_time,
                                          engine_cfg,
                                          fake_think_time(config, board, game))
-                        time.sleep(delay.total_seconds())
+                        time.sleep(to_seconds(delay))
                     elif is_game_over(game):
                         tell_user_game_result(game, board)
                         engine.send_game_result(game, board)

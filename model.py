@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 import logging
 import datetime
 from enum import Enum
-from timer import Timer, msec, seconds, days, sec_str
+from timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from config import Configuration
 from typing import Any
 from collections import defaultdict
@@ -150,7 +150,7 @@ class Game:
         self.id: str = game_info["id"]
         self.speed = game_info.get("speed")
         clock = game_info.get("clock") or {}
-        ten_years_in_ms = 10 * days(365) / msec(1)
+        ten_years_in_ms = to_msec(years(10))
         self.clock_initial = msec(clock.get("initial", ten_years_in_ms))
         self.clock_increment = msec(clock.get("increment", 0))
         self.perf_name = (game_info.get("perf") or {}).get("name", "{perf?}")
@@ -166,7 +166,7 @@ class Game:
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
-        self.game_start = datetime.datetime.fromtimestamp(msec(game_info["createdAt"]).total_seconds(),
+        self.game_start = datetime.datetime.fromtimestamp(to_seconds(msec(game_info["createdAt"])),
                                                           tz=datetime.timezone.utc)
         self.abort_time = Timer(abort_time)
         self.terminate_time = Timer(self.clock_initial + self.clock_increment + abort_time + seconds(60))

@@ -14,7 +14,7 @@ import stat
 import shutil
 import importlib
 import config
-from timer import Timer
+from timer import Timer, to_seconds
 from typing import Any
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
@@ -109,8 +109,8 @@ def thread_for_test() -> None:
             else:
                 move_timer = Timer()
                 move = engine.play(board,
-                                   chess.engine.Limit(white_clock=wtime.total_seconds() - 2,
-                                                      white_inc=increment.total_seconds()),
+                                   chess.engine.Limit(white_clock=to_seconds(wtime) - 2,
+                                                      white_inc=to_seconds(increment)),
                                    ponder=False)
                 wtime -= move_timer.time_since_reset()
                 wtime += increment
@@ -156,7 +156,7 @@ def thread_for_test() -> None:
         with open("./logs/states.txt") as states:
             state_str = states.read()
         state = state_str.split("\n")
-        state[1] = f"{wtime.total_seconds()},{btime.total_seconds()}"
+        state[1] = f"{to_seconds(wtime)},{to_seconds(btime)}"
         state_str = "\n".join(state)
         with open("./logs/states.txt", "w") as file:
             file.write(state_str)

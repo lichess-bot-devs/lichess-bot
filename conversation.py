@@ -5,6 +5,7 @@ import model
 from engine_wrapper import EngineWrapper
 from lichess import Lichess
 from collections.abc import Sequence
+from timer import seconds
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ class Conversation:
         if cmd == "commands" or cmd == "help":
             self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
         elif cmd == "wait" and self.game.is_abortable():
-            self.game.ping(60, 120, 120)
+            self.game.ping(seconds(60), seconds(120), seconds(120))
             self.send_reply(line, "Waiting 60 seconds...")
         elif cmd == "name":
             name = self.game.me.name

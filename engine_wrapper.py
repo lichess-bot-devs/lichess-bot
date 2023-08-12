@@ -426,6 +426,17 @@ class EngineWrapper:
         self.engine.quit()
         self.engine.close()
 
+    def filter_options(self, options: OPTIONS_TYPE) -> OPTIONS_TYPE:
+        """Only send options supported by the engine. If there is an option not supported, raise a warning."""
+        allowed_options: OPTIONS_TYPE = {}
+        for option in options:
+            if option in self.engine.options:
+                allowed_options[option] = options[option]
+            else:
+                logger.warning(f"Option {option} isn't supported by this engine. "
+                               f"You can comment this option in `config.yml`.")
+        return allowed_options
+
 
 class UCIEngine(EngineWrapper):
     """The class used to communicate with UCI engines."""
@@ -444,7 +455,7 @@ class UCIEngine(EngineWrapper):
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
                                                           **popen_args)
-        self.engine.configure(options)
+        self.engine.configure(self.filter_options(options))
 
 
 class XBoardEngine(EngineWrapper):
@@ -475,7 +486,7 @@ class XBoardEngine(EngineWrapper):
                     options[f"egtpath {egt_type}"] = egt_paths[egt_type]
                 else:
                     logger.debug(f"No paths found for egt type: {egt_type}.")
-        self.engine.configure(options)
+        self.engine.configure(self.filter_options(options))
 
 
 class MinimalEngine(EngineWrapper):

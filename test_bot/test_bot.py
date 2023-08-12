@@ -3,7 +3,6 @@ import pytest
 import zipfile
 import requests
 import time
-import datetime
 import yaml
 import chess
 import chess.engine
@@ -14,7 +13,7 @@ import stat
 import shutil
 import importlib
 import config
-from timer import Timer, to_seconds
+from timer import Timer, to_seconds, seconds
 from typing import Any
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
@@ -87,8 +86,8 @@ def thread_for_test() -> None:
     open("./logs/states.txt", "w").close()
     open("./logs/result.txt", "w").close()
 
-    start_time = datetime.timedelta(seconds=10)
-    increment = datetime.timedelta(seconds=0.1)
+    start_time = seconds(10)
+    increment = seconds(0.1)
 
     board = chess.Board()
     wtime = start_time

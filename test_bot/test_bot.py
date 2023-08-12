@@ -95,7 +95,7 @@ def thread_for_test() -> None:
     btime = start_time
 
     with open("./logs/states.txt", "w") as file:
-        file.write(f"\n{wtime.total_seconds()},{btime.total_seconds()}")
+        file.write(f"\n{to_seconds(wtime)},{to_seconds(btime)}")
 
     engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
     engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False})

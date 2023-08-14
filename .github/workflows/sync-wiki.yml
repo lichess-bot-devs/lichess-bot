@@ -6,9 +6,11 @@ on:
       - master
     paths:
       - 'wiki/**'
+      - 'README.md'
 
 jobs:
   sync:
+    if: "!contains(github.event.head_commit.message, 'Auto update wiki/Home.md')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -18,12 +20,20 @@ jobs:
         with:
           repository: "${{ github.repository }}.wiki"
           path: "lichess-bot.wiki"
-      - name: Sync files to wiki
+      - name: Set github bot global config
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "actions-user"
+      - name: Sync README.md to wiki/Home.md
+        run: |
+          cp -r $GITHUB_WORKSPACE/README.md $GITHUB_WORKSPACE/wiki/Home.md
+          git add wiki/Home.md
+          git commit -m "Auto update wiki/Home.md"
+          git push
+      - name: Sync all files to wiki
         run: |
           cp -r $GITHUB_WORKSPACE/wiki/* $GITHUB_WORKSPACE/lichess-bot.wiki
           cd $GITHUB_WORKSPACE/lichess-bot.wiki
-          git config --global user.email "actions@github.com"
-          git config --global user.name "Wiki sync"
           git add .
-          git commit -m "Update wiki"
-          git push --force
+          git commit -m "Auto update wiki"
+          git push

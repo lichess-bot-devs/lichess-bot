@@ -7,7 +7,7 @@ on:
 jobs:
   versioning:
       if: |
-        !contains(github.event.head_commit.message, 'Auto update version') &&
+        !contains(github.event.head_commit.message, 'Auto update version') ||
         !contains(github.event.head_commit.message, 'Auto update wiki/Home.md')
       runs-on: ubuntu-latest
       steps:

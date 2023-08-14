@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 import logging
 import datetime
 from enum import Enum
-from timer import Timer
+from timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from config import Configuration
 from typing import Any
 from collections import defaultdict
@@ -144,15 +144,15 @@ class Termination(str, Enum):
 class Game:
     """Store information about a game."""
 
-    def __init__(self, game_info: dict[str, Any], username: str, base_url: str, abort_time: int) -> None:
+    def __init__(self, game_info: dict[str, Any], username: str, base_url: str, abort_time: datetime.timedelta) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
         self.id: str = game_info["id"]
         self.speed = game_info.get("speed")
         clock = game_info.get("clock") or {}
-        ten_years_in_ms = 1000 * 3600 * 24 * 365 * 10
-        self.clock_initial = clock.get("initial", ten_years_in_ms)
-        self.clock_increment = clock.get("increment", 0)
+        ten_years_in_ms = to_msec(years(10))
+        self.clock_initial = msec(clock.get("initial", ten_years_in_ms))
+        self.clock_increment = msec(clock.get("increment", 0))
         self.perf_name = (game_info.get("perf") or {}).get("name", "{perf?}")
         self.variant_name = game_info["variant"]["name"]
         self.mode = "rated" if game_info.get("rated") else "casual"
@@ -166,10 +166,11 @@ class Game:
         self.me = self.white if self.is_white else self.black
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
-        self.game_start = datetime.datetime.fromtimestamp(game_info["createdAt"] / 1000, tz=datetime.timezone.utc)
+        self.game_start = datetime.datetime.fromtimestamp(to_seconds(msec(game_info["createdAt"])),
+                                                          tz=datetime.timezone.utc)
         self.abort_time = Timer(abort_time)
-        self.terminate_time = Timer((self.clock_initial + self.clock_increment) / 1000 + abort_time + 60)
-        self.disconnect_time = Timer(0)
+        self.terminate_time = Timer(self.clock_initial + self.clock_increment + abort_time + seconds(60))
+        self.disconnect_time = Timer(seconds(0))
 
     def url(self) -> str:
         """Get the url of the game."""
@@ -188,7 +189,7 @@ class Game:
 
     def time_control(self) -> str:
         """Get the time control of the game."""
-        return f"{int(self.clock_initial/1000)}+{int(self.clock_increment/1000)}"
+        return f"{sec_str(self.clock_initial)}+{sec_str(self.clock_increment)}"
 
     def is_abortable(self) -> bool:
         """Whether the game can be aborted."""
@@ -196,7 +197,7 @@ class Game:
         # than two moves (one from each player) have been played.
         return " " not in self.state["moves"]
 
-    def ping(self, abort_in: int, terminate_in: int, disconnect_in: int) -> None:
+    def ping(self, abort_in: datetime.timedelta, terminate_in: datetime.timedelta, disconnect_in: datetime.timedelta) -> None:
         """
         Tell the bot when to abort, terminate, and disconnect from a game.
 
@@ -221,11 +222,11 @@ class Game:
         """Whether we should disconnect form the game."""
         return self.disconnect_time.is_expired()
 
-    def my_remaining_seconds(self) -> float:
+    def my_remaining_time(self) -> datetime.timedelta:
         """How many seconds we have left."""
-        wtime: int = self.state["wtime"]
-        btime: int = self.state["btime"]
-        return (wtime if self.is_white else btime) / 1000
+        wtime = msec(self.state["wtime"])
+        btime = msec(self.state["btime"])
+        return wtime if self.is_white else btime
 
     def result(self) -> str:
         """Get the result of the game."""

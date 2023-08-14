@@ -48,7 +48,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
     commands = [engine_path]
     if cfg.engine_options:
         for k, v in cfg.engine_options.items():
-            commands.append(f"--{k}={v}")
+            commands.append(f"--{k}={v}" if v is not None else f"--{k}")
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 

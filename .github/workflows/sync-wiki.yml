@@ -42,7 +42,7 @@ jobs:
               - 'README.md'
       - name: Prevent Conflicts
         if: |
-          steps.readme.outputs.src == 'true' &&
+          steps.home.outputs.src == 'true' &&
           steps.readme.outputs.src == 'true'
         run: |
             echo "Error: Conflicting changes. Edit either the README.md file or the wiki/Home.md file, not both."

@@ -10,7 +10,6 @@ on:
 
 jobs:
   sync:
-    if: "!contains(github.event.head_commit.message, 'Auto update wiki/Home.md')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

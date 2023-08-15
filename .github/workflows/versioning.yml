@@ -6,11 +6,9 @@ on:
 
 jobs:
   versioning:
-      if: |
-        !contains(github.event.head_commit.message, 'Auto update version') ||
-        !contains(github.event.head_commit.message, 'Auto update wiki/Home.md')
-      runs-on: ubuntu-latest
-      steps:
+    if: github.repository != github.event.repository.full_name
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -25,9 +23,8 @@ jobs:
         run: python .github/workflows/update_version.py
       - name: Auto update version
         run: |
-          git config --global user.email "123640915+Version-BOT@users.noreply.github.com"
-          git config --global user.name "Version-BOT"
-          git remote set-url origin ${{ secrets.version_bot_ssh }}
+          git config --global user.email "actions@github.com"
+          git config --global user.name "actions-user"
           git add versioning.yml
           git commit -m "Auto update version to ${{ steps.new-version.outputs.new_version }}"
           git push origin HEAD:master

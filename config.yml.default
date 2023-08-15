@@ -198,3 +198,27 @@ matchmaking:
 #   - user1
 #   - user2
 
+# overrides:                       # These section provide overrides for the matchmaking specifications above. When a challenge is created,
+#   bullet_only_horde:             # either the default specification above or one of the overrides will be randomly chosen. If one of the
+#     challenge_variant: "horde"   # overrides is chosen, the configurations in that override will replace the ones in the default; all others
+#     challenge_initial_time:      # are unchanged. The names of the overrides ("bullet_only_horde" and "easy_chess960" in these examples) are
+#       - 1                        # arbitrary strings and are only for labeling the override sections. The only requirement is that different
+#       - 2                        # overrides have different names.
+#     challenge_increment:         #
+#       - 0                        # The following configurations cannot be overridden: allow_matchmaking, challenge_timeout, challenge_filter,
+#       - 1                        # and block_list.
+#
+#   easy_chess960:
+#     challenge_variant: "chess960"
+#     opponent_min_rating: 400
+#     opponent_max_rating: 1200
+#     opponent_rating_difference:
+#     challenge_mode: casual
+#
+#   no_pressure_correspondence:
+#     challenge_initial_time:
+#     challenge_increment:
+#     challenge_days:
+#       - 2
+#       - 3
+#     challenge_mode: casual

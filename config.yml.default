@@ -198,7 +198,7 @@ matchmaking:
 #   - user1
 #   - user2
 
-# overrides:                       # These section provide overrides for the matchmaking specifications above. When a challenge is created,
+# overrides:                       # These sections provide overrides for the matchmaking specifications above. When a challenge is created,
 #   bullet_only_horde:             # either the default specification above or one of the overrides will be randomly chosen. If one of the
 #     challenge_variant: "horde"   # overrides is chosen, the configurations in that override will replace the ones in the default; all others
 #     challenge_initial_time:      # are unchanged. The names of the overrides ("bullet_only_horde" and "easy_chess960" in these examples) are

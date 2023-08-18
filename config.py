@@ -236,7 +236,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
         for parameter in ["challenge_initial_time", "challenge_increment", "challenge_days"]:
             if parameter in override_config:
                 set_config_default(override_config, key=parameter, default=[None], force_empty_values=True)
-                change_value_to_list(override_config, key=parameter)    
+                change_value_to_list(override_config, key=parameter)
 
     for section in ["engine", "correspondence"]:
         for ponder in ["ponder", "uci_ponder"]:

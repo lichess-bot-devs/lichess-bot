@@ -206,7 +206,7 @@ matchmaking:
 #       - 2                        # overrides have different names.
 #     challenge_increment:         #
 #       - 0                        # The following configurations cannot be overridden: allow_matchmaking, challenge_timeout, challenge_filter,
-#       - 1                        # and block_list.
+#       - 1                        # challenge_filter, and block_list.
 #
 #   easy_chess960:
 #     challenge_variant: "chess960"

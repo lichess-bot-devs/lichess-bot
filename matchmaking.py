@@ -148,12 +148,17 @@ class Matchmaking:
 
     def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         """Choose an opponent."""
-        variant = self.get_random_config_value("challenge_variant", self.variants)
-        mode = self.get_random_config_value("challenge_mode", ["casual", "rated"])
+        override_choice = random.choice(self.matchmaking_cfg.overrides.keys() + [None])
+        logger.info(f"Using the {override_choice or 'default'} matchmaking configuration.")
+        override = {} if override_choice is None else self.matchmaking_cfg.overrides.lookup(override_choice)
+        match_config = self.matchmaking_cfg | override
 
-        base_time = random.choice(self.matchmaking_cfg.challenge_initial_time)
-        increment = random.choice(self.matchmaking_cfg.challenge_increment)
-        days = random.choice(self.matchmaking_cfg.challenge_days)
+        variant = self.get_random_config_value(match_config, "challenge_variant", self.variants)
+        mode = self.get_random_config_value(match_config, "challenge_mode", ["casual", "rated"])
+
+        base_time = random.choice(match_config.challenge_initial_time)
+        increment = random.choice(match_config.challenge_increment)
+        days = random.choice(match_config.challenge_days)
 
         play_correspondence = [bool(days), not bool(base_time or increment)]
         if random.choice(play_correspondence):
@@ -164,15 +169,15 @@ class Matchmaking:
 
         game_type = game_category(variant, base_time, increment, days)
 
-        min_rating = self.matchmaking_cfg.opponent_min_rating
-        max_rating = self.matchmaking_cfg.opponent_max_rating
-        rating_diff = self.matchmaking_cfg.opponent_rating_difference
+        min_rating = match_config.opponent_min_rating
+        max_rating = match_config.opponent_max_rating
+        rating_diff = match_config.opponent_rating_difference
         bot_rating = self.perf().get(game_type, {}).get("rating", 0)
         if rating_diff is not None and bot_rating > 0:
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
-        allow_tos_violation = self.matchmaking_cfg.opponent_allow_tos_violation
+        allow_tos_violation = match_config.opponent_allow_tos_violation
 
         def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
@@ -209,9 +214,9 @@ class Matchmaking:
 
         return bot_username, base_time, increment, days, variant, mode
 
-    def get_random_config_value(self, parameter: str, choices: list[str]) -> str:
+    def get_random_config_value(self, config: Configuration, parameter: str, choices: list[str]) -> str:
         """Choose a random value from `choices` if the parameter value in the config is `random`."""
-        value: str = self.matchmaking_cfg.lookup(parameter)
+        value: str = config.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
     def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:

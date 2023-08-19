@@ -1,4 +1,5 @@
 """Code related to the config that lichess-bot uses."""
+from __future__ import annotations
 import yaml
 import os
 import os.path
@@ -6,7 +7,7 @@ import logging
 import math
 from abc import ABCMeta
 from enum import Enum
-from typing import Any
+from typing import Any, Union
 CONFIG_DICT_TYPE = dict[str, Any]
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,15 @@ class Configuration:
     def items(self) -> Any:
         """:return: All the key-value pairs in this config."""
         return self.config.items()
+
+    def keys(self) -> list[str]:
+        """:return: All of the keys in this config."""
+        return list(self.config.keys())
+
+    def __or__(self, other: Union[Configuration, CONFIG_DICT_TYPE]) -> Configuration:
+        """Create a copy of this configuration that is updated with values from the parameter."""
+        other_dict = other.config if isinstance(other, Configuration) else other
+        return Configuration(self.config | other_dict)
 
     def __bool__(self) -> bool:
         """Whether `self.config` is empty."""
@@ -221,6 +231,12 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="opponent_allow_tos_violation", default=True)
     set_config_default(CONFIG, "matchmaking", key="challenge_variant", default="random")
     set_config_default(CONFIG, "matchmaking", key="challenge_mode", default="random")
+    set_config_default(CONFIG, "matchmaking", key="overrides", default={}, force_empty_values=True)
+    for override_config in CONFIG["matchmaking"]["overrides"].values():
+        for parameter in ["challenge_initial_time", "challenge_increment", "challenge_days"]:
+            if parameter in override_config:
+                set_config_default(override_config, key=parameter, default=[None], force_empty_values=True)
+                change_value_to_list(override_config, key=parameter)
 
     for section in ["engine", "correspondence"]:
         for ponder in ["ponder", "uci_ponder"]:

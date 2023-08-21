@@ -850,10 +850,7 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
         return
 
     os.makedirs(config.pgn_directory, exist_ok=True)
-
-    game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
-    game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
-    game_path = os.path.join(config.pgn_directory, game_file_name)
+    game_path = get_game_file_path(config, game)
 
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
@@ -886,9 +883,30 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
         pv_node = current_node.parent.add_line(commentary["pv"]) if "pv" in commentary else current_node
         pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
-    with open(game_path, "w") as game_record_destination:
+    with open(game_path, "a") as game_record_destination:
         pgn_writer = chess.pgn.FileExporter(game_record_destination)
         game_record.accept(pgn_writer)
+
+    single_game_path = os.path.join(config.pgn_directory, single_game_file_name(game))
+    if game_path != single_game_path and os.path.exists(single_game_path):
+        os.remove(single_game_path)
+
+
+def get_game_file_path(config: Configuration, game: model.Game) -> str:
+    """Return the path of the file where the game record will be written."""
+    if config.pgn_file_grouping == "game" or game.result() == model.GameEnding.INCOMPLETE:
+        game_file_name = single_game_file_name(game)
+    elif config.pgn_file_grouping == "opponent":
+        game_file_name = f"{game.me.name} games vs. {game.opponent.name}.pgn"
+    else:  # config.pgn_file_grouping == "all"
+        game_file_name = f"{game.me.name} games.pgn"
+    game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
+    return os.path.join(config.pgn_directory, game_file_name)
+
+
+def single_game_file_name(game: model.Game) -> str:
+    """Return the path of the file which will only contain a single game record."""
+    return f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:

@@ -10,7 +10,7 @@ on:
 
 jobs:
   sync:
-    if: github.repository == github.event.repository.full_name
+    if: github.repository == 'lichess-bot-devs/lichess-bot'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

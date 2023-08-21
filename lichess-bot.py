@@ -328,9 +328,9 @@ def lichess_bot_main(li: lichess.Lichess,
                 control_queue.task_done()
                 break
             elif event["type"] in ["local_game_done", "gameFinish"]:
-                id = event["game"]["id"]
-                if id in active_games:
-                    active_games.discard(id)
+                game_id = event["game"]["id"]
+                if game_id in active_games:
+                    active_games.discard(game_id)
                     matchmaker.game_done()
                     log_proc_count("Freed", active_games)
                 one_game_completed = True

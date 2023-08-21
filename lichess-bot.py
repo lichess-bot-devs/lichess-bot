@@ -333,6 +333,7 @@ def lichess_bot_main(li: lichess.Lichess,
                     active_games.discard(game_id)
                     matchmaker.game_done()
                     log_proc_count("Freed", active_games)
+                save_pgn_record(event, config)
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
@@ -654,8 +655,8 @@ def play_game(li: lichess.Lichess,
             finally:
                 upd = {}
 
-        try_print_pgn_game_record(li, config, game, board, engine)
-    final_queue_entries(control_queue, correspondence_queue, game, is_correspondence)
+        pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
+    final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record)
 
 
 def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict[str, str]) -> str:
@@ -750,7 +751,7 @@ def should_exit_game(board: chess.Board, game: model.Game, prior_game: Optional[
 
 
 def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
-                        game: model.Game, is_correspondence: bool) -> None:
+                        game: model.Game, is_correspondence: bool, pgn_record: str) -> None:
     """
     Log the game that ended or we disconnected from, and sends a `local_game_done` for the game.
 
@@ -762,7 +763,7 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id, "pgn": pgn_record, "state": game}})
 
 
 def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:
@@ -815,8 +816,8 @@ def tell_user_game_result(game: model.Game, board: chess.Board) -> None:
         logger.info(f"Game ended by {termination}")
 
 
-def try_print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
-                              engine: engine_wrapper.EngineWrapper) -> None:
+def try_get_pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
+                            engine: engine_wrapper.EngineWrapper) -> str:
     """
     Call `print_pgn_game_record` to write the game to a PGN file and handle errors raised by it.
 
@@ -830,13 +831,14 @@ def try_print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: 
         return
 
     try:
-        print_pgn_game_record(li, config, game, board, engine)
+        return pgn_game_record(li, config, game, board, engine)
     except Exception:
         logger.exception("Error writing game record:")
+        return ""
 
 
-def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
-                          engine: engine_wrapper.EngineWrapper) -> None:
+def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
+                    engine: engine_wrapper.EngineWrapper) -> str:
     """
     Write the game to a PGN file.
 
@@ -847,15 +849,13 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
     :param engine: The engine. Contains information about the moves (e.g. eval, PV, depth).
     """
     if not config.pgn_directory:
-        return
-
-    os.makedirs(config.pgn_directory, exist_ok=True)
-    game_path = get_game_file_path(config, game)
+        return ""
 
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
-        with open(game_path) as game_data:
+        previous_game_path = os.path.join(config.pgn_directory, single_game_file_name(game))
+        with open(previous_game_path) as game_data:
             game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
     except FileNotFoundError:
@@ -883,13 +883,8 @@ def print_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mode
         pv_node = current_node.parent.add_line(commentary["pv"]) if "pv" in commentary else current_node
         pv_node.set_eval(commentary.get("score"), commentary.get("depth"))
 
-    with open(game_path, "a") as game_record_destination:
-        pgn_writer = chess.pgn.FileExporter(game_record_destination)
-        game_record.accept(pgn_writer)
-
-    single_game_path = os.path.join(config.pgn_directory, single_game_file_name(game))
-    if game_path != single_game_path and os.path.exists(single_game_path):
-        os.remove(single_game_path)
+    pgn_writer = chess.pgn.StringExporter()
+    return game_record.accept(pgn_writer)
 
 
 def get_game_file_path(config: Configuration, game: model.Game) -> str:
@@ -957,6 +952,26 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
         headers["WhiteTitle"] = game.white.title
 
     return headers
+
+
+def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
+    """Write the game PGN record to a file."""
+    if (not config.pgn_directory
+            or event["type"] != "local_game_done"
+            or not event["game"]["pgn"]):
+        return
+
+    os.makedirs(config.pgn_directory, exist_ok=True)
+    game = event["game"]["state"]
+    game_path = get_game_file_path(config, game)
+    single_game_path = os.path.join(config.pgn_directory, single_game_file_name(game))
+    write_mode = "w" if game_path == single_game_path else "a"
+    logger.debug(f"Writing PGN game record to: {game_path}")
+    with open(game_path, write_mode) as game_file:
+        game_file.write(event["game"]["pgn"] + "\n\n")
+
+    if os.path.exists(single_game_path) and game_path != single_game_path:
+        os.remove(single_game_path)
 
 
 def intro() -> str:

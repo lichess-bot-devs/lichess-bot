@@ -854,7 +854,7 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
-        previous_game_path = os.path.join(config.pgn_directory, single_game_file_name(game))
+        previous_game_path = get_game_file_path(config, game, True)
         with open(previous_game_path) as game_data:
             game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
@@ -887,21 +887,16 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     return game_record.accept(pgn_writer)
 
 
-def get_game_file_path(config: Configuration, game: model.Game) -> str:
+def get_game_file_path(config: Configuration, game: model.Game, force_single: bool = False) -> str:
     """Return the path of the file where the game record will be written."""
-    if config.pgn_file_grouping == "game" or game.result() == model.GameEnding.INCOMPLETE:
-        game_file_name = single_game_file_name(game)
+    if config.pgn_file_grouping == "game" or game.result() == model.GameEnding.INCOMPLETE or force_single:
+        game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
     elif config.pgn_file_grouping == "opponent":
         game_file_name = f"{game.me.name} games vs. {game.opponent.name}.pgn"
     else:  # config.pgn_file_grouping == "all"
         game_file_name = f"{game.me.name} games.pgn"
     game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
     return os.path.join(config.pgn_directory, game_file_name)
-
-
-def single_game_file_name(game: model.Game) -> str:
-    """Return the path of the file which will only contain a single game record."""
-    return f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
@@ -964,7 +959,7 @@ def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
     os.makedirs(config.pgn_directory, exist_ok=True)
     game = event["game"]["state"]
     game_path = get_game_file_path(config, game)
-    single_game_path = os.path.join(config.pgn_directory, single_game_file_name(game))
+    single_game_path = get_game_file_path(config, game, True)
     write_mode = "w" if game_path == single_game_path else "a"
     logger.debug(f"Writing PGN game record to: {game_path}")
     with open(game_path, write_mode) as game_file:

@@ -6,7 +6,7 @@ on:
 
 jobs:
   versioning:
-    if: github.repository != github.event.repository.full_name
+    if: github.repository == github.event.repository.full_name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

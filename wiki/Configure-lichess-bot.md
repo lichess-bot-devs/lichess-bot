@@ -233,6 +233,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - `coarse` will prevent challenging a bot to any type of game after it declines one challenge.
     - `fine` will prevent challenging a bot to the same kind of game that was declined.
   - `block_list`: An indented list of usernames of bots that will not be challenged. If this option is not present, then the list is considered empty.
+  - `overrides`: Create variations on the matchmaking settings above for more specific circumstances. If there are any subsections under `overrides`, the settings below that will override the settings in the matchmaking section. Any settings that do not appear will be taken from the settings above. In the example configuration below, `easy_chess960` and `no_pressure_correspondence` are arbitrary strings to name the subsections and should be unique. The settings below that replace the previous settings. The blank settings for `challenge_initial_time` and `challenge_increment` under `no_pressure_correspondence` have the effect of deleting these settings, meaning that only correspondence games are possible. For each matchmaking challenge, the default settings and each override have equal probability of being chosen to create the challenge. For example, in the example configuration below, the default settings, `easy_chess960`, and `no_pressure_correspondence` all have a 1/3 chance of being used to create the next challenge.
 
 If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
 
@@ -260,6 +261,20 @@ matchmaking:
   opponent_allow_tos_violation: true
   challenge_mode: "random"
   challenge_filter: none
+  overrides:
+    easy_chess960:
+      challenge_variant: "chess960"
+      opponent_min_rating: 400
+      opponent_max_rating: 1200
+      opponent_rating_difference:
+      challenge_mode: casual
+    no_pressure_correspondence:
+      challenge_initial_time:
+      challenge_increment:
+      challenge_days:
+        - 2
+        - 3
+      challenge_mode: casual
 ```
 
 **Next step**: [Run lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-Run-lichess%E2%80%90bot)

@@ -1,0 +1,65 @@
+name: Sync wiki
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'wiki/**'
+      - 'README.md'
+
+jobs:
+  sync:
+    if: github.repository == 'lichess-bot-devs/lichess-bot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Checkout wiki
+        uses: actions/checkout@v3
+        with:
+          repository: "${{ github.repository }}.wiki"
+          path: "lichess-bot.wiki"
+      - name: Set path
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            wiki:
+              - 'wiki/**'
+            home:
+              - 'wiki/Home.md'
+            readme:
+              - 'README.md'
+      - name: Prevent Conflicts
+        if: |
+          steps.changes.outputs.home == 'true' &&
+          steps.changes.outputs.readme == 'true'
+        run: |
+            echo "Error: Conflicting changes. Edit either the README.md file or the wiki/Home.md file, not both."
+            exit 1
+      - name: Set github bot global config
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "actions-user"
+      - name: Sync README.md to wiki/Home.md
+        if: steps.changes.outputs.readme == 'true'
+        run: |
+          cp -r $GITHUB_WORKSPACE/README.md $GITHUB_WORKSPACE/wiki/Home.md
+          git add wiki/Home.md
+          git commit -m "Auto update wiki/Home.md (${{ github.event.head_commit.message }})"
+          git push
+      - name: Sync wiki/Home.md to README.md
+        if: steps.changes.outputs.home == 'true'
+        run: |
+          cp -r $GITHUB_WORKSPACE/wiki/Home.md $GITHUB_WORKSPACE/README.md
+          git add README.md
+          git commit -m "Auto update README.md (${{ github.event.head_commit.message }})"
+          git push
+      - name: Sync all files to wiki
+        run: |
+          cp -r $GITHUB_WORKSPACE/wiki/* $GITHUB_WORKSPACE/lichess-bot.wiki
+          cd $GITHUB_WORKSPACE/lichess-bot.wiki
+          git add .
+          git commit -m "Auto update wiki (${{ github.event.head_commit.message }})"
+          git push

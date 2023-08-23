@@ -840,7 +840,7 @@ def try_get_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mo
 def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game, board: chess.Board,
                     engine: engine_wrapper.EngineWrapper) -> str:
     """
-    Write the game to a PGN file.
+    Return the text of the game's PGN.
 
     :param li: Provides communication with lichess.org.
     :param config: The config that the bot will use.

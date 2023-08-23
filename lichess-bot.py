@@ -889,7 +889,7 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
 
 def get_game_file_path(config: Configuration, game: model.Game, force_single: bool = False) -> str:
     """Return the path of the file where the game record will be written."""
-    if config.pgn_file_grouping == "game" or game.result() == model.GameEnding.INCOMPLETE or force_single:
+    if config.pgn_file_grouping == "game" or not is_game_over(game) or force_single:
         game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
     elif config.pgn_file_grouping == "opponent":
         game_file_name = f"{game.me.name} games vs. {game.opponent.name}.pgn"

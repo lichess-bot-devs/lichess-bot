@@ -141,15 +141,6 @@ class Termination(str, Enum):
     DRAW = "draw"
 
 
-class GameEnding(str, Enum):
-    """Whether a game is completed and the winner, if any."""
-
-    WHITE_WINS = "1-0"
-    BLACK_WINS = "0-1"
-    DRAW = "1/2-1/2"
-    INCOMPLETE = "*"
-
-
 class Game:
     """Store information about a game."""
 
@@ -239,6 +230,12 @@ class Game:
 
     def result(self) -> str:
         """Get the result of the game."""
+        class GameEnding(str, Enum):
+            WHITE_WINS = "1-0"
+            BLACK_WINS = "0-1"
+            DRAW = "1/2-1/2"
+            INCOMPLETE = "*"
+
         winner = self.state.get("winner")
         termination = self.state.get("status")
 

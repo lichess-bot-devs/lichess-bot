@@ -47,19 +47,19 @@ jobs:
         run: |
           cp -r $GITHUB_WORKSPACE/README.md $GITHUB_WORKSPACE/wiki/Home.md
           git add wiki/Home.md
-          git commit -m "Auto update wiki/Home.md (${{ github.event.head_commit.message }})"
+          git commit -m "Auto update wiki/Home.md"
           git push
       - name: Sync wiki/Home.md to README.md
         if: steps.changes.outputs.home == 'true'
         run: |
           cp -r $GITHUB_WORKSPACE/wiki/Home.md $GITHUB_WORKSPACE/README.md
           git add README.md
-          git commit -m "Auto update README.md (${{ github.event.head_commit.message }})"
+          git commit -m "Auto update README.md"
           git push
       - name: Sync all files to wiki
         run: |
           cp -r $GITHUB_WORKSPACE/wiki/* $GITHUB_WORKSPACE/lichess-bot.wiki
           cd $GITHUB_WORKSPACE/lichess-bot.wiki
           git add .
-          git commit -m "Auto update wiki (${{ github.event.head_commit.message }})"
+          git commit -m "Auto update wiki"
           git push

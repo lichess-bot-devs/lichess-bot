@@ -174,6 +174,10 @@ greeting:
   goodbye_spectators: "Thanks for watching!" # Message to send to spectator chat at the end of a game
 
 # pgn_directory: "game_records"    # A directory where PGN-format records of the bot's games are kept
+# pgn_file_grouping: "game"        # How to group games into files. Options are "game", "opponent", and "all"
+                                   # "game" (default) - every game is written to a different file named "{White name} vs. {Black name} - {lichess game ID}.pgn"
+                                   # "opponent" - every game with a given opponent is written to a file named "{Bot name} games vs. {Opponent name}.pgn"
+                                   # "all" - every game is written to a single file named "{Bot name} games.pgn"
 
 matchmaking:
   allow_matchmaking: false         # Set it to 'true' to challenge other bots.

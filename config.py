@@ -154,6 +154,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="abort_time", default=20)
     set_config_default(CONFIG, key="move_overhead", default=1000)
     set_config_default(CONFIG, key="rate_limiting_delay", default=0)
+    set_config_default(CONFIG, key="pgn_file_grouping", default="game", force_empty_values=True)
     set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
@@ -288,6 +289,12 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
             online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
             config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
+
+    valid_pgn_grouping_options = ["game", "opponent", "all"]
+    config_pgn_choice = CONFIG["pgn_file_grouping"]
+    config_assert(config_pgn_choice in valid_pgn_grouping_options,
+                  f"The `pgn_file_grouping` choice of `{config_pgn_choice}` is not valid. "
+                  f"Please choose from {valid_pgn_grouping_options}.")
 
     for section, subsection in (("online_moves", "online_egtb"),
                                 ("lichess_bot_tbs", "syzygy"),

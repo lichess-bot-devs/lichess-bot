@@ -210,9 +210,14 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 - `fake_think_time`: Artificially slow down the engine to simulate a person thinking about a move. The amount of thinking time decreases as the game goes on.
 - `rate_limiting_delay`: For extremely fast games, the lichess.org servers may respond with an error if too many moves are played too quickly. This option avoids this problem by pausing for a specified number of milliseconds after submitting a move before making the next move.
 - `move_overhead`: To prevent losing on time due to network lag, subtract this many milliseconds from the time to think on each move.
-- `pgn_directory`: Write a record of every game played in PGN format to files in this directory. Each bot move will be annotated with the bot's calculated score and principal variation. The score is written with a tag of the form `[%eval s,d]`, where `s` is the score in pawns (positive means white has the advantage), and `d` is the depth of the search. Each game will be written to a uniquely named file.
+- `pgn_directory`: Write a record of every game played in PGN format to files in this directory. Each bot move will be annotated with the bot's calculated score and principal variation. The score is written with a tag of the form `[%eval s,d]`, where `s` is the score in pawns (positive means white has the advantage), and `d` is the depth of the search.
+- `pgn_file_grouping`: Determine how games are written to files. There are three options:
+    - `game`: Every game record is written to a different file in the `pgn_directory`. The file name is `{White name} vs. {Black name} - {lichess game ID}.pgn`.
+    - `opponent`: Game records are written to files named according to the bot's opponent. The file name is `{Bot name} games vs. {Opponent name}.pgn`.
+    - `all`: All games are written to the same file. The file name is `{Bot name} games.pgn`.
 ```yml
   pgn_directory: "game_records"
+  pgn_file_grouping: "all"
 ```
 
 ## Challenging other bots

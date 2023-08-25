@@ -307,7 +307,7 @@ class EngineWrapper:
         return f"{wdl_percentage}%"
 
     def readable_time(self, number: int) -> str:
-        """Convert time given as a number into minutes and seconds, so it is more human-readable."""
+        """Convert time given as a number into minutes and seconds, so it is more human-readable. e.g. 123 -> 2m 3s"""
         minutes, seconds = divmod(number, 60)
         if minutes >= 1:
             return f"{minutes:0.0f}m {seconds:0.1f}s"

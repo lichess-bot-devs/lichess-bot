@@ -306,6 +306,14 @@ class EngineWrapper:
         wdl_percentage = round(wdl.relative.expectation() * 100, 1)
         return f"{wdl_percentage}%"
 
+    def readable_time(self, number: int) -> str:
+        """Convert time given as a number into minutes and seconds, so it is more human-readable."""
+        minutes, seconds = divmod(number, 60)
+        if minutes >= 1:
+            return f"{minutes:0.0f}m {seconds:0.1f}s"
+        else:
+            return f"{seconds:0.1f}s"
+
     def readable_number(self, number: int) -> str:
         """Convert number to a more human-readable format. e.g. 123456789 -> 123M."""
         if number >= 1e9:
@@ -323,7 +331,8 @@ class EngineWrapper:
                                                      "Nodes": self.readable_number,
                                                      "Speed": lambda x: f"{self.readable_number(x)}nps",
                                                      "Tbhits": self.readable_number,
-                                                     "Cpuload": lambda x: f"{round(x / 10, 1)}%"}
+                                                     "Cpuload": lambda x: f"{round(x / 10, 1)}%",
+                                                     "Movetime": self.readable_time}
 
         def identity(x: Any) -> str:
             return str(x)
@@ -340,7 +349,7 @@ class EngineWrapper:
         info: MOVE_INFO_TYPE = self.move_commentary[-1].copy() if can_index else {}
 
         def to_readable_item(stat: str, value: Any) -> tuple[str, Any]:
-            readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation"}
+            readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation", "time": "movetime"}
             stat = readable.get(stat, stat)
             if stat == "string" and value.startswith("lichess-bot-source:"):
                 stat = "source"

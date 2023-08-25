@@ -202,15 +202,15 @@ matchmaking:
 #   - user1
 #   - user2
 
-# overrides:                       # These sections provide overrides for the matchmaking specifications above. When a challenge is created,
-#   bullet_only_horde:             # either the default specification above or one of the overrides will be randomly chosen. If one of the
-#     challenge_variant: "horde"   # overrides is chosen, the configurations in that override will replace the ones in the default; all others
-#     challenge_initial_time:      # are unchanged. The names of the overrides ("bullet_only_horde" and "easy_chess960" in these examples) are
-#       - 1                        # arbitrary strings and are only for labeling the override sections. The only requirement is that different
-#       - 2                        # overrides have different names.
-#     challenge_increment:         #
-#       - 0                        # The following configurations cannot be overridden: allow_matchmaking, challenge_timeout, challenge_filter,
-#       - 1                        # challenge_filter, and block_list.
+# overrides:                       # List of overrides for the matchmaking specifications above. When a challenge is created, either the default specification above or one of the overrides will be randomly chosen.
+#   bullet_only_horde:             # Name of the override. Can be anything as long as each override has a unique name ("bullet_only_horde" and "easy_chess960" in these examples).
+#     challenge_variant: "horde"   # List of options to override. Only the options mentioned will change when making the challenge. The rest will follow the default matchmaking options above.
+#     challenge_initial_time:
+#       - 1
+#       - 2
+#     challenge_increment:
+#       - 0
+#       - 1
 #
 #   easy_chess960:
 #     challenge_variant: "chess960"
@@ -226,3 +226,5 @@ matchmaking:
 #       - 2
 #       - 3
 #     challenge_mode: casual
+#
+# The following configurations cannot be overridden: allow_matchmaking, challenge_timeout, challenge_filter and block_list.

@@ -982,7 +982,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             if dtm:
                 dtm *= -1
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
-        elif quality == "suggest":
+        else:  # quality == "suggest":
             best_wdl = name_to_wld[data["moves"][0]["category"]]
 
             def good_enough(possible_move: LICHESS_EGTB_MOVE) -> bool:
@@ -1003,20 +1003,6 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                     dtm *= -1
                 logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})"
                             f" for game {game.id}")
-        else:
-            best_wdl = name_to_wld[data["moves"][0]["category"]]
-
-            def good_enough(possible_move: LICHESS_EGTB_MOVE) -> bool:
-                return name_to_wld[possible_move["category"]] == best_wdl
-            possible_moves = list(filter(good_enough, data["moves"]))
-            random_move = random.choice(possible_moves)
-            move = random_move["uci"]
-            wdl = name_to_wld[random_move["category"]] * -1
-            dtz = random_move["dtz"] * -1
-            dtm = random_move["dtm"]
-            if dtm:
-                dtm *= -1
-            logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
 
         return move, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
     return None, -3, None
@@ -1051,7 +1037,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             wdl = score_to_wdl(score)
             dtz = score_to_dtz(score)
             logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
-        elif quality == "suggest":
+        else:  # quality == "suggest"
             best_wdl = score_to_wdl(data["moves"][0]["score"])
 
             def good_enough(move: CHESSDB_EGTB_MOVE) -> bool:
@@ -1069,18 +1055,6 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 wdl = score_to_wdl(score)
                 dtz = score_to_dtz(score)
                 logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
-        else:
-            best_wdl = score_to_wdl(data["moves"][0]["score"])
-
-            def good_enough(move: CHESSDB_EGTB_MOVE) -> bool:
-                return score_to_wdl(move["score"]) == best_wdl
-            possible_moves = list(filter(good_enough, data["moves"]))
-            random_move = random.choice(possible_moves)
-            score = random_move["score"]
-            move = random_move["uci"]
-            wdl = score_to_wdl(score)
-            dtz = score_to_dtz(score)
-            logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
         return move, wdl, {"string": "lichess-bot-source:ChessDB EGTB"}
     return None, -3, None
@@ -1108,11 +1082,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
 
             best_wdl = max(map(dtz_to_wdl, moves.values()))
             good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
-            if move_quality == "good":
-                move, dtz = random.choice(good_moves)
-                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {dtz}) for game {game.id}")
-                return move, best_wdl
-            elif move_quality == "suggest" and len(good_moves) > 1:
+            if move_quality == "suggest" and len(good_moves) > 1:
                 move = [chess_move for chess_move, dtz in good_moves]
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
@@ -1185,11 +1155,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
             best_dtm = min([dtm for move, dtm in good_moves])
 
             pseudo_wdl = dtm_to_wdl(best_dtm, min_dtm_to_consider_as_wdl_1)
-            if move_quality == "good":
-                best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
-                move, dtm = random.choice(best_moves)
-                logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm}) for game {game.id}")
-            elif move_quality == "suggest":
+            if move_quality == "suggest":
                 best_moves = good_enough_gaviota_moves(good_moves, best_dtm, min_dtm_to_consider_as_wdl_1)
                 if len(best_moves) > 1:
                     move = [chess_move for chess_move, dtm in best_moves]

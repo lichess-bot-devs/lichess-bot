@@ -237,14 +237,20 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - `none` does not prevent challenging a bot that declined a challenge.
     - `coarse` will prevent challenging a bot to any type of game after it declines one challenge.
     - `fine` will prevent challenging a bot to the same kind of game that was declined.
+
+    The `challenge_filter` option can be useful if your matchmaking settings result in a lot of declined challenges. The bots that accept challenges will be challenged more often than those that have declined. The filter will remain until lichess-bot quits or the connection with lichess.org is reset.
   - `block_list`: An indented list of usernames of bots that will not be challenged. If this option is not present, then the list is considered empty.
-  - `overrides`: Create variations on the matchmaking settings above for more specific circumstances. If there are any subsections under `overrides`, the settings below that will override the settings in the matchmaking section. Any settings that do not appear will be taken from the settings above. In the example configuration below, `easy_chess960` and `no_pressure_correspondence` are arbitrary strings to name the subsections and should be unique. The settings below that replace the previous settings. The blank settings for `challenge_initial_time` and `challenge_increment` under `no_pressure_correspondence` have the effect of deleting these settings, meaning that only correspondence games are possible. For each matchmaking challenge, the default settings and each override have equal probability of being chosen to create the challenge. For example, in the example configuration below, the default settings, `easy_chess960`, and `no_pressure_correspondence` all have a 1/3 chance of being used to create the next challenge.
+  - `overrides`: Create variations on the matchmaking settings above for more specific circumstances. If there are any subsections under `overrides`, the settings below that will override the settings in the matchmaking section. Any settings that do not appear will be taken from the settings above. <br/> <br/>
+  The overrides section must have the following:
+    - Name: A unique name must be given for each override. In the example configuration below, `easy_chess960` and `no_pressure_correspondence` are arbitrary strings to name the subsections and they are unique.
+    - List of options: A list of options to override. Only the options mentioned will change when making the challenge. The rest will follow the default matchmaking options. In the example settings below, the blank settings for `challenge_initial_time` and `challenge_increment` under `no_pressure_correspondence` have the effect of deleting these settings, meaning that only correspondence games are possible.
 
-If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
+    For each matchmaking challenge, the default settings and each override have equal probability of being chosen to create the challenge. For example, in the example configuration below, the default settings, `easy_chess960`, and `no_pressure_correspondence` all have a 1/3 chance of being used to create the next challenge.
 
-If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precedence.
-
-The `challenge_filter` option can be useful if your matchmaking settings result in a lot of declined challenges. The bots that accept challenges will be challenged more often than those that have declined. The filter will remain until lichess-bot quits or the connection with lichess.org is reset.
+    The following configurations cannot be overridden: `allow_matchmaking`, `challenge_timeout`, `challenge_filter` and `block_list`.
+  - Additional Points:
+    - If there are entries for both real-time (`challenge_initial_time` and/or `challenge_increment`) and correspondence games (`challenge_days`), the challenge will be a random choice between the two.
+    - If there are entries for both absolute ratings (`opponent_min_rating` and `opponent_max_rating`) and rating difference (`opponent_rating_difference`), the rating difference takes precedence.
 
 ```yml
 matchmaking:

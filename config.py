@@ -315,7 +315,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     selection_choices = {"polyglot": ["weighted_random", "uniform_random", "best_move"],
                          "chessdb_book": ["all", "good", "best"],
                          "lichess_cloud_analysis": ["good", "best"],
-                         "online_egtb": ["good", "best", "suggest"]}
+                         "online_egtb": ["best", "suggest"]}
     for db_name, valid_selections in selection_choices.items():
         is_online = db_name != "polyglot"
         db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
@@ -328,7 +328,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"Please choose from {valid_selections}.")
 
     lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
-    quality_selections = ["good", "best", "suggest"]
+    quality_selections = ["best", "suggest"]
     for tb in ["syzygy", "gaviota"]:
         selection = (lichess_tbs_config.get(tb) or {}).get("move_quality")
         config_assert(selection in quality_selections,

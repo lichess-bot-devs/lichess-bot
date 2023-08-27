@@ -244,7 +244,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   The overrides section must have the following:
     - Name: A unique name must be given for each override. In the example configuration below, `easy_chess960` and `no_pressure_correspondence` are arbitrary strings to name the subsections and they are unique.
     - List of options: A list of options to override. Only the options mentioned will change when making the challenge. The rest will follow the default matchmaking options. In the example settings below, the blank settings for `challenge_initial_time` and `challenge_increment` under `no_pressure_correspondence` have the effect of deleting these settings, meaning that only correspondence games are possible.
-    
+
     For each matchmaking challenge, the default settings and each override have equal probability of being chosen to create the challenge. For example, in the example configuration below, the default settings, `easy_chess960`, and `no_pressure_correspondence` all have a 1/3 chance of being used to create the next challenge. <br/>
     The following configurations cannot be overridden: `allow_matchmaking`, `challenge_timeout`, `challenge_filter` and `block_list`.
   - Additional Points:

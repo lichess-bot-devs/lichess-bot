@@ -124,7 +124,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
         - `enabled`: Whether to use the tablebases at all.
         - `paths`: The paths to the tablebases.
         - `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
-        - `move_quality`: Choice of `best`, or `suggest`.
+        - `move_quality`: Choice of `best` or `suggest`.
             - `best`: Choose only the highest scoring move. When using `syzygy`, if `.*tbz` files are not provided, the bot will attempt to get a move using `move_quality` = `suggest`.
             - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that have the best WDL. Can't be used with XBoard engines.
     - Configurations only in `gaviota`:

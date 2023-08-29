@@ -99,11 +99,11 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - Configurations common to all:
         - `enabled`: Whether to use the database at all.
         - `min_time`: The minimum time in seconds on the game clock necessary to allow the online database to be consulted.
-        - `move_quality`: Choice of `"all"` (`chessdb_book` only), `"good"`, `"best"`, or `"suggest"` (`online_egtb` only).
+        - `move_quality`: Choice of `"all"` (`chessdb_book` only), `"good"` (all except `online_egtb`), `"best"`, or `"suggest"` (`online_egtb` only).
             - `all`: Choose a random move from all legal moves.
             - `best`: Choose only the highest scoring move.
-            - `good`: Choose randomly from the top moves. In `lichess_cloud_analysis`, the top moves list is controlled by `max_score_difference`. In `chessdb_book`, the top list is controlled by the online source. For `online_egtb`, `good` is deprecated and will be removed soon.
-            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned. Can't be used with XBoard engines.
+            - `good`: Choose randomly from the top moves. In `lichess_cloud_analysis`, the top moves list is controlled by `max_score_difference`. In `chessdb_book`, the top list is controlled by the online source.
+            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that have the best WDL. Can't be used with XBoard engines.
     - Configurations only in `chessdb_book` and `lichess_cloud_analysis`:
         - `min_depth`: The minimum search depth for a move evaluation for a database move to be accepted.
     - Configurations only in `lichess_cloud_analysis`:
@@ -124,10 +124,9 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
         - `enabled`: Whether to use the tablebases at all.
         - `paths`: The paths to the tablebases.
         - `max_pieces`: The maximum number of pieces in the current board for which the tablebase will be consulted.
-        - `move_quality`: Choice of `good`, `best`, or `suggest`.
-            - `best`: Choose only the highest scoring move. When using `syzygy`, if `.*tbz` files are not provided, the bot will attempt to get a move using `move_quality` = `good`.
-            - `good`: DEPRECATED. Will be removed soon. Choose randomly from the top moves.
-            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that `"good"` could have returned. Can't be used with XBoard engines.
+        - `move_quality`: Choice of `best` or `suggest`.
+            - `best`: Choose only the highest scoring move. When using `syzygy`, if `.*tbz` files are not provided, the bot will attempt to get a move using `move_quality` = `suggest`.
+            - `suggest`: Let the engine choose between the top moves. The top moves are the all the moves that have the best WDL. Can't be used with XBoard engines.
     - Configurations only in `gaviota`:
         - `min_dtm_to_consider_as_wdl_1`: The minimum DTM to consider as syzygy WDL=1/-1. Setting it to 100 will disable it.
 

@@ -62,7 +62,7 @@ engine:                            # Engine settings.
       min_time: 20                 # Minimum time (in seconds) the bot must have to use online EGTBs.
       max_pieces: 7                # Maximum number of pieces on the board to use endgame tablebases.
       source: "lichess"            # One of "lichess", "chessdb".
-      move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
+      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
 
   lichess_bot_tbs:                 # The tablebases list here will be read by lichess-bot, not the engine.
     syzygy:
@@ -70,14 +70,14 @@ engine:                            # Engine settings.
       paths:                       # Paths to Syzygy endgame tablebases.
         - "engines/syzygy"
       max_pieces: 7                # Maximum number of pieces in the endgame tablebase.
-      move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
+      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
     gaviota:
       enabled: false               # Whether or not to use local gaviota endgame tablebases.
       paths:
         - "engines/gaviota"
       max_pieces: 5
       min_dtm_to_consider_as_wdl_1: 120 # The minimum DTM to consider as syzygy WDL=1/-1. Set to 100 to disable.
-      move_quality: "best"         # One of "good", "best", "suggest" (it takes all the "good" moves and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
+      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
 
 # engine_options:                  # Any custom command line params to pass to the engine.
 #   cpuct: 3.1

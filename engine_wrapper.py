@@ -1229,7 +1229,7 @@ def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm
         return good_moves
 
 
-def piecewise_function(range_definitions: list[tuple[Union[int, float], int]], last_value: int, position: int) -> int:
+def piecewise_function(range_definitions: list[tuple[Union[int, float], int]], last_value: int, position: Union[int, float]) -> int:
     """
     Return a value according to a position argument.
 

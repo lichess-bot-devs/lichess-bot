@@ -1097,7 +1097,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
             # Attempt to only get the WDL score. It returns moves of quality="suggest", even if quality is set to "best".
             try:
                 moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
-                best_wdl = max(moves.values())
+                best_wdl = int(max(moves.values()))  # int is there only for mypy.
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found moves using 'move_quality'='suggest'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
@@ -1125,7 +1125,7 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
 
 def dtz_to_wdl(dtz: int) -> int:
     """Convert DTZ scores to syzygy WDL scores."""
-    return piecewise_function([(-100, -1), (-1, -2), (0, 0), (99, 2)], 1, dtz)
+    return piecewise_function([(-100, -1), (-.1, -2), (0, 0), (99, 2)], 1, dtz)
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
@@ -1269,7 +1269,9 @@ def piecewise_function(range_definitions: list[tuple[int, int]], last_value: int
     return last_value
 
 
-def score_syzygy_moves(board: chess.Board, scorer: Callable[[chess.syzygy.Tablebase, chess.Board], int],
+def score_syzygy_moves(board: chess.Board,
+                       scorer: Union[Callable[[chess.syzygy.Tablebase, chess.Board], int],
+                                     Callable[[chess.syzygy.Tablebase, chess.Board], Union[int, float]]],
                        tablebase: chess.syzygy.Tablebase) -> dict[chess.Move, int]:
     """Score all the moves using syzygy egtbs."""
     moves = {}

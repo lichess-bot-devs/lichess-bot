@@ -1061,7 +1061,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
 
 
 def get_syzygy(board: chess.Board, game: model.Game,
-               syzygy_cfg: config.Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], Union[int, float]]:
+               syzygy_cfg: config.Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
     """
     Get a move from local syzygy egtbs.
 

@@ -1123,7 +1123,7 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
     return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
 
 
-def dtz_to_wdl(dtz: int) -> int:
+def dtz_to_wdl(dtz: Union[int, float]) -> int:
     """Convert DTZ scores to syzygy WDL scores."""
     return piecewise_function([(-100, -1), (-.1, -2), (0, 0), (99, 2)], 1, dtz)
 

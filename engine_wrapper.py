@@ -1112,10 +1112,14 @@ def get_syzygy(board: chess.Board, game: model.Game,
                 return None, -3
 
 
-def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> int:
-    """Score a position based on a syzygy DTZ egtb."""
+def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[int, float]:
+    """
+    Score a position based on a syzygy DTZ egtb.
+    
+    For a zeroing move (capture or pawn move), a DTZ of +/-0.5 is returned.
+    """
     dtz = -tablebase.probe_dtz(board)
-    return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
+    return (dtz if board.halfmove_clock else .5 * (1 if dtz > 0 else -1)) + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
 
 
 def dtz_to_wdl(dtz: int) -> int:

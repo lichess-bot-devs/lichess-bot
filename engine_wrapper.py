@@ -1229,7 +1229,7 @@ def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm
         return good_moves
 
 
-def piecewise_function(range_definitions: list[tuple[int, int]], last_value: int, position: int) -> int:
+def piecewise_function(range_definitions: list[tuple[Union[int, float], int]], last_value: int, position: int) -> int:
     """
     Return a value according to a position argument.
 
@@ -1272,7 +1272,7 @@ def piecewise_function(range_definitions: list[tuple[int, int]], last_value: int
 def score_syzygy_moves(board: chess.Board,
                        scorer: Union[Callable[[chess.syzygy.Tablebase, chess.Board], int],
                                      Callable[[chess.syzygy.Tablebase, chess.Board], Union[int, float]]],
-                       tablebase: chess.syzygy.Tablebase) -> dict[chess.Move, int]:
+                       tablebase: chess.syzygy.Tablebase) -> dict[chess.Move, Union[int, float]]:
     """Score all the moves using syzygy egtbs."""
     moves = {}
     for move in board.legal_moves:

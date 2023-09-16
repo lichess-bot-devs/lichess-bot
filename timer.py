@@ -41,7 +41,7 @@ def minutes(time_in_minutes: float) -> datetime.timedelta:
 
 def hours(time_in_hours: float) -> datetime.timedelta:
     """Create a timedelta duration in hours."""
-    return datetime.timedelta(minutes=time_in_hours)
+    return datetime.timedelta(hours=time_in_hours)
 
 
 def days(time_in_days: float) -> datetime.timedelta:

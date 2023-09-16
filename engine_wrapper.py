@@ -20,7 +20,7 @@ import model
 import lichess
 from config import Configuration
 from timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Literal
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
 COMMANDS_TYPE = list[str]
@@ -1017,16 +1017,16 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     def score_to_wdl(score: int) -> int:
-        return piecewise_function([(-20001, 2),
-                                   (-1, -1),
-                                   (0, 0),
-                                   (20000, 1)], 2, score)
+        return piecewise_function([(-20000, 'e', 2),
+                                   (0, 'e', -1),
+                                   (0, 'i', 0),
+                                   (20000, 'i', 1)], 2, score)
 
     def score_to_dtz(score: int) -> int:
-        return piecewise_function([(-20001, -30000 - score),
-                                   (-1, -20000 - score),
-                                   (0, 0),
-                                   (20000, 20000 - score)], 30000 - score, score)
+        return piecewise_function([(-20000, 'e', -30000 - score),
+                                   (0, 'e', -20000 - score),
+                                   (0, 'i', 0),
+                                   (20000, 'i', 20000 - score)], 30000 - score, score)
 
     action = "querypv" if quality == "best" else "queryall"
     data = li.online_book_get("https://www.chessdb.cn/cdb.php",
@@ -1126,7 +1126,7 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
 
 def dtz_to_wdl(dtz: Union[int, float]) -> int:
     """Convert DTZ scores to syzygy WDL scores."""
-    return piecewise_function([(-100, -1), (-.1, -2), (0, 0), (99, 2)], 1, dtz)
+    return piecewise_function([(-100, 'i', -1), (0, 'e', -2), (0, 'i', 0), (100, 'i', 2)], 1, dtz)
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
@@ -1188,14 +1188,14 @@ def dtm_scorer(tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.Pyt
 
 def dtm_to_gaviota_wdl(dtm: int) -> int:
     """Convert DTM scores to gaviota WDL scores."""
-    return piecewise_function([(-1, -1), (0, 0)], 1, dtm)
+    return piecewise_function([(-1, 'i', -1), (0, 'i', 0)], 1, dtm)
 
 
 def dtm_to_wdl(dtm: int, min_dtm_to_consider_as_wdl_1: int) -> int:
     """Convert DTM scores to syzygy WDL scores."""
     # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
     # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
-    return piecewise_function([(-100, -1), (-1, -2), (0, 0), (min_dtm_to_consider_as_wdl_1 - 1, 2)], 1, dtm)
+    return piecewise_function([(-100, 'i', -1), (-1, 'i', -2), (0, 'i', 0), (min_dtm_to_consider_as_wdl_1, 'e', 2)], 1, dtm)
 
 
 def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm: int,
@@ -1230,43 +1230,49 @@ def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm
         return good_moves
 
 
-def piecewise_function(range_definitions: list[tuple[Union[int, float], int]], last_value: int,
+def piecewise_function(range_definitions: list[tuple[Union[int, float], Literal['e', 'i'], int]], last_value: int,
                        position: Union[int, float]) -> int:
     """
     Return a value according to a position argument.
 
-    This function is meant to replace if-elif-else blocks that turn ranges into discrete values. For
-    example, `piecewise_function([(-20001, 2), (-1, -1), (0, 0), (20000, 1)], 2, score)` is equivalent to:
+    This function is meant to replace if-elif-else blocks that turn ranges into discrete values.
+    Each tuple in the list has three parts: an upper limit, and inclusive/exclusive indicator, and
+    a value. For example,
+    `piecewise_function([(-20000, 'e', 2), (0, 'e' -1), (0, 'i', 0), (20000, 'i', 1)], 2, score)` is equivalent to:
 
     if score < -20000:
         return -2
     elif score < 0:
         return -1
-    elif score == 0:
+    elif score <= 0:
         return 0
     elif score <= 20000:
         return 1
     else:
         return 2
-    Note: We use -20001 and not -20000, because we use <= and not <.
 
     Arguments:
     range_definitions:
         A list of tuples with the first element being the inclusive right border of region and the second
-        element being the associated value. An element of this list (a, b) corresponds to
-        if x <= a:
-            return b
-        where x is the value of the position argument. This argument should be sorted by the first element
-        for correct operation.
+        element being the associated value. An element of this list (a, 'i', b) corresponds to an
+        inclusive limit and is equivalent to
+            if x <= a:
+                return b
+        where x is the value of the position argument. An element of the form (a, 'e', b) corresponds to
+        an exclusive limit and is equivalent to
+            if x < a:
+                return b
+        For correct operation, this argument should be sorted by the first element. If two ranges have the
+        same border, one with 'e' and the other with 'i', the 'e' element should be first.
     last_value:
-        If the position argument is greater than all of the borders in the range_definition argument,
+        If the position argument does not fall in any of the ranges in the range_definition argument,
         return this value.
     position:
         The value that will be compared to the first element of the range_definitions tuples.
 
     """
-    for border, value in range_definitions:
-        if position <= border:
+    for border, inc_exc, value in range_definitions:
+        if position < border or (inc_exc == 'i' and position == border):
             return value
     return last_value
 

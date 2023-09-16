@@ -16,7 +16,7 @@ def to_msec(duration: datetime.timedelta) -> float:
 
 def msec_str(duration: datetime.timedelta) -> str:
     """Return a string with the duration value in whole number milliseconds."""
-    return f"{round(to_msec(duration))}"
+    return str(round(to_msec(duration)))
 
 
 def seconds(time_in_sec: float) -> datetime.timedelta:
@@ -31,7 +31,7 @@ def to_seconds(duration: datetime.timedelta) -> float:
 
 def sec_str(duration: datetime.timedelta) -> str:
     """Return a string with the duration value in whole number seconds."""
-    return f"{round(to_seconds(duration))}"
+    return str(round(to_seconds(duration)))
 
 
 def minutes(time_in_minutes: float) -> datetime.timedelta:
@@ -41,7 +41,7 @@ def minutes(time_in_minutes: float) -> datetime.timedelta:
 
 def hours(time_in_hours: float) -> datetime.timedelta:
     """Create a timedelta duration in hours."""
-    return datetime.timedelta(minutes=time_in_hours)
+    return datetime.timedelta(hours=time_in_hours)
 
 
 def days(time_in_days: float) -> datetime.timedelta:
@@ -51,7 +51,7 @@ def days(time_in_days: float) -> datetime.timedelta:
 
 def years(time_in_years: float) -> datetime.timedelta:
     """Create a timedelta duration in median years--i.e., 365 days."""
-    return days(365 * time_in_years)
+    return days(365) * time_in_years
 
 
 class Timer:

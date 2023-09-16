@@ -11,6 +11,7 @@ import logging
 import datetime
 import time
 import random
+import math
 from collections import Counter
 from collections.abc import Generator, Callable
 from contextlib import contextmanager
@@ -1119,8 +1120,8 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
     For a zeroing move (capture or pawn move), a DTZ of +/-0.5 is returned.
     """
     dtz: Union[int, float] = -tablebase.probe_dtz(board)
-    dtz = dtz if board.halfmove_clock else .5 * (1 if dtz > 0 else -1)
-    return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
+    dtz = dtz if board.halfmove_clock else math.copysign(.5, dtz)
+    return dtz + (math.copysign(board.halfmove_clock, dtz) if dtz else 0)
 
 
 def dtz_to_wdl(dtz: Union[int, float]) -> int:
@@ -1182,7 +1183,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
 def dtm_scorer(tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.PythonTablebase], board: chess.Board) -> int:
     """Score a position based on a gaviota DTM egtb."""
     dtm = -tablebase.probe_dtm(board)
-    return dtm + (1 if dtm > 0 else -1) * board.halfmove_clock * (0 if dtm == 0 else 1)
+    return dtm + int(math.copysign(board.halfmove_clock, dtm) if dtm else 0)
 
 
 def dtm_to_gaviota_wdl(dtm: int) -> int:

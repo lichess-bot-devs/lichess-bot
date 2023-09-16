@@ -1097,7 +1097,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
             # Attempt to only get the WDL score. It returns moves of quality="suggest", even if quality is set to "best".
             try:
                 moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
-                best_wdl = max(moves.values())
+                best_wdl = int(max(moves.values()))  # int is there only for mypy.
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found moves using 'move_quality'='suggest'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")
@@ -1112,15 +1112,20 @@ def get_syzygy(board: chess.Board, game: model.Game,
                 return None, -3
 
 
-def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> int:
-    """Score a position based on a syzygy DTZ egtb."""
-    dtz = -tablebase.probe_dtz(board)
+def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[int, float]:
+    """
+    Score a position based on a syzygy DTZ egtb.
+
+    For a zeroing move (capture or pawn move), a DTZ of +/-0.5 is returned.
+    """
+    dtz: Union[int, float] = -tablebase.probe_dtz(board)
+    dtz = dtz if board.halfmove_clock else .5 * (1 if dtz > 0 else -1)
     return dtz + (1 if dtz > 0 else -1) * board.halfmove_clock * (0 if dtz == 0 else 1)
 
 
-def dtz_to_wdl(dtz: int) -> int:
+def dtz_to_wdl(dtz: Union[int, float]) -> int:
     """Convert DTZ scores to syzygy WDL scores."""
-    return piecewise_function([(-100, -1), (-1, -2), (0, 0), (99, 2)], 1, dtz)
+    return piecewise_function([(-100, -1), (-.1, -2), (0, 0), (99, 2)], 1, dtz)
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
@@ -1224,7 +1229,8 @@ def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm
         return good_moves
 
 
-def piecewise_function(range_definitions: list[tuple[int, int]], last_value: int, position: int) -> int:
+def piecewise_function(range_definitions: list[tuple[Union[int, float], int]], last_value: int,
+                       position: Union[int, float]) -> int:
     """
     Return a value according to a position argument.
 
@@ -1264,8 +1270,10 @@ def piecewise_function(range_definitions: list[tuple[int, int]], last_value: int
     return last_value
 
 
-def score_syzygy_moves(board: chess.Board, scorer: Callable[[chess.syzygy.Tablebase, chess.Board], int],
-                       tablebase: chess.syzygy.Tablebase) -> dict[chess.Move, int]:
+def score_syzygy_moves(board: chess.Board,
+                       scorer: Union[Callable[[chess.syzygy.Tablebase, chess.Board], int],
+                                     Callable[[chess.syzygy.Tablebase, chess.Board], Union[int, float]]],
+                       tablebase: chess.syzygy.Tablebase) -> dict[chess.Move, Union[int, float]]:
     """Score all the moves using syzygy egtbs."""
     moves = {}
     for move in board.legal_moves:

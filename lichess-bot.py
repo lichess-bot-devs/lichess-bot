@@ -142,7 +142,7 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
     all_handlers: list[logging.Handler] = [console_handler]
 
     if filename:
-        file_handler = logging.FileHandler(filename, delay=True)
+        file_handler = logging.FileHandler(filename, delay=True, encoding="utf-8")
         FORMAT = "%(asctime)s %(name)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s"
         file_formatter = logging.Formatter(FORMAT)
         file_handler.setFormatter(file_formatter)
@@ -157,7 +157,7 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
             handle_old_logs(auto_log_filename)
 
         # Set up automatic logging.
-        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True)
+        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True, encoding="utf-8")
         auto_file_handler.setLevel(logging.DEBUG)
 
         FORMAT = "%(asctime)s %(name)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s"

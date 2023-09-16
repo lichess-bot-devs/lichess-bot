@@ -16,7 +16,7 @@ def to_msec(duration: datetime.timedelta) -> float:
 
 def msec_str(duration: datetime.timedelta) -> str:
     """Return a string with the duration value in whole number milliseconds."""
-    return f"{round(to_msec(duration))}"
+    return str(round(to_msec(duration)))
 
 
 def seconds(time_in_sec: float) -> datetime.timedelta:
@@ -31,7 +31,7 @@ def to_seconds(duration: datetime.timedelta) -> float:
 
 def sec_str(duration: datetime.timedelta) -> str:
     """Return a string with the duration value in whole number seconds."""
-    return f"{round(to_seconds(duration))}"
+    return str(round(to_seconds(duration)))
 
 
 def minutes(time_in_minutes: float) -> datetime.timedelta:

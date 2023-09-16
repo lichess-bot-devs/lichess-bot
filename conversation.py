@@ -39,7 +39,7 @@ class Conversation:
 
         :param line: Information about the message.
         """
-        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text.encode("utf-8")!r}')
+        logger.info(f'*** {self.game.url()} [{line.room}] {line.username}: {line.text}')
         if line.text[0] == self.command_prefix:
             self.command(line, line.text[1:].lower())
 

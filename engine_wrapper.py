@@ -1126,7 +1126,7 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
 
 def dtz_to_wdl(dtz: Union[int, float]) -> int:
     """Convert DTZ scores to syzygy WDL scores."""
-    return piecewise_function([(-100, 'i', -1), (0, 'e', -2), (0, 'i', 0), (100, 'i', 2)], 1, dtz)
+    return piecewise_function([(-100, 'i', -1), (0, 'e', -2), (0, 'i', 0), (100, 'e', 2)], 1, dtz)
 
 
 def get_gaviota(board: chess.Board, game: model.Game,

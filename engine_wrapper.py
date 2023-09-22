@@ -700,36 +700,18 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     online_egtb_cfg = online_moves_cfg.online_egtb
-    chessdb_cfg = online_moves_cfg.chessdb_book
-    lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
-    opening_explorer_cfg = online_moves_cfg.lichess_opening_explorer
-    max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
-    offer_draw = False
-    resign = False
     best_move, wdl, comment = get_online_egtb_move(li, board, game, online_egtb_cfg)
     if best_move is not None and comment is not None:  # `and comment is not None` is there only for mypy.
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
-        if can_offer_draw and offer_draw_for_zero and wdl == 0:
-            offer_draw = True
+        offer_draw = can_offer_draw and offer_draw_for_zero and wdl == 0
 
         can_resign = draw_or_resign_cfg.resign_enabled
         resign_on_egtb_loss = draw_or_resign_cfg.resign_for_egtb_minus_two
-        if can_resign and resign_on_egtb_loss and wdl == -2:
-            resign = True
+        resign = can_resign and resign_on_egtb_loss and wdl == -2
 
         wdl_to_score = {2: 9900, 1: 500, 0: 0, -1: -500, -2: -9900}
         comment["score"] = chess.engine.PovScore(chess.engine.Cp(wdl_to_score[wdl]), board.turn)
-    elif out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
-        best_move, comment = get_chessdb_move(li, board, game, chessdb_cfg)
-
-    if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
-        best_move, comment = get_lichess_cloud_move(li, board, game, lichess_cloud_cfg)
-
-    if best_move is None and out_of_online_opening_book_moves[game.id] < max_out_of_book_moves:
-        best_move, comment = get_opening_explorer_move(li, board, game, opening_explorer_cfg)
-
-    if best_move:
         if isinstance(best_move, str):
             return chess.engine.PlayResult(chess.Move.from_uci(best_move),
                                            None,
@@ -737,6 +719,24 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
                                            draw_offered=offer_draw,
                                            resigned=resign)
         return [chess.Move.from_uci(move) for move in best_move]
+
+    max_out_of_book_moves = online_moves_cfg.max_out_of_book_moves
+    max_opening_moves = online_moves_cfg.max_depth * 2 - 1
+    game_moves = len(board.move_stack)
+    if game_moves > max_opening_moves or out_of_online_opening_book_moves[game.id] >= max_out_of_book_moves:
+        return chess.engine.PlayResult(None, None)
+
+    chessdb_cfg = online_moves_cfg.chessdb_book
+    lichess_cloud_cfg = online_moves_cfg.lichess_cloud_analysis
+    opening_explorer_cfg = online_moves_cfg.lichess_opening_explorer
+
+    for online_source, cfg in ((get_chessdb_move, chessdb_cfg),
+                               (get_lichess_cloud_move, lichess_cloud_cfg),
+                               (get_opening_explorer_move, opening_explorer_cfg)):
+        best_move, comment = online_source(li, board, game, cfg)
+        if best_move:
+            return chess.engine.PlayResult(chess.Move.from_uci(best_move), None, comment)
+
     out_of_online_opening_book_moves[game.id] += 1
     used_opening_books = chessdb_cfg.enabled or lichess_cloud_cfg.enabled or opening_explorer_cfg.enabled
     if out_of_online_opening_book_moves[game.id] == max_out_of_book_moves and used_opening_books:

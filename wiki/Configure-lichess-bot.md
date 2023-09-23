@@ -96,6 +96,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     4. `online_egtb`: Consults either the online Syzygy 7-piece endgame tablebase [hosted by Lichess](https://lichess.org/blog/W3WeMyQAACQAdfAL/7-piece-syzygy-tablebases-are-complete) or the chessdb listed above.
     - `max_out_of_book_moves`: Stop using online opening books after they don't have a move for `max_out_of_book_moves` positions. Doesn't apply to the online endgame tablebases.
     - `max_retries`: The maximum amount of retries when getting an online move.
+    - `max_depth`: The maximum number of moves a bot can make in the opening before it stops consulting the online opening books. If `max_depth` is 5, then the bot will stop consulting the online books after its fifth move.
     - Configurations common to all:
         - `enabled`: Whether to use the database at all.
         - `min_time`: The minimum time in seconds on the game clock necessary to allow the online database to be consulted.

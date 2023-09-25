@@ -198,11 +198,6 @@ def thread_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYP
     root.setLevel(logging.DEBUG)
 
 
-def game_error_handler(error: BaseException) -> None:
-    """Handle game errors."""
-    logger.exception("Game ended due to error:", exc_info=error)
-
-
 def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configuration, logging_level: int,
           log_filename: Optional[str], auto_log_filename: Optional[str], one_game: bool = False) -> None:
     """
@@ -327,12 +322,10 @@ def lichess_bot_main(li: lichess.Lichess,
                 logger.debug(f"Terminating exception:\n{event['error']}")
                 control_queue.task_done()
                 break
-            elif event["type"] in ["local_game_done", "gameFinish"]:
-                game_id = event["game"]["id"]
-                if game_id in active_games:
-                    active_games.discard(game_id)
-                    matchmaker.game_done()
-                    log_proc_count("Freed", active_games)
+            elif event["type"] == "local_game_done":
+                active_games.discard(event["game"]["id"])
+                matchmaker.game_done()
+                log_proc_count("Freed", active_games)
                 save_pgn_record(event, config)
                 one_game_completed = True
             elif event["type"] == "challenge":
@@ -474,6 +467,13 @@ def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY
     active_games.add(game_id)
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
+
+    def game_error_handler(error: BaseException) -> None:
+        """Handle game errors."""
+        logger.exception("Game ended due to error:", exc_info=error)
+        control_queue = play_game_args["control_queue"]
+        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id}})
+
     pool.apply_async(play_game,
                      kwds=play_game_args,
                      error_callback=game_error_handler)
@@ -951,9 +951,7 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
 
 def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
     """Write the game PGN record to a file."""
-    if (not config.pgn_directory
-            or event["type"] != "local_game_done"
-            or not event["game"]["pgn"]):
+    if not config.pgn_directory or not event["game"].get("pgn"):
         return
 
     os.makedirs(config.pgn_directory, exist_ok=True)

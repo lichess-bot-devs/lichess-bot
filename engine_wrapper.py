@@ -1098,7 +1098,7 @@ def get_syzygy(board: chess.Board, game: model.Game,
             # Attempt to only get the WDL score. It returns moves of quality="suggest", even if quality is set to "best".
             try:
                 moves = score_syzygy_moves(board, lambda tablebase, b: -tablebase.probe_wdl(b), tablebase)
-                best_wdl = int(max(moves.values()))
+                best_wdl = int(max(moves.values()))  # int is there only for mypy.
                 good_chess_moves = [chess_move for chess_move, wdl in moves.items() if wdl == best_wdl]
                 logger.debug("Found moves using 'move_quality'='suggest'. We didn't find an '.rtbz' file for this endgame."
                              if move_quality == "best" else "")

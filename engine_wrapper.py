@@ -701,7 +701,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     """
     online_egtb_cfg = online_moves_cfg.online_egtb
     best_move, wdl, comment = get_online_egtb_move(li, board, game, online_egtb_cfg)
-    if best_move is not None and comment is not None:  # `and comment is not None` is there only for mypy.
+    if best_move is not None:
         can_offer_draw = draw_or_resign_cfg.offer_draw_enabled
         offer_draw_for_zero = draw_or_resign_cfg.offer_draw_for_egtb_zero
         offer_draw = can_offer_draw and offer_draw_for_zero and wdl == 0
@@ -745,14 +745,14 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
 
 
 def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                     chessdb_cfg: config.Configuration) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
+                     chessdb_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from chessdb.cn's opening book."""
     wb = "w" if board.turn == chess.WHITE else "b"
     use_chessdb = chessdb_cfg.enabled
     time_left = msec(game.state[f"{wb}time"])
     min_time = seconds(chessdb_cfg.min_time)
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
-        return None, None
+        return None, {}
 
     move = None
     comment: chess.engine.InfoDict = {}
@@ -787,14 +787,14 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
 
 
 def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
-                           lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
+                           lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from the lichess's cloud analysis."""
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = msec(game.state[f"{wb}time"])
     min_time = seconds(lichess_cloud_cfg.min_time)
     use_lichess_cloud = lichess_cloud_cfg.enabled
     if not use_lichess_cloud or time_left < min_time:
-        return None, None
+        return None, {}
 
     move = None
     comment: chess.engine.InfoDict = {}
@@ -842,17 +842,17 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
 
 def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                               opening_explorer_cfg: config.Configuration
-                              ) -> tuple[Optional[str], Optional[chess.engine.InfoDict]]:
+                              ) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from lichess's opening explorer."""
     wb = "w" if board.turn == chess.WHITE else "b"
     time_left = msec(game.state[f"{wb}time"])
     min_time = seconds(opening_explorer_cfg.min_time)
     source = opening_explorer_cfg.source
     if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":
-        return None, None
+        return None, {}
 
     move = None
-    comment: Optional[chess.engine.InfoDict] = None
+    comment: chess.engine.InfoDict = {}
     variant = "standard" if board.uci_variant == "chess" else board.uci_variant
     try:
         if source == "masters":
@@ -891,7 +891,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
 
 
 def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_egtb_cfg: config.Configuration
-                         ) -> tuple[Union[str, list[str], None], int, Optional[chess.engine.InfoDict]]:
+                         ) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from an online egtb (either by lichess or chessdb).
 
@@ -911,7 +911,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
             or pieces > online_egtb_cfg.max_pieces
             or board.castling_rights):
 
-        return None, -3, None
+        return None, -3, {}
 
     quality = online_egtb_cfg.move_quality
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
@@ -924,7 +924,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     except Exception:
         pass
 
-    return None, -3, None
+    return None, -3, {}
 
 
 def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.Configuration,
@@ -957,7 +957,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
 
 
 def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
-                          variant: str) -> tuple[Union[str, list[str], None], int, Optional[chess.engine.InfoDict]]:
+                          variant: str) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from lichess's egtb.
 
@@ -1006,11 +1006,11 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                             f" for game {game.id}")
 
         return move, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
-    return None, -3, None
+    return None, -3, {}
 
 
 def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
-                          quality: str) -> tuple[Union[str, list[str], None], int, Optional[chess.engine.InfoDict]]:
+                          quality: str) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from chessdb's egtb.
 
@@ -1058,7 +1058,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
         return move, wdl, {"string": "lichess-bot-source:ChessDB EGTB"}
-    return None, -3, None
+    return None, -3, {}
 
 
 def get_syzygy(board: chess.Board, game: model.Game,

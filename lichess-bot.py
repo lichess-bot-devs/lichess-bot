@@ -469,10 +469,10 @@ def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY
     play_game_args["game_id"] = game_id
 
     def game_error_handler(error: BaseException) -> None:
-        """Handle game errors."""
         logger.exception("Game ended due to error:", exc_info=error)
-        control_queue = play_game_args["control_queue"]
-        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id}})
+        control_queue: CONTROL_QUEUE_TYPE = play_game_args["control_queue"]
+        li: lichess.Lichess = play_game_args["li"]
+        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id, "pgn": li.get_game_pgn(game_id)}})
 
     pool.apply_async(play_game,
                      kwds=play_game_args,
@@ -951,7 +951,7 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
 
 def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
     """Write the game PGN record to a file."""
-    if not config.pgn_directory or not event["game"].get("pgn"):
+    if not config.pgn_directory or not event["game"]["pgn"]:
         return
 
     os.makedirs(config.pgn_directory, exist_ok=True)

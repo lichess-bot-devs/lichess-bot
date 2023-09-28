@@ -854,7 +854,7 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
-        previous_game_path = get_game_file_path(config, game, True)
+        previous_game_path = get_game_file_path(config, game, force_single=True)
         with open(previous_game_path) as game_data:
             game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
@@ -887,16 +887,27 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     return game_record.accept(pgn_writer)
 
 
-def get_game_file_path(config: Configuration, game: model.Game, force_single: bool = False) -> str:
+def get_game_file_path(config: Configuration, game: Optional[model.Game], *, pgn: str = "", force_single: bool = False) -> str:
     """Return the path of the file where the game record will be written."""
-    if config.pgn_file_grouping == "game" or not is_game_over(game) or force_single:
-        game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
+    def create_valid_path(s: str) -> str:
+        illegal_characters = '<>:"/\\|?*'
+        return os.path.join(config.pgn_directory, str(filter(lambda c: c not in illegal_characters, s)))
+
+    if game is None:
+        # Game process exited due to an error, so write to single-game file.
+        game_from_pgn = chess.pgn.read_game(io.StringIO(pgn))
+        assert game_from_pgn is not None
+        white = game_from_pgn.headers["White"]
+        black = game_from_pgn.headers["Black"]
+        game_id = game_from_pgn.headers["Site"].split("/")[-1]
+        return create_valid_path(f"{white} vs {black} - {game_id}.pgn")
+
+    if config.pgn_file_grouping == "game" or game is None or not is_game_over(game) or force_single:
+        return create_valid_path(f"{game.white.name} vs {game.black.name} - {game.id}.pgn")
     elif config.pgn_file_grouping == "opponent":
-        game_file_name = f"{game.me.name} games vs. {game.opponent.name}.pgn"
+        return create_valid_path(f"{game.me.name} games vs. {game.opponent.name}.pgn")
     else:  # config.pgn_file_grouping == "all"
-        game_file_name = f"{game.me.name} games.pgn"
-    game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
-    return os.path.join(config.pgn_directory, game_file_name)
+        return create_valid_path(f"{game.me.name} games.pgn")
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
@@ -954,14 +965,15 @@ def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
     if not config.pgn_directory or not event["game"]["pgn"]:
         return
 
+    pgn: str = event["game"]["pgn"]
     os.makedirs(config.pgn_directory, exist_ok=True)
-    game = event["game"]["state"]
-    game_path = get_game_file_path(config, game)
-    single_game_path = get_game_file_path(config, game, True)
+    game: Optional[model.Game] = event["game"].get("state")
+    game_path = get_game_file_path(config, game, pgn=pgn)
+    single_game_path = get_game_file_path(config, game, pgn=pgn, force_single=True)
     write_mode = "w" if game_path == single_game_path else "a"
     logger.debug(f"Writing PGN game record to: {game_path}")
     with open(game_path, write_mode) as game_file:
-        game_file.write(event["game"]["pgn"] + "\n\n")
+        game_file.write(pgn + "\n\n")
 
     if os.path.exists(single_game_path) and game_path != single_game_path:
         os.remove(single_game_path)

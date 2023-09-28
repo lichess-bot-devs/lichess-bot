@@ -961,7 +961,12 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
 
 
 def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
-    """Write the game PGN record to a file."""
+    """
+    Write the game PGN record to a file.
+
+    :param event: A local_game_done event from the control queue.
+    :param config: The user's bot configuration.
+    """
     if not config.pgn_directory or not event["game"]["pgn"]:
         return
 

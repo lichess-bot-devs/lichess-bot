@@ -835,9 +835,6 @@ def try_get_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mo
     :param board: The board. Contains the moves.
     :param engine: The engine. Contains information about the moves (e.g. eval, PV, depth).
     """
-    if board is None:
-        return
-
     try:
         return pgn_game_record(li, config, game, board, engine)
     except Exception:

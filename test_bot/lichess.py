@@ -194,8 +194,8 @@ class Lichess:
 [Site "pytest"]
 [Date "2022.03.11"]
 [Round "1"]
-[White "Engine"]
-[Black "Engine"]
+[White "bo"]
+[Black "b"]
 [Result "0-1"]
 
 *

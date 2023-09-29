@@ -471,8 +471,7 @@ def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY
     def game_error_handler(error: BaseException) -> None:
         logger.exception("Game ended due to error:", exc_info=error)
         control_queue: CONTROL_QUEUE_TYPE = play_game_args["control_queue"]
-        li: lichess.Lichess = play_game_args["li"]
-        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id, "pgn": li.get_game_pgn(game_id)}})
+        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id}})
 
     pool.apply_async(play_game,
                      kwds=play_game_args,
@@ -887,22 +886,13 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     return game_record.accept(pgn_writer)
 
 
-def get_game_file_path(config: Configuration, game: Optional[model.Game], *, pgn: str = "", force_single: bool = False) -> str:
+def get_game_file_path(config: Configuration, game: model.Game, *, force_single: bool = False) -> str:
     """Return the path of the file where the game record will be written."""
     def create_valid_path(s: str) -> str:
         illegal = '<>:"/\\|?*'
         return os.path.join(config.pgn_directory, "".join(c for c in s if c not in illegal))
 
-    if game is None:
-        # Game process exited due to an error, so write to single-game file.
-        game_from_pgn = chess.pgn.read_game(io.StringIO(pgn))
-        assert game_from_pgn is not None
-        white = game_from_pgn.headers["White"]
-        black = game_from_pgn.headers["Black"]
-        game_id = game_from_pgn.headers["Site"].split("/")[-1]
-        return create_valid_path(f"{white} vs {black} - {game_id}.pgn")
-
-    if config.pgn_file_grouping == "game" or game is None or not is_game_over(game) or force_single:
+    if config.pgn_file_grouping == "game" or not is_game_over(game) or force_single:
         return create_valid_path(f"{game.white.name} vs {game.black.name} - {game.id}.pgn")
     elif config.pgn_file_grouping == "opponent":
         return create_valid_path(f"{game.me.name} games vs. {game.opponent.name}.pgn")
@@ -967,18 +957,17 @@ def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
     :param event: A local_game_done event from the control queue.
     :param config: The user's bot configuration.
     """
-    if not config.pgn_directory or not event["game"]["pgn"]:
+    if not config.pgn_directory or not event["game"].get("pgn"):
         return
 
-    pgn: str = event["game"]["pgn"]
     os.makedirs(config.pgn_directory, exist_ok=True)
-    game: Optional[model.Game] = event["game"].get("state")
-    game_path = get_game_file_path(config, game, pgn=pgn)
-    single_game_path = get_game_file_path(config, game, pgn=pgn, force_single=True)
+    game = event["game"]["state"]
+    game_path = get_game_file_path(config, game)
+    single_game_path = get_game_file_path(config, game, force_single=True)
     write_mode = "w" if game_path == single_game_path else "a"
     logger.debug(f"Writing PGN game record to: {game_path}")
     with open(game_path, write_mode) as game_file:
-        game_file.write(pgn + "\n\n")
+        game_file.write(event["game"]["pgn"] + "\n\n")
 
     if os.path.exists(single_game_path) and game_path != single_game_path:
         os.remove(single_game_path)

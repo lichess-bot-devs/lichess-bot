@@ -326,7 +326,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 active_games.discard(event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
-                save_pgn_record(event, config, li, user_profile["username"])
+                save_pgn_record(event, config, user_profile["username"])
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
@@ -462,6 +462,11 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
         challenge_queue[:] = list_c
 
 
+def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
+    """Determine if a game is still being played."""
+    return game_id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
+
+
 def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
     """Start a game thread."""
     active_games.add(game_id)
@@ -471,7 +476,10 @@ def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY
     def game_error_handler(error: BaseException) -> None:
         logger.exception("Game ended due to error:", exc_info=error)
         control_queue: CONTROL_QUEUE_TYPE = play_game_args["control_queue"]
-        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id}})
+        li = play_game_args["li"]
+        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id,
+                                                                      "pgn": li.get_game_pgn(game_id),
+                                                                      "complete": not game_is_active(li, game_id)}})
 
     pool.apply_async(play_game,
                      kwds=play_game_args,
@@ -648,8 +656,7 @@ def play_game(li: lichess.Lichess,
                     StopIteration,
                     MoveTimeout) as e:
                 stopped = isinstance(e, StopIteration)
-                is_ongoing = game.id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
-                if stopped or (not move_attempted and not is_ongoing):
+                if stopped or (not move_attempted and not game_is_active(li, game.id)):
                     break
             finally:
                 upd = {}
@@ -762,7 +769,9 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id, "pgn": pgn_record, "state": game}})
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id,
+                                                                  "pgn": pgn_record,
+                                                                  "complete": is_game_over(game)}})
 
 
 def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:
@@ -963,35 +972,23 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
     return headers
 
 
-def save_pgn_record(event: EVENT_TYPE, config: Configuration, li: lichess.Lichess, user_name: str) -> None:
+def save_pgn_record(event: EVENT_TYPE, config: Configuration, user_name: str) -> None:
     """
     Write the game PGN record to a file.
 
     :param event: A local_game_done event from the control queue.
     :param config: The user's bot configuration.
-    :param li: The lichess communication object.
     :param user_name: The bot's name.
     """
-    if not config.pgn_directory:
+    pgn = event["game"]["pgn"]
+    pgn_headers = chess.pgn.read_headers(io.StringIO(pgn))
+    if not config.pgn_directory or pgn_headers is None:
         return
 
-    if not event["game"].get("pgn"):
-        game_id = event["game"]["id"]
-        pgn = li.get_game_pgn(game_id)
-        pgn_headers = chess.pgn.read_headers(io.StringIO(pgn))
-        if pgn_headers is None:
-            return
-
-        white_name = pgn_headers["White"]
-        black_name = pgn_headers["Black"]
-        game_is_over = game_id not in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
-    else:
-        pgn = event["game"]["pgn"]
-        game = event["game"]["state"]
-        game_id = game.id
-        white_name = game.white.name
-        black_name = game.black.name
-        game_is_over = is_game_over(game)
+    game_id = event["game"]["id"]
+    white_name = pgn_headers["White"]
+    black_name = pgn_headers["Black"]
+    game_is_over = event["game"]["complete"]
 
     os.makedirs(config.pgn_directory, exist_ok=True)
     game_path = get_game_file_path(config, game_id, white_name, black_name, user_name, game_is_over)

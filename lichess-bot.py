@@ -326,7 +326,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 active_games.discard(event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
-                save_pgn_record(event, config)
+                save_pgn_record(event, config, li, user_profile["username"])
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
@@ -853,7 +853,13 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
-        previous_game_path = get_game_file_path(config, game, force_single=True)
+        previous_game_path = get_game_file_path(config,
+                                                game.id,
+                                                game.white.name,
+                                                game.black.name,
+                                                game.me.name,
+                                                is_game_over(game),
+                                                force_single=True)
         with open(previous_game_path) as game_data:
             game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
@@ -886,18 +892,25 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     return game_record.accept(pgn_writer)
 
 
-def get_game_file_path(config: Configuration, game: model.Game, *, force_single: bool = False) -> str:
+def get_game_file_path(config: Configuration,
+                       game_id: str,
+                       white_name: str,
+                       black_name: str,
+                       user_name: str,
+                       game_is_over: bool,
+                       *, force_single: bool = False) -> str:
     """Return the path of the file where the game record will be written."""
     def create_valid_path(s: str) -> str:
         illegal = '<>:"/\\|?*'
         return os.path.join(config.pgn_directory, "".join(c for c in s if c not in illegal))
 
-    if config.pgn_file_grouping == "game" or not is_game_over(game) or force_single:
-        return create_valid_path(f"{game.white.name} vs {game.black.name} - {game.id}.pgn")
+    if config.pgn_file_grouping == "game" or not game_is_over or force_single:
+        return create_valid_path(f"{white_name} vs {black_name} - {game_id}.pgn")
     elif config.pgn_file_grouping == "opponent":
-        return create_valid_path(f"{game.me.name} games vs. {game.opponent.name}.pgn")
+        opponent_name = white_name if user_name == black_name else black_name
+        return create_valid_path(f"{user_name} games vs. {opponent_name}.pgn")
     else:  # config.pgn_file_grouping == "all"
-        return create_valid_path(f"{game.me.name} games.pgn")
+        return create_valid_path(f"{user_name} games.pgn")
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
@@ -950,24 +963,43 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
     return headers
 
 
-def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
+def save_pgn_record(event: EVENT_TYPE, config: Configuration, li: lichess.Lichess, user_name: str) -> None:
     """
     Write the game PGN record to a file.
 
     :param event: A local_game_done event from the control queue.
     :param config: The user's bot configuration.
+    :param li: The lichess communication object.
+    :param user_name: The bot's name.
     """
-    if not config.pgn_directory or not event["game"].get("pgn"):
+    if not config.pgn_directory:
         return
 
+    if not event["game"].get("pgn"):
+        game_id = event["game"]["id"]
+        pgn = li.get_game_pgn(game_id)
+        pgn_headers = chess.pgn.read_headers(io.StringIO(pgn))
+        if pgn_headers is None:
+            return
+
+        white_name = pgn_headers["White"]
+        black_name = pgn_headers["Black"]
+        game_is_over = game_id not in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
+    else:
+        pgn = event["game"]["pgn"]
+        game = event["game"]["state"]
+        game_id = game.id
+        white_name = game.white.name
+        black_name = game.black.name
+        game_is_over = is_game_over(game)
+
     os.makedirs(config.pgn_directory, exist_ok=True)
-    game = event["game"]["state"]
-    game_path = get_game_file_path(config, game)
-    single_game_path = get_game_file_path(config, game, force_single=True)
+    game_path = get_game_file_path(config, game_id, white_name, black_name, user_name, game_is_over)
+    single_game_path = get_game_file_path(config, game_id, white_name, black_name, user_name, game_is_over, force_single=True)
     write_mode = "w" if game_path == single_game_path else "a"
     logger.debug(f"Writing PGN game record to: {game_path}")
     with open(game_path, write_mode) as game_file:
-        game_file.write(event["game"]["pgn"] + "\n\n")
+        game_file.write(pgn + "\n\n")
 
     if os.path.exists(single_game_path) and game_path != single_game_path:
         os.remove(single_game_path)

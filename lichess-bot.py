@@ -198,11 +198,6 @@ def thread_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYP
     root.setLevel(logging.DEBUG)
 
 
-def game_error_handler(error: BaseException) -> None:
-    """Handle game errors."""
-    logger.exception("Game ended due to error:", exc_info=error)
-
-
 def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configuration, logging_level: int,
           log_filename: Optional[str], auto_log_filename: Optional[str], one_game: bool = False) -> None:
     """
@@ -327,13 +322,11 @@ def lichess_bot_main(li: lichess.Lichess,
                 logger.debug(f"Terminating exception:\n{event['error']}")
                 control_queue.task_done()
                 break
-            elif event["type"] in ["local_game_done", "gameFinish"]:
-                game_id = event["game"]["id"]
-                if game_id in active_games:
-                    active_games.discard(game_id)
-                    matchmaker.game_done()
-                    log_proc_count("Freed", active_games)
-                save_pgn_record(event, config)
+            elif event["type"] == "local_game_done":
+                active_games.discard(event["game"]["id"])
+                matchmaker.game_done()
+                log_proc_count("Freed", active_games)
+                save_pgn_record(event, config, user_profile["username"])
                 one_game_completed = True
             elif event["type"] == "challenge":
                 handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
@@ -469,11 +462,25 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
         challenge_queue[:] = list_c
 
 
+def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
+    """Determine if a game is still being played."""
+    return game_id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
+
+
 def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
     """Start a game thread."""
     active_games.add(game_id)
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
+
+    def game_error_handler(error: BaseException) -> None:
+        logger.exception("Game ended due to error:", exc_info=error)
+        control_queue: CONTROL_QUEUE_TYPE = play_game_args["control_queue"]
+        li = play_game_args["li"]
+        control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id,
+                                                                      "pgn": li.get_game_pgn(game_id),
+                                                                      "complete": not game_is_active(li, game_id)}})
+
     pool.apply_async(play_game,
                      kwds=play_game_args,
                      error_callback=game_error_handler)
@@ -649,8 +656,7 @@ def play_game(li: lichess.Lichess,
                     StopIteration,
                     MoveTimeout) as e:
                 stopped = isinstance(e, StopIteration)
-                is_ongoing = game.id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
-                if stopped or (not move_attempted and not is_ongoing):
+                if stopped or (not move_attempted and not game_is_active(li, game.id)):
                     break
             finally:
                 upd = {}
@@ -763,7 +769,9 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
     else:
         logger.info(f"--- {game.url()} Game over")
 
-    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id, "pgn": pgn_record, "state": game}})
+    control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id,
+                                                                  "pgn": pgn_record,
+                                                                  "complete": is_game_over(game)}})
 
 
 def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:
@@ -827,9 +835,6 @@ def try_get_pgn_game_record(li: lichess.Lichess, config: Configuration, game: mo
     :param board: The board. Contains the moves.
     :param engine: The engine. Contains information about the moves (e.g. eval, PV, depth).
     """
-    if board is None:
-        return
-
     try:
         return pgn_game_record(li, config, game, board, engine)
     except Exception:
@@ -854,7 +859,13 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     lichess_game_record = chess.pgn.read_game(io.StringIO(li.get_game_pgn(game.id))) or chess.pgn.Game()
     try:
         # Recall previously written PGN file to retain engine evaluations.
-        previous_game_path = get_game_file_path(config, game, True)
+        previous_game_path = get_game_file_path(config,
+                                                game.id,
+                                                game.white.name,
+                                                game.black.name,
+                                                game.me.name,
+                                                is_game_over(game),
+                                                force_single=True)
         with open(previous_game_path) as game_data:
             game_record = chess.pgn.read_game(game_data) or lichess_game_record
         game_record.headers.update(lichess_game_record.headers)
@@ -887,16 +898,25 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
     return game_record.accept(pgn_writer)
 
 
-def get_game_file_path(config: Configuration, game: model.Game, force_single: bool = False) -> str:
+def get_game_file_path(config: Configuration,
+                       game_id: str,
+                       white_name: str,
+                       black_name: str,
+                       user_name: str,
+                       game_is_over: bool,
+                       *, force_single: bool = False) -> str:
     """Return the path of the file where the game record will be written."""
-    if config.pgn_file_grouping == "game" or not is_game_over(game) or force_single:
-        game_file_name = f"{game.white.name} vs {game.black.name} - {game.id}.pgn"
+    def create_valid_path(s: str) -> str:
+        illegal = '<>:"/\\|?*'
+        return os.path.join(config.pgn_directory, "".join(c for c in s if c not in illegal))
+
+    if config.pgn_file_grouping == "game" or not game_is_over or force_single:
+        return create_valid_path(f"{white_name} vs {black_name} - {game_id}.pgn")
     elif config.pgn_file_grouping == "opponent":
-        game_file_name = f"{game.me.name} games vs. {game.opponent.name}.pgn"
+        opponent_name = white_name if user_name == black_name else black_name
+        return create_valid_path(f"{user_name} games vs. {opponent_name}.pgn")
     else:  # config.pgn_file_grouping == "all"
-        game_file_name = f"{game.me.name} games.pgn"
-    game_file_name = "".join(c for c in game_file_name if c not in '<>:"/\\|?*')
-    return os.path.join(config.pgn_directory, game_file_name)
+        return create_valid_path(f"{user_name} games.pgn")
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:
@@ -949,21 +969,31 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
     return headers
 
 
-def save_pgn_record(event: EVENT_TYPE, config: Configuration) -> None:
-    """Write the game PGN record to a file."""
-    if (not config.pgn_directory
-            or event["type"] != "local_game_done"
-            or not event["game"]["pgn"]):
+def save_pgn_record(event: EVENT_TYPE, config: Configuration, user_name: str) -> None:
+    """
+    Write the game PGN record to a file.
+
+    :param event: A local_game_done event from the control queue.
+    :param config: The user's bot configuration.
+    :param user_name: The bot's name.
+    """
+    pgn = event["game"]["pgn"]
+    pgn_headers = chess.pgn.read_headers(io.StringIO(pgn))
+    if not config.pgn_directory or pgn_headers is None:
         return
 
+    game_id = event["game"]["id"]
+    white_name = pgn_headers["White"]
+    black_name = pgn_headers["Black"]
+    game_is_over = event["game"]["complete"]
+
     os.makedirs(config.pgn_directory, exist_ok=True)
-    game = event["game"]["state"]
-    game_path = get_game_file_path(config, game)
-    single_game_path = get_game_file_path(config, game, True)
+    game_path = get_game_file_path(config, game_id, white_name, black_name, user_name, game_is_over)
+    single_game_path = get_game_file_path(config, game_id, white_name, black_name, user_name, game_is_over, force_single=True)
     write_mode = "w" if game_path == single_game_path else "a"
     logger.debug(f"Writing PGN game record to: {game_path}")
     with open(game_path, write_mode) as game_file:
-        game_file.write(event["game"]["pgn"] + "\n\n")
+        game_file.write(pgn + "\n\n")
 
     if os.path.exists(single_game_path) and game_path != single_game_path:
         os.remove(single_game_path)

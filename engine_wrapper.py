@@ -650,7 +650,7 @@ def game_clock_time(board: chess.Board,
 
 def check_for_draw_offer(game: model.Game) -> bool:
     """Check if the bot was offered a draw."""
-    return game.state.get(f"{game.opponent_color[0]}draw", False)
+    return bool(game.state.get(f"{game.opponent_color[0]}draw"))
 
 
 def get_book_move(board: chess.Board, game: model.Game,

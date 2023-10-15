@@ -1,5 +1,5 @@
 pytest==7.4.2
-pytest-timeout==2.1.0
+pytest-timeout==2.2.0
 flake8==6.1.0
 flake8-markdown==0.5.0
 flake8-docstrings==1.7.0

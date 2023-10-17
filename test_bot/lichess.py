@@ -18,6 +18,12 @@ def backoff_handler(details: Any) -> None:
     logger.debug(f"Exception: {traceback.format_exc()}")
 
 
+def is_final(error: Any) -> bool:
+    """Mock error handler for tests when a function has a backup decorator."""
+    logger.debug(error)
+    return False
+
+
 class GameStream:
     """Imitate lichess.org's GameStream. Used in tests."""
 

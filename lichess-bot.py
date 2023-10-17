@@ -72,11 +72,6 @@ def signal_handler(signal: int, frame: Any) -> None:
 signal.signal(signal.SIGINT, signal_handler)
 
 
-def is_final(exception: Exception) -> bool:
-    """If `is_final` returns True then we won't retry."""
-    return isinstance(exception, HTTPError) and exception.response.status_code < 500
-
-
 def upgrade_account(li: lichess.Lichess) -> bool:
     """Upgrade the account to a BOT account."""
     if li.upgrade_to_bot_account() is None:
@@ -431,7 +426,7 @@ def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST
             active_games.add(chlng.id)
             log_proc_count("Queued", active_games)
         except (HTTPError, ReadTimeout) as exception:
-            if isinstance(exception, HTTPError) and exception.response.status_code == 404:
+            if isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code == 404:
                 logger.info(f"Skip missing {chlng}")
 
 
@@ -547,7 +542,7 @@ def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MU
         li.decline_challenge(chlng.id, reason=decline_reason)
 
 
-@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=is_final,  # type: ignore[arg-type]
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
                       on_backoff=lichess.backoff_handler)
 def play_game(li: lichess.Lichess,
               game_id: str,

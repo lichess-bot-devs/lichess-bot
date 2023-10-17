@@ -55,7 +55,7 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
 
 def is_final(exception: Exception) -> bool:
     """If `is_final` returns True then we won't retry."""
-    return isinstance(exception, HTTPError) and exception.response.status_code < 500
+    return isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code < 500
 
 
 def backoff_handler(details: Any) -> None:

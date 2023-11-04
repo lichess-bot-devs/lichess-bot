@@ -147,7 +147,7 @@ class Matchmaking:
                 pass
 
     def get_weights(online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int
-                    ) -> list[int]:
+                    game_type: str) -> list[int]:
         weights = [1] * len(online_bots)
         if rating_preference == "high":
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
@@ -210,7 +210,7 @@ class Matchmaking:
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
         bot_username = None
-        weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating)
+        weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
 
         try:
             bot = random.choices(online_bots, weights=weights)[0]

@@ -146,14 +146,16 @@ class Matchmaking:
             except Exception:
                 pass
 
-    def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
-        perf = bot.get("perfs", {}).get(game_type, {})
-        return (bot["username"] != self.username()
-                and not self.in_block_list(bot["username"])
-                and not bot.get("disabled")
-                and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
-                and perf.get("games", 0) > 0
-                and min_rating <= perf.get("rating", 0) <= max_rating)
+    def get_weights(online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int
+                    ) -> list[int]:
+        weights = [1] * len(online_bots)
+        if rating_preference == "high":
+            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
+            weights = [bot.get("perfs", {}).get(game_type, {}).get("rating", 0) - reduce_ratings_by for bot in online_bots]
+        elif rating_preference == "low":
+            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
+            weights = [(max_rating - bot.get("perfs", {}).get(game_type, {}).get("rating", 0)) - reduce_ratings_by
+                       for bot in online_bots]
 
     def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         """Choose an opponent."""
@@ -189,8 +191,17 @@ class Matchmaking:
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = match_config.opponent_allow_tos_violation
 
+        def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
+            perf = bot.get("perfs", {}).get(game_type, {})
+            return (bot["username"] != self.username()
+                    and not self.in_block_list(bot["username"])
+                    and not bot.get("disabled")
+                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
+                    and perf.get("games", 0) > 0
+                    and min_rating <= perf.get("rating", 0) <= max_rating)
+
         online_bots = self.li.get_online_bots()
-        online_bots = list(filter(self.is_suitable_opponent, online_bots))
+        online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
             aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []
@@ -199,14 +210,7 @@ class Matchmaking:
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
         bot_username = None
-        weights = [1] * len(online_bots)
-        if rating_preference == "high":
-            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
-            weights = [bot.get("perfs", {}).get(game_type, {}).get("rating", 0) - reduce_ratings_by for bot in online_bots]
-        elif rating_preference == "low":
-            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
-            weights = [(max_rating - bot.get("perfs", {}).get(game_type, {}).get("rating", 0)) - reduce_ratings_by
-                       for bot in online_bots]
+        weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating)
 
         try:
             bot = random.choices(online_bots, weights=weights)[0]

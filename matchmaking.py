@@ -156,7 +156,6 @@ class Matchmaking:
         variant = self.get_random_config_value(match_config, "challenge_variant", self.variants)
         mode = self.get_random_config_value(match_config, "challenge_mode", ["casual", "rated"])
         rating_preference = match_config.rating_preference
-        print(rating_preference)
 
         base_time = random.choice(match_config.challenge_initial_time)
         increment = random.choice(match_config.challenge_increment)
@@ -208,10 +207,6 @@ class Matchmaking:
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
             weights = [(max_rating - bot.get("perfs", {}).get(game_type, {}).get("rating", 0)) - reduce_ratings_by
                        for bot in online_bots]
-        print(weights)
-        print(list(zip(map(lambda b: (b["id"], b.get("perfs", {}).get(game_type, {}).get("rating", 0)), online_bots),
-                       weights)))
-        None * 2
 
         try:
             bot = random.choices(online_bots, weights=weights)[0]

@@ -146,7 +146,7 @@ class Matchmaking:
             except Exception:
                 pass
 
-    def get_weights(online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int,
+    def get_weights(self, online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int,
                     game_type: str) -> list[int]:
         """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
         weights = [1] * len(online_bots)

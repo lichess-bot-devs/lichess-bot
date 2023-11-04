@@ -148,6 +148,7 @@ class Matchmaking:
 
     def get_weights(online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int,
                     game_type: str) -> list[int]:
+        """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
         weights = [1] * len(online_bots)
         if rating_preference == "high":
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)

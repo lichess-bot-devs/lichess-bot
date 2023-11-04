@@ -156,6 +156,7 @@ class Matchmaking:
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
             weights = [(max_rating - bot.get("perfs", {}).get(game_type, {}).get("rating", 0)) - reduce_ratings_by
                        for bot in online_bots]
+        return weights
 
     def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         """Choose an opponent."""

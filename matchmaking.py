@@ -146,6 +146,15 @@ class Matchmaking:
             except Exception:
                 pass
 
+    def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
+        perf = bot.get("perfs", {}).get(game_type, {})
+        return (bot["username"] != self.username()
+                and not self.in_block_list(bot["username"])
+                and not bot.get("disabled")
+                and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
+                and perf.get("games", 0) > 0
+                and min_rating <= perf.get("rating", 0) <= max_rating)
+
     def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         """Choose an opponent."""
         override_choice = random.choice(self.matchmaking_cfg.overrides.keys() + [None])
@@ -180,17 +189,8 @@ class Matchmaking:
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = match_config.opponent_allow_tos_violation
 
-        def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
-            perf = bot.get("perfs", {}).get(game_type, {})
-            return (bot["username"] != self.username()
-                    and not self.in_block_list(bot["username"])
-                    and not bot.get("disabled")
-                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
-                    and perf.get("games", 0) > 0
-                    and min_rating <= perf.get("rating", 0) <= max_rating)
-
         online_bots = self.li.get_online_bots()
-        online_bots = list(filter(is_suitable_opponent, online_bots))
+        online_bots = list(filter(self.is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
             aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []

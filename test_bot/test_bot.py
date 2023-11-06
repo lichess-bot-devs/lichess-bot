@@ -13,6 +13,7 @@ import stat
 import shutil
 import importlib
 import config
+import tarfile
 from timer import Timer, to_seconds, seconds
 from typing import Any
 if __name__ == "__main__":
@@ -30,17 +31,25 @@ def download_sf() -> None:
     """Download Stockfish 15."""
     if os.path.exists(stockfish_path):
         return
-    windows_or_linux = "win" if platform == "win32" else "linux"
-    base_name = f"stockfish_15_{windows_or_linux}_x64"
-    exec_name = "stockfish_15_x64"
-    zip_link = f"https://files.stockfishchess.org/files/{base_name}.zip"
-    response = requests.get(zip_link, allow_redirects=True)
-    with open("./TEMP/sf_zip.zip", "wb") as file:
-        file.write(response.content)
-    with zipfile.ZipFile("./TEMP/sf_zip.zip", "r") as zip_ref:
-        zip_ref.extractall("./TEMP/")
-    shutil.copyfile(f"./TEMP/{base_name}/{exec_name}{file_extension}", stockfish_path)
-    if windows_or_linux == "linux":
+    windows_or_linux = "windows" if platform == "win32" else "ubuntu"
+    if windows_or_linux == "windows":
+        archive_link = ("https://github.com/official-stockfish/Stockfish/releases/download/sf_16/"
+                        "stockfish-windows-x86-64-modern.zip")
+        response = requests.get(archive_link, allow_redirects=True)
+        with open("./TEMP/sf_zip.zip", "wb") as file:
+            file.write(response.content)
+        with zipfile.ZipFile("./TEMP/sf_zip.zip", "r") as archive_ref:
+            archive_ref.extractall("./TEMP/")
+        shutil.copyfile(f"./TEMP/stockfish/stockfish-windows-x86-64-modern.exe", stockfish_path)
+    else:
+        archive_link = ("https://github.com/official-stockfish/Stockfish/releases/download/sf_16/"
+                        "stockfish-ubuntu-x86-64-modern.tar")
+        response = requests.get(archive_link, allow_redirects=True)
+        with open("./TEMP/sf_zip.tar", "wb") as file:
+            file.write(response.content)
+        with tarfile.TarFile("./TEMP/sf_zip.tar", "r") as archive_ref:
+            archive_ref.extractall("./TEMP/")
+        shutil.copyfile(f"./TEMP/stockfish/stockfish-ubuntu-x86-64-modern", stockfish_path)
         st = os.stat(stockfish_path)
         os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)
 

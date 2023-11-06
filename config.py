@@ -312,10 +312,14 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                   "challenge_increment is required, or a list of challenge_days, or both.")
 
     filter_option = "challenge_filter"
-    filter_type = (CONFIG.get("matchmaking") or {}).get(filter_option)
+    filter_type = matchmaking.get(filter_option)
     config_assert(filter_type is None or filter_type in FilterType.__members__.values(),
                   f"{filter_type} is not a valid value for {filter_option} (formerly delay_after_decline) parameter. "
                   f"Choices are: {', '.join(FilterType)}.")
+
+    config_assert(matchmaking.get("rating_preference") in ["none", "high", "low"],
+                  f"{matchmaking.get('rating_preference')} is not a valid `matchmaking:rating_preference` option. "
+                  f"Valid options are 'none', 'high', or 'low'.")
 
     selection_choices = {"polyglot": ["weighted_random", "uniform_random", "best_move"],
                          "chessdb_book": ["all", "good", "best"],

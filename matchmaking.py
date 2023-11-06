@@ -149,7 +149,6 @@ class Matchmaking:
     def get_weights(self, online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int,
                     game_type: str) -> list[int]:
         """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
-        weights = [1] * len(online_bots)
         if rating_preference == "high":
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
             weights = [bot.get("perfs", {}).get(game_type, {}).get("rating", 0) - reduce_ratings_by for bot in online_bots]
@@ -157,6 +156,8 @@ class Matchmaking:
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
             weights = [(max_rating - bot.get("perfs", {}).get(game_type, {}).get("rating", 0)) - reduce_ratings_by
                        for bot in online_bots]
+        else:
+            weights = [1] * len(online_bots)
         return weights
 
     def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:

@@ -40,7 +40,7 @@ def download_sf() -> None:
             file.write(response.content)
         with zipfile.ZipFile("./TEMP/sf_zip.zip", "r") as archive_ref:
             archive_ref.extractall("./TEMP/")
-        shutil.copyfile(f"./TEMP/stockfish/stockfish-windows-x86-64-modern.exe", stockfish_path)
+        shutil.copyfile("./TEMP/stockfish/stockfish-windows-x86-64-modern.exe", stockfish_path)
     else:
         archive_link = ("https://github.com/official-stockfish/Stockfish/releases/download/sf_16/"
                         "stockfish-ubuntu-x86-64-modern.tar")
@@ -49,7 +49,7 @@ def download_sf() -> None:
             file.write(response.content)
         with tarfile.TarFile("./TEMP/sf_zip.tar", "r") as archive_ref:
             archive_ref.extractall("./TEMP/")
-        shutil.copyfile(f"./TEMP/stockfish/stockfish-ubuntu-x86-64-modern", stockfish_path)
+        shutil.copyfile("./TEMP/stockfish/stockfish-ubuntu-x86-64-modern", stockfish_path)
         st = os.stat(stockfish_path)
         os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)
 

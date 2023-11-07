@@ -150,12 +150,12 @@ class Matchmaking:
                     game_type: str) -> list[int]:
         """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
         if rating_preference == "high":
-            # A bot with max_rating rating will be twice as likely to get picked than a bt with min_rating rating.
+            # A bot with max_rating rating will be twice as likely to get picked than a bot with min_rating rating.
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
             # or, reduce_ratings_by = min(2 * min_rating - max_rating, min_rating - 1)
             weights = [bot.get("perfs", {}).get(game_type, {}).get("rating", 0) - reduce_ratings_by for bot in online_bots]
         elif rating_preference == "low":
-            # A bot with min_rating rating will be twice as likely to get picked than a bt with max_rating rating.
+            # A bot with min_rating rating will be twice as likely to get picked than a bot with max_rating rating.
             reduce_ratings_by = max(max_rating - (min_rating - max_rating), max_rating + 1)
             # or, reduce_ratings_by = max(2 * max_rating - min_rating, max_rating + 1)
             weights = [(reduce_ratings_by - bot.get("perfs", {}).get(game_type, {}).get("rating", 0))

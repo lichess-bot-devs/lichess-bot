@@ -151,10 +151,12 @@ class Matchmaking:
         """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
         if rating_preference == "high":
             reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
+            # or, reduce_ratings_by = min(2 * min_rating - max_rating, min_rating - 1)
             weights = [bot.get("perfs", {}).get(game_type, {}).get("rating", 0) - reduce_ratings_by for bot in online_bots]
         elif rating_preference == "low":
-            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
-            weights = [(max_rating - bot.get("perfs", {}).get(game_type, {}).get("rating", 0)) - reduce_ratings_by
+            reduce_ratings_by = max(max_rating - (min_rating - max_rating), max_rating + 1)
+            # or, reduce_ratings_by = max(2 * max_rating - min_rating, max_rating + 1)
+            weights = [(reduce_ratings_by - bot.get("perfs", {}).get(game_type, {}).get("rating", 0))
                        for bot in online_bots]
         else:
             weights = [1] * len(online_bots)

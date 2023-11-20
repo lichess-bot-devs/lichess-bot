@@ -146,6 +146,24 @@ class Matchmaking:
             except Exception:
                 pass
 
+    def get_weights(self, online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int,
+                    game_type: str) -> list[int]:
+        """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
+        if rating_preference == "high":
+            # A bot with max_rating rating will be twice as likely to get picked than a bot with min_rating rating.
+            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
+            # or, reduce_ratings_by = min(2 * min_rating - max_rating, min_rating - 1)
+            weights = [bot.get("perfs", {}).get(game_type, {}).get("rating", 0) - reduce_ratings_by for bot in online_bots]
+        elif rating_preference == "low":
+            # A bot with min_rating rating will be twice as likely to get picked than a bot with max_rating rating.
+            reduce_ratings_by = max(max_rating - (min_rating - max_rating), max_rating + 1)
+            # or, reduce_ratings_by = max(2 * max_rating - min_rating, max_rating + 1)
+            weights = [(reduce_ratings_by - bot.get("perfs", {}).get(game_type, {}).get("rating", 0))
+                       for bot in online_bots]
+        else:
+            weights = [1] * len(online_bots)
+        return weights
+
     def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
         """Choose an opponent."""
         override_choice = random.choice(self.matchmaking_cfg.overrides.keys() + [None])
@@ -155,6 +173,7 @@ class Matchmaking:
 
         variant = self.get_random_config_value(match_config, "challenge_variant", self.variants)
         mode = self.get_random_config_value(match_config, "challenge_mode", ["casual", "rated"])
+        rating_preference = match_config.rating_preference
 
         base_time = random.choice(match_config.challenge_initial_time)
         increment = random.choice(match_config.challenge_increment)
@@ -198,9 +217,10 @@ class Matchmaking:
         ready_bots = list(filter(ready_for_challenge, online_bots))
         online_bots = ready_bots or online_bots
         bot_username = None
+        weights = self.get_weights(online_bots, rating_preference, min_rating, max_rating, game_type)
 
         try:
-            bot = random.choice(online_bots)
+            bot = random.choices(online_bots, weights=weights)[0]
             bot_profile = self.li.get_public_data(bot["username"])
             if bot_profile.get("blocking"):
                 self.add_to_block_list(bot["username"])

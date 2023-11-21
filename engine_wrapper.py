@@ -151,13 +151,9 @@ class EngineWrapper:
         if isinstance(best_move, list) or best_move.move is None:
             draw_offered = check_for_draw_offer(game)
 
-            if len(board.move_stack) < 2:
-                time_limit = first_move_time(game)
-                can_ponder = False  # No pondering after the first move since a new clock starts afterwards.
-            elif is_correspondence:
-                time_limit = single_move_time(board, game, correspondence_move_time, setup_timer, move_overhead)
-            else:
-                time_limit = game_clock_time(board, game, setup_timer, move_overhead)
+            time_limit, can_ponder = move_time(board, game, can_ponder,
+                                               setup_timer, move_overhead,
+                                               is_correspondence, correspondence_move_time)
 
             try:
                 best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
@@ -594,6 +590,35 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     import strategies
     engine: type[MinimalEngine] = getattr(strategies, name)
     return engine
+
+
+def move_time(board: chess.Board,
+              game: model.Game,
+              can_ponder: bool,
+              setup_timer: Timer,
+              move_overhead: datetime.timedelta,
+              is_correspondence: bool,
+              correspondence_move_time: datetime.timedelta) -> tuple[chess.engine.Limit, bool]:
+    """
+    Determine the game clock settings for the current move.
+
+    :param Board: The current position.
+    :param game: Information about the current game.
+    :param setup_timer: How much time has passed since receiving the opponent's move.
+    :param move_overhead: How much time it takes to communicate with lichess.
+    :param can_ponder: Whether the bot is allowed to ponder after choosing a move.
+    :param is_correspondence: Whether the current game is a correspondence game.
+    :param correspondence_move_time: How much time to use for this move it it is a correspondence game.
+    :return: The time to choose a move.
+    """
+    if len(board.move_stack) < 2:
+        time_limit = first_move_time(game)
+        can_ponder = False  # No pondering after the first move since a new clock starts afterwards.
+    elif is_correspondence:
+        time_limit = single_move_time(board, game, correspondence_move_time, setup_timer, move_overhead)
+    else:
+        time_limit = game_clock_time(board, game, setup_timer, move_overhead)
+    return time_limit, can_ponder
 
 
 def single_move_time(board: chess.Board, game: model.Game, search_time: datetime.timedelta,

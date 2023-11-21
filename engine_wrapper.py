@@ -158,7 +158,8 @@ class EngineWrapper:
             try:
                 best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
             except chess.engine.EngineError as error:
-                if any(isinstance(error.args[0], MoveError) for MoveError in [chess.IllegalMoveError, chess.InvalidMoveError]):
+                BadMove = (chess.IllegalMoveError, chess.InvalidMoveError)
+                if any(isinstance(e, BadMove) for e in error.args):
                     if game.is_abortable():
                         li.abort(game.id)
                     else:

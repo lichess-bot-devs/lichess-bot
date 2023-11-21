@@ -6,12 +6,12 @@ With these classes, bot makers will not have to implement the UCI or XBoard inte
 
 from __future__ import annotations
 import chess
-from chess.engine import PlayResult
+from chess.engine import PlayResult, Limit
 import random
 from engine_wrapper import MinimalEngine
 from typing import Any, Union
 import logging
-MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
+MOVE = Union[PlayResult, list[chess.Move]]
 
 
 # Use this logger variable to print messages to the console or log files.
@@ -63,8 +63,7 @@ class ComboEngine(ExampleEngine):
     This engine demonstrates how one can use `time_limit`, `draw_offered`, and `root_moves`.
     """
 
-    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
-               root_moves: MOVE) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, time_limit: Limit, ponder: bool, draw_offered: bool, root_moves: MOVE) -> PlayResult:
         """
         Choose a move using multiple different methods.
 

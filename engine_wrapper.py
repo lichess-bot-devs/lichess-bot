@@ -629,7 +629,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     :param board: The current positions.
     :param game: The game that the bot is playing.
     :param search_time: How long the engine should search.
-    :param start_time: The time we have left.
+    :param setup_timer: How much time has passed since receiving the opponent's move.
     :param move_overhead: The time it takes to communicate between the engine and lichess-bot.
     :return: The time to choose a move.
     """
@@ -664,7 +664,7 @@ def game_clock_time(board: chess.Board,
 
     :param board: The current positions.
     :param game: The game that the bot is playing.
-    :param start_time: The time we have left.
+    :param setup_timer: How much time has passed since receiving the opponent's move.
     :param move_overhead: The time it takes to communicate between the engine and lichess-bot.
     :return: The time to play a move.
     """

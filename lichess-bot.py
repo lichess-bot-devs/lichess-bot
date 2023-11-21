@@ -953,8 +953,11 @@ def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
 
     headers["UTCDate"] = headers["Date"]
     headers["UTCTime"] = game.game_start.strftime("%H:%M:%S")
-    if game.variant_name not in ["Standard", "From Position"]:
-        headers["Variant"] = game.variant_name
+    headers["Variant"] = game.variant_name
+
+    if game.initial_fen and game.initial_fen != "startpos":
+        headers["Setup"] = 1
+        headers["FEN"] = game.initial_fen
 
     if game.white.rating:
         headers["WhiteElo"] = game.white.rating

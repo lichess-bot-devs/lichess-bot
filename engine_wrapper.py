@@ -159,7 +159,15 @@ class EngineWrapper:
             else:
                 time_limit = game_clock_time(board, game, setup_timer, move_overhead)
 
-            best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
+            try:
+                best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
+            except chess.engine.EngineError as error:
+                if any(isinstance(error.args[0], MoveError) for MoveError in [chess.IllegalMoveError, chess.InvalidMoveError]):
+                    if game.is_abortable():
+                        li.abort(game.id)
+                    else:
+                        li.resign(game.id)
+                raise
 
         # Heed min_time
         elapsed = setup_timer.time_since_reset()

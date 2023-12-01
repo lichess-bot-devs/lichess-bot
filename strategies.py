@@ -6,7 +6,7 @@ With these classes, bot makers will not have to implement the UCI or XBoard inte
 
 from __future__ import annotations
 import chess
-from chess.engine import PlayResult
+import chess.engine
 import random
 from engine_wrapper import MinimalEngine
 from typing import Any, Union
@@ -31,29 +31,29 @@ class ExampleEngine(MinimalEngine):
 class RandomMove(ExampleEngine):
     """Get a random move."""
 
-    def search(self, board: chess.Board, *args: Any) -> PlayResult:
+    def search(self, board: chess.Board, *args: Any) -> chess.engine.PlayResult:
         """Choose a random move."""
-        return PlayResult(random.choice(list(board.legal_moves)), None)
+        return chess.engine.PlayResult(random.choice(list(board.legal_moves)), None)
 
 
 class Alphabetical(ExampleEngine):
     """Get the first move when sorted by san representation."""
 
-    def search(self, board: chess.Board, *args: Any) -> PlayResult:
+    def search(self, board: chess.Board, *args: Any) -> chess.engine.PlayResult:
         """Choose the first move alphabetically."""
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
-        return PlayResult(moves[0], None)
+        return chess.engine.PlayResult(moves[0], None)
 
 
 class FirstMove(ExampleEngine):
     """Get the first move when sorted by uci representation."""
 
-    def search(self, board: chess.Board, *args: Any) -> PlayResult:
+    def search(self, board: chess.Board, *args: Any) -> chess.engine.PlayResult:
         """Choose the first move alphabetically in uci representation."""
         moves = list(board.legal_moves)
         moves.sort(key=str)
-        return PlayResult(moves[0], None)
+        return chess.engine.PlayResult(moves[0], None)
 
 
 class ComboEngine(ExampleEngine):
@@ -94,4 +94,4 @@ class ComboEngine(ExampleEngine):
             # Choose the first move alphabetically in uci representation.
             possible_moves.sort(key=str)
             move = possible_moves[0]
-        return PlayResult(move, None, draw_offered=draw_offered)
+        return chess.engine.PlayResult(move, None, draw_offered=draw_offered)

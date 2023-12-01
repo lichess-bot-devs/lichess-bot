@@ -63,8 +63,8 @@ class ComboEngine(ExampleEngine):
     This engine demonstrates how one can use `time_limit`, `draw_offered`, and `root_moves`.
     """
 
-    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
-               root_moves: MOVE) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, time_limit: chess.engine.Limit,
+               ponder: bool, draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
         """
         Choose a move using multiple different methods.
 

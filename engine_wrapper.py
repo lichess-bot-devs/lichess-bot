@@ -151,15 +151,19 @@ class EngineWrapper:
         if isinstance(best_move, list) or best_move.move is None:
             draw_offered = check_for_draw_offer(game)
 
-            if len(board.move_stack) < 2:
-                time_limit = first_move_time(game)
-                can_ponder = False  # No pondering after the first move since a new clock starts afterwards.
-            elif is_correspondence:
-                time_limit = single_move_time(board, game, correspondence_move_time, setup_timer, move_overhead)
-            else:
-                time_limit = game_clock_time(board, game, setup_timer, move_overhead)
+            time_limit, can_ponder = move_time(board, game, can_ponder,
+                                               setup_timer, move_overhead,
+                                               is_correspondence, correspondence_move_time)
 
-            best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
+            try:
+                best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
+            except chess.engine.EngineError as error:
+                BadMove = (chess.IllegalMoveError, chess.InvalidMoveError)
+                if any(isinstance(e, BadMove) for e in error.args):
+                    logger.error("Ending game due to bot attempting an illegal move.")
+                    game_ender = li.abort if game.is_abortable() else li.resign
+                    game_ender(game.id)
+                raise
 
         # Heed min_time
         elapsed = setup_timer.time_since_reset()
@@ -588,6 +592,33 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     return engine
 
 
+def move_time(board: chess.Board,
+              game: model.Game,
+              can_ponder: bool,
+              setup_timer: Timer,
+              move_overhead: datetime.timedelta,
+              is_correspondence: bool,
+              correspondence_move_time: datetime.timedelta) -> tuple[chess.engine.Limit, bool]:
+    """
+    Determine the game clock settings for the current move.
+
+    :param Board: The current position.
+    :param game: Information about the current game.
+    :param setup_timer: How much time has passed since receiving the opponent's move.
+    :param move_overhead: How much time it takes to communicate with lichess.
+    :param can_ponder: Whether the bot is allowed to ponder after choosing a move.
+    :param is_correspondence: Whether the current game is a correspondence game.
+    :param correspondence_move_time: How much time to use for this move it it is a correspondence game.
+    :return: The time to choose a move and whether the bot can ponder after the move.
+    """
+    if len(board.move_stack) < 2:
+        return first_move_time(game), False  # No pondering after the first move since a new clock starts afterwards.
+    elif is_correspondence:
+        return single_move_time(board, game, correspondence_move_time, setup_timer, move_overhead), can_ponder
+    else:
+        return game_clock_time(board, game, setup_timer, move_overhead), can_ponder
+
+
 def single_move_time(board: chess.Board, game: model.Game, search_time: datetime.timedelta,
                      setup_timer: Timer, move_overhead: datetime.timedelta) -> chess.engine.Limit:
     """
@@ -596,7 +627,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     :param board: The current positions.
     :param game: The game that the bot is playing.
     :param search_time: How long the engine should search.
-    :param start_time: The time we have left.
+    :param setup_timer: How much time has passed since receiving the opponent's move.
     :param move_overhead: The time it takes to communicate between the engine and lichess-bot.
     :return: The time to choose a move.
     """
@@ -631,7 +662,7 @@ def game_clock_time(board: chess.Board,
 
     :param board: The current positions.
     :param game: The game that the bot is playing.
-    :param start_time: The time we have left.
+    :param setup_timer: How much time has passed since receiving the opponent's move.
     :param move_overhead: The time it takes to communicate between the engine and lichess-bot.
     :return: The time to play a move.
     """

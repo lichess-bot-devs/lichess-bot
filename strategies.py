@@ -8,10 +8,9 @@ from __future__ import annotations
 import chess
 import chess.engine
 import random
-from engine_wrapper import MinimalEngine
-from typing import Any, Union
+from engine_wrapper import MinimalEngine, MOVE
+from typing import Any
 import logging
-MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
 
 
 # Use this logger variable to print messages to the console or log files.

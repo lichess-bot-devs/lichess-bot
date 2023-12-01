@@ -6,7 +6,7 @@ With these classes, bot makers will not have to implement the UCI or XBoard inte
 
 from __future__ import annotations
 import chess
-import chess.engine
+from chess.engine import PlayResult, Limit
 import random
 from engine_wrapper import MinimalEngine, MOVE
 from typing import Any
@@ -30,29 +30,29 @@ class ExampleEngine(MinimalEngine):
 class RandomMove(ExampleEngine):
     """Get a random move."""
 
-    def search(self, board: chess.Board, *args: Any) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, *args: Any) -> PlayResult:
         """Choose a random move."""
-        return chess.engine.PlayResult(random.choice(list(board.legal_moves)), None)
+        return PlayResult(random.choice(list(board.legal_moves)), None)
 
 
 class Alphabetical(ExampleEngine):
     """Get the first move when sorted by san representation."""
 
-    def search(self, board: chess.Board, *args: Any) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, *args: Any) -> PlayResult:
         """Choose the first move alphabetically."""
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
-        return chess.engine.PlayResult(moves[0], None)
+        return PlayResult(moves[0], None)
 
 
 class FirstMove(ExampleEngine):
     """Get the first move when sorted by uci representation."""
 
-    def search(self, board: chess.Board, *args: Any) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, *args: Any) -> PlayResult:
         """Choose the first move alphabetically in uci representation."""
         moves = list(board.legal_moves)
         moves.sort(key=str)
-        return chess.engine.PlayResult(moves[0], None)
+        return PlayResult(moves[0], None)
 
 
 class ComboEngine(ExampleEngine):
@@ -62,8 +62,7 @@ class ComboEngine(ExampleEngine):
     This engine demonstrates how one can use `time_limit`, `draw_offered`, and `root_moves`.
     """
 
-    def search(self, board: chess.Board, time_limit: chess.engine.Limit,
-               ponder: bool, draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, time_limit: Limit, ponder: bool, draw_offered: bool, root_moves: MOVE) -> PlayResult:
         """
         Choose a move using multiple different methods.
 
@@ -93,4 +92,4 @@ class ComboEngine(ExampleEngine):
             # Choose the first move alphabetically in uci representation.
             possible_moves.sort(key=str)
             move = possible_moves[0]
-        return chess.engine.PlayResult(move, None, draw_offered=draw_offered)
+        return PlayResult(move, None, draw_offered=draw_offered)

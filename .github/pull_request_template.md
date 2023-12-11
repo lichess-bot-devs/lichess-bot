@@ -5,10 +5,18 @@ Type of pull request:
 - [ ] Feature
 - [ ] Other
 
-## **Description**
+## Description:
 
-Please include a summary of the change and/or which issue is fixed.
+[Provide a brief description of the changes introduced by this pull request.]
 
-### **Additional context**
+## Related Issues:
 
-Add any other context or additional information about the pull request.
+[Reference any related issues that this pull request addresses or closes. Use the syntax `Closes #issue_number` to automatically close the linked issue upon merging.]
+
+## Checklist:
+
+- [ ] I have read and followed the [contribution guidelines](/CONTRIBUTING.md).
+- [ ] I have added necessary documentation (if applicable).
+- [ ] The changes pass all existing tests.
+
+## Screenshots/logs (if applicable):

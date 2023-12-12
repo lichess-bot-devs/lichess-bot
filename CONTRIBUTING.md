@@ -14,7 +14,7 @@ We welcome your contributions! There are multiple ways to contribute.
 
 ## Code of Conduct
 
-Please review our [Code of Conduct](CODE_OF_CONDUCT.md) before participating in our community. We want all contributors to feel welcome and to foster an open and inclusive environment.
+Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) before participating in our community. We want all contributors to feel welcome and to foster an open and inclusive environment.
 
 ## How to Contribute
 

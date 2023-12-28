@@ -3,6 +3,6 @@ pytest-timeout==2.2.0
 flake8==6.1.0
 flake8-markdown==0.5.0
 flake8-docstrings==1.7.0
-mypy==1.7.1
+mypy==1.8.0
 types-requests==2.31.0.10
 types-PyYAML==6.0.12.12

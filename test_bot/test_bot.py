@@ -12,14 +12,14 @@ import sys
 import stat
 import shutil
 import importlib
-import config
+from lib import config
 import tarfile
-from timer import Timer, to_seconds, seconds
+from lib.timer import Timer, to_seconds, seconds
 from typing import Any
 if __name__ == "__main__":
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
-shutil.copyfile("lichess.py", "correct_lichess.py")
-shutil.copyfile("test_bot/lichess.py", "lichess.py")
+shutil.copyfile("lib/lichess.py", "lib/correct_lichess.py")
+shutil.copyfile("test_bot/lichess.py", "lib/lichess.py")
 lichess_bot = importlib.import_module("lichess-bot")
 
 platform = sys.platform
@@ -285,10 +285,11 @@ def test_homemade() -> None:
     if platform != "linux" and platform != "win32":
         assert True
         return
-    with open("strategies.py") as file:
+    strategies_py = "lib/strategies.py"
+    with open(strategies_py) as file:
         original_strategies = file.read()
 
-    with open("strategies.py", "a") as file:
+    with open(strategies_py, "a") as file:
         file.write(f"""
 class Stockfish(ExampleEngine):
     def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
@@ -310,7 +311,7 @@ class Stockfish(ExampleEngine):
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
-    with open("strategies.py", "w") as file:
+    with open(strategies_py, "w") as file:
         file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"

@@ -3,14 +3,11 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-import engine_wrapper
-import model
+from lib import engine_wrapper, model, lichess, matchmaking
 import json
-import lichess
 import logging
 import logging.handlers
 import multiprocessing
-import matchmaking
 import signal
 import time
 import datetime
@@ -22,9 +19,9 @@ import math
 import sys
 import yaml
 import traceback
-from config import load_config, Configuration
-from conversation import Conversation, ChatLine
-from timer import Timer, seconds, msec, hours, to_seconds
+from lib.config import load_config, Configuration
+from lib.conversation import Conversation, ChatLine
+from lib.timer import Timer, seconds, msec, hours, to_seconds
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
@@ -47,7 +44,7 @@ POOL_TYPE = Pool
 
 logger = logging.getLogger(__name__)
 
-with open("versioning.yml") as version_file:
+with open("lib/versioning.yml") as version_file:
     versioning_info = yaml.safe_load(version_file)
 
 __version__ = versioning_info["lichess_bot_version"]

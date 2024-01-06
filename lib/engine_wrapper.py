@@ -15,11 +15,9 @@ import math
 from collections import Counter
 from collections.abc import Generator, Callable
 from contextlib import contextmanager
-import config
-import model
-import lichess
-from config import Configuration
-from timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
+from lib import config, model, lichess
+from lib.config import Configuration
+from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from typing import Any, Optional, Union, Literal
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
@@ -587,7 +585,7 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     :param name: The name of the homemade engine.
     :return: The engine with this name.
     """
-    import strategies
+    from lib import strategies
     engine: type[MinimalEngine] = getattr(strategies, name)
     return engine
 

@@ -1,13 +1,13 @@
 """Challenge other bots."""
 import random
 import logging
-import model
-from timer import Timer, seconds, minutes, days
+from lib import model
+from lib.timer import Timer, seconds, minutes, days
 from collections import defaultdict
 from collections.abc import Sequence
-import lichess
+from lib import lichess
 import datetime
-from config import Configuration, FilterType
+from lib.config import Configuration, FilterType
 from typing import Any, Optional
 USER_PROFILE_TYPE = dict[str, Any]
 EVENT_TYPE = dict[str, Any]

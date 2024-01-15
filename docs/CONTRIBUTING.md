@@ -14,7 +14,7 @@ We welcome your contributions! There are multiple ways to contribute.
 
 ## Code of Conduct
 
-Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) before participating in our community. We want all contributors to feel welcome and to foster an open and inclusive environment.
+Please review our [Code of Conduct](/docs/CODE_OF_CONDUCT.md) before participating in our community. We want all contributors to feel welcome and to foster an open and inclusive environment.
 
 ## How to Contribute
 
@@ -26,18 +26,18 @@ We welcome contributions in the form of bug reports, feature requests, code chan
 - Push your changes to your branch.
 - Submit a pull request to the main repository.
 
-Please follow our [Pull Request Template](.github/pull_request_template.md) when submitting a pull request.
+Please follow our [Pull Request Template](/.github/pull_request_template.md) when submitting a pull request.
 
 ## Reporting Bugs
 
 If you find a bug, please open an issue with a detailed description of the problem. Include information about your environment and steps to reproduce the issue.
 When filing a bug remember that the better written the bug is, the more likely it is to be fixed.
-Please follow our [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md) when submitting a pull request.
+Please follow our [Bug Report Template](/.github/ISSUE_TEMPLATE/bug_report.md) when submitting a pull request.
 
 ## Requesting Features
 
 We encourage you to open an issue to propose new features or improvements. Please provide as much detail as possible about your suggestion.
-Please follow our [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md) when submitting a pull request.
+Please follow our [Feature Request Template](/.github/ISSUE_TEMPLATE/feature_request.md) when submitting a pull request.
 
 ## Submitting Pull Requests
 

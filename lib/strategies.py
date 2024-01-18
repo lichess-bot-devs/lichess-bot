@@ -8,7 +8,7 @@ from __future__ import annotations
 import chess
 from chess.engine import PlayResult, Limit
 import random
-from engine_wrapper import MinimalEngine, MOVE
+from lib.engine_wrapper import MinimalEngine, MOVE
 from typing import Any
 import logging
 

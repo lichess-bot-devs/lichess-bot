@@ -4,8 +4,8 @@ from urllib.parse import urljoin
 import logging
 import datetime
 from enum import Enum
-from timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
-from config import Configuration
+from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
+from lib.config import Configuration
 from typing import Any
 from collections import defaultdict
 

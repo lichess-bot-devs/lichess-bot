@@ -5,7 +5,7 @@ import chess.engine
 import json
 import logging
 import traceback
-from timer import seconds, to_msec
+from lib.timer import seconds, to_msec
 from typing import Union, Any, Optional, Generator
 
 logger = logging.getLogger(__name__)

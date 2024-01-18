@@ -1,5 +1,4 @@
 config.yml
-__pycache__
-test_bot/__pycache__
+**/__pycache__
 /engines/*
 !/engines/README.md

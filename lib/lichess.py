@@ -9,7 +9,7 @@ import logging
 import traceback
 from collections import defaultdict
 import datetime
-from timer import Timer, seconds, sec_str
+from lib.timer import Timer, seconds, sec_str
 from typing import Optional, Union, Any
 import chess.engine
 JSON_REPLY_TYPE = dict[str, Any]

@@ -1,6 +1,4 @@
-# **Name of PR**
-
-Type of pull request:
+## Type of pull request:
 - [ ] Bug fix
 - [ ] Feature
 - [ ] Other

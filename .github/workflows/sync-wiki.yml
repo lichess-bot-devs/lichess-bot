@@ -21,7 +21,7 @@ jobs:
           repository: "${{ github.repository }}.wiki"
           path: "lichess-bot.wiki"
       - name: Set path
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         id: changes
         with:
           filters: |

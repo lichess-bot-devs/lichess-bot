@@ -90,7 +90,7 @@ lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False
 lichess_bot.logger.info("Downloaded engines")
 
 
-def thread_for_test(opponent_path) -> None:
+def thread_for_test(opponent_path: str) -> None:
     """Play the moves for the opponent of lichess-bot."""
     open("./logs/events.txt", "w").close()
     open("./logs/states.txt", "w").close()
@@ -332,8 +332,10 @@ def test_buggy_engine() -> None:
     CONFIG["token"] = ""
     CONFIG["engine"]["dir"] = "test_bot"
 
-    def engine_path(CONFIG):
-        return os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
+    def engine_path(CONFIG: dict[str, Any]) -> str:
+        dir: str = CONFIG["engine"]["dir"]
+        name: str = CONFIG["engine"]["name"]
+        return os.path.join(dir, name)
 
     if platform == "win32":
         CONFIG["engine"]["name"] = "buggy_engine.bat"

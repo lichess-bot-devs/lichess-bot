@@ -25,6 +25,6 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "actions-user"
-          git add versioning.yml
+          git add lib/versioning.yml
           git commit -m "Auto update version to ${{ steps.new-version.outputs.new_version }}"
           git push origin HEAD:master

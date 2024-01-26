@@ -85,11 +85,12 @@ if platform == "win32":
     download_lc0()
     download_sjeng()
 logging_level = lichess_bot.logging.DEBUG
-lichess_bot.logging_configurer(logging_level, None, None, False)
+testing_log_file_name = None
+lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)
 lichess_bot.logger.info("Downloaded engines")
 
 
-def thread_for_test() -> None:
+def thread_for_test(opponent_path) -> None:
     """Play the moves for the opponent of lichess-bot."""
     open("./logs/events.txt", "w").close()
     open("./logs/states.txt", "w").close()
@@ -105,8 +106,9 @@ def thread_for_test() -> None:
     with open("./logs/states.txt", "w") as file:
         file.write(f"\n{to_seconds(wtime)},{to_seconds(btime)}")
 
-    engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
-    engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False})
+    engine = chess.engine.SimpleEngine.popen_uci(opponent_path)
+    engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False}
+                     if opponent_path == stockfish_path else {})
 
     while not board.is_game_over():
         if len(board.move_stack) % 2 == 0:
@@ -178,7 +180,7 @@ def thread_for_test() -> None:
         file.write("1" if win else "0")
 
 
-def run_bot(raw_config: dict[str, Any], logging_level: int) -> str:
+def run_bot(raw_config: dict[str, Any], logging_level: int, opponent_path: str = stockfish_path) -> str:
     """Start lichess-bot."""
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
@@ -192,9 +194,9 @@ def run_bot(raw_config: dict[str, Any], logging_level: int) -> str:
     lichess_bot.logger.info(f"Welcome {username}!")
     lichess_bot.disable_restart()
 
-    thr = threading.Thread(target=thread_for_test)
+    thr = threading.Thread(target=thread_for_test, args=[opponent_path])
     thr.start()
-    lichess_bot.start(li, user_profile, CONFIG, logging_level, None, None, one_game=True)
+    lichess_bot.start(li, user_profile, CONFIG, logging_level, testing_log_file_name, None, one_game=True)
     thr.join()
 
     with open("./logs/result.txt") as file:
@@ -314,6 +316,37 @@ class Stockfish(ExampleEngine):
     with open(strategies_py, "w") as file:
         file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
+    assert win == "1"
+    assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                       "bo vs b - zzzzzzzz.pgn"))
+
+
+@pytest.mark.timeout(30, method="thread")
+def test_buggy_engine() -> None:
+    """Test lichess-bot with Stockfish (UCI)."""
+    if os.path.exists("logs"):
+        shutil.rmtree("logs")
+    os.mkdir("logs")
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+    CONFIG["token"] = ""
+    CONFIG["engine"]["dir"] = "test_bot"
+
+    def engine_path(CONFIG):
+        return os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
+
+    if platform == "win32":
+        CONFIG["engine"]["name"] = "buggy_engine.bat"
+    else:
+        CONFIG["engine"]["name"] = "buggy_engine"
+        st = os.stat(engine_path(CONFIG))
+        os.chmod(engine_path(CONFIG), st.st_mode | stat.S_IEXEC)
+    CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 1}}
+    CONFIG["pgn_directory"] = "TEMP/bug_game_record"
+
+    win = run_bot(CONFIG, logging_level, engine_path(CONFIG))
+    shutil.rmtree("logs")
+    lichess_bot.logger.info("Finished Testing buggy engine")
     assert win == "1"
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))

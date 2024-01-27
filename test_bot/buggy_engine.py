@@ -5,7 +5,7 @@ import time
 
 assert input() == "uci"
 
-print("id name Delay tactic")
+print("id name Procrastinator")
 print("id author MZH")
 print("uciok")
 

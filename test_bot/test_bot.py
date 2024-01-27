@@ -323,7 +323,7 @@ class Stockfish(ExampleEngine):
 
 @pytest.mark.timeout(30, method="thread")
 def test_buggy_engine() -> None:
-    """Test lichess-bot with Stockfish (UCI)."""
+    """Test lichess-bot with an engine that causes a timeout error within python-chess."""
     if os.path.exists("logs"):
         shutil.rmtree("logs")
     os.mkdir("logs")

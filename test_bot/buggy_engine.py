@@ -31,11 +31,11 @@ while True:
             assert moves_label == "moves"
             for move in move_list:
                 board.push_uci(move)
-        if just_started and len(board.move_stack) > 0:
+        if just_started and len(board.move_stack) > 1:
             delay_performed = True
     elif command == "go":
         move_count = len(board.move_stack)
-        if move_count == 2 and not delay_performed:
+        if move_count == 3 and not delay_performed:
             send_command("info string delaying move")
             delay_performed = True
             time.sleep(11)

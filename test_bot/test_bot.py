@@ -343,7 +343,7 @@ def test_buggy_engine() -> None:
         CONFIG["engine"]["name"] = "buggy_engine"
         st = os.stat(engine_path(CONFIG))
         os.chmod(engine_path(CONFIG), st.st_mode | stat.S_IEXEC)
-    CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 1}}
+    CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 100}}
     CONFIG["pgn_directory"] = "TEMP/bug_game_record"
 
     win = run_bot(CONFIG, logging_level, engine_path(CONFIG))

@@ -5,8 +5,11 @@ import time
 
 assert input() == "uci"
 
+
 def send_command(command: str) -> None:
+    """Send UCI commands to lichess-bot without output buffering."""
     print(command, flush=True)
+
 
 send_command("id name Procrastinator")
 send_command("id author MZH")

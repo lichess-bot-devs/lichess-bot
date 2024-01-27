@@ -5,9 +5,12 @@ import time
 
 assert input() == "uci"
 
-print("id name Procrastinator")
-print("id author MZH")
-print("uciok")
+def send_command(command: str) -> None:
+    print(command, flush=True)
+
+send_command("id name Procrastinator")
+send_command("id author MZH")
+send_command("uciok")
 
 delay_performed = False
 just_started = True
@@ -18,7 +21,7 @@ while True:
     if command == "quit":
         break
     elif command == "isready":
-        print("readyok")
+        send_command("readyok")
     elif command == "position":
         spec_type, *remaining = remaining
         assert spec_type == "startpos"
@@ -33,9 +36,9 @@ while True:
     elif command == "go":
         move_count = len(board.move_stack)
         if move_count == 2 and not delay_performed:
-            print("info string delaying move")
+            send_command("info string delaying move")
             delay_performed = True
             time.sleep(11)
         move = scholars_mate[move_count]
-        print(f"bestmove {move}")
+        send_command(f"bestmove {move}")
         just_started = False

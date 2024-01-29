@@ -13,12 +13,12 @@ import time
 import random
 import math
 from collections import Counter
-from collections.abc import Generator, Callable
-from contextlib import contextmanager
+from collections.abc import Callable
 from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
-from typing import Any, Optional, Union, Literal
+from typing import Any, Optional, Union, Literal, Type
+from types import TracebackType
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
 COMMANDS_TYPE = list[str]
@@ -31,8 +31,7 @@ logger = logging.getLogger(__name__)
 out_of_online_opening_book_moves: Counter[str] = Counter()
 
 
-@contextmanager
-def create_engine(engine_config: config.Configuration) -> Generator[EngineWrapper, None, None]:
+def create_engine(engine_config: config.Configuration) -> EngineWrapper:
     """
     Create the engine.
 
@@ -63,12 +62,7 @@ def create_engine(engine_config: config.Configuration) -> Generator[EngineWrappe
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or config.Configuration({}))
     logger.debug(f"Starting engine: {commands}")
-    engine = Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
-    try:
-        yield engine
-    finally:
-        engine.ping()
-        engine.quit()
+    return Engine(commands, options, stderr, cfg.draw_or_resign, cwd=cfg.working_dir)
 
 
 def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
@@ -98,6 +92,20 @@ class EngineWrapper:
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
         self.move_commentary: list[MOVE_INFO_TYPE] = []
         self.comment_start_index = -1
+
+    def __enter__(self) -> EngineWrapper:
+        """Enter context so engine communication will be properly shutdown."""
+        self.engine.__enter__()
+        return self
+
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
+        """Exit context and allow engine to shutdown nicely if there was no exception."""
+        if exc_type is None:
+            self.ping()
+            self.quit()
+        self.engine.__exit__(exc_type, exc_value, traceback)
 
     def play_move(self,
                   board: chess.Board,
@@ -436,9 +444,8 @@ class EngineWrapper:
             self.engine.send_game_result(board, None, termination)
 
     def quit(self) -> None:
-        """Close the engine."""
+        """Tell the engine to shut down."""
         self.engine.quit()
-        self.engine.close()
 
 
 class UCIEngine(EngineWrapper):

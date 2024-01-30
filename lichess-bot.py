@@ -23,7 +23,6 @@ from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
-from asyncio.exceptions import TimeoutError as MoveTimeout
 from rich.logging import RichHandler
 from collections import defaultdict
 from collections.abc import Iterator, MutableSequence
@@ -640,13 +639,7 @@ def play_game(li: lichess.Lichess,
                     prior_game = copy.deepcopy(game)
                 elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
                     break
-            except (HTTPError,
-                    ReadTimeout,
-                    RemoteDisconnected,
-                    ChunkedEncodingError,
-                    ConnectionError,
-                    StopIteration,
-                    MoveTimeout) as e:
+            except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError, StopIteration) as e:
                 stopped = isinstance(e, StopIteration)
                 if stopped or (not move_attempted and not game_is_active(li, game.id)):
                     break

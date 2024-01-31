@@ -320,7 +320,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 save_pgn_record(event, config, user_profile["username"])
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, matchmaker, recent_bot_challenges)
+                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, recent_bot_challenges)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -519,9 +519,12 @@ def enough_time_to_queue(event: EVENT_TYPE, config: Configuration) -> bool:
 
 def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      challenge_config: Configuration, user_profile: USER_PROFILE_TYPE,
-                     matchmaker: matchmaking.Matchmaking, recent_bot_challenges: defaultdict[str, list[Timer]]) -> None:
+                     recent_bot_challenges: defaultdict[str, list[Timer]]) -> None:
     """Handle incoming challenges. It either accepts, declines, or queues them to accept later."""
     chlng = model.Challenge(event["challenge"], user_profile)
+    if chlng.from_self:
+        return
+
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
     if is_supported:
         challenge_queue.append(chlng)
@@ -529,7 +532,7 @@ def handle_challenge(event: EVENT_TYPE, li: lichess.Lichess, challenge_queue: MU
         time_window = challenge_config.recent_bot_challenge_age
         if time_window is not None:
             recent_bot_challenges[chlng.challenger.name].append(Timer(seconds(time_window)))
-    elif chlng.id != matchmaker.challenge_id:
+    else:
         li.decline_challenge(chlng.id, reason=decline_reason)
 
 

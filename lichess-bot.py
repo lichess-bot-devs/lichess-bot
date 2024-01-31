@@ -329,7 +329,6 @@ def lichess_bot_main(li: lichess.Lichess,
                            pool,
                            play_game_args,
                            config,
-                           matchmaker,
                            startup_correspondence_games,
                            correspondence_queue,
                            active_games,
@@ -481,7 +480,6 @@ def start_game(event: EVENT_TYPE,
                pool: POOL_TYPE,
                play_game_args: PLAY_GAME_ARGS_TYPE,
                config: Configuration,
-               matchmaker: matchmaking.Matchmaking,
                startup_correspondence_games: list[str],
                correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                active_games: set[str],
@@ -493,15 +491,12 @@ def start_game(event: EVENT_TYPE,
     :param pool: The thread pool that the game is added to, so they can be run asynchronously.
     :param play_game_args: The args passed to `play_game`.
     :param config: The config the bot will use.
-    :param matchmaker: The matchmaker that challenges other bots.
     :param startup_correspondence_games: A list of correspondence games that have to be started.
     :param correspondence_queue: The queue that correspondence games are added to, to be started.
     :param active_games: A set of all the games that aren't correspondence games.
     :param low_time_games: A list of games, in which we don't have much time remaining.
     """
     game_id = event["game"]["id"]
-    if matchmaker.challenge_id == game_id:
-        matchmaker.challenge_id = ""
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f'--- Enqueue {config.url + game_id}')

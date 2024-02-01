@@ -239,7 +239,7 @@ class Matchmaking:
         value: str = config.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+    def challenge(self, active_games: dict[Any, Any], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
         """
         Challenge an opponent.
 

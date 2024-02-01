@@ -174,9 +174,9 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
     while True:
         task: Optional[logging.LogRecord] = None
         try:
-            task = queue.get(timeout=10)
+            task = queue.get(block=False)
         except Empty:
-            pass
+            time.sleep(0.1)
         except InterruptedError:
             pass
         except Exception:

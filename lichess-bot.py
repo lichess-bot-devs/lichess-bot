@@ -365,8 +365,6 @@ def lichess_bot_main(li: lichess.Lichess,
             pool.close()
             pool.join()
 
-    logger.info("Terminated")
-
 
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
     """Get the next event from the control queue."""

@@ -190,7 +190,7 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
         queue.task_done()
 
 
-def thread_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE]) -> None:
+def thread_logging_configurer(queue: LOGGING_QUEUE_TYPE) -> None:
     """Configure the game logger."""
     h = logging.handlers.QueueHandler(queue)
     root = logging.getLogger()

@@ -415,9 +415,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
-def start_low_time_games(low_time_games: list[EVENT_GETATTR_GAME_TYPE],
-                         active_games: set[str],
-                         max_games: int,
+def start_low_time_games(low_time_games: list[EVENT_GETATTR_GAME_TYPE], active_games: set[str], max_games: int,
                          pool: POOL_TYPE, play_game_args: PLAY_GAME_ARGS_TYPE) -> None:
     """Start the games based on how much time we have left."""
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
@@ -426,9 +424,7 @@ def start_low_time_games(low_time_games: list[EVENT_GETATTR_GAME_TYPE],
         start_game_thread(active_games, game_id, play_game_args, pool)
 
 
-def accept_challenges(li: lichess.Lichess,
-                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
-                      active_games: set[str],
+def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: set[str],
                       max_games: int) -> None:
     """Accept a challenge."""
     while len(active_games) < max_games and challenge_queue:
@@ -478,8 +474,7 @@ def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
     return game_id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
 
 
-def start_game_thread(active_games: set[str], game_id: str,
-                      play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
+def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY_GAME_ARGS_TYPE, pool: POOL_TYPE) -> None:
     """Start a game thread."""
     active_games.add(game_id)
     log_proc_count("Used", active_games)

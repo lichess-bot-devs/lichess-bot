@@ -377,6 +377,8 @@ def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
     """Get the next event from the control queue."""
     try:
         event: EVENT_TYPE = control_queue.get()
+        if event is None:
+            return {}
     except InterruptedError:
         return {}
 

@@ -125,7 +125,7 @@ class EventStream:
 class Lichess:
     """Imitate communication with lichess.org."""
 
-    def __init__(self, token: str, url: str, version: str) -> None:
+    def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
         """Has the same parameters as `lichess.Lichess` to be able to be used in its placed without any modification."""
         self.baseUrl = url
         self.game_accepted = False

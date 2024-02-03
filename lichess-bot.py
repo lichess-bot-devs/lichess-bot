@@ -3,7 +3,7 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-from lib import engine_wrapper, model, lichess, matchmaking
+from lib import engine_wrapper, model, matchmaking
 import json
 import logging
 import logging.handlers
@@ -30,6 +30,10 @@ from http.client import RemoteDisconnected
 from queue import Queue
 from multiprocessing.pool import Pool
 from typing import Any, Optional, Union
+if __name__ == "main":
+    from lib import lichess
+else:
+    from test_bot import lichess
 USER_PROFILE_TYPE = dict[str, Any]
 EVENT_TYPE = dict[str, Any]
 PLAY_GAME_ARGS_TYPE = dict[str, Any]

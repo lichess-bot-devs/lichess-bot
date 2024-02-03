@@ -2,11 +2,15 @@
 from lib.strategies import ExampleEngine
 import chess
 import chess.engine
+import sys
 from lib.config import Configuration
 from typing import Any, Optional, Union
 OPTIONS_TYPE = dict[str, Any]
 COMMANDS_TYPE = list[str]
 MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
+
+platform = sys.platform
+file_extension = ".exe" if platform == "win32" else ""
 
 
 class Stockfish(ExampleEngine):
@@ -16,7 +20,7 @@ class Stockfish(ExampleEngine):
                  draw_or_resign: Configuration, **popen_args: str):
         """Start Stockfish."""
         super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
-        self.engine = chess.engine.SimpleEngine.popen_uci('./TEMP/sf.exe')
+        self.engine = chess.engine.SimpleEngine.popen_uci(f"./TEMP/sf{file_extension}")
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
                root_moves: MOVE) -> chess.engine.PlayResult:

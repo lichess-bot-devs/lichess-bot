@@ -49,6 +49,7 @@ with open("lib/versioning.yml") as version_file:
 __version__ = versioning_info["lichess_bot_version"]
 
 terminated = False
+force_quit = False
 restart = True
 
 
@@ -61,8 +62,13 @@ def disable_restart() -> None:
 def signal_handler(signal: int, frame: Any) -> None:
     """Terminate lichess-bot."""
     global terminated
-    logger.debug("Received SIGINT. Terminating client.")
-    terminated = True
+    global force_quit
+    if not terminated:
+        logger.debug("Received SIGINT. Terminating client.")
+        terminated = True
+    else:
+        logger.debug("Received second SIGINT. Quitting now.")
+        force_quit = True
 
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -313,6 +319,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
     if config.quit_after_all_games_finish:
         logger.info("When quitting, lichess-bot will first wait for all running games to finish.")
+        logger.info("Press Ctrl-C twice to quit immediately.")
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
@@ -615,7 +622,7 @@ def play_game(li: lichess.Lichess,
         board = chess.Board()
         upd: dict[str, Any] = game.state
         quit_after_all_games_finish = config.quit_after_all_games_finish
-        while not terminated or quit_after_all_games_finish:
+        while (not terminated or quit_after_all_games_finish) and not force_quit:
             move_attempted = False
             try:
                 upd = upd or next_update(lines)

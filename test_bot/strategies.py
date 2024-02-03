@@ -14,5 +14,6 @@ class Stockfish(ExampleEngine):
         super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
         self.engine = chess.engine.SimpleEngine.popen_uci('./TEMP/sf.exe')
 
-    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool, root_moves: MOVE) -> chess.engine.PlayResult:
+    def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
+               root_moves: MOVE) -> chess.engine.PlayResult:
         return self.engine.play(board, time_limit)

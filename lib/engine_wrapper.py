@@ -592,8 +592,6 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     :param name: The name of the homemade engine.
     :return: The engine with this name.
     """
-    with open("C:\\Users\\panti\\Desktop\\Unknown\\Lichess Bot\\LichessBot312\\a.txt", "a") as file:
-        file.write(f"\new: {__name__}\n")
     if __name__ == "main":
         from lib import strategies
     else:

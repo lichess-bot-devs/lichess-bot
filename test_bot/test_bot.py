@@ -269,7 +269,6 @@ def test_sjeng() -> None:
     CONFIG["engine"]["working_dir"] = "./TEMP/"
     CONFIG["engine"]["protocol"] = "xboard"
     CONFIG["engine"]["name"] = "sjeng.exe"
-    CONFIG["engine"]["ponder"] = False
     CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
     win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
@@ -285,21 +284,6 @@ def test_homemade() -> None:
     if platform != "linux" and platform != "win32":
         assert True
         return
-    strategies_py = "lib/strategies.py"
-    with open(strategies_py) as file:
-        original_strategies = file.read()
-
-    with open(strategies_py, "a") as file:
-        file.write(f"""
-class Stockfish(ExampleEngine):
-    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
-        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
-        import chess
-        self.engine = chess.engine.SimpleEngine.popen_uci('{stockfish_path}')
-
-    def search(self, board, time_limit, *args):
-        return self.engine.play(board, time_limit)
-""")
     if os.path.exists("logs"):
         shutil.rmtree("logs")
     os.mkdir("logs")
@@ -311,8 +295,6 @@ class Stockfish(ExampleEngine):
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
-    with open(strategies_py, "w") as file:
-        file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],

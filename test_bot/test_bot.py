@@ -269,6 +269,7 @@ def test_sjeng() -> None:
     CONFIG["engine"]["working_dir"] = "./TEMP/"
     CONFIG["engine"]["protocol"] = "xboard"
     CONFIG["engine"]["name"] = "sjeng.exe"
+    CONFIG["engine"]["ponder"] = False
     CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
     win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")

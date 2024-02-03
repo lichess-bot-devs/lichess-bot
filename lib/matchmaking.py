@@ -77,7 +77,7 @@ class Matchmaking:
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
-            self.challenge_id = ""
+            self.discard_challenge(self.challenge_id)
             self.show_earliest_challenge_time()
         return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
@@ -257,6 +257,15 @@ class Matchmaking:
         logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")
         self.challenge_id = challenge_id
 
+    def discard_challenge(self, challenge_id: str) -> None:
+        """
+        Clear the ID of the most recent challenge if it is no longer needed.
+
+        :param challenge_id: The ID of the challenge that is expired, accepted, or declined.
+        """
+        if self.challenge_id == challenge_id:
+            self.challenge_id = ""
+
     def game_done(self) -> None:
         """Reset the timer for when the last game ended, and prints the earliest that the next challenge will be created."""
         self.last_game_ended_delay.reset()
@@ -308,8 +317,7 @@ class Matchmaking:
 
         Otherwise, we would attempt to cancel the challenge later.
         """
-        if self.challenge_id == event["game"]["id"]:
-            self.challenge_id = ""
+        self.discard_challenge(event["game"]["id"])
 
     def declined_challenge(self, event: EVENT_TYPE) -> None:
         """
@@ -321,8 +329,7 @@ class Matchmaking:
         opponent = challenge.opponent
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
-        if self.challenge_id == challenge.id:
-            self.challenge_id = ""
+        self.discard_challenge(challenge.id)
         if not challenge.from_self or self.challenge_filter == FilterType.NONE:
             return
 

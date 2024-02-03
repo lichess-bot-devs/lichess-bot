@@ -1,6 +1,4 @@
 """Test lichess-bot."""
-import logging
-
 import pytest
 import zipfile
 import requests

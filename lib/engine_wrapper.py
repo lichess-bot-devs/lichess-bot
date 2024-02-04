@@ -93,6 +93,20 @@ class EngineWrapper:
         self.move_commentary: list[MOVE_INFO_TYPE] = []
         self.comment_start_index = -1
 
+    def configure(self, options: OPTIONS_TYPE) -> None:
+        """
+        Send configurations to the engine.
+
+        :param options: A dictionary of strings to option values.
+
+        Raises chess.engine.EngineError if an option is sent that the engine does not support.
+        """
+        try:
+            self.engine.configure(options)
+        except Exception:
+            self.engine.close()
+            raise
+
     def __enter__(self) -> EngineWrapper:
         """Enter context so engine communication will be properly shutdown."""
         self.engine.__enter__()
@@ -465,7 +479,7 @@ class UCIEngine(EngineWrapper):
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=False, stderr=stderr,
                                                           **popen_args)
-        self.engine.configure(options)
+        self.configure(options)
 
 
 class XBoardEngine(EngineWrapper):
@@ -496,7 +510,7 @@ class XBoardEngine(EngineWrapper):
                     options[f"egtpath {egt_type}"] = egt_paths[egt_type]
                 else:
                     logger.debug(f"No paths found for egt type: {egt_type}.")
-        self.engine.configure(options)
+        self.configure(options)
 
 
 class MinimalEngine(EngineWrapper):

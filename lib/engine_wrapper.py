@@ -94,6 +94,13 @@ class EngineWrapper:
         self.comment_start_index = -1
 
     def configure(self, options: OPTIONS_TYPE) -> None:
+        """
+        Send configurations to the engine.
+
+        :param options: A dictionary of strings to option values.
+
+        Raises chess.engine.EngineError if an option is sent that the engine does not support.
+        """
         try:
             self.engine.configure(options)
         except Exception:

@@ -373,6 +373,8 @@ def lichess_bot_main(li: lichess.Lichess,
             control_queue.task_done()
 
         if config.quit_after_all_games_finish:
+            if active_games:
+                logger.info("Waiting for games to finish before quitting.")
             pool.close()
             pool.join()
 

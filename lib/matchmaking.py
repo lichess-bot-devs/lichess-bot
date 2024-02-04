@@ -2,7 +2,7 @@
 import random
 import logging
 import datetime
-import test_bot
+import test_bot.lichess
 from lib import model
 from lib.timer import Timer, seconds, minutes, days
 from collections import defaultdict

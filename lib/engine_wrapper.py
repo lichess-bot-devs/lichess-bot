@@ -12,7 +12,7 @@ import datetime
 import time
 import random
 import math
-import test_bot
+import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
 from lib import config, model, lichess

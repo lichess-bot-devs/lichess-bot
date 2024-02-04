@@ -1,7 +1,7 @@
 """Allows lichess-bot to send messages to the chat."""
 from __future__ import annotations
 import logging
-import test_bot
+import test_bot.lichess
 from lib import model
 from lib.engine_wrapper import EngineWrapper
 from lib import lichess

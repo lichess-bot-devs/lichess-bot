@@ -63,11 +63,14 @@ def signal_handler(signal: int, frame: Any) -> None:
     """Terminate lichess-bot."""
     global terminated
     global force_quit
+    in_starting_thread = __name__ == "__main__"
     if not terminated:
-        logger.debug("Received SIGINT. Terminating client.")
+        if in_starting_thread:
+            logger.debug("Received SIGINT. Terminating client.")
         terminated = True
     else:
-        logger.debug("Received second SIGINT. Quitting now.")
+        if in_starting_thread:
+            logger.debug("Received second SIGINT. Quitting now.")
         force_quit = True
 
 

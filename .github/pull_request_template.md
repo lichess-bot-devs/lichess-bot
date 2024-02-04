@@ -13,7 +13,7 @@
 
 ## Checklist:
 
-- [ ] I have read and followed the [contribution guidelines](/CONTRIBUTING.md).
+- [ ] I have read and followed the [contribution guidelines](/docs/CONTRIBUTING.md).
 - [ ] I have added necessary documentation (if applicable).
 - [ ] The changes pass all existing tests.
 

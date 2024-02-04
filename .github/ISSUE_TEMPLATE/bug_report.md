@@ -12,7 +12,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Run lichess-bot with '...' commands [e.g. `python lichess-bot.py -v`]
+1. Run lichess-bot with [...] commands [e.g. `python lichess-bot.py -v`]
 2. See error
 
 **Expected behavior**
@@ -23,7 +23,8 @@ Upload `lichess_bot_auto_logs\old.log`, `lichess_bot_auto_logs\recent.log`, and 
 
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows]
- - Python Version [e.g. 3.11]
+ - Python Version: [e.g. 3.11]
+ - Terminal: [e.g. Command Line, PowerShell]
 
 **Additional context**
 Add any other context about the problem here.

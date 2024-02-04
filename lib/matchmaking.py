@@ -1,18 +1,20 @@
 """Challenge other bots."""
 import random
 import logging
+import datetime
+import test_bot
 from lib import model
 from lib.timer import Timer, seconds, minutes, days
 from collections import defaultdict
 from collections.abc import Sequence
 from lib import lichess
-import datetime
 from lib.config import Configuration, FilterType
-from typing import Any, Optional
+from typing import Any, Optional, Union
 USER_PROFILE_TYPE = dict[str, Any]
 EVENT_TYPE = dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 DAILY_TIMERS_TYPE = list[Timer]
+LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
 class Matchmaking:
     """Challenge other bots."""
 
-    def __init__(self, li: lichess.Lichess, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
+    def __init__(self, li: LICHESS_TYPE, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
         """Initialize values needed for matchmaking."""
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))

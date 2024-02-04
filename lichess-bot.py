@@ -252,6 +252,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
         control_stream.join()
         correspondence_pinger.terminate()
         correspondence_pinger.join()
+        time.sleep(1.0)  # Allow final messages in logging_queue to be handled.
         logging_configurer(logging_level, log_filename, auto_log_filename, False)
         logging_listener.terminate()
         logging_listener.join()

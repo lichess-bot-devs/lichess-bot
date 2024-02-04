@@ -45,11 +45,7 @@ LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 logger = logging.getLogger(__name__)
 
-lichess_communicator: type[LICHESS_TYPE]
-if __name__ == "__main__":
-    lichess_communicator = lichess.Lichess
-else:
-    lichess_communicator = test_bot.lichess.Lichess
+lichess_communicator: type[LICHESS_TYPE] = lichess.Lichess
 
 with open("lib/versioning.yml") as version_file:
     versioning_info = yaml.safe_load(version_file)

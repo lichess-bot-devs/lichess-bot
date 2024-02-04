@@ -20,8 +20,6 @@ from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from typing import Any, Optional, Union, Literal, Type
 from types import TracebackType
-from lib import strategies
-from test_bot import strategies as test_strategies
 OPTIONS_TYPE = dict[str, Any]
 MOVE_INFO_TYPE = dict[str, Any]
 COMMANDS_TYPE = list[str]
@@ -596,6 +594,8 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     :param name: The name of the homemade engine.
     :return: The engine with this name.
     """
+    from lib import strategies
+    from test_bot import strategies as test_strategies
     engine: type[MinimalEngine]
     if __name__ == "main":
         engine = getattr(strategies, name)

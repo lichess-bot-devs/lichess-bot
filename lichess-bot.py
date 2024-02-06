@@ -27,7 +27,7 @@ from rich.logging import RichHandler
 from collections import defaultdict
 from collections.abc import Iterator, MutableSequence
 from http.client import RemoteDisconnected
-from queue import Queue
+from queue import Queue, Empty
 from multiprocessing.pool import Pool
 from typing import Any, Optional, Union
 USER_PROFILE_TYPE = dict[str, Any]
@@ -49,6 +49,7 @@ with open("lib/versioning.yml") as version_file:
 __version__ = versioning_info["lichess_bot_version"]
 
 terminated = False
+force_quit = False
 restart = True
 
 
@@ -61,8 +62,16 @@ def disable_restart() -> None:
 def signal_handler(signal: int, frame: Any) -> None:
     """Terminate lichess-bot."""
     global terminated
-    logger.debug("Received SIGINT. Terminating client.")
-    terminated = True
+    global force_quit
+    in_starting_thread = __name__ == "__main__"
+    if not terminated:
+        if in_starting_thread:
+            logger.debug("Received SIGINT. Terminating client.")
+        terminated = True
+    else:
+        if in_starting_thread:
+            logger.debug("Received second SIGINT. Quitting now.")
+        force_quit = True
 
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -171,16 +180,25 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
     """
     logging_configurer(level, log_filename, auto_log_filename, False)
     logger = logging.getLogger()
-    while not terminated:
-        task = queue.get()
+    while True:
+        task: Optional[logging.LogRecord] = None
         try:
-            logger.handle(task)
+            task = queue.get(block=False)
+        except Empty:
+            time.sleep(0.1)
+        except InterruptedError:
+            pass
         except Exception:
             pass
+
+        if task is None:
+            continue
+
+        logger.handle(task)
         queue.task_done()
 
 
-def thread_logging_configurer(queue: Union[CONTROL_QUEUE_TYPE, LOGGING_QUEUE_TYPE]) -> None:
+def thread_logging_configurer(queue: LOGGING_QUEUE_TYPE) -> None:
     """Configure the game logger."""
     h = logging.handlers.QueueHandler(queue)
     root = logging.getLogger()
@@ -237,6 +255,7 @@ def start(li: lichess.Lichess, user_profile: USER_PROFILE_TYPE, config: Configur
         control_stream.join()
         correspondence_pinger.terminate()
         correspondence_pinger.join()
+        time.sleep(1.0)  # Allow final messages in logging_queue to be handled.
         logging_configurer(logging_level, log_filename, auto_log_filename, False)
         logging_listener.terminate()
         logging_listener.join()
@@ -302,6 +321,10 @@ def lichess_bot_main(li: lichess.Lichess,
 
     recent_bot_challenges: defaultdict[str, list[Timer]] = defaultdict(list)
 
+    if config.quit_after_all_games_finish:
+        logger.info("When quitting, lichess-bot will first wait for all running games to finish.")
+        logger.info("Press Ctrl-C twice to quit immediately.")
+
     with multiprocessing.pool.Pool(max_games + 1) as pool:
         while not (terminated or (one_game and one_game_completed) or restart):
             event = next_event(control_queue)
@@ -348,13 +371,24 @@ def lichess_bot_main(li: lichess.Lichess,
 
             control_queue.task_done()
 
-    logger.info("Terminated")
+        close_pool(pool, active_games, config)
+
+
+def close_pool(pool: POOL_TYPE, active_games: set[str], config: Configuration) -> None:
+    """Shut down pool after possibly waiting on games to finish depending on the configuration."""
+    if config.quit_after_all_games_finish:
+        if active_games:
+            logger.info("Waiting for games to finish before quitting.")
+        pool.close()
+        pool.join()
 
 
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EVENT_TYPE:
     """Get the next event from the control queue."""
     try:
         event: EVENT_TYPE = control_queue.get()
+        if event is None:
+            return {}
     except InterruptedError:
         return {}
 
@@ -598,7 +632,8 @@ def play_game(li: lichess.Lichess,
         prior_game = None
         board = chess.Board()
         upd: dict[str, Any] = game.state
-        while not terminated:
+        quit_after_all_games_finish = config.quit_after_all_games_finish
+        while (not terminated or quit_after_all_games_finish) and not force_quit:
             move_attempted = False
             try:
                 upd = upd or next_update(lines)

@@ -16,8 +16,9 @@ from lib import config
 import tarfile
 from lib.timer import Timer, to_seconds, seconds
 import test_bot.lichess
+from test_bot import test_options
 from typing import Any
-if hasattr(sys, '_called_from_test'):
+if test_options._called_from_test:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 lichess_bot = importlib.import_module("lichess-bot")
 

@@ -7,7 +7,7 @@ from typing import Any
 def pytest_configure(config: Any) -> None:
     """Set pytest flag, so we know that lichess-bot is being run under pytest."""
     from test_bot import test_options
-    test_options._called_from_test = True
+    test_options._called_from_test["in_test"] = True
 
 
 def pytest_sessionfinish(session: Any, exitstatus: Any) -> None:

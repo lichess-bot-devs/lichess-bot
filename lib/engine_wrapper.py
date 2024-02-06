@@ -598,7 +598,7 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     from lib import strategies
     from test_bot import strategies as test_strategies
     engine: type[MinimalEngine]
-    if test_options._called_from_test:
+    if test_options._called_from_test["in_test"]:
         engine = getattr(test_strategies, name)
     else:
         engine = getattr(strategies, name)

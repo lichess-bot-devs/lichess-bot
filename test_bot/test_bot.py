@@ -12,13 +12,12 @@ import sys
 import stat
 import shutil
 import importlib
-from lib import config
 import tarfile
-from lib.timer import Timer, to_seconds, seconds
 import test_bot.lichess
-from test_bot import test_options
+from lib import config
+from lib.timer import Timer, to_seconds, seconds
 from typing import Any
-if not test_options._called_from_test["in_test"]:
+if "pytest" in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 lichess_bot = importlib.import_module("lichess-bot")
 

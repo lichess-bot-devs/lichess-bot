@@ -17,7 +17,7 @@ import test_bot.lichess
 from lib import config
 from lib.timer import Timer, to_seconds, seconds
 from typing import Any
-if "pytest" in sys.modules:
+if "pytest" not in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 lichess_bot = importlib.import_module("lichess-bot")
 

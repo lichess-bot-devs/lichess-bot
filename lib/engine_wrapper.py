@@ -12,6 +12,7 @@ import datetime
 import time
 import random
 import math
+import sys
 import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
@@ -597,10 +598,10 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     from lib import strategies
     from test_bot import strategies as test_strategies
     engine: type[MinimalEngine]
-    if __name__ == "main":
-        engine = getattr(strategies, name)
-    else:
+    if hasattr(sys, '_called_from_test'):
         engine = getattr(test_strategies, name)
+    else:
+        engine = getattr(strategies, name)
     return engine
 
 

@@ -3,7 +3,7 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-from lib import engine_wrapper, model, matchmaking, lichess
+from lib import engine_wrapper, model, lichess, matchmaking
 import json
 import logging
 import logging.handlers
@@ -44,8 +44,6 @@ POOL_TYPE = Pool
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 logger = logging.getLogger(__name__)
-
-lichess_communicator: type[LICHESS_TYPE] = lichess.Lichess
 
 with open("lib/versioning.yml") as version_file:
     versioning_info = yaml.safe_load(version_file)
@@ -1025,7 +1023,7 @@ def start_lichess_bot() -> None:
 
     max_retries = CONFIG.engine.online_moves.max_retries
     check_python_version()
-    li = lichess_communicator(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
+    li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()
     username = user_profile["username"]

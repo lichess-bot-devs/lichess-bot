@@ -15,8 +15,9 @@ import importlib
 from lib import config
 import tarfile
 from lib.timer import Timer, to_seconds, seconds
+import test_bot.lichess
 from typing import Any
-if __name__ == "__main__":
+if hasattr(sys, '_called_from_test'):
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 lichess_bot = importlib.import_module("lichess-bot")
 
@@ -183,7 +184,7 @@ def run_bot(raw_config: dict[str, Any], logging_level: int, opponent_path: str =
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
     lichess_bot.logger.info(lichess_bot.intro())
-    li = lichess_bot.test_bot.lichess.Lichess(CONFIG.token, CONFIG.url, lichess_bot.__version__, logging_level, 1)
+    li = test_bot.lichess.Lichess(CONFIG.token, CONFIG.url, lichess_bot.__version__, logging_level, 1)
 
     user_profile = li.get_profile()
     username = user_profile["username"]

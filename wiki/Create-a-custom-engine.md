@@ -5,12 +5,9 @@ Steps to create a homemade bot:
 
 1. Do all the steps in the [How to Install](#how-to-install)
 2. In the `config.yml`, change the engine protocol to `homemade`
-3. Create a class in some file that extends `MinimalEngine` (in `strategies.py`).
-    - Look at the `strategies.py` file to see some examples.
-    - If you don't know what to implement, look at the `EngineWrapper` or `UCIEngine` class.
-        - You don't have to create your own engine, even though it's an "EngineWrapper" class.<br>
-The examples just implement `search`.
-4. In the `config.yml`, change the name from `engine_name` to the name of your class
+3. Create a class in `lib/strategies.py` that extends `MinimalEngine`.
+4. Create a method called `search()` with an argument `board` that chooses a legal move from the board.
+    - There are examples in `lib/strategies.py` to help you get started. These examples show different ways to implement the `search()` method and the proper way to return the chosen move.
+5. In the `config.yml`, change the name from `engine_name` to the name of your class
     - In this case, you could change it to:
-
         `name: "RandomMove"`

@@ -12,7 +12,6 @@ import datetime
 import time
 import random
 import math
-import sys
 import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
@@ -588,6 +587,9 @@ class FillerEngine:
         return method
 
 
+test_suffix = "-for-lichess-bot-testing-only"
+
+
 def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     """
     Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `strategies.RandomMove`.
@@ -598,8 +600,8 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     from lib import strategies
     from test_bot import strategies as test_strategies
     engine: type[MinimalEngine]
-    if "pytest" in sys.modules:
-        engine = getattr(test_strategies, name)
+    if name.endswith(test_suffix):  # Test only.
+        engine = getattr(test_strategies, name.removesuffix(test_suffix))
     else:
         engine = getattr(strategies, name)
     return engine

@@ -17,6 +17,7 @@ import test_bot.lichess
 from lib import config
 from lib.timer import Timer, to_seconds, seconds
 from typing import Any
+from lib.engine_wrapper import test_suffix
 if "pytest" not in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 lichess_bot = importlib.import_module("lichess-bot")
@@ -292,7 +293,7 @@ def test_homemade() -> None:
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
-    CONFIG["engine"]["name"] = "Stockfish"
+    CONFIG["engine"]["name"] = f"Stockfish{test_suffix}"
     CONFIG["engine"]["protocol"] = "homemade"
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     win = run_bot(CONFIG, logging_level)

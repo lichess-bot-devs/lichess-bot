@@ -12,14 +12,14 @@ import sys
 import stat
 import shutil
 import importlib
-from lib import config
 import tarfile
+import test_bot.lichess
+from lib import config
 from lib.timer import Timer, to_seconds, seconds
 from typing import Any
-if __name__ == "__main__":
+from lib.engine_wrapper import test_suffix
+if "pytest" not in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
-shutil.copyfile("lib/lichess.py", "lib/correct_lichess.py")
-shutil.copyfile("test_bot/lichess.py", "lib/lichess.py")
 lichess_bot = importlib.import_module("lichess-bot")
 
 platform = sys.platform
@@ -185,7 +185,7 @@ def run_bot(raw_config: dict[str, Any], logging_level: int, opponent_path: str =
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
     lichess_bot.logger.info(lichess_bot.intro())
-    li = lichess_bot.lichess.Lichess(CONFIG.token, CONFIG.url, lichess_bot.__version__)
+    li = test_bot.lichess.Lichess(CONFIG.token, CONFIG.url, lichess_bot.__version__, logging_level, 1)
 
     user_profile = li.get_profile()
     username = user_profile["username"]
@@ -287,34 +287,17 @@ def test_homemade() -> None:
     if platform != "linux" and platform != "win32":
         assert True
         return
-    strategies_py = "lib/strategies.py"
-    with open(strategies_py) as file:
-        original_strategies = file.read()
-
-    with open(strategies_py, "a") as file:
-        file.write(f"""
-class Stockfish(ExampleEngine):
-    def __init__(self, commands, options, stderr, draw_or_resign, **popen_args):
-        super().__init__(commands, options, stderr, draw_or_resign, **popen_args)
-        import chess
-        self.engine = chess.engine.SimpleEngine.popen_uci('{stockfish_path}')
-
-    def search(self, board, time_limit, *args):
-        return self.engine.play(board, time_limit)
-""")
     if os.path.exists("logs"):
         shutil.rmtree("logs")
     os.mkdir("logs")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
-    CONFIG["engine"]["name"] = "Stockfish"
+    CONFIG["engine"]["name"] = f"Stockfish{test_suffix}"
     CONFIG["engine"]["protocol"] = "homemade"
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     win = run_bot(CONFIG, logging_level)
     shutil.rmtree("logs")
-    with open(strategies_py, "w") as file:
-        file.write(original_strategies)
     lichess_bot.logger.info("Finished Testing Homemade")
     assert win == "1"
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],

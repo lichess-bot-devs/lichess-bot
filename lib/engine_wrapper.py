@@ -12,6 +12,7 @@ import datetime
 import time
 import random
 import math
+import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
 from lib import config, model, lichess
@@ -25,6 +26,7 @@ COMMANDS_TYPE = list[str]
 LICHESS_EGTB_MOVE = dict[str, Any]
 CHESSDB_EGTB_MOVE = dict[str, Any]
 MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
+LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +126,7 @@ class EngineWrapper:
     def play_move(self,
                   board: chess.Board,
                   game: model.Game,
-                  li: lichess.Lichess,
+                  li: LICHESS_TYPE,
                   setup_timer: Timer,
                   move_overhead: datetime.timedelta,
                   can_ponder: bool,
@@ -599,6 +601,9 @@ class FillerEngine:
         return method
 
 
+test_suffix = "-for-lichess-bot-testing-only"
+
+
 def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     """
     Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `strategies.RandomMove`.
@@ -607,7 +612,12 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     :return: The engine with this name.
     """
     from lib import strategies
-    engine: type[MinimalEngine] = getattr(strategies, name)
+    from test_bot import strategies as test_strategies
+    engine: type[MinimalEngine]
+    if name.endswith(test_suffix):  # Test only.
+        engine = getattr(test_strategies, name.removesuffix(test_suffix))
+    else:
+        engine = getattr(strategies, name)
     return engine
 
 
@@ -742,7 +752,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     return no_book_move
 
 
-def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: config.Configuration,
+def get_online_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_moves_cfg: config.Configuration,
                     draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
     """
     Get a move from an online source.
@@ -794,7 +804,7 @@ def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, o
     return chess.engine.PlayResult(None, None)
 
 
-def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
                      chessdb_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from chessdb.cn's opening book."""
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -836,7 +846,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
     return move, comment
 
 
-def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
                            lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from the lichess's cloud analysis."""
     wb = "w" if board.turn == chess.WHITE else "b"
@@ -890,7 +900,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
     return move, comment
 
 
-def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
+def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
                               opening_explorer_cfg: config.Configuration
                               ) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from lichess's opening explorer."""
@@ -940,7 +950,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     return move, comment
 
 
-def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_egtb_cfg: config.Configuration
+def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_egtb_cfg: config.Configuration
                          ) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from an online egtb (either by lichess or chessdb).
@@ -1006,7 +1016,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.
     return chess.engine.PlayResult(None, None)
 
 
-def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
+def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board, quality: str,
                           variant: str) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from lichess's egtb.
@@ -1059,7 +1069,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
     return None, -3, {}
 
 
-def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
+def get_chessdb_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board,
                           quality: str) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from chessdb's egtb.

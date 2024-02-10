@@ -606,7 +606,7 @@ test_suffix = "-for-lichess-bot-testing-only"
 
 def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     """
-    Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `strategies.RandomMove`.
+    Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `homemade.RandomMove`.
 
     :param name: The name of the homemade engine.
     :return: The engine with this name.

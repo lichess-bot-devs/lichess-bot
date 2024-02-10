@@ -611,13 +611,13 @@ def getHomemadeEngine(name: str) -> type[MinimalEngine]:
     :param name: The name of the homemade engine.
     :return: The engine with this name.
     """
-    from lib import strategies
-    from test_bot import strategies as test_strategies
+    import homemade
+    from test_bot import homemade as test_homemade
     engine: type[MinimalEngine]
     if name.endswith(test_suffix):  # Test only.
-        engine = getattr(test_strategies, name.removesuffix(test_suffix))
+        engine = getattr(test_homemade, name.removesuffix(test_suffix))
     else:
-        engine = getattr(strategies, name)
+        engine = getattr(homemade, name)
     return engine
 
 

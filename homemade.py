@@ -1,5 +1,5 @@
 """
-Some example strategies for people who want to create a custom, homemade bot.
+Some example classes for people who want to create a homemade bot.
 
 With these classes, bot makers will not have to implement the UCI or XBoard interfaces themselves.
 """
@@ -25,7 +25,7 @@ class ExampleEngine(MinimalEngine):
     pass
 
 
-# Strategy names and ideas from tom7's excellent eloWorld video
+# Bot names and ideas from tom7's excellent eloWorld video
 
 class RandomMove(ExampleEngine):
     """Get a random move."""

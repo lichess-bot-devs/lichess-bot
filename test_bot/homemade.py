@@ -1,5 +1,5 @@
 """Homemade engine using Stockfish (used in testing)."""
-from lib.strategies import ExampleEngine
+from homemade import ExampleEngine
 import chess
 import chess.engine
 import sys

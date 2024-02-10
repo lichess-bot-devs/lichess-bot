@@ -24,7 +24,7 @@ Supports:
 6. [Run lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-Run-lichess%E2%80%90bot)
 
 ## Advanced options
-- [Create a custom engine](https://github.com/lichess-bot-devs/lichess-bot/wiki/Create-a-custom-engine)
+- [Create a homemade engine](https://github.com/lichess-bot-devs/lichess-bot/wiki/Create-a-homemade-engine)
 
 <br />
 

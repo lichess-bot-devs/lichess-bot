@@ -20,21 +20,11 @@ jobs:
         with:
           repository: "${{ github.repository }}.wiki"
           path: "lichess-bot.wiki"
-      - name: Set path
-        uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            wiki:
-              - 'wiki/**'
-            readme:
-              - 'README.md'
       - name: Set github bot global config
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "actions-user"
       - name: Sync README.md to wiki/Home.md
-        if: steps.changes.outputs.readme == 'true'
         run: |
           cp -r $GITHUB_WORKSPACE/README.md $GITHUB_WORKSPACE/wiki/Home.md
           git add wiki/Home.md

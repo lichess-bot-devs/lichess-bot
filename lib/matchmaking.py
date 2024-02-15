@@ -2,10 +2,9 @@
 import random
 import logging
 import datetime
-import math
 import test_bot.lichess
 from lib import model
-from lib.timer import Timer, seconds, minutes, days
+from lib.timer import Timer, seconds, minutes, days, years
 from collections import defaultdict
 from collections.abc import Sequence
 from lib import lichess
@@ -58,7 +57,7 @@ class Matchmaking:
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
 
         # Maximum time between challenges, even if there are active games
-        self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else seconds(math.inf)
+        self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
         self.challenge_id: str = ""
         self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 

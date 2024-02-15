@@ -224,7 +224,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 ## Challenging other bots
 - `matchmaking`: Challenge a random bot.
   - `allow_matchmaking`: Whether to challenge other bots.
-  - `allow_during_games`: Whether to issue new challenges while the bot is already playing games.
+  - `allow_during_games`: Whether to issue new challenges while the bot is already playing games. If true, no more than 10 minutes will pass between matchmaking challenges.
   - `challenge_variant`: The variant for the challenges. If set to `random` a variant from the ones enabled in `challenge.variants` will be chosen at random.
   - `challenge_timeout`: The time (in minutes) the bot has to be idle before it creates a challenge.
   - `challenge_initial_time`: A list of initial times (in seconds and to be chosen at random) for the challenges.

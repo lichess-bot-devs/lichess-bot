@@ -2,6 +2,7 @@
 import random
 import logging
 import datetime
+import math
 import test_bot.lichess
 from lib import model
 from lib.timer import Timer, seconds, minutes, days
@@ -55,6 +56,9 @@ class Matchmaking:
         self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
         self.last_user_profile_update_time = Timer(minutes(5))
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
+
+        # Maximum time between challenges, even if there are active games
+        self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else seconds(math.inf)
         self.challenge_id: str = ""
         self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 
@@ -251,7 +255,9 @@ class Matchmaking:
         """
         max_games_for_matchmaking = max_games if self.matchmaking_cfg.allow_during_games else 0
         game_count = len(active_games) + len(challenge_queue)
-        if game_count >= max_games_for_matchmaking or not self.should_create_challenge():
+        if (game_count >= max_games_for_matchmaking
+                or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
+                or not self.should_create_challenge()):
             return
 
         logger.info("Challenging a random bot")

@@ -26,7 +26,7 @@ jobs:
           git config --global user.name "actions-user"
       - name: Sync all files to wiki
         run: |
-          cp $GITHUB_WORKSPACE/README.md $GITHUB_WORKSPACE/lichess-bot.wiki
+          cp $GITHUB_WORKSPACE/README.md $GITHUB_WORKSPACE/lichess-bot.wiki/Home.md
           cp -r $GITHUB_WORKSPACE/wiki/* $GITHUB_WORKSPACE/lichess-bot.wiki
           cd $GITHUB_WORKSPACE/lichess-bot.wiki
           git add .

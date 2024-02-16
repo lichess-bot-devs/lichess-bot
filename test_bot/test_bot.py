@@ -97,7 +97,15 @@ def lichess_org_simulator(opponent_path: str,
                           board_queue: Queue[chess.Board],
                           clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]],
                           results: Queue[bool]) -> None:
-    """Play the moves for the opponent of lichess-bot."""
+    """
+    Run a mocked version of the lichess.org server to provide an opponent for a test. This opponent always plays white.
+
+    :param opponent_path: The path to the executable of the opponent. Usually Stockfish.
+    :param move_queue: An interprocess queue that supplies the moves chosen by the bot being tested.
+    :param board_queue: An interprocess queue where this function sends the updated board after choosing a move.
+    :param clock_queue: An interprocess queue where this function sends the updated game clock after choosing a move.
+    :param results: An interprocess queue where this function sends the result of the game to the testing function.
+    """
     start_time = seconds(10)
     increment = seconds(0.1)
 
@@ -151,7 +159,13 @@ def lichess_org_simulator(opponent_path: str,
 
 
 def run_bot(raw_config: dict[str, Any], logging_level: int, opponent_path: str = stockfish_path) -> bool:
-    """Start lichess-bot."""
+    """
+    Start lichess-bot test with a mocked version of the lichess.org site.
+
+    :param raw_config: A dictionary of values to specify the engine to test. This engine will play as white.
+    :param logging_level: The level of logging to use during the test. Usually logging.DEBUG.
+    :param opponent_path: The path to the executable that will play the opponent. The opponent plays as black.
+    """
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
     lichess_bot.logger.info(lichess_bot.intro())

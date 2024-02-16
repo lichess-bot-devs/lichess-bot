@@ -34,7 +34,13 @@ class GameStream:
     def __init__(self,
                  board_queue: Queue[chess.Board],
                  clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]]) -> None:
-        """Initialize `self.moves_sent` to an empty string. It stores the moves that we have already sent."""
+        """
+        Capture the interprocess queues that will feed the gameStream with game information.
+
+        :param board_queue: Updated board positions from the lichess_org_simulator() function.
+        :param clock_queue: Updated game clock timings (white time, black time, and increment) from the
+        lichess_org_simulator() function.
+        """
         self.board_queue = board_queue
         self.clock_queue = clock_queue
 
@@ -88,6 +94,7 @@ class GameStream:
                 new_game_state["winner"] = "black"
                 yield json.dumps(new_game_state).encode("utf-8")
                 break
+
             if board.move_stack:
                 new_game_state["status"] = "started"
                 yield json.dumps(new_game_state).encode("utf-8")
@@ -97,7 +104,11 @@ class EventStream:
     """Imitate lichess.org's EventStream. Used in tests."""
 
     def __init__(self, sent_game: bool = False) -> None:
-        """:param sent_game: If we have already sent the `gameStart` event, so we don't send it again."""
+        """
+        Start the event stream for the lichess_bot_main() loop.
+
+        :param sent_game: If we have already sent the `gameStart` event, so we don't send it again.
+        """
         self.sent_game = sent_game
 
     def iter_lines(self) -> Generator[bytes, None, None]:
@@ -122,7 +133,13 @@ class Lichess:
                  move_queue: Queue[Optional[chess.Move]],
                  board_queue: Queue[chess.Board],
                  clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]]) -> None:
-        """Has the same parameters as `lichess.Lichess` to be able to be used in its placed without any modification."""
+        """
+        Capture the interprocess queues to distribute them to the eventStream and gameStream instances.
+
+        :param move_queue: An interprocess queue to send moves chosen by the bot under test to the mock lichess function.
+        :param board_queue: An interprocess queue to send board positions to the mock game stream.
+        :param clock_queue: An interprocess queue to send game clock information to the mock game stream.
+        """
         self.baseUrl = "testing"
         self.move_queue = move_queue
         self.board_queue = board_queue

@@ -252,7 +252,7 @@ class Matchmaking:
         :param challenge_queue: The queue containing the challenges.
         :param max_games: The maximum allowed number of simultaneous games.
         """
-        max_games_for_matchmaking = max_games if self.matchmaking_cfg.allow_during_games else 0
+        max_games_for_matchmaking = max_games if self.matchmaking_cfg.allow_during_games else 1
         game_count = len(active_games) + len(challenge_queue)
         if (game_count >= max_games_for_matchmaking
                 or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)

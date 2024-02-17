@@ -4,7 +4,7 @@ import logging
 import datetime
 import test_bot.lichess
 from lib import model
-from lib.timer import Timer, seconds, minutes, days
+from lib.timer import Timer, seconds, minutes, days, years
 from collections import defaultdict
 from collections.abc import Sequence
 from lib import lichess
@@ -55,6 +55,9 @@ class Matchmaking:
         self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
         self.last_user_profile_update_time = Timer(minutes(5))
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
+
+        # Maximum time between challenges, even if there are active games
+        self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
         self.challenge_id: str = ""
         self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
 
@@ -241,14 +244,19 @@ class Matchmaking:
         value: str = config.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:
+    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE, max_games: int) -> None:
         """
         Challenge an opponent.
 
         :param active_games: The games that the bot is playing.
         :param challenge_queue: The queue containing the challenges.
+        :param max_games: The maximum allowed number of simultaneous games.
         """
-        if active_games or challenge_queue or not self.should_create_challenge():
+        max_games_for_matchmaking = max_games if self.matchmaking_cfg.allow_during_games else 1
+        game_count = len(active_games) + len(challenge_queue)
+        if (game_count >= max_games_for_matchmaking
+                or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
+                or not self.should_create_challenge()):
             return
 
         logger.info("Challenging a random bot")

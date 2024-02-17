@@ -368,7 +368,7 @@ def lichess_bot_main(li: LICHESS_TYPE,
                                              active_games,
                                              max_games)
             accept_challenges(li, challenge_queue, active_games, max_games)
-            matchmaker.challenge(active_games, challenge_queue)
+            matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
 
             control_queue.task_done()

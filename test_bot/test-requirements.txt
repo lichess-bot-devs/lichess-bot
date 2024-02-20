@@ -4,5 +4,5 @@ flake8==7.0.0
 flake8-markdown==0.5.0
 flake8-docstrings==1.7.0
 mypy==1.8.0
-types-requests==2.31.0.20240125
+types-requests==2.31.0.20240218
 types-PyYAML==6.0.12.12

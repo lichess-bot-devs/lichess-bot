@@ -27,3 +27,20 @@ def is_supported_extra(challenge):
 ```
 The body of the function can be as complex as needed and combine any conditions to suit the needs of the bot.
 Information within the `Challenge` instance is detailed in the [Lichess API documentation](https://lichess.org/api#tag/Bot/operation/apiStreamEvent) (click on 200 under Responses, then select `ChallengeEvent` under Response Schema and expand the `challenge` heading).
+
+### Tailoring engine options
+
+The function `game_specific_options()` can modify the engine options for UCI and XBoard engines based on aspects of the game about to be played.
+It must accept a `Game` instance (see `lib/model.py`) and return a dictionary of `str` to values.
+This dictionary will add or replace values in the `uci_options` or `xboard_options` section of the bot's configuration file.
+For example, this version of the function will changes the move overhead value for longer games:
+``` python
+from datetime import timedelta
+
+def game_specific_options(game):
+    if game.clock_initial >= timedelta(minutes=5):
+        return {"Move Overhead": 5000}
+    else:
+        return {}
+```
+Returning an empty dictionary leaves the engine options unchanged.

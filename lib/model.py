@@ -28,6 +28,9 @@ class Challenge:
         self.challenger = Player(challenge_info.get("challenger") or {})
         self.opponent = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
+        self.initial_fen = challenge_info["initialFen"]
+        self.color = challenge_info["color"]
+        self.time_control = challenge_info["timeControl"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
         """Check whether the variant is supported."""
@@ -102,7 +105,8 @@ class Challenge:
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
                               or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")
-                              or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
+                              or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later")
+                              or self.decline_due_to(is_supported_extra(self), "generic"))
 
             return not decline_reason, decline_reason
 
@@ -129,6 +133,14 @@ class Challenge:
     def __repr__(self) -> str:
         """Get a string representation of `Challenge`."""
         return self.__str__()
+
+
+try:
+    from extra_game_handlers import is_supported_extra  # type: ignore
+except ImportError:
+    def is_supported_extra(challenge: Challenge) -> bool:
+        """Accept every challnege by default."""
+        return True
 
 
 class Termination(str, Enum):

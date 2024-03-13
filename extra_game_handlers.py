@@ -16,6 +16,6 @@ def is_supported_extra(challenge: model.Challenge) -> bool:
     """
     Determine whether to accept a challenge.
 
-    Return True by default so that there are no extra restrictions beyond those in the config file.
+    By default, True is always returned so that there are no extra restrictions beyond those in the config file.
     """
     return True

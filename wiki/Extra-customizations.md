@@ -1,6 +1,6 @@
 ## Extra customizations
 
-If your bot has more complex requirements than can be expressed in the configuration file, create a file named `extra_game_handlers.py` in the main lichess-bot directory.
+If your bot has more complex requirements than can be expressed in the configuration file, edit the file named `extra_game_handlers.py` in the main lichess-bot directory.
 Within this file, write whatever code is needed.
 
 Each section below describes a customization.
@@ -12,7 +12,7 @@ Only the named function will be used in lichess-bot.
 ### Filtering challenges
 
 The function `is_supported_extra()` allows for finer control over which challenges from other players are accepted.
-It must accept a `Challenge` instance (see `lib/model.py`) as an argument and return `True` to accept the challenge or `False` to reject it.
+It should use the data in the `Challenge` argument (see `lib/model.py`) and return `True` to accept the challenge or `False` to reject it.
 As an example, here's a version that will only only accept games where the bot plays black:
 ``` python
 def is_supported_extra(challenge):
@@ -31,7 +31,7 @@ Information within the `Challenge` instance is detailed in the [Lichess API docu
 ### Tailoring engine options
 
 The function `game_specific_options()` can modify the engine options for UCI and XBoard engines based on aspects of the game about to be played.
-It must accept a `Game` instance (see `lib/model.py`) and return a dictionary of `str` to values.
+It use the data in the `Game` argument (see `lib/model.py`) and return a dictionary of `str` to values.
 This dictionary will add or replace values in the `uci_options` or `xboard_options` section of the bot's configuration file.
 For example, this version of the function will changes the move overhead value for longer games:
 ``` python

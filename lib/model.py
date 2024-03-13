@@ -26,7 +26,7 @@ class Challenge:
         self.base: int = challenge_info.get("timeControl", {}).get("limit")
         self.days: int = challenge_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = Player(challenge_info.get("challenger") or {})
-        self.opponent = Player(challenge_info.get("destUser") or {})
+        self.challenge_target = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
         self.initial_fen = challenge_info.get("initialFen", "startpos")
         self.color = challenge_info["color"]

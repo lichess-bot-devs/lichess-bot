@@ -29,7 +29,8 @@ class Challenge:
         self.challenge_target = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
         self.initial_fen = challenge_info.get("initialFen", "startpos")
-        self.color = challenge_info["color"]
+        color = challenge_info["color"]
+        self.color = color if color != "random" else challenge_info["finalColor"]
         self.time_control = challenge_info["timeControl"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:

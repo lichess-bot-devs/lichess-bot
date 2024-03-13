@@ -139,7 +139,7 @@ try:
     from extra_game_handlers import is_supported_extra  # type: ignore
 except ImportError:
     def is_supported_extra(challenge: Challenge) -> bool:
-        """Accept every challnege by default."""
+        """Return True by default so that there are no extra restrictions beyond those in the config file."""
         return True
 
 

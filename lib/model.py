@@ -97,6 +97,8 @@ class Challenge:
             if self.from_self:
                 return True, ""
 
+            from extra_game_handlers import is_supported_extra
+
             allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")
                               or self.decline_due_to(not config.only_bot or self.challenger.is_bot, "onlyBot")
@@ -133,14 +135,6 @@ class Challenge:
     def __repr__(self) -> str:
         """Get a string representation of `Challenge`."""
         return self.__str__()
-
-
-try:
-    from extra_game_handlers import is_supported_extra  # type: ignore
-except ImportError:
-    def is_supported_extra(challenge: Challenge) -> bool:
-        """Return True by default so that there are no extra restrictions beyond those in the config file."""
-        return True
 
 
 class Termination(str, Enum):

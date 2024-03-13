@@ -18,6 +18,7 @@ from collections.abc import Callable
 from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
+from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type
 from types import TracebackType
 OPTIONS_TYPE = dict[str, Any]
@@ -27,14 +28,6 @@ LICHESS_EGTB_MOVE = dict[str, Any]
 CHESSDB_EGTB_MOVE = dict[str, Any]
 MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
-
-
-try:
-    from extra_game_handlers import game_specific_options  # type: ignore
-except ImportError:
-    def game_specific_options(game: model.Game) -> dict[str, Any]:
-        """Return an empty dict by default to keep options unchanged."""
-        return {}
 
 
 logger = logging.getLogger(__name__)

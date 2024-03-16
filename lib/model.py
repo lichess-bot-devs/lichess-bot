@@ -26,8 +26,12 @@ class Challenge:
         self.base: int = challenge_info.get("timeControl", {}).get("limit")
         self.days: int = challenge_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = Player(challenge_info.get("challenger") or {})
-        self.opponent = Player(challenge_info.get("destUser") or {})
+        self.challenge_target = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
+        self.initial_fen = challenge_info.get("initialFen", "startpos")
+        color = challenge_info["color"]
+        self.color = color if color != "random" else challenge_info["finalColor"]
+        self.time_control = challenge_info["timeControl"]
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
         """Check whether the variant is supported."""
@@ -94,6 +98,8 @@ class Challenge:
             if self.from_self:
                 return True, ""
 
+            from extra_game_handlers import is_supported_extra
+
             allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")
                               or self.decline_due_to(not config.only_bot or self.challenger.is_bot, "onlyBot")
@@ -102,7 +108,8 @@ class Challenge:
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
                               or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")
-                              or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later"))
+                              or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later")
+                              or self.decline_due_to(is_supported_extra(self), "generic"))
 
             return not decline_reason, decline_reason
 

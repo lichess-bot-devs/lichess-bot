@@ -146,7 +146,7 @@ challenge:                         # Incoming challenges.
 #   - kingOfTheHill
 #   - racingKings
 #   - threeCheck
-  time_controls:                   # Time controls to accept (bots are not allowed to play ultraBullet)
+  time_controls:                   # Time controls to accept (bots are not allowed to play ultraBullet).
     - bullet
     - blitz
     - rapid

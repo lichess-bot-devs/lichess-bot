@@ -171,7 +171,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - antichess
     # etc.
 ```
-  - `time_controls`: An indented list of acceptable time control types from `bullet` to `correspondence`.
+  - `time_controls`: An indented list of acceptable time control types from `bullet` to `correspondence` (bots are not allowed to play `ultraBullet`).
 ```yml
   time_controls:
     - bullet

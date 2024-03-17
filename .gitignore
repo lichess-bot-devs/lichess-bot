@@ -2,3 +2,5 @@ config.yml
 **/__pycache__
 /engines/*
 !/engines/README.md
+lichess_bot_auto_logs/*
+.vscode/*

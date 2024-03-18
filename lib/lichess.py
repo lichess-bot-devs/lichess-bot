@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
+
 class OKResponse(TypedDict):
     """Often given by the API on POSTs or endpoints needing no further action."""
     ok: bool
@@ -268,8 +269,10 @@ class Lichess:
         :param game_id: The id of the game.
         :param move: The move to make.
         """
-        return cast(OKResponse, self.api_post("move", game_id, move.move,
-                             params={"offeringDraw": str(move.draw_offered).lower()}))
+        return cast(OKResponse, self.api_post(
+            "move", game_id, move.move,
+            params={"offeringDraw": str(move.draw_offered).lower()}
+        ))
 
     def chat(self, game_id: str, room: str, text: str) -> OKResponse:
         """
@@ -309,11 +312,12 @@ class Lichess:
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> OKResponse:
         """Decline a challenge."""
         try:
-            return cast(OKResponse, self.api_post("decline", challenge_id,
-                                 data=f"reason={reason}",
-                                 headers={"Content-Type":
-                                          "application/x-www-form-urlencoded"},
-                                 raise_for_status=False))
+            return cast(OKResponse, self.api_post(
+                "decline", challenge_id,
+                data=f"reason={reason}",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                raise_for_status=False
+            ))
         except Exception:
             return {"ok": False}
 

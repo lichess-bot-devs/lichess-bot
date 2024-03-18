@@ -10,7 +10,7 @@ import traceback
 from collections import defaultdict
 import datetime
 from lib.timer import Timer, seconds, sec_str
-from typing import Optional, Union, Any
+from typing import Optional, TypedDict, Union, Any, cast
 import chess.engine
 JSON_REPLY_TYPE = dict[str, Any]
 REQUESTS_PAYLOAD_TYPE = dict[str, Any]
@@ -40,6 +40,10 @@ ENDPOINTS = {
 logger = logging.getLogger(__name__)
 
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
+
+class OKResponse(TypedDict):
+    """Often given by the API on POSTs or endpoints needing no further action."""
+    ok: bool
 
 
 class RateLimited(RuntimeError):
@@ -253,21 +257,21 @@ class Lichess:
         """How much time is left until we can use the path template normally."""
         return self.rate_limit_timers[path_template].time_until_expiration()
 
-    def upgrade_to_bot_account(self) -> JSON_REPLY_TYPE:
+    def upgrade_to_bot_account(self) -> OKResponse:
         """Upgrade the account to a BOT account."""
-        return self.api_post("upgrade")
+        return cast(OKResponse, self.api_post("upgrade"))
 
-    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> JSON_REPLY_TYPE:
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> OKResponse:
         """
         Make a move.
 
         :param game_id: The id of the game.
         :param move: The move to make.
         """
-        return self.api_post("move", game_id, move.move,
-                             params={"offeringDraw": str(move.draw_offered).lower()})
+        return cast(OKResponse, self.api_post("move", game_id, move.move,
+                             params={"offeringDraw": str(move.draw_offered).lower()}))
 
-    def chat(self, game_id: str, room: str, text: str) -> JSON_REPLY_TYPE:
+    def chat(self, game_id: str, room: str, text: str) -> OKResponse:
         """
         Send a message to the chat.
 
@@ -279,44 +283,48 @@ class Lichess:
             logger.warning(f"This chat message is {len(text)} characters, which is longer "
                            f"than the maximum of {MAX_CHAT_MESSAGE_LEN}. It will not be sent.")
             logger.warning(f"Message: {text}")
-            return {}
+            return {"ok": False}
 
         payload = {"room": room, "text": text}
-        return self.api_post("chat", game_id, data=payload)
+        return cast(OKResponse, self.api_post("chat", game_id, data=payload))
 
-    def abort(self, game_id: str) -> JSON_REPLY_TYPE:
+    def abort(self, game_id: str) -> OKResponse:
         """Aborts a game."""
-        return self.api_post("abort", game_id)
+        return cast(OKResponse, self.api_post("abort", game_id))
 
+    # TODO: Align types with test_bot/lichess.py
     def get_event_stream(self) -> requests.models.Response:
         """Get a stream of the events (e.g. challenge, gameStart)."""
         return self.api_get("stream_event", stream=True, timeout=15)
 
+    # TODO: Align types with test_bot/lichess.py
     def get_game_stream(self, game_id: str) -> requests.models.Response:
         """Get  stream of the in-game events (e.g. moves by the opponent)."""
         return self.api_get("stream", game_id, stream=True, timeout=15)
 
-    def accept_challenge(self, challenge_id: str) -> JSON_REPLY_TYPE:
+    def accept_challenge(self, challenge_id: str) -> OKResponse:
         """Accept a challenge."""
-        return self.api_post("accept", challenge_id)
+        return cast(OKResponse, self.api_post("accept", challenge_id))
 
-    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> JSON_REPLY_TYPE:
+    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> OKResponse:
         """Decline a challenge."""
         try:
-            return self.api_post("decline", challenge_id,
+            return cast(OKResponse, self.api_post("decline", challenge_id,
                                  data=f"reason={reason}",
                                  headers={"Content-Type":
                                           "application/x-www-form-urlencoded"},
-                                 raise_for_status=False)
+                                 raise_for_status=False))
         except Exception:
-            return {}
+            return {"ok": False}
 
+    # TODO: Replace with a more specific type
     def get_profile(self) -> JSON_REPLY_TYPE:
         """Get the bot's profile (e.g. username)."""
         profile = self.api_get_json("profile")
         self.set_user_agent(profile["username"])
         return profile
 
+    # TODO: Replace with a more specific type
     def get_ongoing_games(self) -> list[dict[str, Any]]:
         """Get the bot's ongoing games."""
         ongoing_games: list[dict[str, Any]] = []
@@ -326,9 +334,9 @@ class Lichess:
             pass
         return ongoing_games
 
-    def resign(self, game_id: str) -> None:
+    def resign(self, game_id: str) -> OKResponse:
         """Resign a game."""
-        self.api_post("resign", game_id)
+        return cast(OKResponse, self.api_post("resign", game_id))
 
     def set_user_agent(self, username: str) -> None:
         """Set the user agent for communication with lichess.org."""
@@ -342,6 +350,7 @@ class Lichess:
         except Exception:
             return ""
 
+    # TODO: Replace with a more specific type
     def get_online_bots(self) -> list[dict[str, Any]]:
         """Get a list of bots that are online."""
         try:
@@ -351,14 +360,16 @@ class Lichess:
         except Exception:
             return []
 
+    # TODO: Replace with a more specific type
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
         """Create a challenge."""
         return self.api_post("challenge", username, payload=payload, raise_for_status=False)
 
-    def cancel(self, challenge_id: str) -> JSON_REPLY_TYPE:
+    def cancel(self, challenge_id: str) -> OKResponse:
         """Cancel a challenge."""
-        return self.api_post("cancel", challenge_id, raise_for_status=False)
+        return cast(OKResponse, self.api_post("cancel", challenge_id, raise_for_status=False))
 
+    # TOOD: Replace with a more specific type
     def online_book_get(self, path: str, params: Optional[dict[str, Any]] = None, stream: bool = False) -> JSON_REPLY_TYPE:
         """Get an external move from online sources (chessdb or lichess.org)."""
         @backoff.on_exception(backoff.constant,
@@ -380,6 +391,7 @@ class Lichess:
         user = self.api_get_list("status", params={"ids": user_id})
         return bool(user and user[0].get("online"))
 
+    # TODO: Replace with a more specific type
     def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
         """Get the public data of a bot."""
         return self.api_get_json("public_data", user_name)

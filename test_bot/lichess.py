@@ -9,8 +9,7 @@ import datetime
 from queue import Queue
 from typing import Union, Any, Optional, Generator
 from lib.timer import to_msec
-JSON_REPLY_TYPE = dict[str, Any]
-REQUESTS_PAYLOAD_TYPE = dict[str, Any]
+from lib.lichess import JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE, OKResponse
 
 logger = logging.getLogger(__name__)
 
@@ -147,22 +146,22 @@ class Lichess:
         self.sent_game = False
         self.started_game_stream = False
 
-    def upgrade_to_bot_account(self) -> JSON_REPLY_TYPE:
+    def upgrade_to_bot_account(self) -> OKResponse:
         """Isn't used in tests."""
-        return {}
+        return {"ok": True}
 
-    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> JSON_REPLY_TYPE:
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> OKResponse:
         """Send a move to the opponent engine thread."""
         self.move_queue.put(move.move)
-        return {}
+        return {"ok": True}
 
-    def chat(self, game_id: str, room: str, text: str) -> JSON_REPLY_TYPE:
+    def chat(self, game_id: str, room: str, text: str) -> OKResponse:
         """Isn't used in tests."""
-        return {}
+        return {"ok": True}
 
-    def abort(self, game_id: str) -> JSON_REPLY_TYPE:
+    def abort(self, game_id: str) -> OKResponse:
         """Isn't used in tests."""
-        return {}
+        return {"ok": True}
 
     def get_event_stream(self) -> EventStream:
         """Send the `EventStream`."""
@@ -177,13 +176,13 @@ class Lichess:
         self.started_game_stream = True
         return GameStream(self.board_queue, self.clock_queue)
 
-    def accept_challenge(self, challenge_id: str) -> JSON_REPLY_TYPE:
+    def accept_challenge(self, challenge_id: str) -> OKResponse:
         """Isn't used in tests."""
-        return {}
+        return {"ok": True}
 
-    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> JSON_REPLY_TYPE:
+    def decline_challenge(self, challenge_id: str, reason: str = "generic") -> OKResponse:
         """Isn't used in tests."""
-        return {}
+        return {"ok": True}
 
     def get_profile(self) -> dict[str, Union[str, bool, dict[str, str]]]:
         """Return a simple profile for the bot that lichess-bot uses when testing."""
@@ -202,9 +201,9 @@ class Lichess:
         """Return that the bot isn't playing a game."""
         return []
 
-    def resign(self, game_id: str) -> None:
+    def resign(self, game_id: str) -> OKResponse:
         """Isn't used in tests."""
-        return
+        return {"ok": True}
 
     def get_game_pgn(self, game_id: str) -> str:
         """Return a simple PGN."""
@@ -228,9 +227,9 @@ class Lichess:
         """Isn't used in tests."""
         return {}
 
-    def cancel(self, challenge_id: str) -> JSON_REPLY_TYPE:
+    def cancel(self, challenge_id: str) -> OKResponse:
         """Isn't used in tests."""
-        return {}
+        return {"ok": True}
 
     def online_book_get(self, path: str, params: Optional[dict[str, Any]] = None, stream: bool = False) -> JSON_REPLY_TYPE:
         """Isn't used in tests."""

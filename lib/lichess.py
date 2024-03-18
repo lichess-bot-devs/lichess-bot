@@ -44,6 +44,7 @@ MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 class OKResponse(TypedDict):
     """Often given by the API on POSTs or endpoints needing no further action."""
+
     ok: bool
 
 

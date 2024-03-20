@@ -264,10 +264,8 @@ class Lichess:
         :param game_id: The id of the game.
         :param move: The move to make.
         """
-        self.api_post(
-            "move", game_id, move.move,
-            params={"offeringDraw": str(move.draw_offered).lower()}
-        )
+        self.api_post("move", game_id, move.move,
+                      params={"offeringDraw": str(move.draw_offered).lower()})
 
     def chat(self, game_id: str, room: str, text: str) -> None:
         """
@@ -304,12 +302,10 @@ class Lichess:
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> None:
         """Decline a challenge."""
         try:
-            self.api_post(
-                "decline", challenge_id,
-                data=f"reason={reason}",
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                raise_for_status=False
-            )
+            self.api_post("decline", challenge_id,
+                          data=f"reason={reason}",
+                          headers={"Content-Type": "application/x-www-form-urlencoded"},
+                          raise_for_status=False)
         except Exception:
             pass
 

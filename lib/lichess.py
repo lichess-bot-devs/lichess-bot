@@ -309,14 +309,12 @@ class Lichess:
         except Exception:
             pass
 
-    # TODO: Replace with a more specific type
     def get_profile(self) -> JSON_REPLY_TYPE:
         """Get the bot's profile (e.g. username)."""
         profile = self.api_get_json("profile")
         self.set_user_agent(profile["username"])
         return profile
 
-    # TODO: Replace with a more specific type
     def get_ongoing_games(self) -> list[dict[str, Any]]:
         """Get the bot's ongoing games."""
         ongoing_games: list[dict[str, Any]] = []
@@ -342,7 +340,6 @@ class Lichess:
         except Exception:
             return ""
 
-    # TODO: Replace with a more specific type
     def get_online_bots(self) -> list[dict[str, Any]]:
         """Get a list of bots that are online."""
         try:
@@ -352,7 +349,6 @@ class Lichess:
         except Exception:
             return []
 
-    # TODO: Replace with a more specific type
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
         """Create a challenge."""
         return self.api_post("challenge", username, payload=payload, raise_for_status=False)
@@ -383,7 +379,6 @@ class Lichess:
         user = self.api_get_list("status", params={"ids": user_id})
         return bool(user and user[0].get("online"))
 
-    # TODO: Replace with a more specific type
     def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
         """Get the public data of a bot."""
         return self.api_get_json("public_data", user_name)

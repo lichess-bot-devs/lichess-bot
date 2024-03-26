@@ -2,8 +2,10 @@ token: "xxxxxxxxxxxxxxxxxxxxxx"    # Lichess OAuth2 Token.
 url: "https://lichess.org/"        # Lichess base URL.
 
 engine:                            # Engine settings.
-  dir: "./engines/"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
-  name: "engine_name"              # Binary name of the engine to use.
+  dir: "/usr/games/"
+    # dir: "./engines/"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
+    #name: "engine_name"              # Binary name of the engine to use.
+  name: "stockfish"
   working_dir: ""                  # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
                                    # NOTE: If working_dir is set, the engine will look for files and directories relative to this directory, not where lichess-bot was launched. Absolute paths are unaffected.
   protocol: "uci"                  # "uci", "xboard" or "homemade"
@@ -124,7 +126,7 @@ correspondence:
   ponder: false                    # Ponder in correspondence games the bot is connected to.
 
 challenge:                         # Incoming challenges.
-  concurrency: 1                   # Number of games to play simultaneously.
+  concurrency: 5                   # Number of games to play simultaneously.
   sort_by: "best"                  # Possible values: "best" and "first".
   accept_bot: true                 # Accepts challenges coming from other bots.
   only_bot: false                  # Accept challenges by bots only.
@@ -182,10 +184,10 @@ greeting:
                                    # "all" - every game is written to a single file named "{Bot name} games.pgn"
 
 matchmaking:
-  allow_matchmaking: false         # Set it to 'true' to challenge other bots.
-  allow_during_games: false        # Set it to 'true' to create challenges during long games.
+  allow_matchmaking: true         # Set it to 'true' to challenge other bots.
+  allow_during_games: true        # Set it to 'true' to create challenges during long games.
   challenge_variant: "random"      # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
-  challenge_timeout: 30            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
+  challenge_timeout: 1            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
     - 60
     - 180

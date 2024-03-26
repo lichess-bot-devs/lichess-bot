@@ -9,3 +9,4 @@ lichess_bot_auto_logs/*
 *.log
 *.txt
 TEMP/*
+venv

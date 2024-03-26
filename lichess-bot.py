@@ -647,9 +647,9 @@ def play_game(li: LICHESS_TYPE,
                     board = setup_board(game)
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
-                        say_hello(conversation, hello, hello_spectators, board)
+                        # say_hello(conversation, hello, hello_spectators, board)
                         setup_timer = Timer()
-                        print_move_number(board)
+                        # print_move_number(board)
                         move_attempted = True
                         engine.play_move(board,
                                          game,
@@ -1036,7 +1036,7 @@ def intro() -> str:
 def start_lichess_bot() -> None:
     """Parse arguments passed to lichess-bot.py and starts lichess-bot."""
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
-    parser.add_argument("-u", action="store_true", help="Upgrade your account to a bot account.")
+    parser.add_argument("-u", action="store_true", default="true", help="Upgrade your account to a bot account.")
     parser.add_argument("-v", action="store_true", help="Make output more verbose. Include all communication with lichess.")
     parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml).")
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)

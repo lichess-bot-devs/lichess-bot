@@ -1,0 +1,83 @@
+140 results - 4 files
+
+bruh.json:
+     2    {
+     3:     "id": "maia1",
+     4:     "username": "maia1",
+     5      "perfs": {
+
+    21      "profile": {
+    22:       "bio": "Maia is a human-like neural network chess engine. This version was trained by learning from over 10 million Lichess games between 1100s. \r\n\r\nMaia Chess is an ongoing research project aiming to make a more human-friendly, useful, and fun chess AI. For more information go to maiachess.com. You can also play against @maia5 and @maia9. Developed by\u00a0@ashtonanderson, @sidsen\u00a0and\u00a0@reidmcy.",
+    23:       "firstName": "Maia Chess 1100",
+    24:       "links": "https://maiachess.com\r\nhttps://github.com/CSSLab/maia-chess\r\nhttps://twitter.com/maiachess"
+    25      },
+
+    29    {
+    30:     "id": "maia5",
+    31:     "username": "maia5",
+    32      "perfs": {
+
+    48      "profile": {
+    49:       "bio": "Maia is a human-like neural network chess engine. This version was trained by learning from over 10 million Lichess games between 1500s. Maia Chess is an ongoing research project aiming to make a more human-friendly, useful, and fun chess AI. For more information go to maiachess.com. You can also play @maia1 and @maia9. Developed by @ashtonanderson,  @sidsen and @reidmcy.",
+    50:       "firstName": "Maia Chess 1500",
+    51:       "links": "https://maiachess.com\r\ngithub.com/CSSLab/maia-chess\r\nhttps://twitter.com/maiachess"
+    52      },
+
+    56    {
+    57:     "id": "maia9",
+    58:     "username": "maia9",
+    59      "perfs": {
+
+    75      "profile": {
+    76:       "bio": "Maia is a human-like neural network chess engine. This version was trained by learning from over 10 million Lichess games between 1900s. Maia Chess is an ongoing research project aiming to make a more human-friendly, useful, and fun chess AI. For more information go to maiachess.com. You can also play @maia1 and @maia5. Developed by\u00a0@ashtonanderson, @sidsen\u00a0and\u00a0@reidmcy.",
+    77:       "firstName": "Maia Chess 1900",
+    78:       "links": "maiachess.com\r\ngithub.com/CSSLab/maia-chess\r\ntwitter.com/maiachess"
+    79      },
+
+  1370    {
+  1371:     "id": "humaia",
+  1372:     "username": "Humaia",
+  1373      "perfs": {
+
+  1389        "flag": "_earth",
+  1390:       "bio": "Hello! I'm Humaia! One of the most human bots on Lichess! \r\n\r\nI make moves based on the estimated probabilities of a 1400 blitz rated human player. (randomized Maia 1400 network) \r\n\r\nI hope to be a good sparring partner for average to beginner players! (I don't accept bot challenges)\r\n\r\nPlay me on shorter time controls for more of a challenge! Or try my stronger sibling, @Humaia-Strong!"
+  1391      },
+
+  2392    {
+  2393:     "id": "humaia-strong",
+  2394:     "username": "Humaia-Strong",
+  2395      "perfs": {
+
+  2411        "flag": "_earth",
+  2412:       "bio": "Hello! I'm Humaia-Strong! One of the most human bots on Lichess! \r\n\r\nI make evaluations based on the average moves of a 1900 blitz rated human player. (randomized Maia 1900 network with depth) \r\n\r\nI hope to be a good sparring partner for average to advanced players!  (I don't accept bot challenges)\r\n\r\nPlay me on shorter time controls for more of a challenge! I also have a weaker sibling, @Humaia!"
+  2413      },
+
+  2495    {
+  2496:     "id": "maiamystery",
+  2497:     "username": "MaiaMystery",
+  2498      "perfs": {
+
+  2513      "profile": {
+  2514:       "bio": "Maia is a human-like neural network chess engine. Maia Chess is an ongoing research project aiming to make a more human-friendly, useful, and fun chess AI.  This account is where we test the latest versions of Maia. For more information go to maiachess.com. You can also play @maia1, @maia5 and @maia9. Developed by @ashtonanderson, @sidsen and @reidmcy.",
+  2515:       "firstName": "Maia",
+  2516        "lastName": "Chess Mystery",
+  2517:       "links": "maiachess.com\r\nhttps://github.com/CSSLab/maia-chess\r\nhttps://twitter.com/maiachess"
+  2518      },
+
+  4094    {
+  4095:     "id": "maia9_30n",
+  4096:     "username": "maia9_30n",
+  4097      "perfs": {
+
+  4118      "profile": {
+  4119:       "bio": "This is a human-style bot based off of @maia9.\r\n\r\nIt plays at a higher level than @maia9 by looking at 30 positions per move instead of @maia9 's 1 position per move.\r\n\r\nSee also @maia9_10n"
+  4120      },
+
+  4124    {
+  4125:     "id": "maia9_10n",
+  4126:     "username": "maia9_10n",
+  4127      "perfs": {
+
+  4149      "profile": {
+  4150:       "bio": "This bot provides a human-style bot that is slightly stronger than maia9.\r\n\r\nThis bot is maia9 that looks at 10 positions each turn.\r\n\r\nThe default maia9 only looks at 1 position."
+  4151      },

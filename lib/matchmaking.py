@@ -54,7 +54,7 @@ class Matchmaking:
         self.last_challenge_created_delay = Timer(seconds(25))  # Challenges expire after 20 seconds.
         self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
         self.last_user_profile_update_time = Timer(minutes(5))
-        self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
+        self.min_wait_time = seconds(1)  # Wait before new challenge to avoid api rate limits.
 
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
@@ -73,7 +73,7 @@ class Matchmaking:
         for name in self.matchmaking_cfg.block_list:
             self.add_to_block_list(name)
 
-    def should_create_challenge(self) -> bool:
+    def should_create_challenge(self) -> bool: #!!!
         """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         time_has_passed = self.last_game_ended_delay.is_expired()
@@ -212,7 +212,7 @@ class Matchmaking:
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 
-        online_bots = self.li.get_online_bots()
+        online_bots = self.li.get_online_bots() #!!!
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
         def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
@@ -239,6 +239,19 @@ class Matchmaking:
 
         return bot_username, base_time, increment, days, variant, mode
 
+
+    def choose_maia_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
+        """Choose only maia opponent."""
+        variant = 'standard'
+        mode = 'rated'
+        base_time = 180
+        increment = 1
+        days = 0
+        bot_username = ["maia1", "maia5", "maia9"][-1] # add humaia?
+        # bot_username = random.choice(["maia1", "maia5", "maia9", "Humaia", "Humaia-Strong", "MaiaMystery", "maia9_30n", "maia9_10n"])
+        return bot_username, base_time, increment, days, variant, mode
+
+
     def get_random_config_value(self, config: Configuration, parameter: str, choices: list[str]) -> str:
         """Choose a random value from `choices` if the parameter value in the config is `random`."""
         value: str = config.lookup(parameter)
@@ -258,10 +271,13 @@ class Matchmaking:
                 or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
                 or not self.should_create_challenge()):
             return
+        if (game_count >= max_games_for_matchmaking):
+            return
 
         logger.info("Challenging a random bot")
         self.update_user_profile()
-        bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
+        # bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
+        bot_username, base_time, increment, days, variant, mode = self.choose_maia_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
         logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")

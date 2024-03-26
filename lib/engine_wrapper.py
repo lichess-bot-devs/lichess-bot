@@ -196,7 +196,7 @@ class EngineWrapper:
             time.sleep(to_seconds(min_time - elapsed))
 
         self.add_comment(best_move, board)
-        self.print_stats()
+        # self.print_stats()
         if best_move.resigned and len(board.move_stack) >= 2:
             li.resign(game.id)
         else:
@@ -706,7 +706,7 @@ def game_clock_time(board: chess.Board,
     times = {side: msec(game.state[side]) for side in ["wtime", "btime"]}
     wb = "w" if board.turn == chess.WHITE else "b"
     times[f"{wb}time"] = max(msec(0), times[f"{wb}time"] - overhead)
-    logger.info(f"Searching for wtime {msec_str(times['wtime'])} btime {msec_str(times['btime'])} for game {game.id}")
+    # logger.info(f"Searching for wtime {msec_str(times['wtime'])} btime {msec_str(times['btime'])} for game {game.id}")
     return chess.engine.Limit(white_clock=to_seconds(times["wtime"]),
                               black_clock=to_seconds(times["btime"]),
                               white_inc=to_seconds(msec(game.state["winc"])),

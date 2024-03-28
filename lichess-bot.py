@@ -19,6 +19,7 @@ import math
 import sys
 import yaml
 import traceback
+import itertools
 import test_bot.lichess
 from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
@@ -636,12 +637,13 @@ def play_game(li: LICHESS_TYPE,
         disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else seconds(0)
         prior_game = None
         board = chess.Board()
-        upd: dict[str, Any] = game.state
+        game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
         quit_after_all_games_finish = config.quit_after_all_games_finish
-        while (not terminated or quit_after_all_games_finish) and not force_quit:
+        stay_in_game = True
+        while stay_in_game and (not terminated or quit_after_all_games_finish) and not force_quit:
             move_attempted = False
             try:
-                upd = upd or next_update(lines)
+                upd = next_update(game_stream)
                 u_type = upd["type"] if upd else "ping"
                 if u_type == "chatLine":
                     conversation.react(ChatLine(upd))
@@ -682,13 +684,10 @@ def play_game(li: LICHESS_TYPE,
                     game.ping(abort_time, terminate_time, disconnect_time)
                     prior_game = copy.deepcopy(game)
                 elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
-                    break
+                    stay_in_game = False
             except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, ConnectionError, StopIteration) as e:
                 stopped = isinstance(e, StopIteration)
-                if stopped or (not move_attempted and not game_is_active(li, game.id)):
-                    break
-            finally:
-                upd = {}
+                stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
 
         pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record)

@@ -624,6 +624,9 @@ def play_game(li: LICHESS_TYPE,
         move_overhead = msec(config.move_overhead)
         delay = msec(config.rate_limiting_delay)
 
+        takebacks_accepted = 0
+        max_takebacks_accepted = config.max_takebacks_accepted
+
         keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
         hello = get_greeting("hello", config.greeting, keyword_map)
         goodbye = get_greeting("goodbye", config.greeting, keyword_map)
@@ -645,6 +648,7 @@ def play_game(li: LICHESS_TYPE,
                 elif u_type == "gameState":
                     game.state = upd
                     board = setup_board(game)
+                    takeback_field = f'{"b" if game.is_white else "w"}takeback'
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
@@ -667,6 +671,11 @@ def play_game(li: LICHESS_TYPE,
                         engine.send_game_result(game, board)
                         conversation.send_message("player", goodbye)
                         conversation.send_message("spectator", goodbye_spectators)
+                    elif (game.state.get(takeback_field)
+                            and takebacks_accepted < max_takebacks_accepted
+                            and li.accept_takeback(game.id)):
+                        takebacks_accepted += 1
+                        engine.move_commentary.pop()
 
                     wb = "w" if board.turn == chess.WHITE else "b"
                     terminate_time = msec(upd[f"{wb}time"]) + msec(upd[f"{wb}inc"]) + seconds(60)

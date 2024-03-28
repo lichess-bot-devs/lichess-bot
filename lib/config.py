@@ -156,6 +156,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="quit_after_all_games_finish", default=False)
     set_config_default(CONFIG, key="rate_limiting_delay", default=0)
     set_config_default(CONFIG, key="pgn_file_grouping", default="game", force_empty_values=True)
+    set_config_default(CONFIG, key="max_takebacks_accepted", default=0, force_empty_values=True)
     set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)

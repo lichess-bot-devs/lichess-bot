@@ -677,7 +677,7 @@ def play_game(li: LICHESS_TYPE,
                             and not bot_to_move(game, board)
                             and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
                         takebacks_accepted += 1
-                        engine.move_commentary.pop()
+                        engine.discard_last_move_commentary()
 
                     wb = "w" if board.turn == chess.WHITE else "b"
                     terminate_time = msec(upd[f"{wb}time"]) + msec(upd[f"{wb}inc"]) + seconds(60)

@@ -316,6 +316,17 @@ class EngineWrapper:
             move_info["currmove"] = board.san(move.info["currmove"])
         self.move_commentary.append(move_info)
 
+    def discard_last_move_commentary(self) -> None:
+        """
+        Remove the commentary for the last move, if any.
+
+        Used after allowing an opponent to take back a move.
+        """
+        try:
+            self.move_commentary.pop()
+        except IndexError:
+            pass
+
     def print_stats(self) -> None:
         """Print the engine stats."""
         for line in self.get_stats():

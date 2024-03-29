@@ -674,6 +674,7 @@ def play_game(li: LICHESS_TYPE,
                         conversation.send_message("player", goodbye)
                         conversation.send_message("spectator", goodbye_spectators)
                     elif (game.state.get(takeback_field)
+                            and not bot_to_move(game, board)
                             and takebacks_accepted < max_takebacks_accepted
                             and li.accept_takeback(game.id)):
                         takebacks_accepted += 1
@@ -755,7 +756,18 @@ def setup_board(game: model.Game) -> chess.Board:
 
 def is_engine_move(game: model.Game, prior_game: Optional[model.Game], board: chess.Board) -> bool:
     """Check whether it is the engine's turn."""
-    return game_changed(game, prior_game) and game.is_white == (board.turn == chess.WHITE)
+    return game_changed(game, prior_game) and bot_to_move(game, board)
+
+
+def bot_to_move(game: model.Game, board: chess.Board) -> bool:
+    """
+    Determine whether it is the bot's move on the given board.
+
+    This only determines if the board state shows the bot is on move. It does not check if the board state has changed.
+    Messages from lichess can contain repeat board states if another game aspect has changed (draw offer, takeback offer,
+    etc.). Use is_engine_move() to determine if the engine should play a move.
+    """
+    return game.is_white == (board.turn == chess.WHITE)
 
 
 def is_game_over(game: model.Game) -> bool:

@@ -268,12 +268,12 @@ class Lichess:
         self.api_post("move", game_id, move.move,
                       params={"offeringDraw": str(move.draw_offered).lower()})
 
-    def accept_takeback(self, game_id: str) -> bool:
-        """Accept an opponent's move takeback request."""
+    def accept_takeback(self, game_id: str, accept: bool) -> bool:
+        """Answer an opponent's move takeback request."""
         try:
-            self.api_post("takeback", game_id, "yes")
+            self.api_post("takeback", game_id, "yes" if accept else "no")
             logger.info("Opponent took back previous move.")
-            return True
+            return accept
         except Exception:
             return False
 

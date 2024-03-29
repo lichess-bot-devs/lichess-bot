@@ -675,8 +675,7 @@ def play_game(li: LICHESS_TYPE,
                         conversation.send_message("spectator", goodbye_spectators)
                     elif (game.state.get(takeback_field)
                             and not bot_to_move(game, board)
-                            and takebacks_accepted < max_takebacks_accepted
-                            and li.accept_takeback(game.id)):
+                            and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
                         takebacks_accepted += 1
                         engine.move_commentary.pop()
 

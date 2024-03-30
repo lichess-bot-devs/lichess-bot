@@ -20,6 +20,7 @@ import sys
 import yaml
 import traceback
 import itertools
+import glob
 import test_bot.lichess
 from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
@@ -302,6 +303,7 @@ def lichess_bot_main(li: LICHESS_TYPE,
     one_game_completed = False
 
     all_games = li.get_ongoing_games()
+    prune_takeback_records(all_games)
     startup_correspondence_games = [game["gameId"]
                                     for game in all_games
                                     if game["speed"] == "correspondence"]
@@ -625,7 +627,7 @@ def play_game(li: LICHESS_TYPE,
         move_overhead = msec(config.move_overhead)
         delay = msec(config.rate_limiting_delay)
 
-        takebacks_accepted = 0
+        takebacks_accepted = read_takeback_record(game)
         max_takebacks_accepted = config.max_takebacks_accepted
 
         keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
@@ -677,6 +679,7 @@ def play_game(li: LICHESS_TYPE,
                             and not bot_to_move(game, board)
                             and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
                         takebacks_accepted += 1
+                        record_takeback(game, takebacks_accepted)
                         engine.discard_last_move_commentary()
 
                     wb = "w" if board.turn == chess.WHITE else "b"
@@ -691,6 +694,50 @@ def play_game(li: LICHESS_TYPE,
 
         pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
     final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record)
+    delete_takeback_record(game)
+
+
+def read_takeback_record(game: model.Game) -> int:
+    """Read the number of move takeback requests accepeted in a game."""
+    try:
+        with open(takeback_record_file_name(game.id)) as takeback_file:
+            return int(takeback_file.read())
+    except Exception:
+        return 0
+
+
+def record_takeback(game: model.Game, accepted_count: int) -> None:
+    """Record the number of move takeback requests accepeted in a game."""
+    with open(takeback_record_file_name(game.id), "w") as takeback_file:
+        takeback_file.write(str(accepted_count))
+
+
+def delete_takeback_record(game: model.Game) -> None:
+    """Delete the takeback record from a game if it has finished."""
+    if is_game_over(game):
+        try:
+            os.remove(takeback_record_file_name(game.id))
+        except Exception:
+            pass
+
+
+def prune_takeback_records(all_games: list[dict[str, Any]]) -> None:
+    """Delete takeback records from games that have ended."""
+    active_game_ids = set(game["gameID"] for game in all_games)
+    takeback_file_template = takeback_record_file_name("*")
+    prefix, suffix = takeback_file_template.split("*")
+    for takeback_file_name in glob.glob(takeback_file_template):
+        game_id = takeback_file_name.removeprefix(prefix).removesuffix(suffix)
+        if game_id not in active_game_ids:
+            try:
+                os.remove(takeback_file_name)
+            except Exception:
+                pass
+
+
+def takeback_record_file_name(game_id: str) -> str:
+    """Get the file name for recording the number of move takebacks accepted."""
+    return os.path.join(auto_log_directory, f"takeback-count-{game_id}.txt")
 
 
 def get_greeting(greeting: str, greeting_cfg: Configuration, keyword_map: defaultdict[str, str]) -> str:
@@ -1052,6 +1099,9 @@ def intro() -> str:
     """
 
 
+auto_log_directory = "lichess_bot_auto_logs"
+
+
 def start_lichess_bot() -> None:
     """Parse arguments passed to lichess-bot.py and starts lichess-bot."""
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
@@ -1065,7 +1115,7 @@ def start_lichess_bot() -> None:
     logging_level = logging.DEBUG if args.v else logging.INFO
     auto_log_filename = None
     if not args.disable_auto_logging:
-        auto_log_filename = "./lichess_bot_auto_logs/recent.log"
+        auto_log_filename = os.path.join(auto_log_directory, "recent.log")
     logging_configurer(logging_level, args.logfile, auto_log_filename, True)
     logger.info(intro(), extra={"highlighter": None})
 

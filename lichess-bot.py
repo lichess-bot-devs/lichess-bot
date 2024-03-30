@@ -723,7 +723,7 @@ def delete_takeback_record(game: model.Game) -> None:
 
 def prune_takeback_records(all_games: list[dict[str, Any]]) -> None:
     """Delete takeback records from games that have ended."""
-    active_game_ids = set(game["gameID"] for game in all_games)
+    active_game_ids = set(game["gameId"] for game in all_games)
     takeback_file_template = takeback_record_file_name("*")
     prefix, suffix = takeback_file_template.split("*")
     for takeback_file_name in glob.glob(takeback_file_template):

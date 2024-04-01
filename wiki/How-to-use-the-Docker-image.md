@@ -6,7 +6,7 @@ You can see an example of this file using the following command: ```docker run -
 You can also find documentation [here](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot).
 
 
-Once your configuration file is ready, let say in `/home/me/myEngine` folder, run the following command:
+Once your configuration file is ready, let's say in `/home/me/myEngine` folder, run the following command:
 ```docker run -d -v /home/me/myEngine:/engine lichess-bot-devs/lichess-bot```
 
 That's all!
@@ -16,7 +16,7 @@ If you want to pass some options to the ```lichess-bot.py``` executed in the con
 ```docker run -d -v /home/me/myEngine:/engine --env OPTIONS=-v lichess-bot-devs/lichess-bot```
 
 
-If you need, you can check the lichess release information using the following command: ```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot lib/versioning.yml```
+If you need to, you can check the lichess release information using the following command: ```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot lib/versioning.yml```
 
 ## What if my engine requires some software installation?
 You will have to create a new Docker image of your own and install the required software in your `Dockerfile`.

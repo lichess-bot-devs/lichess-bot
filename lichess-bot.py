@@ -45,7 +45,8 @@ LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 logger = logging.getLogger(__name__)
 
-with open("lib/versioning.yml") as version_file:
+# with open("lib/versioning.yml") as version_file:
+with open("/mnt/data/lichess_bot_eval_part_2/lichess-bot/lib/versioning.yml") as version_file:
     versioning_info = yaml.safe_load(version_file)
 
 __version__ = versioning_info["lichess_bot_version"]
@@ -366,7 +367,7 @@ def lichess_bot_main(li: LICHESS_TYPE,
                                              challenge_queue,
                                              play_game_args,
                                              active_games,
-                                             max_games)
+                                             max_games) #What is the point of the correspondence game
             accept_challenges(li, challenge_queue, active_games, max_games)
             matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
@@ -510,6 +511,7 @@ def start_game_thread(active_games: set[str], game_id: str, play_game_args: PLAY
     pool.apply_async(play_game,
                      kwds=play_game_args,
                      error_callback=game_error_handler)
+    # play_game(**play_game_args)
 
 
 def start_game(event: EVENT_TYPE,
@@ -572,8 +574,8 @@ def handle_challenge(event: EVENT_TYPE, li: LICHESS_TYPE, challenge_queue: MULTI
         li.decline_challenge(chlng.id, reason=decline_reason)
 
 
-@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
-                      on_backoff=lichess.backoff_handler)
+# @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
+#                       on_backoff=lichess.backoff_handler)
 def play_game(li: LICHESS_TYPE,
               game_id: str,
               control_queue: CONTROL_QUEUE_TYPE,
@@ -1041,16 +1043,25 @@ def start_lichess_bot() -> None:
     parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml).")
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
     parser.add_argument("--disable_auto_logging", action="store_true", help="Disable automatic logging.")
+    # parser.add_argument("--iter_num", help="Describes which iteration of the model training we are on.")
+    parser.add_argument("--weight_file", help="Describes which iteration of the model training we are on.")
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
     auto_log_filename = None
     if not args.disable_auto_logging:
-        auto_log_filename = "./lichess_bot_auto_logs/recent.log"
+        # auto_log_filename = "./lichess_bot_auto_logs/recent.log"
+        auto_log_filename = "/mnt/data/lichess_bot_eval_part_2/lichess-bot/lichess_bot_auto_logs/recent.log"
     logging_configurer(logging_level, args.logfile, auto_log_filename, True)
     logger.info(intro(), extra={"highlighter": None})
 
-    CONFIG = load_config(args.config or "./config.yml")
+    # CONFIG = load_config(args.config or "./config.yml")
+    CONFIG = load_config(args.config or "/mnt/data/lichess_bot_eval_part_2/lichess-bot/config.yml")
+    #this is the weight file. The default is the stockfish executable
+    os.environ["WEIGHT_FILE"] = args.weight_file
+    # CONFIG.engine.working_dir = f"../chess-nanogpt/out/ckpt_{iter_num}.pt" 
+    # CONFIG.engine.dir = "/mnt/data/lichess_bot_eval_part_2/chess-nanogpt/out"
+    # CONFIG.engine.name = f"ckpt_{iter_num}.pt"
     logger.info("Checking engine configuration ...")
     with engine_wrapper.create_engine(CONFIG):
         pass

@@ -53,7 +53,7 @@ class Matchmaking:
         self.user_profile = user_profile
         self.last_challenge_created_delay = Timer(seconds(25))  # Challenges expire after 20 seconds.
         # self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
-        self.last_game_ended_delay = Timer(seconds(1))
+        self.last_game_ended_delay = Timer(seconds(1)) # to speed up matchmaking
         self.last_user_profile_update_time = Timer(minutes(5))
         self.min_wait_time = seconds(1)  # Wait before new challenge to avoid api rate limits.
 
@@ -90,7 +90,9 @@ class Matchmaking:
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
         """Create a challenge."""
-        params = {"rated": mode == "rated", "variant": variant, "color": 'white' } 
+        # params = {"rated": mode == "rated", "variant": variant, "color": 'white' } # If you only want to test when the bot plays white
+        # params = {"rated": mode == "rated", "variant": variant, "color": 'black' } # If you only want to test when the bot plays black
+        params = {"rated": mode == "rated", "variant": variant}
 
         if days:
             params["days"] = days

@@ -1,5 +1,6 @@
 """The main module that controls lichess-bot."""
 import argparse
+from pathlib import Path
 import chess
 import chess.pgn
 from chess.variant import find_variant
@@ -46,7 +47,8 @@ LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 logger = logging.getLogger(__name__)
 
 # with open("lib/versioning.yml") as version_file:
-with open("/mnt/data/lichess_bot_eval_part_2/lichess-bot/lib/versioning.yml") as version_file:
+# with open("/mnt/data/lichess_bot_eval_part_2/lichess-bot/lib/versioning.yml") as version_file:
+with open(Path('lib/versioning.yml').absolute()) as version_file:
     versioning_info = yaml.safe_load(version_file)
 
 __version__ = versioning_info["lichess_bot_version"]
@@ -1043,8 +1045,8 @@ def start_lichess_bot() -> None:
     parser.add_argument("--config", help="Specify a configuration file (defaults to ./config.yml).")
     parser.add_argument("-l", "--logfile", help="Record all console output to a log file.", default=None)
     parser.add_argument("--disable_auto_logging", action="store_true", help="Disable automatic logging.")
-    # parser.add_argument("--iter_num", help="Describes which iteration of the model training we are on.")
     parser.add_argument("--weight_file", help="Describes which iteration of the model training we are on.")
+    parser.add_argument("--temperature", help="Describes which iteration of the model training we are on.")
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
@@ -1059,9 +1061,7 @@ def start_lichess_bot() -> None:
     CONFIG = load_config(args.config or "/mnt/data/lichess_bot_eval_part_2/lichess-bot/config.yml")
     #this is the weight file. The default is the stockfish executable
     os.environ["WEIGHT_FILE"] = args.weight_file
-    # CONFIG.engine.working_dir = f"../chess-nanogpt/out/ckpt_{iter_num}.pt" 
-    # CONFIG.engine.dir = "/mnt/data/lichess_bot_eval_part_2/chess-nanogpt/out"
-    # CONFIG.engine.name = f"ckpt_{iter_num}.pt"
+    os.environ["TEMPERATURE"] = args.temperature
     logger.info("Checking engine configuration ...")
     with engine_wrapper.create_engine(CONFIG):
         pass

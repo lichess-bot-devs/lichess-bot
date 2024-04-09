@@ -1,15 +1,10 @@
 """
 Sample from a trained model
 """
-import os
-import pickle
+from pathlib import Path
 from contextlib import nullcontext
 import torch
-import tiktoken
 from nanogpt.model import GPTConfig, GPT
-
-# BASE_DIR = "nanogpt/"
-BASE_DIR = "/mnt/data/lichess_bot_eval_part_2/lichess-bot/nanogpt/"
 
 
 class NanoGptPlayer:
@@ -31,10 +26,6 @@ class NanoGptPlayer:
         device = "cpu"
         dtype = "float16"  # 'float32' or 'bfloat16' or 'float16'
         compile = False  # use PyTorch 2.0 to compile the model to be faster
-        exec(
-            # open(f"{BASE_DIR}configurator.py").read() 
-            'open(f"{BASE_DIR}configurator.py").read()' # this needs to be a string type according to error
-        )  # overrides from command line or config file
         # -----------------------------------------------------------------------------
 
         torch.manual_seed(seed)
@@ -57,13 +48,8 @@ class NanoGptPlayer:
 
         # model
         if init_from == "resume":
-            # init from a model saved in a specific directory
-            # ckpt_path = os.path.join(BASE_DIR, out_dir, self.model_name)
-            # ckpt_path = f"nanogpt/out/{self.model_name}"
-            # ckpt_path = f"/mnt/data/lichess_bot_eval_part_2/chess-nanoGPT/{self.model_name}"
             ckpt_path = f"{self.model_name}"
             checkpoint = torch.load(ckpt_path, map_location=device)
-            # checkpoint = torch.load(ckpt_path, map_location=torch.device('cpu'))
             gptconf = GPTConfig(**checkpoint["model_args"])
             model = GPT(gptconf)
             state_dict = checkpoint["model"]

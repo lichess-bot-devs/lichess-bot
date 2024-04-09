@@ -63,7 +63,7 @@ def create_engine(engine_config: config.Configuration, game: Optional[model.Game
         from nanogpt_engine import NanoGPTEngine
         options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or config.Configuration({}))
         logger.debug(f"Starting engine: {commands}")
-        return NanoGPTEngine(os.environ["WEIGHT_FILE"], commands, options, stderr, cfg.draw_or_resign, game, cwd=cfg.working_dir, temperature=os.environ["TEMPERATURE"]) #TODO: Add the temperature hyperparameter to the config file (set to 0.)
+        return NanoGPTEngine(os.environ["WEIGHT_FILE"], commands, options, stderr, cfg.draw_or_resign, game, cwd=cfg.working_dir, temperature=os.environ["TEMPERATURE"])
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")

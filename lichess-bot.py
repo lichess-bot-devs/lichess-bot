@@ -575,9 +575,9 @@ def handle_challenge(event: EVENT_TYPE, li: LICHESS_TYPE, challenge_queue: MULTI
     else:
         li.decline_challenge(chlng.id, reason=decline_reason)
 
-
-# @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
-#                       on_backoff=lichess.backoff_handler)
+# Should comment out line below when debugging.
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
+                      on_backoff=lichess.backoff_handler)
 def play_game(li: LICHESS_TYPE,
               game_id: str,
               control_queue: CONTROL_QUEUE_TYPE,
@@ -1053,12 +1053,14 @@ def start_lichess_bot() -> None:
     auto_log_filename = None
     if not args.disable_auto_logging:
         # auto_log_filename = "./lichess_bot_auto_logs/recent.log"
-        auto_log_filename = "/mnt/data/lichess_bot_eval_part_2/lichess-bot/lichess_bot_auto_logs/recent.log"
+        # auto_log_filename = "/mnt/data/lichess_bot_eval_part_2/lichess-bot/lichess_bot_auto_logs/recent.log"
+        auto_log_filename = Path('lichess_bot_auto_logs/recent.log').absolute()
     logging_configurer(logging_level, args.logfile, auto_log_filename, True)
     logger.info(intro(), extra={"highlighter": None})
 
     # CONFIG = load_config(args.config or "./config.yml")
-    CONFIG = load_config(args.config or "/mnt/data/lichess_bot_eval_part_2/lichess-bot/config.yml")
+    # CONFIG = load_config(args.config or "/mnt/data/lichess_bot_eval_part_2/lichess-bot/config.yml")
+    CONFIG = load_config(args.config or Path('config.yml').absolute())
     #this is the weight file. The default is the stockfish executable
     os.environ["WEIGHT_FILE"] = args.weight_file
     os.environ["TEMPERATURE"] = args.temperature

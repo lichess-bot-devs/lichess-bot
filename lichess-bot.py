@@ -368,7 +368,7 @@ def lichess_bot_main(li: LICHESS_TYPE,
                                              challenge_queue,
                                              play_game_args,
                                              active_games,
-                                             max_games) #What is the point of the correspondence game
+                                             max_games)
             accept_challenges(li, challenge_queue, active_games, max_games)
             matchmaker.challenge(active_games, challenge_queue, max_games)
             check_online_status(li, user_profile, last_check_online_time)
@@ -575,8 +575,8 @@ def handle_challenge(event: EVENT_TYPE, li: LICHESS_TYPE, challenge_queue: MULTI
         li.decline_challenge(chlng.id, reason=decline_reason)
 
 # Should comment out line below when debugging.
-# @backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
-#                       on_backoff=lichess.backoff_handler)
+@backoff.on_exception(backoff.expo, BaseException, max_time=600, giveup=lichess.is_final,  # type: ignore[arg-type]
+                      on_backoff=lichess.backoff_handler)
 def play_game(li: LICHESS_TYPE,
               game_id: str,
               control_queue: CONTROL_QUEUE_TYPE,

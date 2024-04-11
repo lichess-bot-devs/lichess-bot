@@ -56,8 +56,3 @@ For instance, to launch the bot in verbose mode, run the command:
 ## How to know which release of lichess-bot is running?
 Use the following command: ```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot lib/versioning.yml```
 
-
-
-
-
-

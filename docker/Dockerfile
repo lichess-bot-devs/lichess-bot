@@ -18,4 +18,3 @@ RUN ln -s $CONF_FOLDER/config.yml config.yml &&\
     mv extra_game_handlers.py lib/extra_game_handlers_failover.py && ln -sf $CONF_FOLDER/extra_game_handlers.py extra_game_handlers.py
 
 CMD python3 lichess-bot.py ${OPTIONS} --disable_auto_logging
-

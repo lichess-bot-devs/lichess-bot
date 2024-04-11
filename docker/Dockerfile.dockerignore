@@ -2,3 +2,4 @@ docker/
 docs/
 wiki/
 .git*
+**/__pycache__

@@ -51,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./docker/Dockerfile-alpine
+          file: ./docker/Dockerfile
+          build-args: VARIANT=-alpine
           push: true
           tags: ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerAlpineTag}}

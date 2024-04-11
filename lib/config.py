@@ -84,6 +84,10 @@ def config_assert(assertion: bool, error_message: str) -> None:
     if not assertion:
         raise Exception(error_message)
 
+def config_warn(assertion: bool, warning_message: str) -> None:
+    """Raise an exception if an assertion is false."""
+    if not assertion:
+        logger.warning(warning_message)
 
 def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: ABCMeta, subsection: str = "") -> None:
     """
@@ -155,6 +159,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="move_overhead", default=1000)
     set_config_default(CONFIG, key="quit_after_all_games_finish", default=False)
     set_config_default(CONFIG, key="rate_limiting_delay", default=0)
+    set_config_default(CONFIG, key="pgn_directory", default=None)
     set_config_default(CONFIG, key="pgn_file_grouping", default="game", force_empty_values=True)
     set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
@@ -292,6 +297,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
             online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
             config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
+
+    pgn_directory = CONFIG["pgn_directory"]
+    in_docker = os.environ.get("LICHESS_BOT_DOCKER")
+    config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted volume; Using the Docker's container internal file system will prevent you accessing the saved files and can lead to disk saturation.".format(pgn_directory))
 
     valid_pgn_grouping_options = ["game", "opponent", "all"]
     config_pgn_choice = CONFIG["pgn_file_grouping"]

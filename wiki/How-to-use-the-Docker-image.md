@@ -11,16 +11,13 @@ You can also find documentation [here](https://github.com/lichess-bot-devs/liche
 
 ## Run the bot
 
-Once your configuration file is ready, let's say in `/home/me/myEngine` folder.
-- if the bot does not use a custom `extra_game_handlers.py`, run the following command:  
-```docker run -d -v /home/me/myEngine:/engine --name myBot lichess-bot-devs/lichess-bot```
-- if the bot uses custom `extra_game_handlers.py`, you should mount your `extra_game_handlers.py` file in `/lichessbot/extra_game_handlers.py`. The command is:  
-```docker run -d -v /home/me/myEngine:/engine -v /home/me/myEngine/extra_game_handlers.py:/lichessbot/extra_game_handlers.py --name myBot lichess-bot-devs/lichess-bot```
+Once your configuration files are ready, let's say in `/home/me/myEngine` folder, run the following command:  
+```docker run -d -v /home/me/myEngine:/lichess-bot/config --name myBot lichess-bot-devs/lichess-bot```
 
 That's all!
 
 ### Warning:
-- **If you've configured a folder to save pgn files** using [`pgn_directory`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot#other-options) that is not in `/engine` directory, always mount a volume to that folder. Without that, your saved games will remain unreachable from the outside of the container, and storing a lot of games in the container's file system could result in disk saturation.
+- **If you've configured a folder to save pgn files** using [`pgn_directory`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot#other-options) that is not in `/lichess-bot/config` directory, always mount a volume to that folder. Without that, your saved games will remain unreachable from the outside of the container, and storing a lot of games in the container's file system could result in disk saturation.
 - The container uses the standard docker logging system and the bot is always launched with the `--disable_auto_logging` option.
   Use the `docker logs myBot` [command](https://docs.docker.com/reference/cli/docker/container/logs/) to access to the bot logs.
 
@@ -51,7 +48,8 @@ Please note that, as `lichess-bot:alpine` image is based on [Alpine](https://www
 
 If you want to pass some options to the ```lichess-bot.py``` executed in the container, add them in the ```OPTIONS``` environment variable.  
 For instance, to launch the bot in verbose mode, run the command:  
-```docker run -d -v /home/me/myEngine:/engine --env OPTIONS=-v lichess-bot-devs/lichess-bot```
+```docker run -d -v /home/me/myEngine:/lichess-bot/config --env OPTIONS=-v lichess-bot-devs/lichess-bot```
 
 ## How to know which release of lichess-bot is running?
 Use the following command: ```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot lib/versioning.yml```
+

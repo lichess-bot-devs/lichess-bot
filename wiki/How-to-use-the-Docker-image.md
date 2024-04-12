@@ -2,7 +2,7 @@
 ## Prepare the deployment
 Create a folder where you will put your configuration file, the UCI/XBoard program that runs your engine (be aware that this program will run inside the container ... in a Linux OS) or your own [`homemade.py`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Create-a-homemade-engine) and, if required, your own [`extra_game_handlers.py`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Extra-customizations).
 
-The configuration file **must** be named ```config.yml```.
+The configuration file **must** be named `config.yml`.
 
 You can see an example of this file using the following command:  
 ```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot config.yml.default```.
@@ -17,6 +17,7 @@ Once your configuration files are ready, let's say in `/home/me/myEngine` folder
 That's all!
 
 ### Warning:
+- Make sure you've set the `dir` and `working_dir` attributes of your `config.yml` to the right path (remember the engine runs in the container's OS, so the path should start with `/lichess-bot/config/`).
 - **If you've configured a folder to save pgn files** using [`pgn_directory`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot#other-options) that is not in `/lichess-bot/config` directory, always mount a volume to that folder. Without that, your saved games will remain unreachable from the outside of the container, and storing a lot of games in the container's file system could result in disk saturation.
 - The container uses the standard docker logging system and the bot is always launched with the `--disable_auto_logging` option.
   Use the `docker logs myBot` [command](https://docs.docker.com/reference/cli/docker/container/logs/) to access to the bot logs.

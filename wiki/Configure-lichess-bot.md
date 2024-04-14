@@ -215,6 +215,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
       1. Sign into the bot's account on the lichess website.
       2. Go to the [`Game behavior`](https://lichess.org/account/preferences/game-behavior) section of the bot's preferences page.
       3. Under `Takebacks (with opponent approval)`, select `Always` or `In casual games only`.
+    - Note: bots requesting a move takeback (whether through lichess-bot or through the lichess website) is not supported.
 - `quit_after_all_games_finish`: If this is set to `true`, then pressing Ctrl-c to quit will cause lichess-bot to terminate after all in-progress games are finished. No new challenges will be sent or accepted, nor will any correspondence games be checked on. If `false` (the default), lichess-bot will terminate immediately and not wait to finish games in progress. If this value is `true` and you find that you need to quit immediately, press Ctrl-c twice.
 - `pgn_directory`: Write a record of every game played in PGN format to files in this directory. Each bot move will be annotated with the bot's calculated score and principal variation. The score is written with a tag of the form `[%eval s,d]`, where `s` is the score in pawns (positive means white has the advantage), and `d` is the depth of the search.
 - `pgn_file_grouping`: Determine how games are written to files. There are three options:

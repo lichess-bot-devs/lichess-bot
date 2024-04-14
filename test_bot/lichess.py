@@ -154,6 +154,10 @@ class Lichess:
         """Send a move to the opponent engine thread."""
         self.move_queue.put(move.move)
 
+    def accept_takeback(self, game_id: str, accept: bool) -> None:
+        """Isn't used in tests."""
+        pass
+
     def chat(self, game_id: str, room: str, text: str) -> None:
         """Isn't used in tests."""
         pass

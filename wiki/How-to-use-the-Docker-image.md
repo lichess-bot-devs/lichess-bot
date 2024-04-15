@@ -23,7 +23,10 @@ That's all!
   Use the `docker logs myBot` [command](https://docs.docker.com/reference/cli/docker/container/logs/) to access to the bot logs.
 
 # Image variants
-The `lichess-bot` images come in two flavors, each designed for a specific use case.
+
+The `lichess-bot` images come in two flavors, each designed for a specific use case.  
+Both are available through [Docker hub](https://hub.docker.com/repository/docker/lichess-bot-devs/lichess-bot) and [Github container registry](https://github.com/lichess-bot-devs/lichess-bot/pkgs/container/lichess-bot).
+
 ## lichess-bot:\<version\>
 This is the defacto image. It is based on the [`python:3`](https://hub.docker.com/_/python) image.
 If you are unsure about what your needs are, you probably want to use this one.

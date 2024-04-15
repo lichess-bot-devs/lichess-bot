@@ -12,6 +12,9 @@ on:
     branches:
       - master
 
+env:
+  GB_REGISTRY: ghcr.io
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,13 +42,22 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PWD }}
           
+      - name: Login to Github container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GB_REGISTRY }}
+          username: ${{ secrets.GB_REPO_USER }}
+          password: ${{ secrets.GB_REPO_PWD }}
+          
       - name: build and push fat image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerTag}}          
+          tags: |
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerTag}}
+            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerTag}}       
 
       - name: build and push alpine image
         uses: docker/build-push-action@v5
@@ -54,4 +66,6 @@ jobs:
           file: ./docker/Dockerfile
           build-args: VARIANT=-alpine
           push: true
-          tags: ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerAlpineTag}}
+          tags: |
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerAlpineTag}}
+            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerAlpineTag}}

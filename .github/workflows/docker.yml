@@ -1,16 +1,11 @@
 name: Docker CI
 
 on:
-  # Configure Manual Trigger
-  workflow_dispatch:
-    inputs:
-      dockerTagPrefix:
-        description: 'Docker image tag prefix'
-        required: true
-        default: 'latest'
   push:
     branches:
       - master
+    paths:
+      - lib/versioning.yml
 
 env:
   GB_REGISTRY: ghcr.io
@@ -23,18 +18,12 @@ jobs:
       
       - name: Assign defaultValue
         run: |
-          USER_INPUT="${{ github.event.inputs.dockerTagPrefix }}"
-          # Use user input or fall back to "latest"
-          dockerTag=${USER_INPUT:-"latest"}
-          echo dockerTag="$dockerTag" >> "$GITHUB_ENV"
-          # Use $dockerTag-alpine or fall back to "alpine"
-          dockerAlpineTag=$([ "$dockerTag" = "latest" ] && echo "alpine" || echo $dockerTag"-alpine")
-          echo dockerAlpineTag="$dockerAlpineTag" >> "$GITHUB_ENV"
+          version=$(grep -m1 '^lichess_bot_version: ' lib/versioning.yml | sed -n -e 's/^.*://p' | tr -d '[:space:]')
+          echo version="$version" >> "$GITHUB_ENV"
       
       - name: show me docker tags.
         run: |
-          echo "dockerTag:'"$dockerTag"'"
-          echo "dockerAlpineTag:'"$dockerAlpineTag"'"
+          echo "version:'"$version"'"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -56,8 +45,10 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: |
-            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerTag}}
-            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerTag}}       
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
+            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
+            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
 
       - name: build and push alpine image
         uses: docker/build-push-action@v5
@@ -67,5 +58,7 @@ jobs:
           build-args: VARIANT=-alpine
           push: true
           tags: |
-            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerAlpineTag}}
-            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{env.dockerAlpineTag}}
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
+            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
+            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine

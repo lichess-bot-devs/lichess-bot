@@ -101,7 +101,7 @@ class Challenge:
             try:
                 from extra_game_handlers import is_supported_extra
             except ImportError:
-                from lib.extra_game_handlers_failover import is_supported_extra  # type: ignore
+                from lib.extra_game_handlers_failover import is_supported_extra  # type: ignore[import-untyped,no-redef]
 
             allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")

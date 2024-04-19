@@ -21,7 +21,7 @@ from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 try:
     from extra_game_handlers import game_specific_options
 except ImportError:
-    from lib.extra_game_handlers_failover import game_specific_options
+    from lib.extra_game_handlers_failover import game_specific_options  # type: ignore[import-untyped,no-redef]
 
 
 from typing import Any, Optional, Union, Literal, Type

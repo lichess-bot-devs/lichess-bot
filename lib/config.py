@@ -90,6 +90,7 @@ def config_warn(assertion: bool, warning_message: str) -> None:
     if not assertion:
         logger.warning(warning_message)
 
+
 def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: ABCMeta, subsection: str = "") -> None:
     """
     Check the validity of a config section.

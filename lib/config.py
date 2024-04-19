@@ -84,6 +84,7 @@ def config_assert(assertion: bool, error_message: str) -> None:
     if not assertion:
         raise Exception(error_message)
 
+
 def config_warn(assertion: bool, warning_message: str) -> None:
     """Raise an exception if an assertion is false."""
     if not assertion:
@@ -300,7 +301,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")
-    config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted volume; Using the Docker's container internal file system will prevent you accessing the saved files and can lead to disk saturation.".format(pgn_directory))
+    config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted "
+                                                    "volume; Using the Docker's container internal file system will prevent "
+                                                    "you accessing the saved files and can lead to disk "
+                                                    "saturation.".format(pgn_directory))
 
     valid_pgn_grouping_options = ["game", "opponent", "all"]
     config_pgn_choice = CONFIG["pgn_file_grouping"]

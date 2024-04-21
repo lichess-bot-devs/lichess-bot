@@ -18,6 +18,7 @@ That's all!
 
 ### Warning:
 - Make sure you've set the `dir` and `working_dir` attributes of your `config.yml` to the right path (remember the engine runs in the container's OS, so the path should start with `/lichess-bot/config/`).
+- If you are using a homemade engine provided in the original [`homemade.py` file in the Github project](https://github.com/lichess-bot-devs/lichess-bot/blob/master/homemade.py), you **must** add this file to the folder containing your configuration files.
 - **If you've configured a folder to save pgn files** using [`pgn_directory`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot#other-options) that is not in `/lichess-bot/config` directory, always mount a volume to that folder. Without that, your saved games will remain unreachable from the outside of the container, and storing a lot of games in the container's file system could result in disk saturation.
 - The container uses the standard docker logging system and the bot is always launched with the `--disable_auto_logging` option.
   Use the `docker logs myBot` [command](https://docs.docker.com/reference/cli/docker/container/logs/) to access to the bot logs.

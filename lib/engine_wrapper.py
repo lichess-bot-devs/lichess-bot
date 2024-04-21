@@ -18,12 +18,7 @@ from collections.abc import Callable
 from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
-try:
-    from extra_game_handlers import game_specific_options
-except ImportError:
-    from lib.extra_game_handlers_failover import game_specific_options  # type: ignore[import-untyped,no-redef]
-
-
+from lib.extra_game_handlers_wrapper import game_specific_options
 from typing import Any, Optional, Union, Literal, Type
 from types import TracebackType
 OPTIONS_TYPE = dict[str, Any]

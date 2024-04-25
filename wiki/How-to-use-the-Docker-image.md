@@ -23,6 +23,10 @@ That's all!
 - The container uses the standard docker logging system and the bot is always launched with the `--disable_auto_logging` option.
   Use the `docker logs myBot` [command](https://docs.docker.com/reference/cli/docker/container/logs/) to access to the bot logs.
 
+## Stop and delete the bot
+Use the standard commands.  
+If you used the command from the [Run chapter](#run-the-bot) above: ```docker stop myBot``` and ```docker rm myBot```
+
 # Image variants
 
 The `lichess-bot` images come in two flavors, each designed for a specific use case.  

@@ -29,14 +29,14 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PWD }}
+          password: ${{ secrets.DOCKER_TOKEN }}
           
       - name: Login to Github container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.GB_REGISTRY }}
           username: ${{ secrets.GB_REPO_USER }}
-          password: ${{ secrets.GB_REPO_PWD }}
+          password: ${{ secrets.GB_REPO_TOKEN }}
           
       - name: build and push fat image
         uses: docker/build-push-action@v5

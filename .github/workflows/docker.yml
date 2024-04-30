@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - lib/versioning.yml
 
 env:
   GB_REGISTRY: ghcr.io

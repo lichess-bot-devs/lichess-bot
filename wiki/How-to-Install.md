@@ -37,4 +37,10 @@ pip install -r requirements.txt
 PowerShell note: If the `activate` command does not work in PowerShell, execute `Set-ExecutionPolicy RemoteSigned` first and choose `Y` there (you may need to run Powershell as administrator). After you execute the script, change execution policy back with `Set-ExecutionPolicy Restricted` and pressing `Y`.
 - Copy `config.yml.default` to `config.yml`.
 
+### Docker
+If you have a [Docker](https://www.docker.com/) host, you can use the ```lichess-bot-devs/lichess-bot``` [image in DockerHub](https://hub.docker.com/repository/docker/lichess-bot-devs/lichess-bot).  
+It requires a folder where you have to copy `config.yml.default` to `config.yml`.
+
+See [Running with Docker](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-use-the-Docker-image) once you've created the OAuth token and setup the engine.  
+
 **Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)

@@ -5,14 +5,14 @@ Create a folder where you will put your configuration file, the UCI/XBoard progr
 The configuration file **must** be named `config.yml`.
 
 You can see an example of this file using the following command:  
-```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot config.yml.default```.
+```docker run --rm --entrypoint=cat lichessbotdevs/lichess-bot config.yml.default```.
 
 You can also find documentation [here](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot).
 
 ## Run the bot
 
 Once your configuration files are ready, let's say in `/home/me/myEngine` folder, run the following command:  
-```docker run -d -v /home/me/myEngine:/lichess-bot/config --name myBot lichess-bot-devs/lichess-bot```
+```docker run -d -v /home/me/myEngine:/lichess-bot/config --name myBot lichessbotdevs/lichess-bot```
 
 That's all!
 
@@ -47,7 +47,7 @@ This variant is useful when final image size being as small as possible is your 
 You will have to create a new Docker image of your own and install the required software in your `Dockerfile`.
 For example to install java 17, the docker file would look like:  
 ```
-FROM lichess-bot-devs/lichess-bot:alpine
+FROM lichessbotdevs/lichess-bot:alpine
 
 RUN apk add --no-cache openjdk17-jre
 ```
@@ -57,8 +57,7 @@ Please note that, as `lichess-bot:alpine` image is based on [Alpine](https://www
 
 If you want to pass some options to the ```lichess-bot.py``` executed in the container, add them in the ```OPTIONS``` environment variable.  
 For instance, to launch the bot in verbose mode, run the command:  
-```docker run -d -v /home/me/myEngine:/lichess-bot/config --env OPTIONS=-v lichess-bot-devs/lichess-bot```
+```docker run -d -v /home/me/myEngine:/lichess-bot/config --env OPTIONS=-v lichessbotdevs/lichess-bot```
 
 ## How to know which release of lichess-bot is running?
-Use the following command: ```docker run --rm --entrypoint=cat lichess-bot-devs/lichess-bot lib/versioning.yml```
-
+Use the following command: ```docker run --rm --entrypoint=cat lichessbotdevs/lichess-bot lib/versioning.yml```

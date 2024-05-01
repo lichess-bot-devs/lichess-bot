@@ -1,11 +1,10 @@
 name: Docker CI
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - lib/versioning.yml
+  workflow_run:
+    workflows: [Versioning]
+    types:
+      - completed
 
 env:
   GB_REGISTRY: ghcr.io
@@ -13,6 +12,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       

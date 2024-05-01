@@ -47,8 +47,8 @@ jobs:
           tags: |
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
-            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
-            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
+            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
+            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
 
       - name: build and push alpine image
         uses: docker/build-push-action@v5
@@ -60,5 +60,5 @@ jobs:
           tags: |
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
-            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
-            ${{ env.GB_REGISTRY }}/${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
+            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
+            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine

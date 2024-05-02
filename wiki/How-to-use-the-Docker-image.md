@@ -1,4 +1,12 @@
 # How to launch your bot
+## Download the docker image
+The images are available through [Docker hub](https://hub.docker.com/r/lichessbotdevs/lichess-bot) and [Github container registry](https://github.com/lichess-bot-devs/lichess-bot/pkgs/container/lichess-bot).
+Run `docker pull lichessbotdevs/lichess-bot` to download from docker hub, or run `docker pull ghcr.io/fathzer/lichess-bot` if you want to download it from the Github container registry.
+
+**NOTE**: On Docker hub, the organization name is `lichessbotdevs` (without hyphens) while on the Github container registry it is `lichess-bot-devs`. The package name is in both cases `lichess-bot` (with hyphens).
+
+In the steps below replace `lichessbotdevs` with `ghcr.io/lichess-bot-devs` if you downloaded the image through the Github container registry.
+
 ## Prepare the deployment
 Create a folder where you will put your configuration file, the UCI/XBoard program that runs your engine (be aware that this program will run inside the container ... in a Linux OS) or your own [`homemade.py`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Create-a-homemade-engine) and, if required, your own [`extra_game_handlers.py`](https://github.com/lichess-bot-devs/lichess-bot/wiki/Extra-customizations).
 
@@ -30,16 +38,19 @@ If you used the command from the [Run chapter](#run-the-bot) above: ```docker st
 # Image variants
 
 The `lichess-bot` images come in two flavors, each designed for a specific use case.  
-Both are available through [Docker hub](https://hub.docker.com/repository/docker/lichess-bot-devs/lichess-bot) and [Github container registry](https://github.com/lichess-bot-devs/lichess-bot/pkgs/container/lichess-bot).
 
 ## lichess-bot:\<version\>
 This is the defacto image. It is based on the [`python:3`](https://hub.docker.com/_/python) image.
 If you are unsure about what your needs are, you probably want to use this one.
 
+To download the latest version use `lichess-bot:latest`.
+
 ## lichess-bot:\<version\>-alpine
 This image is based on the popular Alpine Linux project, available in the alpine official image. Alpine Linux is much smaller than most distribution base images, and thus leads to a much slimmer image than the default one (80MB instead of 1GB).
 
 This variant is useful when final image size being as small as possible is your primary concern. The main caveat to note is that it does use musl libc instead of glibc and friends, so software will often run into issues depending on the depth of their libc requirements/assumptions. For instance, running [Stockfish](https://stockfishchess.org/) on this image requires extra libraries installation.
+
+To download the latest version use `lichess-bot:alpine`.
 
 # Some tips
 

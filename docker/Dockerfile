@@ -14,4 +14,4 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 ARG CONF_FOLDER=$LICHESS_DIR/config
 
-CMD docker/copy_files.sh $CONF_FOLDER && python3 lichess-bot.py ${OPTIONS} --disable_auto_logging
+CMD docker/copy_files.sh && python3 lichess-bot.py ${OPTIONS} --disable_auto_logging

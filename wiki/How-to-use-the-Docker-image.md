@@ -1,7 +1,7 @@
 # How to launch your bot
 ## Download the docker image
 The images are available through [Docker hub](https://hub.docker.com/r/lichessbotdevs/lichess-bot) and [Github container registry](https://github.com/lichess-bot-devs/lichess-bot/pkgs/container/lichess-bot).
-Run `docker pull lichessbotdevs/lichess-bot` to download from docker hub, or run `docker pull ghcr.io/fathzer/lichess-bot` if you want to download it from the Github container registry.
+Run `docker pull lichessbotdevs/lichess-bot` to download from docker hub, or run `docker pull ghcr.io/lichess-bot-devs/lichess-bot` if you want to download it from the Github container registry.
 
 **NOTE**: On Docker hub, the organization name is `lichessbotdevs` (without hyphens) while on the Github container registry it is `lichess-bot-devs`. The package name is in both cases `lichess-bot` (with hyphens).
 

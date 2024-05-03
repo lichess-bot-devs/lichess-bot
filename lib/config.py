@@ -7,7 +7,7 @@ import logging
 import math
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Union
+from typing import Any, Union, ItemsView
 CONFIG_DICT_TYPE = dict[str, Any]
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class Configuration:
         data = self.config.get(name)
         return Configuration(data) if isinstance(data, dict) else data
 
-    def items(self) -> Any:
+    def items(self) -> ItemsView[str, Any]:
         """:return: All the key-value pairs in this config."""
         return self.config.items()
 

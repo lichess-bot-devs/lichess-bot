@@ -839,9 +839,7 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
               "good": "querybest",
               "all": "query"}
     try:
-        params = {"action": action[quality],
-                  "board": board.fen(),
-                  "json": 1}
+        params: dict[str, Union[str, int]] = {"action": action[quality], "board": board.fen(), "json": 1}
         data = li.online_book_get(site, params=params)
         if data["status"] == "ok":
             if quality == "best":
@@ -878,7 +876,7 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
 
     quality = lichess_cloud_cfg.move_quality
     multipv = 1 if quality == "best" else 5
-    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy.
 
     try:
         data = li.online_book_get("https://lichess.org/api/cloud-eval",
@@ -930,8 +928,9 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
 
     move = None
     comment: chess.engine.InfoDict = {}
-    variant = "standard" if board.uci_variant == "chess" else board.uci_variant
+    variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy
     try:
+        params: dict[str, Union[str, int]]
         if source == "masters":
             params = {"fen": board.fen(), "moves": 100}
             response = li.online_book_get("https://explorer.lichess.ovh/masters", params)

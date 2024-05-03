@@ -38,18 +38,6 @@ jobs:
           username: ${{ secrets.GB_REPO_USER }}
           password: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: build and push fat image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: |
-            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
-            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
-            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
-            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
-
       - name: build and push alpine image
         uses: docker/build-push-action@v5
         with:
@@ -62,3 +50,26 @@ jobs:
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
             ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
             ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
+      
+      - name: build and push fat image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
+            ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
+            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest
+            ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
+
+      - name: push README to Dockerhub
+        uses: christian-korneck/update-container-description-action@v1
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.DOCKER_TOKEN }}
+        with:
+          destination_container_repo: lichessbotdevs/lichess-bot
+          provider: dockerhub
+          short_description: 'A bridge between Lichess API and chess engines'
+          readme_file: './wiki/How-to-use-the-Docker-image.md'

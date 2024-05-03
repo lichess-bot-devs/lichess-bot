@@ -13,8 +13,5 @@ COPY . .
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 ARG CONF_FOLDER=$LICHESS_DIR/config
-RUN ln -s $CONF_FOLDER/config.yml config.yml &&\
-    ln -sf $CONF_FOLDER/homemade.py homemade.py &&\
-    ln -sf $CONF_FOLDER/extra_game_handlers.py extra_game_handlers.py
 
-CMD python3 lichess-bot.py ${OPTIONS} --disable_auto_logging
+CMD docker/copy_files.sh && python3 lichess-bot.py ${OPTIONS} --disable_auto_logging

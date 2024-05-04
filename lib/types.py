@@ -4,7 +4,6 @@ from chess.engine import PovWdl, PovScore, PlayResult
 from chess import Move
 from queue import Queue
 import logging
-from multiprocessing.pool import Pool
 from enum import Enum
 
 JSON_REPLY_TYPE = dict[str, Any]
@@ -16,7 +15,6 @@ MOVE = Union[PlayResult, list[Move]]
 CONFIG_DICT_TYPE = dict[str, Any]
 CORRESPONDENCE_QUEUE_TYPE = Queue[str]
 LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
-POOL_TYPE = Pool
 
 
 class PerfType(TypedDict, total=False):

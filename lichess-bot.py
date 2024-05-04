@@ -27,7 +27,7 @@ from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
 from lib.types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE, CORRESPONDENCE_QUEUE_TYPE,
-                       LOGGING_QUEUE_TYPE, POOL_TYPE)
+                       LOGGING_QUEUE_TYPE)
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from rich.logging import RichHandler
 from collections import defaultdict
@@ -39,6 +39,7 @@ from typing import Optional, Union, TypedDict
 from types import FrameType
 MULTIPROCESSING_LIST_TYPE = MutableSequence[model.Challenge]
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
+POOL_TYPE = Pool
 
 
 class PlayGameArgsType(TypedDict, total=False):
@@ -655,10 +656,7 @@ def play_game(li: LICHESS_TYPE,
                 elif u_type == "gameState":
                     game.state = upd
                     board = setup_board(game)
-                    if game.is_white:
-                        takeback_field = game.state.get("btakeback")
-                    else:
-                        takeback_field = game.state.get("wtakeback")
+                    takeback_field = game.state.get("btakeback") if game.is_white else game.state.get("wtakeback")
 
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
@@ -689,13 +687,8 @@ def play_game(li: LICHESS_TYPE,
                         record_takeback(game, takebacks_accepted)
                         engine.discard_last_move_commentary()
 
-                    wb = "w" if board.turn == chess.WHITE else "b"
-                    if board.turn == chess.WHITE:
-                        wbtime = upd["wtime"]
-                        wbinc = upd["winc"]
-                    else:
-                        wbtime = upd["btime"]
-                        wbinc = upd["binc"]
+                    wbtime = upd["wtime"] if board.turn == chess.WHITE else upd["btime"]
+                    wbinc = upd["winc"] if board.turn == chess.WHITE else upd["binc"]
                     terminate_time = msec(wbtime) + msec(wbinc) + seconds(60)
                     game.ping(abort_time, terminate_time, disconnect_time)
                     prior_game = copy.deepcopy(game)

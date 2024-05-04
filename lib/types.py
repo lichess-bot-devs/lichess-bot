@@ -107,6 +107,8 @@ class LichessEGTBMoveType(TypedDict):
 
 
 class InfoStrDict(TypedDict, total=False):
+    """Type hints for the readable version of the information returned by chess engines."""
+
     score: PovScore
     pv: list[Move]
     depth: int

@@ -8,7 +8,7 @@ with open("lib/versioning.yml") as version_file:
 
 current_version = versioning_info["lichess_bot_version"]
 
-utc_datetime = datetime.datetime.utcnow()
+utc_datetime = datetime.datetime.now(datetime.UTC)
 new_version = f"{utc_datetime.year}.{utc_datetime.month}.{utc_datetime.day}."
 if current_version.startswith(new_version):
     current_version_list = current_version.split(".")

@@ -9,6 +9,7 @@ REQUESTS_PAYLOAD_TYPE = dict[str, Any]
 
 class PerfType(TypedDict):
     """Type hint for `perf`."""
+
     games: NotRequired[int]
     rating: NotRequired[int]
     rd: NotRequired[int]
@@ -18,6 +19,7 @@ class PerfType(TypedDict):
 
 class ProfileType(TypedDict):
     """Type hint for `profile`."""
+
     country: NotRequired[str]
     location: NotRequired[str]
     bio: NotRequired[str]
@@ -33,6 +35,7 @@ class ProfileType(TypedDict):
 
 class UserProfileType(TypedDict):
     """Type hint for `user_profile`."""
+
     id: str
     username: str
     perfs: NotRequired[dict[str, PerfType]]
@@ -55,6 +58,7 @@ class UserProfileType(TypedDict):
 
 class ReadableType(TypedDict):
     """Type hint for `readable`."""
+
     Evaluation: Callable[[PovScore], str]
     Winrate: Callable[[PovWdl], str]
     Hashfull: Callable[[int], str]

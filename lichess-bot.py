@@ -655,7 +655,11 @@ def play_game(li: LICHESS_TYPE,
                 elif u_type == "gameState":
                     game.state = upd
                     board = setup_board(game)
-                    takeback_field = f'{"b" if game.is_white else "w"}takeback'
+                    if game.is_white:
+                        takeback_field = game.state.get("btakeback")
+                    else:
+                        takeback_field = game.state.get("wtakeback")
+
                     if not is_game_over(game) and is_engine_move(game, prior_game, board):
                         disconnect_time = correspondence_disconnect_time
                         say_hello(conversation, hello, hello_spectators, board)
@@ -678,7 +682,7 @@ def play_game(li: LICHESS_TYPE,
                         engine.send_game_result(game, board)
                         conversation.send_message("player", goodbye)
                         conversation.send_message("spectator", goodbye_spectators)
-                    elif (game.state.get(takeback_field)
+                    elif (takeback_field
                             and not bot_to_move(game, board)
                             and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
                         takebacks_accepted += 1

@@ -19,7 +19,7 @@ from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from lib.types import (ReadableType, ChessDBEGTBMoveType, LichessEGTBMoveType, MoveInfoType, OPTIONS_GO_EGTB_TYPE,
-                       OPTIONS_TYPE, COMMANDS_TYPE, MOVE, ReadableMoveInfoType, ReadableMoveInfoTypeKeys)
+                       OPTIONS_TYPE, COMMANDS_TYPE, MOVE, ReadableMoveInfoType)
 from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type
 from types import TracebackType

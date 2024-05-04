@@ -132,29 +132,29 @@ class MoveInfoType(TypedDict, total=False):
     ponderpv: str
 
 
-class ReadableMoveInfoTypeKeys(str, Enum):
+class ReadableMoveInfoType(TypedDict, total=False):
     """Type hint for readable version of the info returned by chess engines."""
 
-    Evaluation = "Evaluation"
-    Pv = "Pv"
-    Depth = "Depth"
-    Seldepth = "Seldepth"
-    Movetime = "Movetime"
-    Nodes = "Nodes"
-    Speed = "Speed"
-    Tbhits = "Tbhits"
-    Multipv = "Multipv"
-    Currmove = "Currmove"
-    Currmovenumber = "Currmovenumber"
-    Hashfull = "Hashfull"
-    Cpuload = "Cpuload"
-    Refutation = "Refutation"
-    Currline = "Rurrline"
-    Ebf = "Ebf"
-    Winrate = "Winrate"
-    String = "String"
-    Ponderpv = "Ponderpv"
-    Source = "Source"
+    Evaluation: PovScore
+    Pv: str
+    Depth: int
+    Seldepth: int
+    Movetime: float
+    Nodes: int
+    Speed: int
+    Tbhits: int
+    Multipv: int
+    Currmove: Union[Move, str]
+    Currmovenumber: int
+    Hashfull: int
+    Cpuload: int
+    Refutation: Union[dict[Move, list[Move]], str]
+    Currline: dict[int, list[Move]]
+    Ebf: float
+    Winrate: PovWdl
+    String: str
+    Ponderpv: str
+    Source: str
 
 
 class PlayerType(TypedDict, total=False):
@@ -283,6 +283,8 @@ class GameEventType(TypedDict, total=False):
     status: str
     winner: str
     clock: TimeControlType
+    wtakeback: bool
+    btakeback: bool
 
 
 CONTROL_QUEUE_TYPE = Queue[EventType]

@@ -43,6 +43,8 @@ POOL_TYPE = Pool
 
 
 class PlayGameArgsType(TypedDict, total=False):
+    """Type hint for `play_game_args`."""
+
     li: LICHESS_TYPE
     control_queue: CONTROL_QUEUE_TYPE
     user_profile: UserProfileType

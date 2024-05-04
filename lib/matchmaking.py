@@ -88,7 +88,7 @@ class Matchmaking:
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
         """Create a challenge."""
-        params = {"rated": mode == "rated", "variant": variant}
+        params: dict[str, Union[str, int, bool]] = {"rated": mode == "rated", "variant": variant}
 
         if days:
             params["days"] = days

@@ -391,7 +391,8 @@ class EngineWrapper:
                 value = value.split(":", 1)[1]
             return cast(InfoDictKeys, stat.title()), value
 
-        info = cast(InfoStrDict, dict(to_readable_item(cast(InfoDictKeys, key), cast(InfoDictValue, value)) for (key, value) in info.items()))
+        info = cast(InfoStrDict, dict(to_readable_item(cast(InfoDictKeys, key), cast(InfoDictValue, value))
+                                      for (key, value) in info.items()))
         if "Source" not in info:
             info["Source"] = "Engine"
 

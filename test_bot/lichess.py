@@ -235,7 +235,8 @@ class Lichess:
         """Isn't used in tests."""
         pass
 
-    def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None, stream: bool = False) -> JSON_REPLY_TYPE:
+    def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None,
+                        stream: bool = False) -> JSON_REPLY_TYPE:
         """Isn't used in tests."""
         return {}
 

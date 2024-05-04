@@ -6,15 +6,17 @@ from queue import Queue
 import logging
 from enum import Enum
 
-JSON_REPLY_TYPE = dict[str, Any]
-REQUESTS_PAYLOAD_TYPE = dict[str, Any]
-OPTIONS_GO_EGTB_TYPE = dict[str, Any]
 OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
 COMMANDS_TYPE = list[str]
 MOVE = Union[PlayResult, list[Move]]
-CONFIG_DICT_TYPE = dict[str, Any]
 CORRESPONDENCE_QUEUE_TYPE = Queue[str]
 LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
+REQUESTS_PAYLOAD_TYPE = dict[str, Union[str, int, bool]]
+
+# Types that still use `Any`.
+JSON_REPLY_TYPE = dict[str, Any]
+OPTIONS_GO_EGTB_TYPE = dict[str, Any]
+CONFIG_DICT_TYPE = dict[str, Any]
 
 
 class PerfType(TypedDict, total=False):

@@ -24,7 +24,6 @@ from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type, cast
 from types import TracebackType
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
-MOVE_INFO_TYPE = dict[str, Any]
 
 
 logger = logging.getLogger(__name__)
@@ -369,7 +368,7 @@ class EngineWrapper:
                                   "Speed": lambda x: f"{self.readable_number(x)}nps", "Tbhits": self.readable_number,
                                   "Cpuload": lambda x: f"{round(x / 10, 1)}%", "Movetime": self.readable_time}
 
-        def identity(x: Any) -> str:
+        def identity(x: InfoDictValue) -> str:
             return str(x)
 
         func: Callable[[InfoDictValue], str] = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
@@ -384,15 +383,15 @@ class EngineWrapper:
         can_index = self.move_commentary and self.move_commentary[-1]
         info: InfoStrDict = self.move_commentary[-1].copy() if can_index else {}
 
-        def to_readable_item(stat: InfoDictKeys, value: Any) -> tuple[InfoDictKeys, Any]:
+        def to_readable_item(stat: InfoDictKeys, value: InfoDictValue) -> tuple[InfoDictKeys, InfoDictValue]:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation", "time": "movetime"}
             stat = cast(InfoDictKeys, readable.get(stat, stat))
-            if stat == "string" and value.startswith("lichess-bot-source:"):
+            if stat == "string" and isinstance(value, str) and value.startswith("lichess-bot-source:"):
                 stat = cast(InfoDictKeys, "Source")
                 value = value.split(":", 1)[1]
             return cast(InfoDictKeys, stat.title()), value
 
-        info = cast(InfoStrDict, dict(to_readable_item(cast(InfoDictKeys, key), value) for (key, value) in info.items()))
+        info = cast(InfoStrDict, dict(to_readable_item(cast(InfoDictKeys, key), cast(InfoDictValue, value)) for (key, value) in info.items()))
         if "Source" not in info:
             info["Source"] = "Engine"
 

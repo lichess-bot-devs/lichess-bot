@@ -7,7 +7,7 @@ import logging
 import traceback
 import datetime
 from queue import Queue
-from typing import Any, Optional, Generator
+from typing import Union, Optional, Generator, Any
 from lib.timer import to_msec
 from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE, GameType
 
@@ -225,7 +225,7 @@ class Lichess:
 
     def get_online_bots(self) -> list[UserProfileType]:
         """Return that the only bot online is us."""
-        return [{"username": "b", "id": "b", "online": True}]
+        return [{"username": "b", "online": True}]
 
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
         """Isn't used in tests."""
@@ -235,7 +235,7 @@ class Lichess:
         """Isn't used in tests."""
         pass
 
-    def online_book_get(self, path: str, params: Optional[dict[str, Any]] = None, stream: bool = False) -> JSON_REPLY_TYPE:
+    def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None, stream: bool = False) -> JSON_REPLY_TYPE:
         """Isn't used in tests."""
         return {}
 

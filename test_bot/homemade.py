@@ -5,10 +5,8 @@ import chess.engine
 import sys
 from lib.config import Configuration
 from lib import model
-from typing import Any, Optional, Union
-OPTIONS_TYPE = dict[str, Any]
-COMMANDS_TYPE = list[str]
-MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
+from typing import Optional
+from lib.types import OPTIONS_TYPE, COMMANDS_TYPE, MOVE
 
 platform = sys.platform
 file_extension = ".exe" if platform == "win32" else ""

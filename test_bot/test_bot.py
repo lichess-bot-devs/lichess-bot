@@ -18,8 +18,9 @@ from queue import Queue
 import test_bot.lichess
 from lib import config
 from lib.timer import Timer, to_seconds, seconds
-from typing import Any, Optional
+from typing import Optional
 from lib.engine_wrapper import test_suffix
+from lib.types import CONFIG_DICT_TYPE
 if "pytest" not in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 lichess_bot = importlib.import_module("lichess-bot")
@@ -157,7 +158,7 @@ def lichess_org_simulator(opponent_path: str,
     results.put(outcome is not None and outcome.winner == chess.BLACK)
 
 
-def run_bot(raw_config: dict[str, Any], logging_level: int, opponent_path: str = stockfish_path) -> bool:
+def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str = stockfish_path) -> bool:
     """
     Start lichess-bot test with a mocked version of the lichess.org site.
 
@@ -291,7 +292,7 @@ def test_buggy_engine() -> None:
     CONFIG["token"] = ""
     CONFIG["engine"]["dir"] = "test_bot"
 
-    def engine_path(CONFIG: dict[str, Any]) -> str:
+    def engine_path(CONFIG: CONFIG_DICT_TYPE) -> str:
         dir: str = CONFIG["engine"]["dir"]
         name: str = CONFIG["engine"]["name"]
         return os.path.join(dir, name)

@@ -6,16 +6,18 @@ from queue import Queue
 import logging
 from enum import Enum
 
-OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
 COMMANDS_TYPE = list[str]
 MOVE = Union[PlayResult, list[Move]]
 CORRESPONDENCE_QUEUE_TYPE = Queue[str]
 LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
 REQUESTS_PAYLOAD_TYPE = dict[str, Union[str, int, bool]]
+GO_COMMANDS_TYPE = dict[str, str]
+EGTPATH_TYPE = dict[str, str]
+OPTIONS_GO_EGTB_TYPE = dict[str, Union[str, int, bool, None, EGTPATH_TYPE, GO_COMMANDS_TYPE]]
+OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
 
 # Types that still use `Any`.
 JSON_REPLY_TYPE = dict[str, Any]
-OPTIONS_GO_EGTB_TYPE = dict[str, Any]
 CONFIG_DICT_TYPE = dict[str, Any]
 
 

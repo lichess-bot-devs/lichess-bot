@@ -19,7 +19,7 @@ from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from lib.types import (ReadableType, ChessDBEGTBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
-                       COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue)
+                       COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE)
 from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type, cast
 from types import TracebackType
@@ -65,7 +65,7 @@ def create_engine(engine_config: config.Configuration, game: Optional[model.Game
     return Engine(commands, options, stderr, cfg.draw_or_resign, game, cwd=cfg.working_dir)
 
 
-def remove_managed_options(config: config.Configuration) -> OPTIONS_TYPE:
+def remove_managed_options(config: config.Configuration) -> OPTIONS_GO_EGTB_TYPE:
     """Remove the options managed by python-chess."""
     def is_managed(key: str) -> bool:
         return chess.engine.Option(key, "", None, None, None, None).is_managed()
@@ -89,11 +89,11 @@ class EngineWrapper:
         self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
         self.scores: list[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
-        self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
+        self.go_commands = config.Configuration(cast(GO_COMMANDS_TYPE, options.pop("go_commands", {})) or {})
         self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
 
-    def configure(self, options: OPTIONS_TYPE, game: Optional[model.Game]) -> None:
+    def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: Optional[model.Game]) -> None:
         """
         Send configurations to the engine.
 
@@ -103,7 +103,7 @@ class EngineWrapper:
         """
         try:
             extra_options = {} if game is None else game_specific_options(game)
-            self.engine.configure(options | extra_options)
+            self.engine.configure(cast(OPTIONS_TYPE, options | extra_options))
         except Exception:
             self.engine.close()
             raise
@@ -476,7 +476,7 @@ class EngineWrapper:
 class UCIEngine(EngineWrapper):
     """The class used to communicate with UCI engines."""
 
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
                  draw_or_resign: config.Configuration, game: Optional[model.Game], **popen_args: str) -> None:
         """
         Communicate with UCI engines.
@@ -512,7 +512,7 @@ class XBoardEngine(EngineWrapper):
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=True,
                                                              stderr=stderr, **popen_args)
-        egt_paths = options.pop("egtpath", {}) or {}
+        egt_paths: EGTPATH_TYPE = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
         features = self.engine.protocol.features if isinstance(self.engine.protocol, chess.engine.XBoardProtocol) else {}
         egt_features = features.get("egt", "")
         if isinstance(egt_features, str):
@@ -538,7 +538,7 @@ class MinimalEngine(EngineWrapper):
     `notify`, etc.
     """
 
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
                  draw_or_resign: Configuration, game: Optional[model.Game] = None, name: Optional[str] = None,
                  **popen_args: str) -> None:
         """

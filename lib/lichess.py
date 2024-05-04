@@ -10,7 +10,7 @@ import traceback
 from collections import defaultdict
 import datetime
 from lib.timer import Timer, seconds, sec_str
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, cast
 import chess.engine
 from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType
 
@@ -324,7 +324,7 @@ class Lichess:
 
     def get_profile(self) -> UserProfileType:
         """Get the bot's profile (e.g. username)."""
-        profile: UserProfileType = self.api_get_json("profile")
+        profile: UserProfileType = cast(UserProfileType, self.api_get_json("profile"))
         self.set_user_agent(profile["username"])
         return profile
 
@@ -394,4 +394,4 @@ class Lichess:
 
     def get_public_data(self, user_name: str) -> PublicDataType:
         """Get the public data of a bot."""
-        return self.api_get_json("public_data", user_name)
+        return cast(PublicDataType, self.api_get_json("public_data", user_name))

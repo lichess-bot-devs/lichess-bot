@@ -18,12 +18,13 @@ from collections.abc import Callable
 from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
-from lib.types import (ReadableType, ChessDBEGTBMoveType, LichessEGTBMoveType, MoveInfoType, OPTIONS_GO_EGTB_TYPE,
-                       OPTIONS_TYPE, COMMANDS_TYPE, MOVE, ReadableMoveInfoType)
+from lib.types import (ReadableType, ChessDBEGTBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
+                       COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue)
 from extra_game_handlers import game_specific_options
-from typing import Any, Optional, Union, Literal, Type
+from typing import Any, Optional, Union, Literal, Type, cast
 from types import TracebackType
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
+MOVE_INFO_TYPE = dict[str, Any]
 
 
 logger = logging.getLogger(__name__)
@@ -90,7 +91,7 @@ class EngineWrapper:
         self.scores: list[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
         self.go_commands = config.Configuration(options.pop("go_commands", {}) or {})
-        self.move_commentary: list[MoveInfoType] = []
+        self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
 
     def configure(self, options: OPTIONS_TYPE, game: Optional[model.Game]) -> None:
@@ -277,14 +278,14 @@ class EngineWrapper:
         else:
             return move_stack_index - self.comment_start_index
 
-    def comment_for_board_index(self, index: int) -> MoveInfoType:
+    def comment_for_board_index(self, index: int) -> InfoStrDict:
         """
         Get the engine comments for a specific move.
 
         :param index: The move number.
         :return: The move comments.
         """
-        no_info: MoveInfoType = {}
+        no_info: InfoStrDict = {}
         comment_index = self.comment_index(index)
         if comment_index < 0 or comment_index % 2 != 0:
             return no_info
@@ -303,7 +304,7 @@ class EngineWrapper:
         """
         if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
-        move_info: MoveInfoType = move.info.copy() if move.info else {}
+        move_info: InfoStrDict = cast(InfoStrDict, dict(move.info.copy() if move.info else {}))
         if "pv" in move_info:
             move_info["ponderpv"] = board.variation_san(move.info["pv"])
         if "refutation" in move_info:
@@ -361,17 +362,18 @@ class EngineWrapper:
             return f"{round(number / 1e3, 1)}K"
         return str(number)
 
-    def to_readable_value(self, stat: str, info: ReadableMoveInfoType) -> str:
+    def to_readable_value(self, stat: InfoDictKeys, info: InfoStrDict) -> str:
         """Change a value to a more human-readable format."""
         readable: ReadableType = {"Evaluation": self.readable_score, "Winrate": self.readable_wdl,
                                   "Hashfull": lambda x: f"{round(x / 10, 1)}%", "Nodes": self.readable_number,
                                   "Speed": lambda x: f"{self.readable_number(x)}nps", "Tbhits": self.readable_number,
                                   "Cpuload": lambda x: f"{round(x / 10, 1)}%", "Movetime": self.readable_time}
 
-        if stat in readable:
-            return readable[stat](info[stat])
+        def identity(x: Any) -> str:
+            return str(x)
 
-        return str(info[stat])
+        func: Callable[[InfoDictValue], str] = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
+        return str(func(info[stat]))
 
     def get_stats(self, for_chat: bool = False) -> list[str]:
         """
@@ -380,37 +382,37 @@ class EngineWrapper:
         :param for_chat: Whether the stats will be sent to the game chat, which has a 140 character limit.
         """
         can_index = self.move_commentary and self.move_commentary[-1]
-        info: MoveInfoType = self.move_commentary[-1].copy() if can_index else {}
+        info: InfoStrDict = self.move_commentary[-1].copy() if can_index else {}
 
-        def to_readable_item(stat: str, value: Any) -> tuple[str, Any]:
+        def to_readable_item(stat: InfoDictKeys, value: Any) -> tuple[InfoDictKeys, Any]:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation", "time": "movetime"}
-            stat = readable.get(stat, stat)
+            stat = cast(InfoDictKeys, readable.get(stat, stat))
             if stat == "string" and value.startswith("lichess-bot-source:"):
-                stat = "source"
+                stat = cast(InfoDictKeys, "Source")
                 value = value.split(":", 1)[1]
-            return stat.title(), value
+            return cast(InfoDictKeys, stat.title()), value
 
-        info_str: ReadableMoveInfoType = dict(to_readable_item(key, value) for (key, value) in info.items())
-        if "Source" not in info_str:
-            info_str["Source"] = "Engine"
+        info = cast(InfoStrDict, dict(to_readable_item(cast(InfoDictKeys, key), value) for (key, value) in info.items()))
+        if "Source" not in info:
+            info["Source"] = "Engine"
 
         stats = ["Source", "Evaluation", "Winrate", "Depth", "Nodes", "Speed", "Pv"]
-        if for_chat and "Pv" in info_str:
-            bot_stats = [f"{stat}: {self.to_readable_value(stat, info_str)}"
-                         for stat in stats if stat in info_str and stat != "Pv"]
+        if for_chat and "Pv" in info:
+            bot_stats = [f"{stat}: {self.to_readable_value(cast(InfoDictKeys, stat), info)}"
+                         for stat in stats if stat in info and stat != "Pv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
-            ponder_pv = info_str["Pv"].split()
+            ponder_pv = info["Pv"].split()
             try:
                 while len(" ".join(ponder_pv)) + len_bot_stats > lichess.MAX_CHAT_MESSAGE_LEN:
                     ponder_pv.pop()
                 if ponder_pv[-1].endswith("."):
                     ponder_pv.pop()
-                info_str["Pv"] = " ".join(ponder_pv)
+                info["Pv"] = " ".join(ponder_pv)
             except IndexError:
                 pass
-            if not info_str["Pv"]:
-                info_str.pop("Pv")
-        return [f"{stat}: {self.to_readable_value(stat, info_str)}" for stat in stats if stat in info_str]
+            if not info["Pv"]:
+                info.pop("Pv")
+        return [f"{stat}: {self.to_readable_value(cast(InfoDictKeys, stat), info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
         """Get the opponent's information and sends it to the engine."""

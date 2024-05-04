@@ -1,5 +1,5 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, Callable, Optional, Union, TypedDict
+from typing import Any, Callable, Optional, Union, TypedDict, Literal
 from chess.engine import PovWdl, PovScore, PlayResult
 from chess import Move
 from queue import Queue
@@ -106,9 +106,7 @@ class LichessEGTBMoveType(TypedDict):
     category: str
 
 
-class MoveInfoType(TypedDict, total=False):
-    """Type hint for the info returned by chess engines."""
-
+class InfoStrDict(TypedDict, total=False):
     score: PovScore
     pv: list[Move]
     depth: int
@@ -118,41 +116,26 @@ class MoveInfoType(TypedDict, total=False):
     nps: int
     tbhits: int
     multipv: int
-    currmove: Union[Move, str]
+    currmove: Union[str, Move]
     currmovenumber: int
     hashfull: int
     cpuload: int
-    refutation: Union[dict[Move, list[Move]], str]
+    refutation: Union[str, dict[Move, list[Move]]]
     currline: dict[int, list[Move]]
     ebf: float
     wdl: PovWdl
     string: str
     ponderpv: str
-
-
-class ReadableMoveInfoType(TypedDict, total=False):
-    """Type hint for readable version of the info returned by chess engines."""
-
-    Evaluation: PovScore
-    Pv: str
-    Depth: int
-    Seldepth: int
-    Movetime: float
-    Nodes: int
-    Speed: int
-    Tbhits: int
-    Multipv: int
-    Currmove: Union[Move, str]
-    Currmovenumber: int
-    Hashfull: int
-    Cpuload: int
-    Refutation: Union[dict[Move, list[Move]], str]
-    Currline: dict[int, list[Move]]
-    Ebf: float
-    Winrate: PovWdl
-    String: str
-    Ponderpv: str
     Source: str
+    Pv: str
+
+
+InfoDictKeys = Literal["score", "pv", "depth", "seldepth", "time", "nodes", "nps", "tbhits", "multipv", "currmove",
+                       "currmovenumber", "hashfull", "cpuload", "refutation", "currline", "ebf", "wdl", "string",
+                       "ponderpv", "Source", "Pv"]
+
+
+InfoDictValue = Union[PovScore, list[Move], int, float, str, Move, dict[Move, list[Move]], dict[int, list[Move]], PovWdl]
 
 
 class PlayerType(TypedDict, total=False):

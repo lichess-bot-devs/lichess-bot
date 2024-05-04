@@ -8,6 +8,7 @@ from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
 from typing import Any
 from collections import defaultdict
+from lib.types import UserProfileType
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class Challenge:
     """Store information about a challenge."""
 
-    def __init__(self, challenge_info: dict[str, Any], user_profile: dict[str, Any]) -> None:
+    def __init__(self, challenge_info: dict[str, Any], user_profile: UserProfileType) -> None:
         """:param user_profile: Information about our bot."""
         self.id = challenge_info["id"]
         self.rated = challenge_info["rated"]

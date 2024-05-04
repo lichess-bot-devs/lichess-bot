@@ -7,9 +7,10 @@ import logging
 import traceback
 import datetime
 from queue import Queue
-from typing import Union, Any, Optional, Generator
+from typing import Any, Optional, Generator
 from lib.timer import to_msec
-from lib.lichess import JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE
+from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE
+
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +188,7 @@ class Lichess:
         """Isn't used in tests."""
         pass
 
-    def get_profile(self) -> dict[str, Union[str, bool, dict[str, str]]]:
+    def get_profile(self) -> UserProfileType:
         """Return a simple profile for the bot that lichess-bot uses when testing."""
         return {"id": "b",
                 "username": "b",
@@ -222,9 +223,9 @@ class Lichess:
 *
 """
 
-    def get_online_bots(self) -> list[dict[str, Union[str, bool]]]:
+    def get_online_bots(self) -> list[UserProfileType]:
         """Return that the only bot online is us."""
-        return [{"username": "b", "online": True}]
+        return [{"username": "b", "id": "b", "online": True}]
 
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
         """Isn't used in tests."""

@@ -25,6 +25,7 @@ import test_bot.lichess
 from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
+from lib.types import UserProfileType
 from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError, ReadTimeout
 from rich.logging import RichHandler
 from collections import defaultdict
@@ -33,7 +34,8 @@ from http.client import RemoteDisconnected
 from queue import Queue, Empty
 from multiprocessing.pool import Pool
 from typing import Any, Optional, Union
-USER_PROFILE_TYPE = dict[str, Any]
+from types import FrameType
+USER_PROFILE_TYPE = UserProfileType
 EVENT_TYPE = dict[str, Any]
 PLAY_GAME_ARGS_TYPE = dict[str, Any]
 EVENT_GETATTR_GAME_TYPE = dict[str, Any]
@@ -63,7 +65,7 @@ def disable_restart() -> None:
     restart = False
 
 
-def signal_handler(signal: int, frame: Any) -> None:
+def signal_handler(signal: int, frame: Optional[FrameType]) -> None:
     """Terminate lichess-bot."""
     global terminated
     global force_quit

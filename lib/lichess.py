@@ -12,8 +12,8 @@ import datetime
 from lib.timer import Timer, seconds, sec_str
 from typing import Optional, Union, Any
 import chess.engine
-JSON_REPLY_TYPE = dict[str, Any]
-REQUESTS_PAYLOAD_TYPE = dict[str, Any]
+from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE
+
 
 ENDPOINTS = {
     "profile": "/api/account",
@@ -322,9 +322,9 @@ class Lichess:
         except Exception:
             pass
 
-    def get_profile(self) -> JSON_REPLY_TYPE:
+    def get_profile(self) -> UserProfileType:
         """Get the bot's profile (e.g. username)."""
-        profile = self.api_get_json("profile")
+        profile: UserProfileType = self.api_get_json("profile")
         self.set_user_agent(profile["username"])
         return profile
 
@@ -353,7 +353,7 @@ class Lichess:
         except Exception:
             return ""
 
-    def get_online_bots(self) -> list[dict[str, Any]]:
+    def get_online_bots(self) -> list[UserProfileType]:
         """Get a list of bots that are online."""
         try:
             online_bots_str = self.api_get_raw("online_bots")

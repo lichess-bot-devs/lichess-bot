@@ -10,7 +10,8 @@ from collections.abc import Sequence
 from lib import lichess
 from lib.config import Configuration, FilterType
 from typing import Any, Optional, Union
-USER_PROFILE_TYPE = dict[str, Any]
+from lib.types import UserProfileType, PerfType
+USER_PROFILE_TYPE = UserProfileType
 EVENT_TYPE = dict[str, Any]
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 DAILY_TIMERS_TYPE = list[Timer]
@@ -132,9 +133,9 @@ class Matchmaking:
         self.min_wait_time = seconds(60) * ((len(self.daily_challenges) // 50) + 1)
         write_daily_challenges(self.daily_challenges)
 
-    def perf(self) -> dict[str, dict[str, Any]]:
+    def perf(self) -> dict[str, PerfType]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""
-        user_perf: dict[str, dict[str, Any]] = self.user_profile["perfs"]
+        user_perf: dict[str, PerfType] = self.user_profile["perfs"]
         return user_perf
 
     def username(self) -> str:
@@ -155,7 +156,9 @@ class Matchmaking:
                     game_type: str) -> list[int]:
         """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
         def rating(bot: USER_PROFILE_TYPE) -> int:
-            return int(bot.get("perfs", {}).get(game_type, {}).get("rating", 0))
+            perfs: dict[str, PerfType] = bot.get("perfs", {})
+            perf: PerfType = perfs.get(game_type, {})
+            return perf.get("rating", 0)
 
         if rating_preference == "high":
             # A bot with max_rating rating will be twice as likely to get picked than a bot with min_rating rating.

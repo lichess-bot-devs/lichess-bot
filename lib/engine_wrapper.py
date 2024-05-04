@@ -18,6 +18,7 @@ from collections.abc import Callable
 from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
+from lib.types import ReadableType
 from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type
 from types import TracebackType
@@ -367,18 +368,15 @@ class EngineWrapper:
 
     def to_readable_value(self, stat: str, info: MOVE_INFO_TYPE) -> str:
         """Change a value to a more human-readable format."""
-        readable: dict[str, Callable[[Any], str]] = {"Evaluation": self.readable_score, "Winrate": self.readable_wdl,
-                                                     "Hashfull": lambda x: f"{round(x / 10, 1)}%",
-                                                     "Nodes": self.readable_number,
-                                                     "Speed": lambda x: f"{self.readable_number(x)}nps",
-                                                     "Tbhits": self.readable_number,
-                                                     "Cpuload": lambda x: f"{round(x / 10, 1)}%",
-                                                     "Movetime": self.readable_time}
+        readable: ReadableType = {"Evaluation": self.readable_score, "Winrate": self.readable_wdl,
+                                  "Hashfull": lambda x: f"{round(x / 10, 1)}%", "Nodes": self.readable_number,
+                                  "Speed": lambda x: f"{self.readable_number(x)}nps", "Tbhits": self.readable_number,
+                                  "Cpuload": lambda x: f"{round(x / 10, 1)}%", "Movetime": self.readable_time}
 
-        def identity(x: Any) -> str:
-            return str(x)
+        if stat in readable:
+            return readable[stat](info[stat])
 
-        return str(readable.get(stat, identity)(info[stat]))
+        return str(info[stat])
 
     def get_stats(self, for_chat: bool = False) -> list[str]:
         """

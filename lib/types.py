@@ -1,59 +1,71 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, Callable
-from typing_extensions import TypedDict, NotRequired
-from chess.engine import PovWdl, PovScore
+from typing import Any, Callable, Optional, Union, TypedDict
+from chess.engine import PovWdl, PovScore, PlayResult
+from chess import Move
+from queue import Queue
+import logging
+from multiprocessing.pool import Pool
+from enum import Enum
 
 JSON_REPLY_TYPE = dict[str, Any]
 REQUESTS_PAYLOAD_TYPE = dict[str, Any]
+OPTIONS_GO_EGTB_TYPE = dict[str, Any]
+OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
+COMMANDS_TYPE = list[str]
+MOVE = Union[PlayResult, list[Move]]
+CONFIG_DICT_TYPE = dict[str, Any]
+CORRESPONDENCE_QUEUE_TYPE = Queue[str]
+LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
+POOL_TYPE = Pool
 
 
-class PerfType(TypedDict):
+class PerfType(TypedDict, total=False):
     """Type hint for `perf`."""
 
-    games: NotRequired[int]
-    rating: NotRequired[int]
-    rd: NotRequired[int]
-    sd: NotRequired[int]
-    prov: NotRequired[bool]
+    games: int
+    rating: int
+    rd: int
+    sd: int
+    prov: bool
 
 
-class ProfileType(TypedDict):
+class ProfileType(TypedDict, total=False):
     """Type hint for `profile`."""
 
-    country: NotRequired[str]
-    location: NotRequired[str]
-    bio: NotRequired[str]
-    firstName: NotRequired[str]
-    lastName: NotRequired[str]
-    fideRating: NotRequired[int]
-    uscfRating: NotRequired[int]
-    ecfRating: NotRequired[int]
-    cfcRating: NotRequired[int]
-    dsbRating: NotRequired[int]
-    links: NotRequired[str]
+    country: str
+    location: str
+    bio: str
+    firstName: str
+    lastName: str
+    fideRating: int
+    uscfRating: int
+    ecfRating: int
+    cfcRating: int
+    dsbRating: int
+    links: str
 
 
-class UserProfileType(TypedDict):
+class UserProfileType(TypedDict, total=False):
     """Type hint for `user_profile`."""
 
     id: str
     username: str
-    perfs: NotRequired[dict[str, PerfType]]
-    createdAt: NotRequired[int]
-    disabled: NotRequired[bool]
-    tosViolation: NotRequired[bool]
-    profile: NotRequired[ProfileType]
-    seenAt: NotRequired[int]
-    patron: NotRequired[int]
-    verified: NotRequired[int]
-    playTime: NotRequired[dict[str, int]]
-    title: NotRequired[str]
-    online: NotRequired[bool]
-    url: NotRequired[str]
-    followable: NotRequired[bool]
-    following: NotRequired[bool]
-    blocking: NotRequired[bool]
-    followsYou: NotRequired[bool]
+    perfs: dict[str, PerfType]
+    createdAt: int
+    disabled: bool
+    tosViolation: bool
+    profile: ProfileType
+    seenAt: int
+    patron: int
+    verified: int
+    playTime: dict[str, int]
+    title: str
+    online: bool
+    url: str
+    followable: bool
+    following: bool
+    blocking: bool
+    followsYou: bool
 
 
 class ReadableType(TypedDict):
@@ -67,3 +79,251 @@ class ReadableType(TypedDict):
     Tbhits: Callable[[int], str]
     Cpuload: Callable[[int], str]
     Movetime: Callable[[int], str]
+
+
+class ChessDBEGTBMoveType(TypedDict):
+    """Type hint for the moves returned by the chessdb egtb."""
+
+    uci: str
+    san: str
+    score: int
+    rank: int
+    note: str
+
+
+class LichessEGTBMoveType(TypedDict):
+    """Type hint for the moves returned by the lichess egtb."""
+
+    uci: str
+    san: str
+    zeroing: bool
+    checkmate: bool
+    stalemate: bool
+    variant_win: bool
+    variant_loss: bool
+    insufficient_material: bool
+    dtz: int
+    precise_dtz: Optional[int]
+    dtm: Optional[int]
+    category: str
+
+
+class MoveInfoType(TypedDict, total=False):
+    """Type hint for the info returned by chess engines."""
+
+    score: PovScore
+    pv: list[Move]
+    depth: int
+    seldepth: int
+    time: float
+    nodes: int
+    nps: int
+    tbhits: int
+    multipv: int
+    currmove: Union[Move, str]
+    currmovenumber: int
+    hashfull: int
+    cpuload: int
+    refutation: Union[dict[Move, list[Move]], str]
+    currline: dict[int, list[Move]]
+    ebf: float
+    wdl: PovWdl
+    string: str
+    ponderpv: str
+
+
+class ReadableMoveInfoTypeKeys(str, Enum):
+    """Type hint for readable version of the info returned by chess engines."""
+
+    Evaluation = "Evaluation"
+    Pv = "Pv"
+    Depth = "Depth"
+    Seldepth = "Seldepth"
+    Movetime = "Movetime"
+    Nodes = "Nodes"
+    Speed = "Speed"
+    Tbhits = "Tbhits"
+    Multipv = "Multipv"
+    Currmove = "Currmove"
+    Currmovenumber = "Currmovenumber"
+    Hashfull = "Hashfull"
+    Cpuload = "Cpuload"
+    Refutation = "Refutation"
+    Currline = "Rurrline"
+    Ebf = "Ebf"
+    Winrate = "Winrate"
+    String = "String"
+    Ponderpv = "Ponderpv"
+    Source = "Source"
+
+
+class PlayerType(TypedDict, total=False):
+    """Type hint for information on a player."""
+
+    title: str
+    rating: int
+    provisional: bool
+    aiLevel: int
+    id: str
+    username: str
+    name: str
+    online: bool
+
+
+class GameType(TypedDict, total=False):
+    """Type hint for game."""
+
+    gameId: str
+    fullId: str
+    color: str
+    fen: str
+    hasMoved: bool
+    isMyTurn: bool
+    lastMove: str
+    opponent: PlayerType
+    perf: str
+    rated: bool
+    secondsLeft: int
+    source: str
+    status: dict[str, Union[str, int]]
+    speed: str
+    variant: dict[str, str]
+    compat: dict[str, bool]
+    id: str
+    winner: str
+    ratingDiff: int
+    pgn: str
+    complete: bool
+
+
+class TimeControlType(TypedDict, total=False):
+    """Type hint for time control."""
+
+    increment: int
+    limit: int
+    show: str
+    type: str
+    daysPerTurn: int
+    initial: int
+
+
+class ChallengeType(TypedDict, total=False):
+    """Type hint for challenge."""
+
+    id: str
+    url: str
+    color: str
+    direction: str
+    rated: bool
+    speed: str
+    status: str
+    timeControl: TimeControlType
+    variant: dict[str, str]
+    challenger: PlayerType
+    destUser: PlayerType
+    perf: dict[str, str]
+    compat: dict[str, bool]
+    finalColor: str
+    declineReason: str
+    declineReasonKey: str
+    initialFen: str
+
+
+class EventType(TypedDict, total=False):
+    """Type hint for event."""
+
+    type: str
+    game: GameType
+    challenge: ChallengeType
+    error: Optional[str]
+
+
+class GameStateType(TypedDict, total=False):
+    """Type hint for game state."""
+
+    type: str
+    moves: str
+    wtime: int
+    btime: int
+    winc: int
+    binc: int
+    wdraw: bool
+    bdraw: bool
+    status: str
+    winner: str
+
+
+class GameEventType(TypedDict, total=False):
+    """Type hint for game event."""
+
+    type: str
+    id: str
+    rated: bool
+    variant: dict[str, str]
+    cloak: dict[str, int]
+    speed: str
+    perf: dict[str, str]
+    createdAt: int
+    white: PlayerType
+    black: PlayerType
+    initialFen: str
+    state: GameStateType
+    username: str
+    text: str
+    room: str
+    gone: bool
+    claimWinInSeconds: int
+    moves: str
+    wtime: int
+    btime: int
+    winc: int
+    binc: int
+    wdraw: bool
+    bdraw: bool
+    status: str
+    winner: str
+    clock: TimeControlType
+
+
+CONTROL_QUEUE_TYPE = Queue[EventType]
+
+
+class PublicDataType(TypedDict, total=False):
+    """Type hint for public data."""
+
+    id: str
+    username: str
+    perfs: dict[str, PerfType]
+    flair: str
+    createdAt: int
+    disabled: bool
+    tosViolation: bool
+    profile: ProfileType
+    seenAt: int
+    patron: bool
+    verified: bool
+    playTime: dict[str, int]
+    title: str
+    url: str
+    playing: str
+    count: dict[str, int]
+    streaming: bool
+    streamer: dict[str, dict[str, str]]
+    followable: bool
+    following: bool
+    blocking: bool
+    followsYou: bool
+
+
+class FilterType(str, Enum):
+    """What to do if the opponent declines our challenge."""
+
+    NONE = "none"
+    """Will still challenge the opponent."""
+    COARSE = "coarse"
+    """Won't challenge the opponent again."""
+    FINE = "fine"
+    """
+    Won't challenge the opponent to a game of the same mode, speed, and variant
+    based on the reason for the opponent declining the challenge.
+    """

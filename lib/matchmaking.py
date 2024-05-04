@@ -8,11 +8,9 @@ from lib.timer import Timer, seconds, minutes, days, years
 from collections import defaultdict
 from collections.abc import Sequence
 from lib import lichess
-from lib.config import Configuration, FilterType
-from typing import Any, Optional, Union
-from lib.types import UserProfileType, PerfType
-USER_PROFILE_TYPE = UserProfileType
-EVENT_TYPE = dict[str, Any]
+from lib.config import Configuration
+from typing import Optional, Union
+from lib.types import UserProfileType, PerfType, EventType, FilterType
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 DAILY_TIMERS_TYPE = list[Timer]
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
@@ -46,7 +44,7 @@ def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
 class Matchmaking:
     """Challenge other bots."""
 
-    def __init__(self, li: LICHESS_TYPE, config: Configuration, user_profile: USER_PROFILE_TYPE) -> None:
+    def __init__(self, li: LICHESS_TYPE, config: Configuration, user_profile: UserProfileType) -> None:
         """Initialize values needed for matchmaking."""
         self.li = li
         self.variants = list(filter(lambda variant: variant != "fromPosition", config.challenge.variants))
@@ -152,10 +150,10 @@ class Matchmaking:
             except Exception:
                 pass
 
-    def get_weights(self, online_bots: list[USER_PROFILE_TYPE], rating_preference: str, min_rating: int, max_rating: int,
+    def get_weights(self, online_bots: list[UserProfileType], rating_preference: str, min_rating: int, max_rating: int,
                     game_type: str) -> list[int]:
         """Get the weight for each bot. A higher weights means the bot is more likely to get challenged."""
-        def rating(bot: USER_PROFILE_TYPE) -> int:
+        def rating(bot: UserProfileType) -> int:
             perfs: dict[str, PerfType] = bot.get("perfs", {})
             perf: PerfType = perfs.get(game_type, {})
             return perf.get("rating", 0)
@@ -206,7 +204,7 @@ class Matchmaking:
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = match_config.opponent_allow_tos_violation
 
-        def is_suitable_opponent(bot: USER_PROFILE_TYPE) -> bool:
+        def is_suitable_opponent(bot: UserProfileType) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and not self.in_block_list(bot["username"])
@@ -218,7 +216,7 @@ class Matchmaking:
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
-        def ready_for_challenge(bot: USER_PROFILE_TYPE) -> bool:
+        def ready_for_challenge(bot: UserProfileType) -> bool:
             aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []
             return all(self.should_accept_challenge(bot["username"], aspect) for aspect in aspects)
 
@@ -324,7 +322,7 @@ class Matchmaking:
         """
         return self.challenge_type_acceptable[(username, game_aspect)]
 
-    def accepted_challenge(self, event: EVENT_TYPE) -> None:
+    def accepted_challenge(self, event: EventType) -> None:
         """
         Set the challenge id to an empty string, if the challenge was accepted.
 
@@ -332,7 +330,7 @@ class Matchmaking:
         """
         self.discard_challenge(event["game"]["id"])
 
-    def declined_challenge(self, event: EVENT_TYPE) -> None:
+    def declined_challenge(self, event: EventType) -> None:
         """
         Handle a challenge that was declined by the opponent.
 

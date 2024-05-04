@@ -1,9 +1,9 @@
 """Functions for the user to implement when the config file is not adequate to express bot requirements."""
 from lib import model
-from typing import Any
+from lib.types import OPTIONS_TYPE
 
 
-def game_specific_options(game: model.Game) -> dict[str, Any]:
+def game_specific_options(game: model.Game) -> OPTIONS_TYPE:
     """
     Return a dictionary of engine options based on game aspects.
 

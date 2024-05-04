@@ -5,6 +5,7 @@ import test_bot.lichess
 from lib import model
 from lib.engine_wrapper import EngineWrapper
 from lib import lichess
+from lib.types import GameEventType
 from collections.abc import Sequence
 from lib.timer import seconds
 from typing import Union
@@ -95,7 +96,7 @@ class Conversation:
 class ChatLine:
     """Information about the message."""
 
-    def __init__(self, message_info: dict[str, str]) -> None:
+    def __init__(self, message_info: GameEventType) -> None:
         """Information about the message."""
         self.room = message_info["room"]
         """Whether the message was sent in the chat room or in the spectator room."""

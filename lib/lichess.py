@@ -12,7 +12,7 @@ import datetime
 from lib.timer import Timer, seconds, sec_str
 from typing import Optional, Union, Any
 import chess.engine
-from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE
+from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType
 
 
 ENDPOINTS = {
@@ -191,7 +191,7 @@ class Lichess:
                           giveup_log_level=logging.DEBUG)
     def api_post(self,
                  endpoint_name: str,
-                 *template_args: Any,
+                 *template_args: str,
                  data: Union[str, dict[str, str], None] = None,
                  headers: Optional[dict[str, str]] = None,
                  params: Optional[dict[str, str]] = None,
@@ -265,7 +265,7 @@ class Lichess:
         :param game_id: The id of the game.
         :param move: The move to make.
         """
-        self.api_post("move", game_id, move.move,
+        self.api_post("move", game_id, str(move.move),
                       params={"offeringDraw": str(move.draw_offered).lower()})
 
     def accept_takeback(self, game_id: str, accept: bool) -> bool:
@@ -328,9 +328,9 @@ class Lichess:
         self.set_user_agent(profile["username"])
         return profile
 
-    def get_ongoing_games(self) -> list[dict[str, Any]]:
+    def get_ongoing_games(self) -> list[GameType]:
         """Get the bot's ongoing games."""
-        ongoing_games: list[dict[str, Any]] = []
+        ongoing_games: list[GameType] = []
         try:
             ongoing_games = self.api_get_json("playing")["nowPlaying"]
         except Exception:
@@ -392,6 +392,6 @@ class Lichess:
         user = self.api_get_list("status", params={"ids": user_id})
         return bool(user and user[0].get("online"))
 
-    def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
+    def get_public_data(self, user_name: str) -> PublicDataType:
         """Get the public data of a bot."""
         return self.api_get_json("public_data", user_name)

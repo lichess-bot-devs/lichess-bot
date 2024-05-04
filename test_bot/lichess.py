@@ -9,7 +9,7 @@ import datetime
 from queue import Queue
 from typing import Any, Optional, Generator
 from lib.timer import to_msec
-from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE
+from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE, GameType
 
 
 logger = logging.getLogger(__name__)
@@ -201,7 +201,7 @@ class Lichess:
                 "followsYou": False,
                 "perfs": {}}
 
-    def get_ongoing_games(self) -> list[dict[str, Any]]:
+    def get_ongoing_games(self) -> list[GameType]:
         """Return that the bot isn't playing a game."""
         return []
 

@@ -6,25 +6,10 @@ import os.path
 import logging
 import math
 from abc import ABCMeta
-from enum import Enum
 from typing import Any, Union, ItemsView
-CONFIG_DICT_TYPE = dict[str, Any]
+from lib.types import CONFIG_DICT_TYPE, FilterType
 
 logger = logging.getLogger(__name__)
-
-
-class FilterType(str, Enum):
-    """What to do if the opponent declines our challenge."""
-
-    NONE = "none"
-    """Will still challenge the opponent."""
-    COARSE = "coarse"
-    """Won't challenge the opponent again."""
-    FINE = "fine"
-    """
-    Won't challenge the opponent to a game of the same mode, speed, and variant
-    based on the reason for the opponent declining the challenge.
-    """
 
 
 class Configuration:

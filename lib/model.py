@@ -6,9 +6,8 @@ import datetime
 from enum import Enum
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
-from typing import Any
 from collections import defaultdict
-from lib.types import UserProfileType
+from lib.types import UserProfileType, ChallengeType, GameEventType, GameStateType, PlayerType
 
 logger = logging.getLogger(__name__)
 
@@ -16,16 +15,16 @@ logger = logging.getLogger(__name__)
 class Challenge:
     """Store information about a challenge."""
 
-    def __init__(self, challenge_info: dict[str, Any], user_profile: UserProfileType) -> None:
+    def __init__(self, challenge_info: ChallengeType, user_profile: UserProfileType) -> None:
         """:param user_profile: Information about our bot."""
         self.id = challenge_info["id"]
         self.rated = challenge_info["rated"]
         self.variant = challenge_info["variant"]["key"]
         self.perf_name = challenge_info["perf"]["name"]
         self.speed = challenge_info["speed"]
-        self.increment: int = challenge_info.get("timeControl", {}).get("increment")
-        self.base: int = challenge_info.get("timeControl", {}).get("limit")
-        self.days: int = challenge_info.get("timeControl", {}).get("daysPerTurn")
+        self.increment: int = challenge_info.get("timeControl", {}).get("increment", -1)
+        self.base: int = challenge_info.get("timeControl", {}).get("limit", -1)
+        self.days: int = challenge_info.get("timeControl", {}).get("daysPerTurn", -1)
         self.challenger = Player(challenge_info.get("challenger") or {})
         self.challenge_target = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
@@ -152,7 +151,7 @@ class Termination(str, Enum):
 class Game:
     """Store information about a game."""
 
-    def __init__(self, game_info: dict[str, Any], username: str, base_url: str, abort_time: datetime.timedelta) -> None:
+    def __init__(self, game_info: GameEventType, username: str, base_url: str, abort_time: datetime.timedelta) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
         self.id: str = game_info["id"]
@@ -167,7 +166,7 @@ class Game:
         self.white = Player(game_info["white"])
         self.black = Player(game_info["black"])
         self.initial_fen = game_info.get("initialFen")
-        self.state: dict[str, Any] = game_info["state"]
+        self.state: GameStateType = game_info["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
@@ -270,7 +269,7 @@ class Game:
 class Player:
     """Store information about a player."""
 
-    def __init__(self, player_info: dict[str, Any]) -> None:
+    def __init__(self, player_info: PlayerType) -> None:
         """:param player_info: Contains information about a player."""
         self.title = player_info.get("title")
         self.rating = player_info.get("rating")

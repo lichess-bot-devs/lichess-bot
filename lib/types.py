@@ -1,4 +1,5 @@
-from typing import NotRequired, TypedDict, Any, Callable
+from typing import Any, Callable
+from typing_extensions import TypedDict, NotRequired
 from chess.engine import PovWdl, PovScore
 
 JSON_REPLY_TYPE = dict[str, Any]

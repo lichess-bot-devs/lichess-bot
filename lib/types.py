@@ -1,6 +1,6 @@
 """Some type hints that can be accessed by all other python files."""
 from typing import Any, Callable, Optional, Union, TypedDict, Literal, Type
-from chess.engine import PovWdl, PovScore, PlayResult, Limit, INFO_ALL, Opponent
+from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
 from queue import Queue
 import logging

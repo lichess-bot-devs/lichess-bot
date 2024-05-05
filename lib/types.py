@@ -17,7 +17,6 @@ OPTIONS_GO_EGTB_TYPE = dict[str, Union[str, int, bool, None, EGTPATH_TYPE, GO_CO
 OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
 
 # Types that still use `Any`.
-JSON_REPLY_TYPE = dict[str, Any]
 CONFIG_DICT_TYPE = dict[str, Any]
 
 
@@ -81,33 +80,6 @@ class ReadableType(TypedDict):
     Tbhits: Callable[[int], str]
     Cpuload: Callable[[int], str]
     Movetime: Callable[[int], str]
-
-
-class ChessDBEGTBMoveType(TypedDict):
-    """Type hint for the moves returned by the chessdb egtb."""
-
-    uci: str
-    san: str
-    score: int
-    rank: int
-    note: str
-
-
-class LichessEGTBMoveType(TypedDict):
-    """Type hint for the moves returned by the lichess egtb."""
-
-    uci: str
-    san: str
-    zeroing: bool
-    checkmate: bool
-    stalemate: bool
-    variant_win: bool
-    variant_loss: bool
-    insufficient_material: bool
-    dtz: int
-    precise_dtz: Optional[int]
-    dtm: Optional[int]
-    category: str
 
 
 class InfoStrDict(TypedDict, total=False):
@@ -216,6 +188,12 @@ class ChallengeType(TypedDict, total=False):
     initialFen: str
 
 
+class ChallengeSentType(TypedDict, total=False):
+    """Type hint for challenge sent."""
+
+    challenge: ChallengeType
+
+
 class EventType(TypedDict, total=False):
     """Type hint for event."""
 
@@ -316,3 +294,146 @@ class FilterType(str, Enum):
     Won't challenge the opponent to a game of the same mode, speed, and variant
     based on the reason for the opponent declining the challenge.
     """
+
+
+class ChessDBMoveType(TypedDict, total=False):
+    """Type hint for a move returned by chessdb (opening & egtb)."""
+
+    uci: str
+    san: str
+    score: int
+    rank: int
+    note: str
+    winrate: str
+
+
+class LichessPvType(TypedDict, total=False):
+    """Type hint for a move returned by lichess cloud analysis."""
+
+    moves: str
+    cp: int
+
+
+class LichessExplorerGameType(TypedDict, total=False):
+    """Type hint for a game returned by lichess explorer."""
+
+    id: str
+    winner: Optional[str]
+    speed: str
+    mode: str
+    black: dict[str, Union[str, int]]
+    white: dict[str, Union[str, int]]
+    year: int
+    month: str
+
+
+class LichessEGTBMoveType(TypedDict):
+    """Type hint for the moves returned by the lichess egtb."""
+
+    uci: str
+    san: str
+    zeroing: bool
+    checkmate: bool
+    stalemate: bool
+    variant_win: bool
+    variant_loss: bool
+    insufficient_material: bool
+    dtz: int
+    precise_dtz: Optional[int]
+    dtm: Optional[int]
+    category: str
+
+
+class OnlineMoveType(TypedDict):
+    """Type hint for a move returned by an online source."""
+
+    # chessdb
+    uci: str
+    san: str
+    score: int
+    rank: int
+    note: str
+    winrate: str
+
+    # lichess explorer
+    # uci: str  (duplicate)
+    # san: str  (duplicate)
+    averageRating: int
+    performance: int
+    white: int
+    black: int
+    draws: int
+    game: Optional[LichessExplorerGameType]
+
+    # lichess egtb
+    # uci: str  (duplicate)
+    # san: str  (duplicate)
+    zeroing: bool
+    checkmate: bool
+    stalemate: bool
+    variant_win: bool
+    variant_loss: bool
+    insufficient_material: bool
+    dtz: int
+    precise_dtz: Optional[int]
+    dtm: Optional[int]
+    category: str
+
+
+class OnlineType(TypedDict, total=False):
+    """Type hint for moves returned by an online source."""
+
+    # lichess egtb
+    checkmate: bool
+    stalemate: bool
+    variant_win: bool
+    variant_loss: bool
+    insufficient_material: bool
+    dtz: int
+    precise_dtz: Optional[int]
+    dtm: Optional[int]
+    category: str
+    # moves: list[LichessEGTBMoveType]
+
+    # lichess explorer
+    white: int
+    black: int
+    draws: int
+    # moves: list[LichessExplorerMoveType]
+    topGames: list[LichessExplorerGameType]
+    recentGames: list[LichessExplorerGameType]
+    opening: Optional[dict[str, str]]
+    queuePosition: int
+
+    # lichess cloud
+    fen: str
+    knodes: int
+    ply: str
+    depth: int
+    pvs: list[LichessPvType]
+    error: str
+
+    # chessdb (opening & egtb)
+    status: str
+    # moves: list[ChessDBMoveType]
+    # ply: str  (duplicate)
+    score: int
+    # depth: int  (duplicate)
+    pv: list[str]
+    pvSAN: list[str]
+    move: str
+    egtb: str
+
+    # all
+    moves: list[OnlineMoveType]
+
+
+class TokenTestType(TypedDict, total=False):
+    """Type hint for token test."""
+
+    scopes: str
+    userId: str
+    expires: int
+
+
+TOKEN_TESTS_TYPE = dict[str, TokenTestType]

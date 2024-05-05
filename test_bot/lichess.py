@@ -9,7 +9,7 @@ import datetime
 from queue import Queue
 from typing import Union, Optional, Generator, Any
 from lib.timer import to_msec
-from lib.types import UserProfileType, JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE, GameType
+from lib.types import UserProfileType, ChallengeSentType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType
 
 
 logger = logging.getLogger(__name__)
@@ -227,7 +227,7 @@ class Lichess:
         """Return that the only bot online is us."""
         return [{"username": "b", "online": True}]
 
-    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
+    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeSentType:
         """Isn't used in tests."""
         return {}
 
@@ -236,7 +236,7 @@ class Lichess:
         pass
 
     def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None,
-                        stream: bool = False) -> JSON_REPLY_TYPE:
+                        stream: bool = False) -> OnlineType:
         """Isn't used in tests."""
         return {}
 
@@ -244,6 +244,6 @@ class Lichess:
         """Return that a bot is online."""
         return True
 
-    def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
+    def get_public_data(self, user_name: str) -> PublicDataType:
         """Isn't used in tests."""
         return {}

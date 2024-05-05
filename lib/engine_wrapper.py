@@ -18,7 +18,7 @@ from collections.abc import Callable
 from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
-from lib.types import (ReadableType, ChessDBEGTBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
+from lib.types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
                        COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE)
 from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type, cast
@@ -1075,9 +1075,10 @@ def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
 
             possible_moves = list(filter(good_enough, data["moves"]))
             if len(possible_moves) > 1:
-                move = [move["uci"] for move in possible_moves]
+                move_list = [move["uci"] for move in possible_moves]
                 wdl = best_wdl * -1
                 logger.info(f"Suggesting moves from tablebase.lichess.ovh (wdl: {wdl}) for game {game.id}")
+                return move_list, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
             else:
                 best_move = possible_moves[0]
                 move = best_move["uci"]
@@ -1125,14 +1126,15 @@ def get_chessdb_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
         else:  # quality == "suggest"
             best_wdl = score_to_wdl(data["moves"][0]["score"])
 
-            def good_enough(move: ChessDBEGTBMoveType) -> bool:
+            def good_enough(move: ChessDBMoveType) -> bool:
                 return score_to_wdl(move["score"]) == best_wdl
 
-            possible_moves = list(filter(good_enough, data["moves"]))
+            possible_moves = list(filter(good_enough, cast(list[ChessDBMoveType], data["moves"])))
             if len(possible_moves) > 1:
                 wdl = score_to_wdl(possible_moves[0]["score"])
-                move = [move["uci"] for move in possible_moves]
+                move_list = [move["uci"] for move in possible_moves]
                 logger.info(f"Suggesting moves from from chessdb.cn (wdl: {wdl}) for game {game.id}")
+                return move_list, wdl, {"string": "lichess-bot-source:ChessDB EGTB"}
             else:
                 best_move = possible_moves[0]
                 score = best_move["score"]

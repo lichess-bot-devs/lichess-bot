@@ -1,6 +1,6 @@
 """Some type hints that can be accessed by all other python files."""
 from typing import Any, Callable, Optional, Union, TypedDict, Literal
-from chess.engine import PovWdl, PovScore, PlayResult
+from chess.engine import PovWdl, PovScore, PlayResult, Limit
 from chess import Move
 from queue import Queue
 import logging
@@ -15,6 +15,7 @@ GO_COMMANDS_TYPE = dict[str, str]
 EGTPATH_TYPE = dict[str, str]
 OPTIONS_GO_EGTB_TYPE = dict[str, Union[str, int, bool, None, EGTPATH_TYPE, GO_COMMANDS_TYPE]]
 OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
+HOMEMADE_ARGS_TYPE = Union[Limit, bool, MOVE]
 
 # Types that still use `Any`.
 CONFIG_DICT_TYPE = dict[str, Any]
@@ -437,3 +438,20 @@ class TokenTestType(TypedDict, total=False):
 
 
 TOKEN_TESTS_TYPE = dict[str, TokenTestType]
+
+
+class _BackoffDetails(TypedDict):
+    """`_Details` from `backoff._typing`."""
+
+    target: Callable[..., Any]
+    args: tuple[Any, ...]
+    kwargs: dict[str, Any]
+    tries: int
+    elapsed: float
+
+
+class BackoffDetails(_BackoffDetails, total=False):
+    """`Details` from `backoff._typing`."""
+
+    wait: float  # present in the on_backoff handler case for either decorator
+    value: Any  # present in the on_predicate decorator case

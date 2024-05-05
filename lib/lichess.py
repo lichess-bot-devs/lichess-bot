@@ -10,10 +10,10 @@ import traceback
 from collections import defaultdict
 import datetime
 from lib.timer import Timer, seconds, sec_str
-from typing import Optional, Union, Any, cast
+from typing import Optional, Union, cast
 import chess.engine
 from lib.types import (UserProfileType, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType, OnlineType,
-                       ChallengeSentType, TOKEN_TESTS_TYPE)
+                       ChallengeSentType, TOKEN_TESTS_TYPE, BackoffDetails)
 
 
 ENDPOINTS = {
@@ -60,7 +60,7 @@ def is_final(exception: Exception) -> bool:
     return isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code < 500
 
 
-def backoff_handler(details: Any) -> None:
+def backoff_handler(details: BackoffDetails) -> None:
     """Log exceptions inside functions with the backoff decorator."""
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))

@@ -9,8 +9,7 @@ import chess
 from chess.engine import PlayResult, Limit
 import random
 from lib.engine_wrapper import MinimalEngine
-from lib.types import MOVE
-from typing import Any
+from lib.types import MOVE, HOMEMADE_ARGS_TYPE
 import logging
 
 
@@ -31,7 +30,7 @@ class ExampleEngine(MinimalEngine):
 class RandomMove(ExampleEngine):
     """Get a random move."""
 
-    def search(self, board: chess.Board, *args: Any) -> PlayResult:
+    def search(self, board: chess.Board, *args: HOMEMADE_ARGS_TYPE) -> PlayResult:
         """Choose a random move."""
         return PlayResult(random.choice(list(board.legal_moves)), None)
 
@@ -39,7 +38,7 @@ class RandomMove(ExampleEngine):
 class Alphabetical(ExampleEngine):
     """Get the first move when sorted by san representation."""
 
-    def search(self, board: chess.Board, *args: Any) -> PlayResult:
+    def search(self, board: chess.Board, *args: HOMEMADE_ARGS_TYPE) -> PlayResult:
         """Choose the first move alphabetically."""
         moves = list(board.legal_moves)
         moves.sort(key=board.san)
@@ -49,7 +48,7 @@ class Alphabetical(ExampleEngine):
 class FirstMove(ExampleEngine):
     """Get the first move when sorted by uci representation."""
 
-    def search(self, board: chess.Board, *args: Any) -> PlayResult:
+    def search(self, board: chess.Board, *args: HOMEMADE_ARGS_TYPE) -> PlayResult:
         """Choose the first move alphabetically in uci representation."""
         moves = list(board.legal_moves)
         moves.sort(key=str)

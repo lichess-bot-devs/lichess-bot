@@ -7,22 +7,23 @@ import logging
 import traceback
 import datetime
 from queue import Queue
-from typing import Union, Optional, Generator, Any
+from typing import Union, Optional, Generator
 from lib.timer import to_msec
-from lib.types import UserProfileType, ChallengeSentType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType
+from lib.types import (UserProfileType, ChallengeSentType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
+                       BackoffDetails)
 
 
 logger = logging.getLogger(__name__)
 
 
-def backoff_handler(details: Any) -> None:
+def backoff_handler(details: BackoffDetails) -> None:
     """Log exceptions inside functions with the backoff decorator."""
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
     logger.debug(f"Exception: {traceback.format_exc()}")
 
 
-def is_final(error: Any) -> bool:
+def is_final(error: Exception) -> bool:
     """Mock error handler for tests when a function has a backup decorator."""
     logger.debug(error)
     return False

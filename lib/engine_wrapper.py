@@ -19,7 +19,8 @@ from lib import config, model, lichess
 from lib.config import Configuration
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from lib.types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
-                       COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE)
+                       COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE,
+                       ENGINE_INPUT_ARGS_TYPE, ENGINE_INPUT_KWARGS_TYPE)
 from extra_game_handlers import game_specific_options
 from typing import Any, Optional, Union, Literal, Type, cast
 from types import TracebackType
@@ -567,7 +568,8 @@ class MinimalEngine(EngineWrapper):
         """
         raise NotImplementedError("The search method is not implemented")
 
-    def notify(self, method_name: str, *args: Any, **kwargs: Any) -> None:
+    def notify(self, method_name: str, *args: ENGINE_INPUT_ARGS_TYPE, **kwargs: ENGINE_INPUT_KWARGS_TYPE
+               ) -> Any:
         """
         Enable the use of `self.engine.option1`.
 
@@ -605,7 +607,7 @@ class FillerEngine:
         """Provide the property `self.engine`."""
         main_engine = self.main_engine
 
-        def method(*args: Any, **kwargs: Any) -> Any:
+        def method(*args: ENGINE_INPUT_ARGS_TYPE, **kwargs: ENGINE_INPUT_KWARGS_TYPE) -> Any:
             nonlocal main_engine
             nonlocal method_name
             return main_engine.notify(method_name, *args, **kwargs)

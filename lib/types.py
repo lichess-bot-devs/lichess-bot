@@ -1,10 +1,11 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, Callable, Optional, Union, TypedDict, Literal
-from chess.engine import PovWdl, PovScore, PlayResult, Limit
-from chess import Move
+from typing import Any, Callable, Optional, Union, TypedDict, Literal, Type
+from chess.engine import PovWdl, PovScore, PlayResult, Limit, INFO_ALL, Opponent
+from chess import Move, Board
 from queue import Queue
 import logging
 from enum import Enum
+from types import TracebackType
 
 COMMANDS_TYPE = list[str]
 MOVE = Union[PlayResult, list[Move]]
@@ -455,3 +456,7 @@ class BackoffDetails(_BackoffDetails, total=False):
 
     wait: float  # present in the on_backoff handler case for either decorator
     value: Any  # present in the on_predicate decorator case
+
+
+ENGINE_INPUT_ARGS_TYPE = Union[None, OPTIONS_TYPE, Type[BaseException], BaseException, TracebackType, Board, Limit, str, bool]
+ENGINE_INPUT_KWARGS_TYPE = Union[None, int, bool, list[Move], Opponent]

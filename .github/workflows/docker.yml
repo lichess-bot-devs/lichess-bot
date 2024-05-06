@@ -5,6 +5,8 @@ on:
     workflows: [Versioning]
     types:
       - completed
+  push:
+    branches: [ docker_test ]
 
 env:
   GB_REGISTRY: ghcr.io

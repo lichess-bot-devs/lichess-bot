@@ -5,8 +5,6 @@ on:
     workflows: [Versioning]
     types:
       - completed
-  push:
-    branches: [ docker_test ]
 
 env:
   GB_REGISTRY: ghcr.io
@@ -14,6 +12,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       

@@ -1,6 +1,6 @@
 ARG VARIANT
 FROM python:3$VARIANT
-MAINTAINER Jean-Marc Astesana <admin@fathzer.com>
+MAINTAINER Lichess Bot Devs <lichess.bot.devs@gmail.com>
 
 ENV LICHESS_BOT_DOCKER="true"
 ENV PYTHONDONTWRITEBYTECODE=1

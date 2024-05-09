@@ -952,6 +952,8 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
             winrate = (possible_move["white"] + possible_move["draws"] * .5) / games_played
+            if wb == "b":
+                winrate = 1 - winrate
             if games_played >= opening_explorer_cfg.min_games:
                 # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
                 # the second one will be used.

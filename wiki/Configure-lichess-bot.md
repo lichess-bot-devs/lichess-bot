@@ -3,7 +3,7 @@ There are many possible options within `config.yml` for configuring lichess-bot.
 
 ## Engine options
 - `protocol`: Specify which protocol your engine uses. Choices are
-    1. `"uci"` for the [Universal Chess Interface](http://wbec-ridderkerk.nl/html/UCIProtocol.html)
+    1. `"uci"` for the [Universal Chess Interface](https://wbec-ridderkerk.nl/html/UCIProtocol.html)
     2. `"xboard"` for the XBoard/WinBoard/[Chess Engine Communication Protocol](https://www.gnu.org/software/xboard/engine-intf.html)
     3. `"homemade"` if you want to write your own engine in Python within lichess-bot. See [**Create a homemade engine**](https://github.com/lichess-bot-devs/lichess-bot/wiki/Create-a-homemade-engine).
 - `ponder`: Specify whether your bot will ponder--i.e., think while the bot's opponent is choosing a move.

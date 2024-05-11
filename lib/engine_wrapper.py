@@ -1052,7 +1052,7 @@ def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
     pieces = chess.popcount(board.occupied)
     max_pieces = 7 if board.uci_variant == "chess" else 6
     if pieces <= max_pieces:
-        data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
+        data = li.online_book_get(f"https://tablebase.lichess.ovh/{variant}",
                                   params={"fen": board.fen()})
         if quality == "best":
             move = data["moves"][0]["uci"]

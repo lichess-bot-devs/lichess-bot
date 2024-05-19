@@ -8,6 +8,7 @@ from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
 from collections import defaultdict
 from lib.types import UserProfileType, ChallengeType, GameEventType, GameStateType, PlayerType
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +23,9 @@ class Challenge:
         self.variant = challenge_info["variant"]["key"]
         self.perf_name = challenge_info["perf"]["name"]
         self.speed = challenge_info["speed"]
-        self.increment: int = challenge_info.get("timeControl", {}).get("increment", -1)
-        self.base: int = challenge_info.get("timeControl", {}).get("limit", -1)
-        self.days: int = challenge_info.get("timeControl", {}).get("daysPerTurn", -1)
+        self.increment: Optional[int] = challenge_info.get("timeControl", {}).get("increment")
+        self.base: Optional[int] = challenge_info.get("timeControl", {}).get("limit")
+        self.days: Optional[int] = challenge_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = Player(challenge_info.get("challenger") or {})
         self.challenge_target = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]

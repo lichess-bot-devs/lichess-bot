@@ -924,10 +924,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
                               ) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from lichess's opening explorer."""
     wb = "w" if board.turn == chess.WHITE else "b"
-    if board.turn == chess.WHITE:
-        time_left = msec(game.state["wtime"])
-    else:
-        time_left = msec(game.state["btime"])
+    time_left = msec(game.state["wtime"]) if board.turn == chess.WHITE else msec(game.state["btime"])
     min_time = seconds(opening_explorer_cfg.min_time)
     source = opening_explorer_cfg.source
     if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":

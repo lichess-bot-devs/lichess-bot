@@ -1,7 +1,5 @@
 #!/bin/sh
 
-ln -s /lichess-bot/config/config.yml /lichess-bot/
-
 if [ -e /lichess-bot/config/homemade.py ]; then
     ln -sf /lichess-bot/config/homemade.py /lichess-bot/
 fi

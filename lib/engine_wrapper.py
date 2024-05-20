@@ -663,10 +663,12 @@ def move_time(board: chess.Board,
 
 
 def wbtime(board: chess.Board) -> Literal["wtime", "btime"]:
+    """Return `wtime` if it is white's turn to move else `btime`."""
     return "wtime" if board.turn == chess.WHITE else "btime"
 
 
 def wbinc(board: chess.Board) -> Literal["winc", "binc"]:
+    """Return `winc` if it is white's turn to move else `binc`."""
     return "winc" if board.turn == chess.WHITE else "binc"
 
 

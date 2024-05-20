@@ -955,6 +955,8 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
             winrate = (possible_move["white"] + possible_move["draws"] * .5) / games_played
+            if wb == "b":
+                winrate = 1 - winrate
             if games_played >= opening_explorer_cfg.min_games:
                 # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
                 # the second one will be used.
@@ -1056,7 +1058,7 @@ def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
     pieces = chess.popcount(board.occupied)
     max_pieces = 7 if board.uci_variant == "chess" else 6
     if pieces <= max_pieces:
-        data = li.online_book_get(f"http://tablebase.lichess.ovh/{variant}",
+        data = li.online_book_get(f"https://tablebase.lichess.ovh/{variant}",
                                   params={"fen": board.fen()})
         if quality == "best":
             move = data["moves"][0]["uci"]

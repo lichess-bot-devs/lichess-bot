@@ -1,11 +1,9 @@
 #!/bin/sh
 
-ln -s /lichess-bot/config/config.yml config.yml
-
-if [ -f /lichess-bot/config/homemade.py ]; then
-    ln -sf /lichess-bot/config/homemade.py homemade.py
+if [ -e /lichess-bot/config/homemade.py ]; then
+    ln -sf /lichess-bot/config/homemade.py /lichess-bot/
 fi
 
-if [ -f /lichess-bot/config/extra_game_handlers.py ]; then
-    ln -sf /lichess-bot/config/extra_game_handlers.py extra_game_handlers.py
+if [ -e /lichess-bot/config/extra_game_handlers.py ]; then
+    ln -sf /lichess-bot/config/extra_game_handlers.py /lichess-bot/
 fi

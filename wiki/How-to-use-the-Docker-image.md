@@ -22,6 +22,8 @@ You can also find documentation [here](https://github.com/lichess-bot-devs/liche
 Once your configuration files are ready, let's say in `/home/me/myEngine` folder, run the following command:  
 ```docker run -d -v /home/me/myEngine:/lichess-bot/config --name myBot lichessbotdevs/lichess-bot```
 
+**NOTE**: Prefer using absolute paths over relative paths, as relative ones may cause problems.
+
 That's all!
 
 ### Warning:

@@ -689,8 +689,8 @@ def play_game(li: LICHESS_TYPE,
                         record_takeback(game, takebacks_accepted)
                         engine.discard_last_move_commentary()
 
-                    wbtime = upd["wtime"] if board.turn == chess.WHITE else upd["btime"]
-                    wbinc = upd["winc"] if board.turn == chess.WHITE else upd["binc"]
+                    wbtime = upd[engine_wrapper.wbtime(board)]
+                    wbinc = upd[engine_wrapper.wbinc(board)]
                     terminate_time = msec(wbtime) + msec(wbinc) + seconds(60)
                     game.ping(abort_time, terminate_time, disconnect_time)
                     prior_game = copy.deepcopy(game)

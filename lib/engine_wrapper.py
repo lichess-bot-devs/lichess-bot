@@ -662,6 +662,14 @@ def move_time(board: chess.Board,
         return game_clock_time(board, game, setup_timer, move_overhead), can_ponder
 
 
+def wbtime(board: chess.Board) -> Literal["wtime", "btime"]:
+    return "wtime" if board.turn == chess.WHITE else "btime"
+
+
+def wbinc(board: chess.Board) -> Literal["winc", "binc"]:
+    return "winc" if board.turn == chess.WHITE else "binc"
+
+
 def single_move_time(board: chess.Board, game: model.Game, search_time: datetime.timedelta,
                      setup_timer: Timer, move_overhead: datetime.timedelta) -> chess.engine.Limit:
     """
@@ -676,10 +684,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     """
     pre_move_time = setup_timer.time_since_reset()
     overhead = pre_move_time + move_overhead
-    if board.turn == chess.WHITE:
-        clock_time = max(msec(0), msec(game.state["wtime"]) - overhead)
-    else:
-        clock_time = max(msec(0), msec(game.state["btime"]) - overhead)
+    clock_time = max(msec(0), msec(game.state[wbtime(board)]) - overhead)
     search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {sec_str(search_time)} seconds for game {game.id}")
     return chess.engine.Limit(time=to_seconds(search_time), clock_id="correspondence")
@@ -714,8 +719,8 @@ def game_clock_time(board: chess.Board,
     pre_move_time = setup_timer.time_since_reset()
     overhead = pre_move_time + move_overhead
     times = {"wtime": msec(game.state["wtime"]), "btime": msec(game.state["btime"])}
-    wb = "w" if board.turn == chess.WHITE else "b"
-    times[f"{wb}time"] = max(msec(0), times[f"{wb}time"] - overhead)
+    side = wbtime(board)
+    times[side] = max(msec(0), times[side] - overhead)
     logger.info(f"Searching for wtime {msec_str(times['wtime'])} btime {msec_str(times['btime'])} for game {game.id}")
     return chess.engine.Limit(white_clock=to_seconds(times["wtime"]),
                               black_clock=to_seconds(times["btime"]),
@@ -824,10 +829,7 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
                      chessdb_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from chessdb.cn's opening book."""
     use_chessdb = chessdb_cfg.enabled
-    if board.turn == chess.WHITE:
-        time_left = msec(game.state["wtime"])
-    else:
-        time_left = msec(game.state["btime"])
+    time_left = msec(game.state[wbtime(board)])
     min_time = seconds(chessdb_cfg.min_time)
     if not use_chessdb or time_left < min_time or board.uci_variant != "chess":
         return None, {}
@@ -865,11 +867,8 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
 def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
                            lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from the lichess's cloud analysis."""
-    wb = "w" if board.turn == chess.WHITE else "b"
-    if board.turn == chess.WHITE:
-        time_left = msec(game.state["wtime"])
-    else:
-        time_left = msec(game.state["btime"])
+    side = wbtime(board)
+    time_left = msec(game.state[side])
     min_time = seconds(lichess_cloud_cfg.min_time)
     use_lichess_cloud = lichess_cloud_cfg.enabled
     if not use_lichess_cloud or time_left < min_time:
@@ -899,13 +898,13 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
                     best_eval = data["pvs"][0]["cp"]
                     pvs = data["pvs"]
                     max_difference = lichess_cloud_cfg.max_score_difference
-                    if wb == "w":
+                    if side == "wtime":
                         pvs = list(filter(lambda pv: pv["cp"] >= best_eval - max_difference, pvs))
                     else:
                         pvs = list(filter(lambda pv: pv["cp"] <= best_eval + max_difference, pvs))
                     pv = random.choice(pvs)
                 move = pv["moves"].split()[0]
-                score = pv["cp"] if wb == "w" else -pv["cp"]
+                score = pv["cp"] if side == "wtime" else -pv["cp"]
                 comment["score"] = chess.engine.PovScore(chess.engine.Cp(score), board.turn)
                 comment["depth"] = data["depth"]
                 comment["nodes"] = data["knodes"] * 1000
@@ -923,8 +922,8 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
                               opening_explorer_cfg: config.Configuration
                               ) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from lichess's opening explorer."""
-    wb = "w" if board.turn == chess.WHITE else "b"
-    time_left = msec(game.state["wtime"]) if board.turn == chess.WHITE else msec(game.state["btime"])
+    side = wbtime(board)
+    time_left = msec(game.state[side])
     min_time = seconds(opening_explorer_cfg.min_time)
     source = opening_explorer_cfg.source
     if not opening_explorer_cfg.enabled or time_left < min_time or source == "master" and board.uci_variant != "chess":
@@ -944,7 +943,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
             if not player:
                 player = game.username
             params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
-                      "recentGames": 0, "color": "white" if wb == "w" else "black"}
+                      "recentGames": 0, "color": "white" if side == "wtime" else "black"}
             response = li.online_book_get("https://explorer.lichess.ovh/player", params, True)
             comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
         else:
@@ -955,7 +954,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]
             winrate = (possible_move["white"] + possible_move["draws"] * .5) / games_played
-            if wb == "b":
+            if side == "btime":
                 winrate = 1 - winrate
             if games_played >= opening_explorer_cfg.min_games:
                 # We add both winrate and games_played to the tuple, so that if 2 moves are tied on the first metric,
@@ -983,12 +982,9 @@ def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     pieces = chess.popcount(board.occupied)
     source = online_egtb_cfg.source
     minimum_time = seconds(online_egtb_cfg.min_time)
-    if board.turn == chess.WHITE:
-        wbtime = game.state["wtime"]
-    else:
-        wbtime = game.state["btime"]
+    time_left = game.state[wbtime(board)]
     if (not use_online_egtb
-            or msec(wbtime) < minimum_time
+            or msec(time_left) < minimum_time
             or board.uci_variant not in ["chess", "antichess", "atomic"]
             and source == "lichess"
             or board.uci_variant != "chess"

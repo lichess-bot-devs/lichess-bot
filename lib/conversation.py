@@ -1,5 +1,4 @@
 """Allows lichess-bot to send messages to the chat."""
-
 import logging
 import test_bot.lichess
 from lib import model

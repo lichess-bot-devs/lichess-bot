@@ -1,5 +1,5 @@
 """Allows lichess-bot to send messages to the chat."""
-from __future__ import annotations
+
 import logging
 import test_bot.lichess
 from lib import model
@@ -13,6 +13,19 @@ MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 logger = logging.getLogger(__name__)
+
+
+class ChatLine:
+    """Information about the message."""
+
+    def __init__(self, message_info: GameEventType) -> None:
+        """Information about the message."""
+        self.room = message_info["room"]
+        """Whether the message was sent in the chat room or in the spectator room."""
+        self.username = message_info["username"]
+        """The username of the account that sent the message."""
+        self.text = message_info["text"]
+        """The message sent."""
 
 
 class Conversation:
@@ -91,16 +104,3 @@ class Conversation:
         """Send the message to the chat."""
         if message:
             self.send_reply(ChatLine({"room": room, "username": "", "text": ""}), message)
-
-
-class ChatLine:
-    """Information about the message."""
-
-    def __init__(self, message_info: GameEventType) -> None:
-        """Information about the message."""
-        self.room = message_info["room"]
-        """Whether the message was sent in the chat room or in the spectator room."""
-        self.username = message_info["username"]
-        """The username of the account that sent the message."""
-        self.text = message_info["text"]
-        """The message sent."""

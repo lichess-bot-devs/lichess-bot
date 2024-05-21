@@ -45,8 +45,8 @@ class Challenge:
         increment_min: int = challenge_cfg.min_increment
         base_max: int = challenge_cfg.max_base
         base_min: int = challenge_cfg.min_base
-        days_max: int = challenge_cfg.max_days
-        days_min: int = challenge_cfg.min_days
+        days_max: float = challenge_cfg.max_days
+        days_min: float = challenge_cfg.min_days
 
         if self.speed not in speeds:
             return False

@@ -3,7 +3,6 @@ Some example classes for people who want to create a homemade bot.
 
 With these classes, bot makers will not have to implement the UCI or XBoard interfaces themselves.
 """
-
 import chess
 from chess.engine import PlayResult, Limit
 import random

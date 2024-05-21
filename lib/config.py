@@ -6,25 +6,10 @@ import os.path
 import logging
 import math
 from abc import ABCMeta
-from enum import Enum
-from typing import Any, Union
-CONFIG_DICT_TYPE = dict[str, Any]
+from typing import Any, Union, ItemsView
+from lib.types import CONFIG_DICT_TYPE, FilterType
 
 logger = logging.getLogger(__name__)
-
-
-class FilterType(str, Enum):
-    """What to do if the opponent declines our challenge."""
-
-    NONE = "none"
-    """Will still challenge the opponent."""
-    COARSE = "coarse"
-    """Won't challenge the opponent again."""
-    FINE = "fine"
-    """
-    Won't challenge the opponent to a game of the same mode, speed, and variant
-    based on the reason for the opponent declining the challenge.
-    """
 
 
 class Configuration:
@@ -53,7 +38,7 @@ class Configuration:
         data = self.config.get(name)
         return Configuration(data) if isinstance(data, dict) else data
 
-    def items(self) -> Any:
+    def items(self) -> ItemsView[str, Any]:
         """:return: All the key-value pairs in this config."""
         return self.config.items()
 

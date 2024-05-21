@@ -7,21 +7,23 @@ import logging
 import traceback
 import datetime
 from queue import Queue
-from typing import Union, Any, Optional, Generator
+from typing import Union, Optional, Generator
 from lib.timer import to_msec
-from lib.lichess import JSON_REPLY_TYPE, REQUESTS_PAYLOAD_TYPE
+from lib.types import (UserProfileType, ChallengeSentType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
+                       BackoffDetails)
+
 
 logger = logging.getLogger(__name__)
 
 
-def backoff_handler(details: Any) -> None:
+def backoff_handler(details: BackoffDetails) -> None:
     """Log exceptions inside functions with the backoff decorator."""
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
     logger.debug(f"Exception: {traceback.format_exc()}")
 
 
-def is_final(error: Any) -> bool:
+def is_final(error: Exception) -> bool:
     """Mock error handler for tests when a function has a backup decorator."""
     logger.debug(error)
     return False
@@ -187,7 +189,7 @@ class Lichess:
         """Isn't used in tests."""
         pass
 
-    def get_profile(self) -> dict[str, Union[str, bool, dict[str, str]]]:
+    def get_profile(self) -> UserProfileType:
         """Return a simple profile for the bot that lichess-bot uses when testing."""
         return {"id": "b",
                 "username": "b",
@@ -200,7 +202,7 @@ class Lichess:
                 "followsYou": False,
                 "perfs": {}}
 
-    def get_ongoing_games(self) -> list[dict[str, Any]]:
+    def get_ongoing_games(self) -> list[GameType]:
         """Return that the bot isn't playing a game."""
         return []
 
@@ -222,11 +224,11 @@ class Lichess:
 *
 """
 
-    def get_online_bots(self) -> list[dict[str, Union[str, bool]]]:
+    def get_online_bots(self) -> list[UserProfileType]:
         """Return that the only bot online is us."""
         return [{"username": "b", "online": True}]
 
-    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> JSON_REPLY_TYPE:
+    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeSentType:
         """Isn't used in tests."""
         return {}
 
@@ -234,7 +236,8 @@ class Lichess:
         """Isn't used in tests."""
         pass
 
-    def online_book_get(self, path: str, params: Optional[dict[str, Any]] = None, stream: bool = False) -> JSON_REPLY_TYPE:
+    def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None,
+                        stream: bool = False) -> OnlineType:
         """Isn't used in tests."""
         return {}
 
@@ -242,6 +245,6 @@ class Lichess:
         """Return that a bot is online."""
         return True
 
-    def get_public_data(self, user_name: str) -> JSON_REPLY_TYPE:
+    def get_public_data(self, user_name: str) -> PublicDataType:
         """Isn't used in tests."""
         return {}

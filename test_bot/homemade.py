@@ -5,10 +5,8 @@ import chess.engine
 import sys
 from lib.config import Configuration
 from lib import model
-from typing import Any, Optional, Union
-OPTIONS_TYPE = dict[str, Any]
-COMMANDS_TYPE = list[str]
-MOVE = Union[chess.engine.PlayResult, list[chess.Move]]
+from typing import Optional
+from lib.types import OPTIONS_GO_EGTB_TYPE, COMMANDS_TYPE, MOVE
 
 platform = sys.platform
 file_extension = ".exe" if platform == "win32" else ""
@@ -17,7 +15,7 @@ file_extension = ".exe" if platform == "win32" else ""
 class Stockfish(ExampleEngine):
     """A homemade engine that uses Stockfish."""
 
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_TYPE, stderr: Optional[int],
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
                  draw_or_resign: Configuration, game: Optional[model.Game], **popen_args: str):
         """Start Stockfish."""
         super().__init__(commands, options, stderr, draw_or_resign, game, **popen_args)

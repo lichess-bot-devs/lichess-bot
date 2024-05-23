@@ -1,4 +1,4 @@
-lichess_bot_version: 2024.5.23.1
+lichess_bot_version: 2024.5.23.2
 minimum_python_version: '3.9'
 deprecated_python_version: '3.8'
 deprecation_date: 2023-05-01

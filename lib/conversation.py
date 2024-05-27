@@ -69,7 +69,7 @@ class Conversation:
         from_self = line.username == self.game.username
         is_eval = cmd.startswith("eval")
         if cmd == "commands" or cmd == "help":
-            self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
+            self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval (or any text starting with !eval), !queue")
         elif cmd == "wait" and self.game.is_abortable():
             self.game.ping(seconds(60), seconds(120), seconds(120))
             self.send_reply(line, "Waiting 60 seconds...")

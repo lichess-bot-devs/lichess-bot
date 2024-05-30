@@ -1,5 +1,5 @@
 chess==1.10.0
 PyYAML==6.0.1
-requests==2.32.2
+requests==2.32.3
 backoff==2.2.1
 rich==13.7.1

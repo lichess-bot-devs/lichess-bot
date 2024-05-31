@@ -67,8 +67,11 @@ class Conversation:
         :param cmd: The command to react to.
         """
         from_self = line.username == self.game.username
+        is_eval = cmd.startswith("eval")
         if cmd == "commands" or cmd == "help":
-            self.send_reply(line, "Supported commands: !wait (wait a minute for my first move), !name, !howto, !eval, !queue")
+            self.send_reply(line, (
+                "Supported commands: !wait (wait a minute for my first move), !name, !howto, "
+                "!eval (or any text starting with !eval), !queue"))
         elif cmd == "wait" and self.game.is_abortable():
             self.game.ping(seconds(60), seconds(120), seconds(120))
             self.send_reply(line, "Waiting 60 seconds...")
@@ -77,10 +80,10 @@ class Conversation:
             self.send_reply(line, f"{name} running {self.engine.name()} (lichess-bot v{self.version})")
         elif cmd == "howto":
             self.send_reply(line, "How to run: Check out 'Lichess Bot API'")
-        elif cmd == "eval" and (from_self or line.room == "spectator"):
+        elif is_eval and (from_self or line.room == "spectator"):
             stats = self.engine.get_stats(for_chat=True)
             self.send_reply(line, ", ".join(stats))
-        elif cmd == "eval":
+        elif is_eval:
             self.send_reply(line, "I don't tell that to my opponent, sorry.")
         elif cmd == "queue":
             if self.challengers:

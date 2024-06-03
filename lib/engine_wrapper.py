@@ -15,8 +15,8 @@ import math
 import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
-from lib import config, model, lichess
-from lib.config import Configuration
+from lib import model, lichess
+from lib.config import Configuration, change_value_to_list
 from lib.timer import Timer, msec, seconds, msec_str, sec_str, to_seconds
 from lib.types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIONS_GO_EGTB_TYPE, OPTIONS_TYPE,
                        COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE,
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 out_of_online_opening_book_moves: Counter[str] = Counter()
 
 
-def create_engine(engine_config: config.Configuration, game: Optional[model.Game] = None) -> EngineWrapper:
+def create_engine(engine_config: Configuration, game: Optional[model.Game] = None) -> EngineWrapper:
     """
     Create the engine.
 
@@ -61,12 +61,12 @@ def create_engine(engine_config: config.Configuration, game: Optional[model.Game
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
-    options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or config.Configuration({}))
+    options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
     logger.debug(f"Starting engine: {commands}")
     return Engine(commands, options, stderr, cfg.draw_or_resign, game, cwd=cfg.working_dir)
 
 
-def remove_managed_options(config: config.Configuration) -> OPTIONS_GO_EGTB_TYPE:
+def remove_managed_options(config: Configuration) -> OPTIONS_GO_EGTB_TYPE:
     """Remove the options managed by python-chess."""
     def is_managed(key: str) -> bool:
         return chess.engine.Option(key, "", None, None, None, None).is_managed()
@@ -80,7 +80,7 @@ PONDERPV_CHARACTERS = 6  # The length of ", Pv: ".
 class EngineWrapper:
     """A wrapper used by all engines (UCI, XBoard, Homemade)."""
 
-    def __init__(self, options: OPTIONS_GO_EGTB_TYPE, draw_or_resign: config.Configuration) -> None:
+    def __init__(self, options: OPTIONS_GO_EGTB_TYPE, draw_or_resign: Configuration) -> None:
         """
         Initialize the values of the wrapper used by all engines (UCI, XBoard, Homemade).
 
@@ -90,7 +90,7 @@ class EngineWrapper:
         self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
         self.scores: list[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
-        self.go_commands = config.Configuration(cast(GO_COMMANDS_TYPE, options.pop("go_commands", {})) or {})
+        self.go_commands = Configuration(cast(GO_COMMANDS_TYPE, options.pop("go_commands", {})) or {})
         self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
 
@@ -132,7 +132,7 @@ class EngineWrapper:
                   can_ponder: bool,
                   is_correspondence: bool,
                   correspondence_move_time: datetime.timedelta,
-                  engine_cfg: config.Configuration,
+                  engine_cfg: Configuration,
                   min_time: datetime.timedelta) -> None:
         """
         Play a move.
@@ -478,7 +478,7 @@ class UCIEngine(EngineWrapper):
     """The class used to communicate with UCI engines."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
-                 draw_or_resign: config.Configuration, game: Optional[model.Game], **popen_args: str) -> None:
+                 draw_or_resign: Configuration, game: Optional[model.Game], **popen_args: str) -> None:
         """
         Communicate with UCI engines.
 
@@ -499,7 +499,7 @@ class XBoardEngine(EngineWrapper):
     """The class used to communicate with XBoard engines."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
-                 draw_or_resign: config.Configuration, game: Optional[model.Game], **popen_args: str) -> None:
+                 draw_or_resign: Configuration, game: Optional[model.Game], **popen_args: str) -> None:
         """
         Communicate with XBoard engines.
 
@@ -738,7 +738,7 @@ def check_for_draw_offer(game: model.Game) -> bool:
 
 
 def get_book_move(board: chess.Board, game: model.Game,
-                  polyglot_cfg: config.Configuration) -> chess.engine.PlayResult:
+                  polyglot_cfg: Configuration) -> chess.engine.PlayResult:
     """Get a move from an opening book."""
     no_book_move = chess.engine.PlayResult(None, None)
     use_book = polyglot_cfg.enabled
@@ -751,7 +751,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     else:
         variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
-    config.change_value_to_list(polyglot_cfg.config, "book", key=variant)
+    change_value_to_list(polyglot_cfg.config, "book", key=variant)
     books = polyglot_cfg.book.lookup(variant)
 
     for book in books:
@@ -776,8 +776,8 @@ def get_book_move(board: chess.Board, game: model.Game,
     return no_book_move
 
 
-def get_online_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_moves_cfg: config.Configuration,
-                    draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
+def get_online_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_moves_cfg: Configuration,
+                    draw_or_resign_cfg: Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
     """
     Get a move from an online source.
 
@@ -829,7 +829,7 @@ def get_online_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, onli
 
 
 def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
-                     chessdb_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
+                     chessdb_cfg: Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from chessdb.cn's opening book."""
     use_chessdb = chessdb_cfg.enabled
     time_left = msec(game.state[wbtime(board)])
@@ -868,7 +868,7 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
 
 
 def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
-                           lichess_cloud_cfg: config.Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
+                           lichess_cloud_cfg: Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from the lichess's cloud analysis."""
     side = wbtime(board)
     time_left = msec(game.state[side])
@@ -922,7 +922,7 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
 
 
 def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
-                              opening_explorer_cfg: config.Configuration
+                              opening_explorer_cfg: Configuration
                               ) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from lichess's opening explorer."""
     side = wbtime(board)
@@ -974,7 +974,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
     return move, comment
 
 
-def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_egtb_cfg: config.Configuration
+def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_egtb_cfg: Configuration
                          ) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from an online egtb (either by lichess or chessdb).
@@ -1011,8 +1011,8 @@ def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     return None, -3, {}
 
 
-def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: config.Configuration,
-                  draw_or_resign_cfg: config.Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
+def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: Configuration,
+                  draw_or_resign_cfg: Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
     """
     Get a move from a local egtb.
 
@@ -1148,7 +1148,7 @@ def get_chessdb_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
 
 
 def get_syzygy(board: chess.Board, game: model.Game,
-               syzygy_cfg: config.Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
+               syzygy_cfg: Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
     """
     Get a move from local syzygy egtbs.
 
@@ -1220,7 +1220,7 @@ def dtz_to_wdl(dtz: Union[int, float]) -> int:
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
-                gaviota_cfg: config.Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
+                gaviota_cfg: Configuration) -> tuple[Union[chess.Move, list[chess.Move], None], int]:
     """
     Get a move from local gaviota egtbs.
 

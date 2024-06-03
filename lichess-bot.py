@@ -3,7 +3,6 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-import lib.config
 from lib import engine_wrapper, model, lichess, matchmaking
 import json
 import logging
@@ -48,7 +47,7 @@ class PlayGameArgsType(TypedDict, total=False):
     li: LICHESS_TYPE
     control_queue: CONTROL_QUEUE_TYPE
     user_profile: UserProfileType
-    config: lib.config.Configuration
+    config: Configuration
     challenge_queue: MULTIPROCESSING_LIST_TYPE
     correspondence_queue: CORRESPONDENCE_QUEUE_TYPE
     logging_queue: LOGGING_QUEUE_TYPE

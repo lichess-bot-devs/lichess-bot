@@ -21,6 +21,7 @@ import yaml
 import traceback
 import itertools
 import glob
+import platform
 import test_bot.lichess
 from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
@@ -1100,7 +1101,7 @@ def intro() -> str:
     return fr"""
     .   _/|
     .  // o\
-    .  || ._)  lichess-bot {__version__}
+    .  || ._)  lichess-bot {__version__} on {platform.system()} {platform.release()}
     .  //__\
     .  )___(   Play on Lichess with a bot
     """

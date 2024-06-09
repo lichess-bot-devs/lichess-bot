@@ -3,7 +3,6 @@ import argparse
 import chess
 import chess.pgn
 from chess.variant import find_variant
-import lib.config
 from lib import engine_wrapper, model, lichess, matchmaking
 import json
 import logging
@@ -22,6 +21,7 @@ import yaml
 import traceback
 import itertools
 import glob
+import platform
 import test_bot.lichess
 from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
@@ -48,7 +48,7 @@ class PlayGameArgsType(TypedDict, total=False):
     li: LICHESS_TYPE
     control_queue: CONTROL_QUEUE_TYPE
     user_profile: UserProfileType
-    config: lib.config.Configuration
+    config: Configuration
     challenge_queue: MULTIPROCESSING_LIST_TYPE
     correspondence_queue: CORRESPONDENCE_QUEUE_TYPE
     logging_queue: LOGGING_QUEUE_TYPE
@@ -1101,7 +1101,7 @@ def intro() -> str:
     return fr"""
     .   _/|
     .  // o\
-    .  || ._)  lichess-bot {__version__}
+    .  || ._)  lichess-bot {__version__} on {platform.system()} {platform.release()}
     .  //__\
     .  )___(   Play on Lichess with a bot
     """

@@ -2,7 +2,6 @@
 from __future__ import annotations
 import yaml
 import os
-import os.path
 import logging
 import math
 from abc import ABCMeta

@@ -1,6 +1,6 @@
 pytest==8.2.2
 pytest-timeout==2.3.1
-flake8==7.0.0
+flake8==7.1.0
 flake8-markdown==0.5.0
 flake8-docstrings==1.7.0
 mypy==1.10.0

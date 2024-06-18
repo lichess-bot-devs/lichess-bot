@@ -242,6 +242,9 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
         for target in ["", "_spectators"]:
             set_config_default(CONFIG, "greeting", key=type + target, default="", force_empty_values=True)
 
+    if CONFIG["matchmaking"]["include_challenge_block_list"]:
+        CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])
+
 
 def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     """

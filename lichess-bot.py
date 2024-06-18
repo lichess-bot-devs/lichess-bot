@@ -22,6 +22,7 @@ import traceback
 import itertools
 import glob
 import platform
+import importlib.metadata
 import test_bot.lichess
 from lib.config import load_config, Configuration
 from lib.conversation import Conversation, ChatLine
@@ -1110,6 +1111,15 @@ def intro() -> str:
 auto_log_directory = "lichess_bot_auto_logs"
 
 
+def log_libraries() -> None:
+    text = "Installed libraries:\n"
+    distributions = importlib.metadata.distributions()
+    for distribution in distributions:
+        text += f"{distribution.metadata['Name']}=={distribution.version}\n"
+    text += "\n"
+    logger.debug(text)
+
+
 def start_lichess_bot() -> None:
     """Parse arguments passed to lichess-bot.py and starts lichess-bot."""
     parser = argparse.ArgumentParser(description="Play on Lichess with a bot")
@@ -1135,6 +1145,7 @@ def start_lichess_bot() -> None:
 
     max_retries = CONFIG.engine.online_moves.max_retries
     check_python_version()
+    log_libraries()
     li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()
@@ -1164,6 +1175,7 @@ def check_python_version() -> None:
 
     def version_str(version: list[int]) -> str:
         return f"Python {'.'.join(str(n) for n in version)}"
+    logger.debug(f"Python version: {version_str(sys.version_info)}")
 
     upgrade_request = (f"You are currently running {version_str(this_python_version)}. "
                        f"Please upgrade to {version_str(python_good_version)} or newer")

@@ -1111,8 +1111,9 @@ def intro() -> str:
 auto_log_directory = "lichess_bot_auto_logs"
 
 
-def log_libraries() -> None:
-    """Log the installed libraries."""
+def log_python_and_libraries() -> None:
+    """Log the installed libraries and the python version."""
+    logger.debug(f"Python version: {'.'.join(map(str, sys.version_info))}")
     text = "Installed libraries:\n"
     distributions = importlib.metadata.distributions()
     for distribution in distributions:
@@ -1146,7 +1147,7 @@ def start_lichess_bot() -> None:
 
     max_retries = CONFIG.engine.online_moves.max_retries
     check_python_version()
-    log_libraries()
+    log_python_and_libraries()
     li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()
@@ -1176,7 +1177,6 @@ def check_python_version() -> None:
 
     def version_str(version: list[int]) -> str:
         return f"Python {'.'.join(str(n) for n in version)}"
-    logger.debug(f"Python version: {version_str(list(sys.version_info))}")
 
     upgrade_request = (f"You are currently running {version_str(this_python_version)}. "
                        f"Please upgrade to {version_str(python_good_version)} or newer")

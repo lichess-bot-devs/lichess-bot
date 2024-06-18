@@ -1112,6 +1112,7 @@ auto_log_directory = "lichess_bot_auto_logs"
 
 
 def log_libraries() -> None:
+    """Log the installed libraries."""
     text = "Installed libraries:\n"
     distributions = importlib.metadata.distributions()
     for distribution in distributions:
@@ -1175,7 +1176,7 @@ def check_python_version() -> None:
 
     def version_str(version: list[int]) -> str:
         return f"Python {'.'.join(str(n) for n in version)}"
-    logger.debug(f"Python version: {version_str(sys.version_info)}")
+    logger.debug(f"Python version: {version_str(list(sys.version_info))}")
 
     upgrade_request = (f"You are currently running {version_str(this_python_version)}. "
                        f"Please upgrade to {version_str(python_good_version)} or newer")

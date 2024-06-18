@@ -491,10 +491,18 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
     They can be sorted either by rating (the best challenger is accepted first),
     or by time (the first challenger is accepted first).
     """
-    if challenge_config.sort_by == "best":
-        list_c = list(challenge_queue)
-        list_c.sort(key=lambda c: -c.score())
-        challenge_queue[:] = list_c
+    if challenge_config.preference != "none":
+        list_challengers = list(challenge_queue)
+        humans = [challenger for challenger in list_challengers if not challenger.challenger.is_bot]
+        bots = [challenger for challenger in list_challengers if challenger.challenger.is_bot]
+        if challenge_config.sort_by == "best":
+            humans.sort(key=lambda challenger: challenger.score(), reverse=True)
+            bots.sort(key=lambda challenger: challenger.score(), reverse=True)
+        challenge_queue[:] = (humans + bots) if challenge_config.preference == "human" else (bots + humans)
+    elif challenge_config.sort_by == "best":
+        list_challengers = list(challenge_queue)
+        list_challengers.sort(key=lambda challenger: challenger.score(), reverse=True)
+        challenge_queue[:] = list_challengers
 
 
 def game_is_active(li: LICHESS_TYPE, game_id: str) -> bool:

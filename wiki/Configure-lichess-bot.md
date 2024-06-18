@@ -154,6 +154,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 - `challenge`: Control what kind of games for which the bot should accept challenges. All of the following options must be satisfied by a challenge to be accepted.
   - `concurrency`: The maximum number of games to play simultaneously.
   - `sort_by`: Whether to start games by the best rated/titled opponent `"best"` or by first-come-first-serve `"first"`.
+  - `preference`: Whether to prioritize human opponents, bot opponents, or treat them equally.
   - `accept_bot`: Whether to accept challenges from other bots.
   - `only_bot`: Whether to only accept challenges from other bots.
   - `max_increment`: The maximum value of time increment.

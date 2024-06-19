@@ -212,6 +212,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "matchmaking", key="challenge_timeout", default=30, force_empty_values=True)
     CONFIG["matchmaking"]["challenge_timeout"] = max(CONFIG["matchmaking"]["challenge_timeout"], 1)
     set_config_default(CONFIG, "matchmaking", key="block_list", default=[], force_empty_values=True)
+    set_config_default(CONFIG, "matchmaking", key="include_challenge_block_list", default=False, force_empty_values=True)
     default_filter = (CONFIG.get("matchmaking") or {}).get("delay_after_decline") or FilterType.NONE.value
     set_config_default(CONFIG, "matchmaking", key="challenge_filter", default=default_filter, force_empty_values=True)
     set_config_default(CONFIG, "matchmaking", key="allow_matchmaking", default=False)
@@ -241,6 +242,9 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     for type in ["hello", "goodbye"]:
         for target in ["", "_spectators"]:
             set_config_default(CONFIG, "greeting", key=type + target, default="", force_empty_values=True)
+
+    if CONFIG["matchmaking"]["include_challenge_block_list"]:
+        CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])
 
 
 def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:

@@ -496,7 +496,7 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
     if challenge_config.sort_by == "best":
         challenge_list.sort(key=lambda challenger: challenger.score(), reverse=True)
     if challenge_config.preference != "none":
-        challenge_list.sort(key=lambda challenger: challenger.is_bot, reverse=challenge_config.preference == "bot")
+        challenge_list.sort(key=lambda challenger: challenger.challenger.is_bot, reverse=challenge_config.preference == "bot")
     challenge_queue[:] = challenge_list
 
 

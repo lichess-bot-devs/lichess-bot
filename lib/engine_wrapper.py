@@ -1068,15 +1068,15 @@ def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
                 dtm *= -1
             logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
         else:  # quality == "suggest":
-            best_wdl = name_to_wld[data["moves"][0]["category"]]
+            best_wdl = name_to_wld[data["moves"][0]["category"]] * -1
 
             def good_enough(possible_move: LichessEGTBMoveType) -> bool:
-                return name_to_wld[possible_move["category"]] == best_wdl
+                return name_to_wld[possible_move["category"]] * -1 == best_wdl
 
             possible_moves = list(filter(good_enough, data["moves"]))
             if len(possible_moves) > 1:
                 move_list = [move["uci"] for move in possible_moves]
-                wdl = best_wdl * -1
+                wdl = best_wdl
                 logger.info(f"Suggesting moves from tablebase.lichess.ovh (wdl: {wdl}) for game {game.id}")
                 return move_list, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
             else:
@@ -1102,7 +1102,7 @@ def get_chessdb_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     def score_to_wdl(score: int) -> int:
-        return piecewise_function([(-20000, 'e', 2),
+        return piecewise_function([(-20000, 'e', -2),
                                    (0, 'e', -1),
                                    (0, 'i', 0),
                                    (20000, 'i', 1)], 2, score)

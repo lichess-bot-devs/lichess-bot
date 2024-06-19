@@ -7,6 +7,9 @@ from typing import Union
 
 
 def pytest_sessionfinish(session: Session, exitstatus: Union[int, ExitCode]) -> None:
-    """Remove files created when testing lichess-bot."""
+    """
+    Remove files created when testing lichess-bot, except if running in a GitHub action because we want to save the
+    engines to the cache.
+    """
     if os.path.exists("TEMP") and not os.getenv("GITHUB_ACTIONS"):
         shutil.rmtree("TEMP")

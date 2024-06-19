@@ -116,7 +116,7 @@ download_opening_book()
 
 def get_online_move_wrapper(li: LICHESS_TYPE, board: chess.Board, game: Game, online_moves_cfg: Configuration,
                             draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult:
-    """Wrapper for lib.engine_wrapper.get_online_move."""
+    """Wrap `lib.engine_wrapper.get_online_move` so that it only returns a PlayResult type."""
     return cast(chess.engine.PlayResult, get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))
 
 

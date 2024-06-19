@@ -1,23 +1,30 @@
+"""Test the functions that get the external moves."""
 import backoff
 import requests
 import yaml
 import os
 import chess
 import logging
+import test_bot.lichess
+import chess.engine
 from datetime import timedelta
 from copy import deepcopy
 from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
 from http.client import RemoteDisconnected
-from lib.types import OnlineType
-from typing import Optional, Union
+from lib.types import OnlineType, GameEventType
+from typing import Optional, Union, cast
 from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values
 from lib.model import Game
 from lib.engine_wrapper import get_online_move, get_book_move
+LICHESS_TYPE = Union[Lichess, test_bot.lichess.Lichess]
 
 
 class MockLichess(Lichess):
+    """A modified Lichess class for communication with external move sources."""
+
     def __init__(self) -> None:
+        """Initialize only self.other_session and not self.session."""
         self.max_retries = 3
         self.other_session = requests.Session()
 
@@ -42,6 +49,7 @@ class MockLichess(Lichess):
 
 
 def get_configs() -> tuple[Configuration, Configuration, Configuration, Configuration]:
+    """Create the configs used for the tests."""
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     insert_default_values(CONFIG)
@@ -59,34 +67,35 @@ def get_configs() -> tuple[Configuration, Configuration, Configuration, Configur
 
 
 def get_game() -> Game:
-    game_event = {"id": "zzzzzzzz",
-                  "variant": {"key": "standard",
-                              "name": "Standard",
-                              "short": "Std"},
-                  "clock": {"initial": 60000,
-                            "increment": 2000},
-                  "speed": "bullet",
-                  "perf": {"name": "Bullet"},
-                  "rated": True,
-                  "createdAt": 1600000000000,
-                  "white": {"id": "bo",
-                            "name": "bo",
-                            "title": "BOT",
-                            "rating": 3000},
-                  "black": {"id": "b",
-                            "name": "b",
-                            "title": "BOT",
-                            "rating": 3000,
-                            "provisional": True},
-                  "initialFen": "startpos",
-                  "type": "gameFull",
-                  "state": {"type": "gameState",
-                            "moves": "",
-                            "wtime": 1000000,
-                            "btime": 1000000,
-                            "winc": 2000,
-                            "binc": 2000,
-                            "status": "started"}}
+    """Create a model.Game to be used in the tests."""
+    game_event: GameEventType = {"id": "zzzzzzzz",
+                                 "variant": {"key": "standard",
+                                             "name": "Standard",
+                                             "short": "Std"},
+                                 "clock": {"initial": 60000,
+                                           "increment": 2000},
+                                 "speed": "bullet",
+                                 "perf": {"name": "Bullet"},
+                                 "rated": True,
+                                 "createdAt": 1600000000000,
+                                 "white": {"id": "bo",
+                                           "name": "bo",
+                                           "title": "BOT",
+                                           "rating": 3000},
+                                 "black": {"id": "b",
+                                           "name": "b",
+                                           "title": "BOT",
+                                           "rating": 3000,
+                                           "provisional": True},
+                                 "initialFen": "startpos",
+                                 "type": "gameFull",
+                                 "state": {"type": "gameState",
+                                           "moves": "",
+                                           "wtime": 1000000,
+                                           "btime": 1000000,
+                                           "winc": 2000,
+                                           "binc": 2000,
+                                           "status": "started"}}
     game = Game(game_event, "b", "https://lichess.org", timedelta(seconds=60))
     return game
 
@@ -105,7 +114,14 @@ os.makedirs("TEMP", exist_ok=True)
 download_opening_book()
 
 
+def get_online_move_wrapper(li: LICHESS_TYPE, board: chess.Board, game: Game, online_moves_cfg: Configuration,
+                            draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult:
+    """Wrapper for lib.engine_wrapper.get_online_move."""
+    return cast(chess.engine.PlayResult, get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))
+
+
 def test_external_moves() -> None:
+    """Test that the code for external moves works properly."""
     li = MockLichess()
     game = get_game()
     online_cfg, online_cfg_2, draw_or_resign_cfg, polyglot_cfg = get_configs()
@@ -118,35 +134,37 @@ def test_external_moves() -> None:
     endgame_wdl0_fen = "6N1/3n4/3k1b2/8/8/7Q/5K2/1r6 b - - 8 10"
 
     # Test lichess_cloud_analysis.
-    assert get_online_move(li, chess.Board(starting_fen), game, online_cfg, draw_or_resign_cfg).move is not None
-    assert get_online_move(li, chess.Board(opening_fen), game, online_cfg, draw_or_resign_cfg).move is not None
-    assert get_online_move(li, chess.Board(middlegame_fen), game, online_cfg, draw_or_resign_cfg).move is None
+    assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg, draw_or_resign_cfg).move is not None
+    assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg, draw_or_resign_cfg).move is not None
+    assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg, draw_or_resign_cfg).move is None
 
     # Test chessdb_book.
-    assert get_online_move(li, chess.Board(starting_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
-    assert get_online_move(li, chess.Board(opening_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
-    assert get_online_move(li, chess.Board(middlegame_fen), game, online_cfg_2, draw_or_resign_cfg).move is None
+    assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
+    assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
+    assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg_2, draw_or_resign_cfg).move is None
 
     # Test online_egtb with lichess.
-    assert get_online_move(li, chess.Board(endgame_wdl2_fen), game, online_cfg, draw_or_resign_cfg).resigned
-    assert get_online_move(li, chess.Board(endgame_wdl0_fen), game, online_cfg, draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move(li, chess.Board(endgame_wdl1_fen), game, online_cfg, draw_or_resign_cfg)
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg, draw_or_resign_cfg).resigned
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg, draw_or_resign_cfg).draw_offered
+    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg, draw_or_resign_cfg)
     assert not wdl1_move.resigned and not wdl1_move.draw_offered
     # Test with reversed colors.
-    assert get_online_move(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg, draw_or_resign_cfg).resigned
-    assert get_online_move(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg, draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg, draw_or_resign_cfg)
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg, draw_or_resign_cfg).resigned
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg,
+                           draw_or_resign_cfg).draw_offered
+    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg, draw_or_resign_cfg)
     assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
     # Test online_egtb with chessdb.
-    assert get_online_move(li, chess.Board(endgame_wdl2_fen), game, online_cfg_2, draw_or_resign_cfg).resigned
-    assert get_online_move(li, chess.Board(endgame_wdl0_fen), game, online_cfg_2, draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move(li, chess.Board(endgame_wdl1_fen), game, online_cfg_2, draw_or_resign_cfg)
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg_2, draw_or_resign_cfg).resigned
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg_2, draw_or_resign_cfg).draw_offered
+    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg_2, draw_or_resign_cfg)
     assert not wdl1_move.resigned and not wdl1_move.draw_offered
     # Test with reversed colors.
-    assert get_online_move(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg).resigned
-    assert get_online_move(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg)
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg).resigned
+    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg_2,
+                           draw_or_resign_cfg).draw_offered
+    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg)
     assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
     # Test opening book.

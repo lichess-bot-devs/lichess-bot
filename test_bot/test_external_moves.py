@@ -151,7 +151,7 @@ def test_external_moves() -> None:
     # Test with reversed colors.
     assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg, draw_or_resign_cfg).resigned
     assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg,
-                           draw_or_resign_cfg).draw_offered
+                                   draw_or_resign_cfg).draw_offered
     wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg, draw_or_resign_cfg)
     assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
@@ -163,7 +163,7 @@ def test_external_moves() -> None:
     # Test with reversed colors.
     assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg).resigned
     assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg_2,
-                           draw_or_resign_cfg).draw_offered
+                                   draw_or_resign_cfg).draw_offered
     wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg)
     assert not wdl1_move.resigned and not wdl1_move.draw_offered
 

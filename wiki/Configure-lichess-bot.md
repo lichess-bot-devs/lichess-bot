@@ -142,6 +142,8 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - `offer_draw_for_egtb_zero`: If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
     - `offer_draw_moves`: The absolute value of the evaluation has to be less than or equal to `offer_draw_score` for `offer_draw_moves` amount of moves for the bot to offer/accept draw.
     - `offer_draw_pieces`: The bot only offers/accepts draws if the position has less than or equal to `offer_draw_pieces` pieces.
+  
+  Note: if a games reaches 300 moves it is adjudicated as a draw and shows up in the logs as _draw by agreement_ (see [this discussion](https://lichess.org/forum/general-chess-discussion/lichess-300-move-rule-forced-draw) and [this commit](https://github.com/lichess-org/lila/commit/f8921999115878a98431cd722b267281793b7f6f)).
 
 ## Options for correspondence games
 - `correspondence` These options control how the engine behaves during correspondence games.

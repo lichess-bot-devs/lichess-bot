@@ -286,6 +286,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
             config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
 
+    config_assert(CONFIG["challenge"]["sort_by"] in ["best", "first"], "challenge.sort_by can be either `first` or `best`.")
+    config_assert(CONFIG["challenge"]["preference"] in ["none", "human", "bot"],
+                  "challenge.preference should be `none`, `human`, or `bot`.")
+
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")
     config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted "

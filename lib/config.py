@@ -196,6 +196,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
+    set_config_default(CONFIG, "challenge", key="preference", default="none")
     set_config_default(CONFIG, "challenge", key="accept_bot", default=False)
     set_config_default(CONFIG, "challenge", key="only_bot", default=False)
     set_config_default(CONFIG, "challenge", key="max_increment", default=180)
@@ -288,6 +289,10 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
             online_section = (CONFIG["engine"].get(section) or {}).get(subsection) or {}
             config_assert(online_section.get("move_quality") != "suggest" or not online_section.get("enabled"),
                           f"XBoard engines can't be used with `move_quality` set to `suggest` in {subsection}.")
+
+    config_assert(CONFIG["challenge"]["sort_by"] in ["best", "first"], "challenge.sort_by can be either `first` or `best`.")
+    config_assert(CONFIG["challenge"]["preference"] in ["none", "human", "bot"],
+                  "challenge.preference should be `none`, `human`, or `bot`.")
 
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")

@@ -1,6 +1,6 @@
 <div align="center">
 
-  ![lichess-bot](https://repository-images.githubusercontent.com/129721834/49e3e215-c2bc-4116-a5da-f7ed44b3cb9b)
+  ![lichess-bot](https://github.com/lichess-bot-devs/lichess-bot-images/blob/main/lichess-bot-icon-400.png)
 
   <h1>lichess-bot</h1>
 

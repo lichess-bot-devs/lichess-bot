@@ -43,6 +43,9 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile
+          platforms: |
+            linux/amd64
+            linux/arm64
           build-args: VARIANT=-alpine
           push: true
           tags: |
@@ -56,6 +59,9 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile
+          platforms: |
+            linux/amd64
+            linux/arm64
           push: true
           tags: |
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest

@@ -8,19 +8,19 @@ on:
 
 env:
   GB_REGISTRY: ghcr.io
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Assign defaultValue
         run: |
           version=$(grep -m1 '^lichess_bot_version: ' lib/versioning.yml | sed -n -e 's/^.*://p' | tr -d '[:space:]')
           echo version="$version" >> "$GITHUB_ENV"
-      
+
       - name: show me docker tags.
         run: |
           echo "version:'"$version"'"
@@ -30,19 +30,28 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_TOKEN }}
-          
+
       - name: Login to Github container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.GB_REGISTRY }}
           username: ${{ secrets.GB_REPO_USER }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: build and push alpine image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
+          platforms: |
+            linux/amd64
+            linux/arm64
           build-args: VARIANT=-alpine
           push: true
           tags: |
@@ -50,12 +59,15 @@ jobs:
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
             ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:alpine
             ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
-      
+
       - name: build and push fat image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
+          platforms: |
+            linux/amd64
+            linux/arm64
           push: true
           tags: |
             ${{ vars.DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:latest

@@ -13,7 +13,7 @@ from lib.timer import Timer, seconds, sec_str
 from typing import Optional, Union, cast
 import chess.engine
 from lib.types import (UserProfileType, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType, OnlineType,
-                       ChallengeSentType, TOKEN_TESTS_TYPE, BackoffDetails)
+                       ChallengeType, TOKEN_TESTS_TYPE, BackoffDetails)
 
 
 ENDPOINTS = {
@@ -199,7 +199,7 @@ class Lichess:
                  headers: Optional[dict[str, str]] = None,
                  params: Optional[dict[str, str]] = None,
                  payload: Optional[REQUESTS_PAYLOAD_TYPE] = None,
-                 raise_for_status: bool = True) -> Union[ChallengeSentType, Optional[TOKEN_TESTS_TYPE]]:
+                 raise_for_status: bool = True) -> Union[ChallengeType, Optional[TOKEN_TESTS_TYPE]]:
         """
         Send a POST to lichess.org.
 
@@ -223,7 +223,7 @@ class Lichess:
         if raise_for_status:
             response.raise_for_status()
 
-        json_response: Union[ChallengeSentType, Optional[TOKEN_TESTS_TYPE]] = response.json()
+        json_response: Union[ChallengeType, Optional[TOKEN_TESTS_TYPE]] = response.json()
         return json_response
 
     def get_path_template(self, endpoint_name: str) -> str:
@@ -366,9 +366,9 @@ class Lichess:
         except Exception:
             return []
 
-    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeSentType:
+    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeType:
         """Create a challenge."""
-        return cast(ChallengeSentType,
+        return cast(ChallengeType,
                     self.api_post("challenge", username, payload=payload, raise_for_status=False))
 
     def cancel(self, challenge_id: str) -> None:

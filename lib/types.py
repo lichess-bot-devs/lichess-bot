@@ -190,12 +190,6 @@ class ChallengeType(TypedDict, total=False):
     initialFen: str
 
 
-class ChallengeSentType(TypedDict, total=False):
-    """Type hint for challenge sent."""
-
-    challenge: ChallengeType
-
-
 class EventType(TypedDict, total=False):
     """Type hint for event."""
 

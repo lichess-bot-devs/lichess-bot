@@ -104,7 +104,7 @@ class Matchmaking:
             self.update_daily_challenge_record()
             self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
-            challenge_id: str = response.get("challenge", {}).get("id", "")
+            challenge_id: str = response.get("id", "")
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)

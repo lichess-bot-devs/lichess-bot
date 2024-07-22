@@ -9,7 +9,7 @@ import datetime
 from queue import Queue
 from typing import Union, Optional, Generator
 from lib.timer import to_msec
-from lib.types import (UserProfileType, ChallengeSentType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
+from lib.types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
                        BackoffDetails)
 
 
@@ -228,7 +228,7 @@ class Lichess:
         """Return that the only bot online is us."""
         return [{"username": "b", "online": True}]
 
-    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeSentType:
+    def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeType:
         """Isn't used in tests."""
         return {}
 

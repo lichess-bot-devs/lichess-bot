@@ -513,12 +513,11 @@ class XBoardEngine(EngineWrapper):
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=True,
                                                              stderr=stderr, **popen_args)
-        egt_paths: EGTPATH_TYPE = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
-        features = self.engine.protocol.features if isinstance(self.engine.protocol, chess.engine.XBoardProtocol) else {}
-        egt_features = features.get("egt", "")
+        egt_paths = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
+        protocol = cast(chess.engine.XBoardProtocol, self.engine.protocol)
+        egt_features = protocol.features.get("egt", "")
         if isinstance(egt_features, str):
             egt_types_from_engine = egt_features.split(",")
-            egt_type: str
             for egt_type in filter(None, egt_types_from_engine):
                 if egt_type in egt_paths:
                     options[f"egtpath {egt_type}"] = egt_paths[egt_type]

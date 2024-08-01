@@ -388,7 +388,7 @@ class EngineWrapper:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation", "time": "movetime"}
             stat = cast(InfoDictKeys, readable.get(stat, stat))
             if stat == "string" and isinstance(value, str) and value.startswith("lichess-bot-source:"):
-                stat = cast(InfoDictKeys, "Source")
+                stat = "Source"
                 value = value.split(":", 1)[1]
             return cast(InfoDictKeys, stat.title()), value
 

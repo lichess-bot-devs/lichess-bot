@@ -57,8 +57,8 @@ class Matchmaking:
 
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
-        self.challenge_id: str = ""
-        self.daily_challenges: DAILY_TIMERS_TYPE = read_daily_challenges()
+        self.challenge_id = ""
+        self.daily_challenges = read_daily_challenges()
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
         # game aspect is the one the challenged bot objects to and is one of:
@@ -104,7 +104,7 @@ class Matchmaking:
             self.update_daily_challenge_record()
             self.last_challenge_created_delay.reset()
             response = self.li.challenge(username, params)
-            challenge_id: str = response.get("id", "")
+            challenge_id = response.get("id", "")
             if not challenge_id:
                 logger.error(response)
                 self.add_to_block_list(username)

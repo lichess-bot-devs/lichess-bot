@@ -7,8 +7,7 @@ from enum import Enum
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
 from collections import defaultdict
-from lib.types import UserProfileType, ChallengeType, GameEventType, GameStateType, PlayerType
-from typing import Optional
+from lib.types import UserProfileType, ChallengeType, GameEventType, PlayerType
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +22,9 @@ class Challenge:
         self.variant = challenge_info["variant"]["key"]
         self.perf_name = challenge_info["perf"]["name"]
         self.speed = challenge_info["speed"]
-        self.increment: Optional[int] = challenge_info.get("timeControl", {}).get("increment")
-        self.base: Optional[int] = challenge_info.get("timeControl", {}).get("limit")
-        self.days: Optional[int] = challenge_info.get("timeControl", {}).get("daysPerTurn")
+        self.increment = challenge_info.get("timeControl", {}).get("increment")
+        self.base = challenge_info.get("timeControl", {}).get("limit")
+        self.days = challenge_info.get("timeControl", {}).get("daysPerTurn")
         self.challenger = Player(challenge_info.get("challenger") or {})
         self.challenge_target = Player(challenge_info.get("destUser") or {})
         self.from_self = self.challenger.name == user_profile["username"]
@@ -155,7 +154,7 @@ class Game:
     def __init__(self, game_info: GameEventType, username: str, base_url: str, abort_time: datetime.timedelta) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
-        self.id: str = game_info["id"]
+        self.id = game_info["id"]
         self.speed = game_info.get("speed")
         clock = game_info.get("clock") or {}
         ten_years_in_ms = to_msec(years(10))
@@ -167,7 +166,7 @@ class Game:
         self.white = Player(game_info["white"])
         self.black = Player(game_info["black"])
         self.initial_fen = game_info.get("initialFen")
-        self.state: GameStateType = game_info["state"]
+        self.state = game_info["state"]
         self.is_white = (self.white.name or "").lower() == username.lower()
         self.my_color = "white" if self.is_white else "black"
         self.opponent_color = "black" if self.is_white else "white"
@@ -277,7 +276,7 @@ class Player:
         self.provisional = player_info.get("provisional")
         self.aiLevel = player_info.get("aiLevel")
         self.is_bot = self.title == "BOT" or self.aiLevel is not None
-        self.name: str = f"AI level {self.aiLevel}" if self.aiLevel else player_info.get("name", "")
+        self.name = f"AI level {self.aiLevel}" if self.aiLevel else player_info.get("name", "")
 
     def __str__(self) -> str:
         """Get a string representation of `Player`."""

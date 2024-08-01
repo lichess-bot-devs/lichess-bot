@@ -426,7 +426,7 @@ class EngineWrapper:
     def name(self) -> str:
         """Get the name of the engine."""
         engine_info: dict[str, str] = dict(self.engine.id)
-        name: str = engine_info["name"]
+        name = engine_info["name"]
         return name
 
     def get_pid(self) -> str:
@@ -596,9 +596,7 @@ class FillerEngine:
 
     def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
         """:param name: The name to send to the chat."""
-        self.id: dict[str, str] = {
-            "name": name
-        }
+        self.id = {"name": name}
         self.name = name
         self.main_engine = main_engine
 

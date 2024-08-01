@@ -351,10 +351,10 @@ def lichess_bot_main(li: LICHESS_TYPE,
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
     matchmaker.show_earliest_challenge_time()
 
-    play_game_args: PlayGameArgsType = {"li": li, "control_queue": control_queue, "user_profile": user_profile,
-                                        "config": config, "challenge_queue": challenge_queue,
-                                        "correspondence_queue": correspondence_queue, "logging_queue": logging_queue,
-                                        "pgn_queue": pgn_queue}
+    play_game_args = PlayGameArgsType(li=li, control_queue=control_queue, user_profile=user_profile,
+                                      config=config, challenge_queue=challenge_queue,
+                                      correspondence_queue=correspondence_queue, logging_queue=logging_queue,
+                                      pgn_queue=pgn_queue)
 
     recent_bot_challenges: defaultdict[str, list[Timer]] = defaultdict(list)
 

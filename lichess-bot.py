@@ -351,10 +351,10 @@ def lichess_bot_main(li: LICHESS_TYPE,
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
     matchmaker.show_earliest_challenge_time()
 
-    play_game_args: PlayGameArgsType = {"li": li, "control_queue": control_queue, "user_profile": user_profile,
-                                        "config": config, "challenge_queue": challenge_queue,
-                                        "correspondence_queue": correspondence_queue, "logging_queue": logging_queue,
-                                        "pgn_queue": pgn_queue}
+    play_game_args = PlayGameArgsType(li=li, control_queue=control_queue, user_profile=user_profile,
+                                      config=config, challenge_queue=challenge_queue,
+                                      correspondence_queue=correspondence_queue, logging_queue=logging_queue,
+                                      pgn_queue=pgn_queue)
 
     recent_bot_challenges: defaultdict[str, list[Timer]] = defaultdict(list)
 
@@ -422,7 +422,7 @@ def close_pool(pool: POOL_TYPE, active_games: set[str], config: Configuration) -
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
     """Get the next event from the control queue."""
     try:
-        event: EventType = control_queue.get()
+        event = control_queue.get()
         if event is None:
             return {}
     except InterruptedError:
@@ -538,8 +538,8 @@ def start_game_thread(active_games: set[str], game_id: str, play_game_args: Play
 
     def game_error_handler(error: BaseException) -> None:
         logger.exception("Game ended due to error:", exc_info=error)
-        control_queue: CONTROL_QUEUE_TYPE = play_game_args["control_queue"]
-        pgn_queue: PGN_QUEUE_TYPE = play_game_args["pgn_queue"]
+        control_queue = play_game_args["control_queue"]
+        pgn_queue = play_game_args["pgn_queue"]
         li = play_game_args["li"]
         control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id}})
         pgn_queue.put_nowait({"game": {"id": game_id,
@@ -857,7 +857,7 @@ def bot_to_move(game: model.Game, board: chess.Board) -> bool:
 
 def is_game_over(game: model.Game) -> bool:
     """Check whether the game is over."""
-    status: str = game.state["status"]
+    status = game.state["status"]
     return status != "started"
 
 
@@ -905,8 +905,8 @@ def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> 
     if prior_game is None:
         return True
 
-    current_game_moves_str: str = current_game.state["moves"]
-    prior_game_moves_str: str = prior_game.state["moves"]
+    current_game_moves_str = current_game.state["moves"]
+    prior_game_moves_str = prior_game.state["moves"]
     return current_game_moves_str != prior_game_moves_str
 
 

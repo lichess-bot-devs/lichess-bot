@@ -304,7 +304,7 @@ class EngineWrapper:
         """
         if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
-        move_info: InfoStrDict = cast(InfoStrDict, dict(move.info.copy() if move.info else {}))
+        move_info = cast(InfoStrDict, dict(move.info.copy() if move.info else {}))
         if "pv" in move_info:
             move_info["ponderpv"] = board.variation_san(move.info["pv"])
         if "refutation" in move_info:
@@ -372,7 +372,7 @@ class EngineWrapper:
         def identity(x: InfoDictValue) -> str:
             return str(x)
 
-        func: Callable[[InfoDictValue], str] = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
+        func = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
         return str(func(info[stat]))
 
     def get_stats(self, for_chat: bool = False) -> list[str]:
@@ -388,7 +388,7 @@ class EngineWrapper:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation", "time": "movetime"}
             stat = cast(InfoDictKeys, readable.get(stat, stat))
             if stat == "string" and isinstance(value, str) and value.startswith("lichess-bot-source:"):
-                stat = cast(InfoDictKeys, "Source")
+                stat = "Source"
                 value = value.split(":", 1)[1]
             return cast(InfoDictKeys, stat.title()), value
 
@@ -426,7 +426,7 @@ class EngineWrapper:
     def name(self) -> str:
         """Get the name of the engine."""
         engine_info: dict[str, str] = dict(self.engine.id)
-        name: str = engine_info["name"]
+        name = engine_info["name"]
         return name
 
     def get_pid(self) -> str:
@@ -513,12 +513,11 @@ class XBoardEngine(EngineWrapper):
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=True,
                                                              stderr=stderr, **popen_args)
-        egt_paths: EGTPATH_TYPE = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
-        features = self.engine.protocol.features if isinstance(self.engine.protocol, chess.engine.XBoardProtocol) else {}
-        egt_features = features.get("egt", "")
+        egt_paths = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
+        protocol = cast(chess.engine.XBoardProtocol, self.engine.protocol)
+        egt_features = protocol.features.get("egt", "")
         if isinstance(egt_features, str):
             egt_types_from_engine = egt_features.split(",")
-            egt_type: str
             for egt_type in filter(None, egt_types_from_engine):
                 if egt_type in egt_paths:
                     options[f"egtpath {egt_type}"] = egt_paths[egt_type]
@@ -597,9 +596,7 @@ class FillerEngine:
 
     def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
         """:param name: The name to send to the chat."""
-        self.id: dict[str, str] = {
-            "name": name
-        }
+        self.id = {"name": name}
         self.name = name
         self.main_engine = main_engine
 

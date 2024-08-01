@@ -304,7 +304,7 @@ class EngineWrapper:
         """
         if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
-        move_info: InfoStrDict = cast(InfoStrDict, dict(move.info.copy() if move.info else {}))
+        move_info = cast(InfoStrDict, dict(move.info.copy() if move.info else {}))
         if "pv" in move_info:
             move_info["ponderpv"] = board.variation_san(move.info["pv"])
         if "refutation" in move_info:
@@ -372,7 +372,7 @@ class EngineWrapper:
         def identity(x: InfoDictValue) -> str:
             return str(x)
 
-        func: Callable[[InfoDictValue], str] = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
+        func = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
         return str(func(info[stat]))
 
     def get_stats(self, for_chat: bool = False) -> list[str]:

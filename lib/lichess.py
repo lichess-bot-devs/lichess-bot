@@ -327,7 +327,7 @@ class Lichess:
 
     def get_profile(self) -> UserProfileType:
         """Get the bot's profile (e.g. username)."""
-        profile: UserProfileType = cast(UserProfileType, self.api_get_json("profile"))
+        profile = cast(UserProfileType, self.api_get_json("profile"))
         self.set_user_agent(profile["username"])
         return profile
 

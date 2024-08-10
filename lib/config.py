@@ -70,7 +70,7 @@ def config_assert(assertion: bool, error_message: str) -> None:
 
 
 def config_warn(assertion: bool, warning_message: str) -> None:
-    """Raise an exception if an assertion is false."""
+    """Print a warning message if an assertion is false."""
     if not assertion:
         logger.warning(warning_message)
 

@@ -309,7 +309,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         config_warn(matchmaking["opponent_min_rating"] <= matchmaking["opponent_max_rating"],
                     "matchmaking.opponent_max_rating < matchmaking.opponent_min_rating will result in "
                     "no challenges being created.")
-        config_warn(matchmaking["opponent_rating_difference"] >= 0,
+        config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,
                     "matchmaking.opponent_rating_difference < 0 will result in no challenges being created.")
 
     pgn_directory = CONFIG["pgn_directory"]

@@ -302,12 +302,14 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         config_warn(CONFIG["challenge"][f"min_{setting}"] <= CONFIG["challenge"][f"max_{setting}"],
                     min_max_template.format(setting=setting))
 
-    if CONFIG["matchmaking"]["allow_matchmaking"]:
-        match_config = CONFIG["matchmaking"]
-        config_warn(match_config.get("opponent_min_rating", 0) <= match_config.get("opponent_max_rating", 5000),
+    matchmaking = CONFIG.get("matchmaking") or {}
+    matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
+
+    if matchmaking_enabled:
+        config_warn(matchmaking.get("opponent_min_rating", 0) <= matchmaking.get("opponent_max_rating", 5000),
                     "matchmaking.opponent_max_rating < matchmaking.opponent_min_rating will result in "
                     "no challenges being accepted.")
-        config_warn(match_config.get("opponent_rating_difference", 0) >= 0,
+        config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,
                     "matchmaking.opponent_rating_difference < 0 will result in no challenges being accepted.")
 
     pgn_directory = CONFIG["pgn_directory"]
@@ -322,9 +324,6 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(config_pgn_choice in valid_pgn_grouping_options,
                   f"The `pgn_file_grouping` choice of `{config_pgn_choice}` is not valid. "
                   f"Please choose from {valid_pgn_grouping_options}.")
-
-    matchmaking = CONFIG.get("matchmaking") or {}
-    matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
 
     def has_valid_list(name: str) -> bool:
         entries = matchmaking.get(name)

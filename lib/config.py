@@ -297,6 +297,19 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(CONFIG["challenge"]["preference"] in ["none", "human", "bot"],
                   "challenge.preference should be `none`, `human`, or `bot`.")
 
+    min_max_template = "challenge.max_{setting} < challenge.min_{setting} will result in no challenges being accepted."
+    for setting in ["increment", "base", "days"]:
+        config_warn(CONFIG["challenge"][f"min_{setting}"] <= CONFIG["challenge"][f"max_{setting}"],
+                    min_max_template.format(setting=setting))
+
+    if CONFIG["matchmaking"]["allow_matchmaking"]:
+        match_config = CONFIG["matchmaking"]
+        config_warn(match_config.get("opponent_min_rating", 0) <= match_config.get("opponent_max_rating", 5000),
+                    "matchmaking.opponent_max_rating < matchmaking.opponent_min_rating will result in "
+                    "no challenges being accepted.")
+        config_warn(match_config.get("opponent_rating_difference", 0) >= 0,
+                    "matchmaking.opponent_rating_difference < 0 will result in no challenges being accepted.")
+
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")
     config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted "

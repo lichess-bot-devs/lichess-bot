@@ -302,14 +302,14 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         config_warn(CONFIG["challenge"][f"min_{setting}"] <= CONFIG["challenge"][f"max_{setting}"],
                     min_max_template.format(setting=setting))
 
-    matchmaking = CONFIG.get("matchmaking") or {}
-    matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
+    matchmaking = CONFIG["matchmaking"]
+    matchmaking_enabled = matchmaking["allow_matchmaking"]
 
     if matchmaking_enabled:
-        config_warn(matchmaking.get("opponent_min_rating", 0) <= matchmaking.get("opponent_max_rating", math.inf),
+        config_warn(matchmaking["opponent_min_rating"] <= matchmaking["opponent_max_rating"],
                     "matchmaking.opponent_max_rating < matchmaking.opponent_min_rating will result in "
                     "no challenges being accepted.")
-        config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,
+        config_warn(matchmaking["opponent_rating_difference"] >= 0,
                     "matchmaking.opponent_rating_difference < 0 will result in no challenges being accepted.")
 
     pgn_directory = CONFIG["pgn_directory"]

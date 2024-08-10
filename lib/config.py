@@ -306,7 +306,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     matchmaking_enabled = matchmaking.get("allow_matchmaking") or False
 
     if matchmaking_enabled:
-        config_warn(matchmaking.get("opponent_min_rating", 0) <= matchmaking.get("opponent_max_rating", 5000),
+        config_warn(matchmaking.get("opponent_min_rating", 0) <= matchmaking.get("opponent_max_rating", math.inf),
                     "matchmaking.opponent_max_rating < matchmaking.opponent_min_rating will result in "
                     "no challenges being accepted.")
         config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,

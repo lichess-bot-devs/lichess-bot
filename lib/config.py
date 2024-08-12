@@ -297,10 +297,12 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_assert(CONFIG["challenge"]["preference"] in ["none", "human", "bot"],
                   "challenge.preference should be `none`, `human`, or `bot`.")
 
-    min_max_template = "challenge.max_{setting} < challenge.min_{setting} will result in no challenges being accepted."
+    min_max_template = ("challenge.max_{setting} < challenge.min_{setting} will result "
+                        "in no {game_type} challenges being accepted.")
     for setting in ["increment", "base", "days"]:
+        game_type = "correspondence" if setting == "days" else "real-time"
         config_warn(CONFIG["challenge"][f"min_{setting}"] <= CONFIG["challenge"][f"max_{setting}"],
-                    min_max_template.format(setting=setting))
+                    min_max_template.format(setting=setting, game_type=game_type))
 
     matchmaking = CONFIG["matchmaking"]
     matchmaking_enabled = matchmaking["allow_matchmaking"]

@@ -59,8 +59,18 @@ class PlayGameArgsType(TypedDict, total=False):
 
 logger = logging.getLogger(__name__)
 
+
+class VersioningType(TypedDict):
+    """Type hint for the versioning information from lib/versioning.yml."""
+
+    lichess_bot_version: str
+    minimum_python_version: str
+    deprecated_python_version: str
+    deprecation_date: datetime.date
+
+
 with open("lib/versioning.yml") as version_file:
-    versioning_info = yaml.safe_load(version_file)
+    versioning_info: VersioningType = yaml.safe_load(version_file)
 
 __version__ = versioning_info["lichess_bot_version"]
 

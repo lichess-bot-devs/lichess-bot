@@ -57,9 +57,6 @@ class PlayGameArgsType(TypedDict, total=False):
     game_id: str
 
 
-logger = logging.getLogger(__name__)
-
-
 class VersioningType(TypedDict):
     """Type hint for the versioning information from lib/versioning.yml."""
 
@@ -68,6 +65,8 @@ class VersioningType(TypedDict):
     deprecated_python_version: str
     deprecation_date: datetime.date
 
+
+logger = logging.getLogger(__name__)
 
 with open("lib/versioning.yml") as version_file:
     versioning_info: VersioningType = yaml.safe_load(version_file)

@@ -78,6 +78,11 @@ force_quit = False
 restart = True
 
 
+def should_restart() -> bool:
+    """Decide whether to restart lichess-bot when exiting main program."""
+    return restart
+
+
 def disable_restart() -> None:
     """Disable restarting lichess-bot when errors occur. Used during testing."""
     global restart
@@ -1236,14 +1241,3 @@ def check_python_version() -> None:
             logger.warning(out_of_date_warning)
         else:
             raise out_of_date_error
-
-
-if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn')
-    try:
-        while restart:
-            restart = False
-            start_lichess_bot()
-            time.sleep(10 if restart else 0)
-    except Exception:
-        logger.exception("Quitting lichess-bot due to an error:")

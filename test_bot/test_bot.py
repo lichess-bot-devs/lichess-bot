@@ -10,9 +10,9 @@ import os
 import sys
 import stat
 import shutil
-import importlib
 import tarfile
 import datetime
+import logging
 from multiprocessing import Manager
 from queue import Queue
 import test_bot.lichess
@@ -23,7 +23,7 @@ from lib.engine_wrapper import test_suffix
 from lib.types import CONFIG_DICT_TYPE
 if "pytest" not in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
-lichess_bot = importlib.import_module("lichess-bot")
+from lib import lichess_bot
 
 platform = sys.platform
 file_extension = ".exe" if platform == "win32" else ""
@@ -86,7 +86,7 @@ download_sf()
 if platform == "win32":
     download_lc0()
     download_sjeng()
-logging_level = lichess_bot.logging.DEBUG
+logging_level = logging.DEBUG
 testing_log_file_name = None
 lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)
 lichess_bot.logger.info("Downloaded engines")

@@ -148,6 +148,13 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, key="pgn_directory", default=None)
     set_config_default(CONFIG, key="pgn_file_grouping", default="game", force_empty_values=True)
     set_config_default(CONFIG, key="max_takebacks_accepted", default=0, force_empty_values=True)
+    print(CONFIG["engine"]["before_name_parameters"])
+    set_config_default(CONFIG, "engine", key="before_name_parameters", default=[], force_empty_values=True)
+    print(CONFIG["engine"]["before_name_parameters"])
+    change_value_to_list(CONFIG, "engine", key="before_name_parameters")
+    print(CONFIG["engine"]["before_name_parameters"])
+    set_config_default(CONFIG, "engine", key="after_name_parameters", default=[], force_empty_values=True)
+    change_value_to_list(CONFIG, "engine", key="after_name_parameters")
     set_config_default(CONFIG, "engine", key="working_dir", default=os.getcwd(), force_empty_values=True)
     set_config_default(CONFIG, "engine", key="silence_stderr", default=False)
     set_config_default(CONFIG, "engine", "draw_or_resign", key="offer_draw_enabled", default=False)
@@ -275,12 +282,6 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     working_dir = CONFIG["engine"].get("working_dir")
     config_assert(not working_dir or os.path.isdir(working_dir),
                   f"Your engine's working directory `{working_dir}` is not a directory.")
-
-    engine = os.path.join(CONFIG["engine"]["dir"], CONFIG["engine"]["name"])
-    config_assert(os.path.isfile(engine) or CONFIG["engine"]["protocol"] == "homemade",
-                  f"The engine {engine} file does not exist.")
-    config_assert(os.access(engine, os.X_OK) or CONFIG["engine"]["protocol"] == "homemade",
-                  f"The engine {engine} doesn't have execute (x) permission. Try: chmod +x {engine}")
 
     if CONFIG["engine"]["protocol"] == "xboard":
         for section, subsection in (("online_moves", "online_egtb"),

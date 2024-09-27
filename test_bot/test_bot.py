@@ -298,7 +298,6 @@ def test_buggy_engine() -> None:
         return os.path.join(dir, name)
 
     CONFIG["engine"]["name"] = "buggy_engine.py"
-    CONFIG["engine"]["dir"] = "./test_bot/"
     CONFIG["engine"]["interpreter"] = "python" if platform == "win32" else "python3"
     CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 100}}
     CONFIG["pgn_directory"] = "TEMP/bug_game_record"

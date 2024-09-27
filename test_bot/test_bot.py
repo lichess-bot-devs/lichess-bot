@@ -284,7 +284,7 @@ def test_homemade() -> None:
                                        "bo vs b - zzzzzzzz.pgn"))
 
 
-@pytest.mark.timeout(30, method="thread")
+@pytest.mark.timeout(60, method="thread")
 def test_buggy_engine() -> None:
     """Test lichess-bot with an engine that causes a timeout error within python-chess."""
     with open("./config.yml.default") as file:

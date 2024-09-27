@@ -297,12 +297,8 @@ def test_buggy_engine() -> None:
         name: str = CONFIG["engine"]["name"]
         return os.path.join(dir, name)
 
-    if platform == "win32":
-        CONFIG["engine"]["name"] = "buggy_engine.bat"
-    else:
-        CONFIG["engine"]["name"] = "buggy_engine"
-        st = os.stat(engine_path(CONFIG))
-        os.chmod(engine_path(CONFIG), st.st_mode | stat.S_IEXEC)
+    CONFIG["engine"]["name"] = "buggy_engine.py"
+    CONFIG["engine"]["interpreter"] = "python" if platform == "win32" else "python3"
     CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 100}}
     CONFIG["pgn_directory"] = "TEMP/bug_game_record"
 

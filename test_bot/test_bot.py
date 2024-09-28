@@ -31,7 +31,7 @@ stockfish_path = f"./TEMP/sf{file_extension}"
 
 
 def download_sf() -> None:
-    """Download Stockfish 15."""
+    """Download Stockfish 16."""
     if os.path.exists(stockfish_path):
         return
 

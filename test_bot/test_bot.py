@@ -294,7 +294,7 @@ def test_buggy_engine() -> None:
 
     def engine_path(CONFIG: CONFIG_DICT_TYPE) -> str:
         dir: str = CONFIG["engine"]["dir"]
-        name: str = CONFIG["engine"]["name"]
+        name: str = CONFIG["engine"]["name"].replace(".py", (".bat" if platform == "win32" else ""))
         return os.path.join(dir, name)
 
     CONFIG["engine"]["name"] = "buggy_engine.py"

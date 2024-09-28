@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: [3.9, "3.13"]
+        python: [3.9, "3.13.0-rc.2"]
 
 
     steps:

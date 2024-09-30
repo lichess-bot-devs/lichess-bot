@@ -295,12 +295,13 @@ def test_buggy_engine() -> None:
     def engine_path(CONFIG: CONFIG_DICT_TYPE) -> str:
         dir: str = CONFIG["engine"]["dir"]
         name: str = CONFIG["engine"]["name"].removesuffix(".py")
+        path = os.path.join(dir, name)
         if platform == "win32":
-            name += ".bat"
+            path += ".bat"
         else:
-            st = os.stat(os.path.join(dir, name))
-            os.chmod(os.path.join(dir, name), st.st_mode | stat.S_IEXEC)
-        return os.path.join(dir, name)
+            st = os.stat(path)
+            os.chmod(path, st.st_mode | stat.S_IEXEC)
+        return path
 
     CONFIG["engine"]["name"] = "buggy_engine.py"
     CONFIG["engine"]["interpreter"] = "python" if platform == "win32" else "python3"

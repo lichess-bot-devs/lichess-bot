@@ -44,7 +44,11 @@ def create_engine(engine_config: Configuration, game: Optional[model.Game] = Non
     cfg = engine_config.engine
     engine_path = os.path.abspath(os.path.join(cfg.dir, cfg.name))
     engine_type = cfg.protocol
-    commands = [engine_path]
+    commands = []
+    if cfg.interpreter:
+        commands.append(cfg.interpreter)
+        commands.extend(cfg.interpreter_options)
+    commands.append(engine_path)
     if cfg.engine_options:
         for k, v in cfg.engine_options.items():
             commands.append(f"--{k}={v}" if v is not None else f"--{k}")

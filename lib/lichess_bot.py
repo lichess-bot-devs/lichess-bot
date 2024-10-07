@@ -109,7 +109,10 @@ signal.signal(signal.SIGINT, signal_handler)
 
 def upgrade_account(li: LICHESS_TYPE) -> bool:
     """Upgrade the account to a BOT account."""
-    if li.upgrade_to_bot_account() is None:
+    try:
+        li.upgrade_to_bot_account()
+    except HTTPError:
+        logger.exception("Failed to upgrade to Bot Account.")
         return False
 
     logger.info("Successfully upgraded to Bot Account!")

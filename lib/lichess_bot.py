@@ -159,6 +159,8 @@ def write_pgn_records(pgn_queue: PGN_QUEUE_TYPE, config: Configuration, username
             pgn_queue.task_done()
         except InterruptedError:
             pass
+        except Exception:
+            logger.exception("Could not write PGN to file")
 
 
 def handle_old_logs(auto_log_filename: str) -> None:

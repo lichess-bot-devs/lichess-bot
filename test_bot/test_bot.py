@@ -69,27 +69,29 @@ def download_lc0() -> None:
         zip_ref.extractall("./TEMP/")
 
 
-def download_sjeng() -> None:
+def download_sjeng() -> bool:
     """Download Sjeng."""
     if os.path.exists("./TEMP/sjeng.exe"):
-        return
-    response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
+        return True
+    try:
+        response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
+        response.raise_for_status()
+    except requests.HTTPError:
+        return False
+
     with open("./TEMP/sjeng_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/sjeng_zip.zip", "r") as zip_ref:
         zip_ref.extractall("./TEMP/")
     shutil.copyfile("./TEMP/Release/Sjeng112.exe", "./TEMP/sjeng.exe")
+    return True
 
 
 os.makedirs("TEMP", exist_ok=True)
-download_sf()
-if platform == "win32":
-    download_lc0()
-    download_sjeng()
 logging_level = logging.DEBUG
 testing_log_file_name = None
 lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)
-lichess_bot.logger.info("Downloaded engines")
+logger = logging.getLogger(__name__)
 
 
 def lichess_org_simulator(opponent_path: str,
@@ -168,7 +170,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     """
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
-    lichess_bot.logger.info(lichess_bot.intro())
+    logger.info(lichess_bot.intro())
     manager = Manager()
     board_queue: Queue[chess.Board] = manager.Queue()
     clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]] = manager.Queue()
@@ -179,7 +181,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     username = user_profile["username"]
     if user_profile.get("title") != "BOT":
         return False
-    lichess_bot.logger.info(f"Welcome {username}!")
+    logger.info(f"Welcome {username}!")
     lichess_bot.disable_restart()
 
     results: Queue[bool] = manager.Queue()
@@ -213,8 +215,10 @@ def test_sf() -> None:
     CONFIG["engine"]["name"] = f"sf{file_extension}"
     CONFIG["engine"]["uci_options"]["Threads"] = 1
     CONFIG["pgn_directory"] = "TEMP/sf_game_record"
+    logger.info("Downloading stockfish")
+    download_sf()
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing SF")
+    logger.info("Finished Testing SF")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -236,8 +240,10 @@ def test_lc0() -> None:
     CONFIG["engine"]["uci_options"].pop("Hash", None)
     CONFIG["engine"]["uci_options"].pop("Move Overhead", None)
     CONFIG["pgn_directory"] = "TEMP/lc0_game_record"
+    logger.info("Downloading lc0")
+    download_lc0()
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing LC0")
+    logger.info("Finished Testing LC0")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -258,8 +264,11 @@ def test_sjeng() -> None:
     CONFIG["engine"]["name"] = "sjeng.exe"
     CONFIG["engine"]["ponder"] = False
     CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
+    logger.info("Downloading Sjeng")
+    if not download_sjeng():
+        pytest.skip("Could not download Sjeng chess engine.")
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing Sjeng")
+    logger.info("Finished Testing Sjeng")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -278,7 +287,7 @@ def test_homemade() -> None:
     CONFIG["engine"]["protocol"] = "homemade"
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing Homemade")
+    logger.info("Finished Testing Homemade")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -309,7 +318,7 @@ def test_buggy_engine() -> None:
     CONFIG["pgn_directory"] = "TEMP/bug_game_record"
 
     win = run_bot(CONFIG, logging_level, engine_path(CONFIG))
-    lichess_bot.logger.info("Finished Testing buggy engine")
+    logger.info("Finished Testing buggy engine")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))

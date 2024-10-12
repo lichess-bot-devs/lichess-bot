@@ -158,7 +158,6 @@ def write_pgn_records(pgn_queue: PGN_QUEUE_TYPE, config: Configuration, username
             event = pgn_queue.get()
             mark_task_done = True
             save_pgn_record(event, config, username)
-            pgn_queue.task_done()
         except InterruptedError:
             pass
         except Exception:

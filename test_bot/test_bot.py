@@ -69,22 +69,18 @@ def download_lc0() -> None:
         zip_ref.extractall("./TEMP/")
 
 
-def download_sjeng() -> bool:
+def download_sjeng() -> None:
     """Download Sjeng."""
     if os.path.exists("./TEMP/sjeng.exe"):
-        return True
-    try:
-        response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
-        response.raise_for_status()
-    except requests.HTTPError:
-        return False
+        return
 
+    response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
+    response.raise_for_status()
     with open("./TEMP/sjeng_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/sjeng_zip.zip", "r") as zip_ref:
         zip_ref.extractall("./TEMP/")
     shutil.copyfile("./TEMP/Release/Sjeng112.exe", "./TEMP/sjeng.exe")
-    return True
 
 
 os.makedirs("TEMP", exist_ok=True)
@@ -265,8 +261,11 @@ def test_sjeng() -> None:
     CONFIG["engine"]["ponder"] = False
     CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
     logger.info("Downloading Sjeng")
-    if not download_sjeng():
-        pytest.skip("Could not download Sjeng chess engine.")
+    try:
+        download_sjeng()
+    except Exception:
+        logger.exception("Could not download the Sjeng chess engine")
+        pytest.skip("Could not download the Sjeng chess engine")
     win = run_bot(CONFIG, logging_level)
     logger.info("Finished Testing Sjeng")
     assert win

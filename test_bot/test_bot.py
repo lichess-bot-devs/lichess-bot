@@ -41,6 +41,7 @@ def download_sf() -> None:
     archive_link = f"https://github.com/official-stockfish/Stockfish/releases/download/sf_16/{sf_base}.{archive_ext}"
 
     response = requests.get(archive_link, allow_redirects=True)
+    response.raise_for_status()
     archive_name = f"./TEMP/sf_zip.{archive_ext}"
     with open(archive_name, "wb") as file:
         file.write(response.content)
@@ -63,6 +64,7 @@ def download_lc0() -> None:
         return
     response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.29.0/lc0-v0.29.0-windows-cpu-dnnl.zip",
                             allow_redirects=True)
+    response.raise_for_status()
     with open("./TEMP/lc0_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/lc0_zip.zip", "r") as zip_ref:
@@ -211,8 +213,12 @@ def test_sf() -> None:
     CONFIG["engine"]["name"] = f"sf{file_extension}"
     CONFIG["engine"]["uci_options"]["Threads"] = 1
     CONFIG["pgn_directory"] = "TEMP/sf_game_record"
-    logger.info("Downloading stockfish")
-    download_sf()
+    logger.info("Downloading Stockfish")
+    try:
+        download_sf()
+    except Exception:
+        logger.exception("Could not download the Stockfish chess engine")
+        pytest.skip("Could not download the Stockfish chess engine")
     win = run_bot(CONFIG, logging_level)
     logger.info("Finished Testing SF")
     assert win
@@ -236,8 +242,12 @@ def test_lc0() -> None:
     CONFIG["engine"]["uci_options"].pop("Hash", None)
     CONFIG["engine"]["uci_options"].pop("Move Overhead", None)
     CONFIG["pgn_directory"] = "TEMP/lc0_game_record"
-    logger.info("Downloading lc0")
-    download_lc0()
+    logger.info("Downloading LC0")
+    try:
+        download_lc0()
+    except Exception:
+        logger.exception("Could not download the LC0 chess engine")
+        pytest.skip("Could not download the LC0 chess engine")
     win = run_bot(CONFIG, logging_level)
     logger.info("Finished Testing LC0")
     assert win

@@ -153,14 +153,19 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.t
 def write_pgn_records(pgn_queue: PGN_QUEUE_TYPE, config: Configuration, username: str) -> None:
     """Write PGN records to files as games finish."""
     while True:
+        mark_task_done = False
         try:
             event = pgn_queue.get()
+            mark_task_done = True
             save_pgn_record(event, config, username)
             pgn_queue.task_done()
         except InterruptedError:
             pass
         except Exception:
             logger.exception("Could not write PGN to file")
+
+        if mark_task_done:
+            pgn_queue.task_done()
 
 
 def handle_old_logs(auto_log_filename: str) -> None:

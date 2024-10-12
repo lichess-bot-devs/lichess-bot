@@ -62,6 +62,7 @@ def download_lc0() -> None:
     """Download Leela Chess Zero 0.29.0."""
     if os.path.exists("./TEMP/lc0.exe"):
         return
+
     response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.29.0/lc0-v0.29.0-windows-cpu-dnnl.zip",
                             allow_redirects=True)
     response.raise_for_status()

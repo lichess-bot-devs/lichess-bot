@@ -1,2 +1,2 @@
 @echo off
-py test_bot\buggy_engine.py
+python test_bot\buggy_engine.py

@@ -26,6 +26,7 @@ if "pytest" not in sys.modules:
 from lib import lichess_bot
 
 platform = sys.platform
+archive_ext = "zip" if platform == "win32" else "tar"
 file_extension = ".exe" if platform == "win32" else ""
 stockfish_path = f"./TEMP/sf{file_extension}"
 
@@ -35,9 +36,8 @@ def download_sf() -> None:
     if os.path.exists(stockfish_path):
         return
 
-    windows_or_linux = "windows" if platform == "win32" else "ubuntu"
-    sf_base = f"stockfish-{windows_or_linux}-x86-64-modern"
-    archive_ext = "zip" if platform == "win32" else "tar"
+    windows_linux_mac = "windows" if platform == "win32" else ("macos" if platform == "darwin" else "ubuntu")
+    sf_base = f"stockfish-{windows_linux_mac}-x86-64-modern"
     archive_link = f"https://github.com/official-stockfish/Stockfish/releases/download/sf_16/{sf_base}.{archive_ext}"
 
     response = requests.get(archive_link, allow_redirects=True)
@@ -52,7 +52,7 @@ def download_sf() -> None:
     exe_ext = ".exe" if platform == "win32" else ""
     shutil.copyfile(f"./TEMP/stockfish/{sf_base}{exe_ext}", stockfish_path)
 
-    if windows_or_linux == "ubuntu":
+    if windows_linux_mac == "ubuntu":
         st = os.stat(stockfish_path)
         os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)
 
@@ -69,23 +69,27 @@ def download_lc0() -> None:
         zip_ref.extractall("./TEMP/")
 
 
-def download_sjeng() -> None:
-    """Download Sjeng."""
-    if os.path.exists("./TEMP/sjeng.exe"):
+def download_arasan() -> None:
+    """Download Arasan."""
+    if os.path.exists(f"./TEMP/arasan{file_extension}"):
         return
-    response = requests.get("https://sjeng.org/ftp/Sjeng112.zip", allow_redirects=True)
-    with open("./TEMP/sjeng_zip.zip", "wb") as file:
+    if platform == "win32":
+        response = requests.get("https://arasanchess.org/arasan24.2.2.zip", allow_redirects=True)
+    else:
+        response = requests.get("https://arasanchess.org/arasan-linux-binaries-24.2.2.tar.gz", allow_redirects=True)
+    with open(f"arasan.{archive_ext}", "w") as file:
         file.write(response.content)
-    with zipfile.ZipFile("./TEMP/sjeng_zip.zip", "r") as zip_ref:
-        zip_ref.extractall("./TEMP/")
-    shutil.copyfile("./TEMP/Release/Sjeng112.exe", "./TEMP/sjeng.exe")
+    archive_open = zipfile.ZipFile if archive_ext == "zip" else tarfile.TarFile
+    with archive_open(f"arasan.{archive_ext}", "r") as archive_ref:
+        archive_ref.extractall("./TEMP/")
+    shutil.copyfile(f"./TEMP/arasanx-64{file_extension}", f"./TEMP/arasan{file_extension}")
 
 
 os.makedirs("TEMP", exist_ok=True)
 download_sf()
 if platform == "win32":
     download_lc0()
-    download_sjeng()
+    download_arasan()
 logging_level = logging.DEBUG
 testing_log_file_name = None
 lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)
@@ -203,9 +207,6 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
 @pytest.mark.timeout(150, method="thread")
 def test_sf() -> None:
     """Test lichess-bot with Stockfish (UCI)."""
-    if platform != "linux" and platform != "win32":
-        assert True
-        return
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -244,9 +245,9 @@ def test_lc0() -> None:
 
 
 @pytest.mark.timeout(150, method="thread")
-def test_sjeng() -> None:
-    """Test lichess-bot with Sjeng (XBoard)."""
-    if platform != "win32":
+def test_arasan() -> None:
+    """Test lichess-bot with Arasan (XBoard)."""
+    if platform != "linux" and platform != "win32":
         assert True
         return
     with open("./config.yml.default") as file:
@@ -255,11 +256,11 @@ def test_sjeng() -> None:
     CONFIG["engine"]["dir"] = "./TEMP/"
     CONFIG["engine"]["working_dir"] = "./TEMP/"
     CONFIG["engine"]["protocol"] = "xboard"
-    CONFIG["engine"]["name"] = "sjeng.exe"
+    CONFIG["engine"]["name"] = f"arasan{file_extension}"
     CONFIG["engine"]["ponder"] = False
-    CONFIG["pgn_directory"] = "TEMP/sjeng_game_record"
+    CONFIG["pgn_directory"] = "TEMP/arasan_game_record"
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing Sjeng")
+    lichess_bot.logger.info("Finished Testing Arasan")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -268,9 +269,6 @@ def test_sjeng() -> None:
 @pytest.mark.timeout(150, method="thread")
 def test_homemade() -> None:
     """Test lichess-bot with a homemade engine running Stockfish (Homemade)."""
-    if platform != "linux" and platform != "win32":
-        assert True
-        return
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""

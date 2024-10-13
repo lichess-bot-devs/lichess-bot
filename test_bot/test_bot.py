@@ -52,7 +52,7 @@ def download_sf() -> None:
     exe_ext = ".exe" if platform == "win32" else ""
     shutil.copyfile(f"./TEMP/stockfish/{sf_base}{exe_ext}", stockfish_path)
 
-    if windows_linux_mac == "ubuntu":
+    if platform != "win32":
         st = os.stat(stockfish_path)
         os.chmod(stockfish_path, st.st_mode | stat.S_IEXEC)
 
@@ -83,6 +83,9 @@ def download_arasan() -> None:
     with archive_open(f"arasan.{archive_ext}", "r") as archive_ref:
         archive_ref.extractall("./TEMP/")
     shutil.copyfile(f"./TEMP/arasanx-64{file_extension}", f"./TEMP/arasan{file_extension}")
+    if platform != "win32":
+        st = os.stat(f"./TEMP/arasan{file_extension}")
+        os.chmod(f"./TEMP/arasan{file_extension}", st.st_mode | stat.S_IEXEC)
 
 
 os.makedirs("TEMP", exist_ok=True)

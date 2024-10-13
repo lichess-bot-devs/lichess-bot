@@ -77,10 +77,10 @@ def download_arasan() -> None:
         response = requests.get("https://arasanchess.org/arasan24.2.2.zip", allow_redirects=True)
     else:
         response = requests.get("https://arasanchess.org/arasan-linux-binaries-24.2.2.tar.gz", allow_redirects=True)
-    with open(f"arasan.{archive_ext}", "wb") as file:
+    with open(f"./TEMP/arasan.{archive_ext}", "wb") as file:
         file.write(response.content)
     archive_open = zipfile.ZipFile if archive_ext == "zip" else tarfile.TarFile
-    with archive_open(f"arasan.{archive_ext}", "r") as archive_ref:
+    with archive_open(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
         archive_ref.extractall("./TEMP/")
     shutil.copyfile(f"./TEMP/arasanx-64{file_extension}", f"./TEMP/arasan{file_extension}")
     if platform != "win32":
@@ -90,9 +90,9 @@ def download_arasan() -> None:
 
 os.makedirs("TEMP", exist_ok=True)
 download_sf()
+download_arasan()
 if platform == "win32":
     download_lc0()
-    download_arasan()
 logging_level = logging.DEBUG
 testing_log_file_name = None
 lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)

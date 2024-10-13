@@ -300,6 +300,8 @@ def test_buggy_engine() -> None:
         if platform == "win32":
             path += ".bat"
         else:
+            if platform == "darwin":
+                path += "_macos"
             st = os.stat(path)
             os.chmod(path, st.st_mode | stat.S_IEXEC)
         return path

@@ -287,6 +287,12 @@ def test_homemade() -> None:
     if platform != "linux" and platform != "win32":
         pytest.skip("Platform must be Linux or Windows.")
 
+    try:
+        download_sf()
+    except Exception:
+        logger.exception("Could not download the Stockfish chess engine")
+        pytest.skip("Could not download the Stockfish chess engine")
+
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""

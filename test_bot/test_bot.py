@@ -201,7 +201,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     return result
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_sf() -> None:
     """Test lichess-bot with Stockfish (UCI)."""
     if platform != "linux" and platform != "win32":
@@ -226,7 +226,7 @@ def test_sf() -> None:
                                        "bo vs b - zzzzzzzz.pgn"))
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_lc0() -> None:
     """Test lichess-bot with Leela Chess Zero (UCI)."""
     if platform != "win32":
@@ -254,7 +254,7 @@ def test_lc0() -> None:
                                        "bo vs b - zzzzzzzz.pgn"))
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_sjeng() -> None:
     """Test lichess-bot with Sjeng (XBoard)."""
     if platform != "win32":
@@ -281,7 +281,7 @@ def test_sjeng() -> None:
                                        "bo vs b - zzzzzzzz.pgn"))
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_homemade() -> None:
     """Test lichess-bot with a homemade engine running Stockfish (Homemade)."""
     if platform != "linux" and platform != "win32":

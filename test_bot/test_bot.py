@@ -205,8 +205,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
 def test_sf() -> None:
     """Test lichess-bot with Stockfish (UCI)."""
     if platform != "linux" and platform != "win32":
-        assert True
-        return
+        pytest.skip("Platform must be Linux or Windows.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -231,8 +230,7 @@ def test_sf() -> None:
 def test_lc0() -> None:
     """Test lichess-bot with Leela Chess Zero (UCI)."""
     if platform != "win32":
-        assert True
-        return
+        pytest.skip("Platform must be Windows.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -260,8 +258,7 @@ def test_lc0() -> None:
 def test_sjeng() -> None:
     """Test lichess-bot with Sjeng (XBoard)."""
     if platform != "win32":
-        assert True
-        return
+        pytest.skip("Platform must be Windows.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -288,8 +285,8 @@ def test_sjeng() -> None:
 def test_homemade() -> None:
     """Test lichess-bot with a homemade engine running Stockfish (Homemade)."""
     if platform != "linux" and platform != "win32":
-        assert True
-        return
+        pytest.skip("Platform must be Linux or Windows.")
+
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""

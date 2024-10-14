@@ -357,7 +357,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     for db_name, valid_selections in selection_choices.items():
         is_online = db_name != "polyglot"
         db_section = (CONFIG["engine"].get("online_moves") or {}) if is_online else CONFIG["engine"]
-        db_config = db_section.get(db_name)
+        db_config = db_section.get(db_name) or {}
         select_key = "selection" if db_name == "polyglot" else "move_quality"
         selection = db_config.get(select_key)
         select = f"{'online_moves:' if is_online else ''}{db_name}:{select_key}"

@@ -114,6 +114,13 @@ def lichess_org_simulator(opponent_path: str,
     wtime = start_time
     btime = start_time
 
+    if opponent_path == stockfish_path:
+        try:
+            download_sf()
+        except Exception:
+            logger.exception("Could not download the Stockfish chess engine")
+            pytest.skip("Could not download the Stockfish chess engine")
+
     engine = chess.engine.SimpleEngine.popen_uci(opponent_path)
     engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False}
                      if opponent_path == stockfish_path else {})

@@ -41,6 +41,7 @@ def download_sf() -> None:
     archive_link = f"https://github.com/official-stockfish/Stockfish/releases/download/sf_16/{sf_base}.{archive_ext}"
 
     response = requests.get(archive_link, allow_redirects=True)
+    response.raise_for_status()
     archive_name = f"./TEMP/sf_zip.{archive_ext}"
     with open(archive_name, "wb") as file:
         file.write(response.content)
@@ -61,8 +62,10 @@ def download_lc0() -> None:
     """Download Leela Chess Zero 0.29.0."""
     if os.path.exists("./TEMP/lc0.exe"):
         return
+
     response = requests.get("https://github.com/LeelaChessZero/lc0/releases/download/v0.29.0/lc0-v0.29.0-windows-cpu-dnnl.zip",
                             allow_redirects=True)
+    response.raise_for_status()
     with open("./TEMP/lc0_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/lc0_zip.zip", "r") as zip_ref:
@@ -89,14 +92,10 @@ def download_arasan() -> None:
 
 
 os.makedirs("TEMP", exist_ok=True)
-download_sf()
-download_arasan()
-if platform == "win32":
-    download_lc0()
 logging_level = logging.DEBUG
 testing_log_file_name = None
 lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)
-lichess_bot.logger.info("Downloaded engines")
+logger = logging.getLogger(__name__)
 
 
 def lichess_org_simulator(opponent_path: str,
@@ -119,6 +118,13 @@ def lichess_org_simulator(opponent_path: str,
     board = chess.Board()
     wtime = start_time
     btime = start_time
+
+    if opponent_path == stockfish_path:
+        try:
+            download_sf()
+        except Exception:
+            logger.exception("Could not download the Stockfish chess engine")
+            pytest.skip("Could not download the Stockfish chess engine")
 
     engine = chess.engine.SimpleEngine.popen_uci(opponent_path)
     engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False}
@@ -175,7 +181,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     """
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
-    lichess_bot.logger.info(lichess_bot.intro())
+    logger.info(lichess_bot.intro())
     manager = Manager()
     board_queue: Queue[chess.Board] = manager.Queue()
     clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]] = manager.Queue()
@@ -186,7 +192,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     username = user_profile["username"]
     if user_profile.get("title") != "BOT":
         return False
-    lichess_bot.logger.info(f"Welcome {username}!")
+    logger.info(f"Welcome {username}!")
     lichess_bot.disable_restart()
 
     results: Queue[bool] = manager.Queue()
@@ -207,7 +213,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     return result
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_sf() -> None:
     """Test lichess-bot with Stockfish (UCI)."""
     with open("./config.yml.default") as file:
@@ -217,19 +223,24 @@ def test_sf() -> None:
     CONFIG["engine"]["name"] = f"sf{file_extension}"
     CONFIG["engine"]["uci_options"]["Threads"] = 1
     CONFIG["pgn_directory"] = "TEMP/sf_game_record"
+    logger.info("Downloading Stockfish")
+    try:
+        download_sf()
+    except Exception:
+        logger.exception("Could not download the Stockfish chess engine")
+        pytest.skip("Could not download the Stockfish chess engine")
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing SF")
+    logger.info("Finished Testing SF")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_lc0() -> None:
     """Test lichess-bot with Leela Chess Zero (UCI)."""
     if platform != "win32":
-        assert True
-        return
+        pytest.skip("Platform must be Windows.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -240,8 +251,14 @@ def test_lc0() -> None:
     CONFIG["engine"]["uci_options"].pop("Hash", None)
     CONFIG["engine"]["uci_options"].pop("Move Overhead", None)
     CONFIG["pgn_directory"] = "TEMP/lc0_game_record"
+    logger.info("Downloading LC0")
+    try:
+        download_lc0()
+    except Exception:
+        logger.exception("Could not download the LC0 chess engine")
+        pytest.skip("Could not download the LC0 chess engine")
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing LC0")
+    logger.info("Finished Testing LC0")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -251,8 +268,7 @@ def test_lc0() -> None:
 def test_arasan() -> None:
     """Test lichess-bot with Arasan (XBoard)."""
     if platform != "linux" and platform != "win32":
-        assert True
-        return
+        pytest.skip("Platform must be Windows or Linux.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -262,16 +278,28 @@ def test_arasan() -> None:
     CONFIG["engine"]["name"] = f"arasan{file_extension}"
     CONFIG["engine"]["ponder"] = False
     CONFIG["pgn_directory"] = "TEMP/arasan_game_record"
+    logger.info("Downloading Arasan")
+    try:
+        download_arasan()
+    except Exception:
+        logger.exception("Could not download the Arasan chess engine")
+        pytest.skip("Could not download the Arasan chess engine")
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing Arasan")
+    logger.info("Finished Testing Arasan")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
 
 
-@pytest.mark.timeout(150, method="thread")
+@pytest.mark.timeout(180, method="thread")
 def test_homemade() -> None:
     """Test lichess-bot with a homemade engine running Stockfish (Homemade)."""
+    try:
+        download_sf()
+    except Exception:
+        logger.exception("Could not download the Stockfish chess engine")
+        pytest.skip("Could not download the Stockfish chess engine")
+
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
     CONFIG["token"] = ""
@@ -279,7 +307,7 @@ def test_homemade() -> None:
     CONFIG["engine"]["protocol"] = "homemade"
     CONFIG["pgn_directory"] = "TEMP/homemade_game_record"
     win = run_bot(CONFIG, logging_level)
-    lichess_bot.logger.info("Finished Testing Homemade")
+    logger.info("Finished Testing Homemade")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))
@@ -312,7 +340,7 @@ def test_buggy_engine() -> None:
     CONFIG["pgn_directory"] = "TEMP/bug_game_record"
 
     win = run_bot(CONFIG, logging_level, engine_path(CONFIG))
-    lichess_bot.logger.info("Finished Testing buggy engine")
+    logger.info("Finished Testing buggy engine")
     assert win
     assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                        "bo vs b - zzzzzzzz.pgn"))

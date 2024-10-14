@@ -111,7 +111,6 @@ def download_opening_book() -> None:
 
 
 os.makedirs("TEMP", exist_ok=True)
-download_opening_book()
 
 
 def get_online_move_wrapper(li: LICHESS_TYPE, board: chess.Board, game: Game, online_moves_cfg: Configuration,
@@ -124,6 +123,7 @@ def test_external_moves() -> None:
     """Test that the code for external moves works properly."""
     li = MockLichess()
     game = get_game()
+    download_opening_book()
     online_cfg, online_cfg_2, draw_or_resign_cfg, polyglot_cfg = get_configs()
 
     starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

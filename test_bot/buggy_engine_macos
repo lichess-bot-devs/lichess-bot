@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python3 test_bot/buggy_engine.py

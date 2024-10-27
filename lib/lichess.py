@@ -246,7 +246,7 @@ class Lichess:
         :param path_template: The path template.
         :param delay_time: How long we won't call this endpoint.
         """
-        logger.warning(f"Endpoint {path_template} is rate limited. Waiting {delay_time} seconds until next request.")
+        logger.warning(f"Endpoint {path_template} is rate limited. Waiting {sec_str(delay_time)} seconds until next request.")
         self.rate_limit_timers[path_template] = Timer(delay_time)
 
     def is_rate_limited(self, path_template: str) -> bool:

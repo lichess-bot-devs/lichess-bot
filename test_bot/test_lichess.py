@@ -1,10 +1,13 @@
+"""Tests for the lichess communication."""
+
 from lib import lichess
 import logging
 import os
 import pytest
 
 
-def test_lichess():
+def test_lichess() -> None:
+    """Test the lichess communication."""
     token = os.getenv("LICHESS_BOT_TEST_TOKEN")
     if token is None:
         pytest.skip("Lichess-bot test token must be set.")
@@ -18,9 +21,9 @@ def test_lichess():
                        'createdAt': 1627834995597, 'followable': True, 'following': False, 'id': 'badsunfish',
                        'perfs': {'blitz': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500},
                                  'bullet': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500},
-                       'classical': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500},
-                       'correspondence': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500},
-                       'rapid': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500}},
+                                 'classical': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500},
+                                 'correspondence': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500},
+                                 'rapid': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 500}},
                        'playTime': {'total': 1873, 'tv': 0}, 'seenAt': 1700000000000, 'title': 'BOT',
                        'url': 'https://lichess.org/@/BadSunfish', 'username': 'BadSunfish'}
     assert li.get_ongoing_games() == []

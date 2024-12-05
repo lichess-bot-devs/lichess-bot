@@ -30,6 +30,7 @@ class PerfType(TypedDict, total=False):
     rd: int
     sd: int
     prov: bool
+    prog: int
 
 
 class ProfileType(TypedDict, total=False):
@@ -69,6 +70,7 @@ class UserProfileType(TypedDict, total=False):
     following: bool
     blocking: bool
     followsYou: bool
+    count: dict[str, int]
 
 
 class ReadableType(TypedDict):
@@ -121,7 +123,7 @@ InfoDictValue = Union[PovScore, list[Move], int, float, str, Move, dict[Move, li
 class PlayerType(TypedDict, total=False):
     """Type hint for information on a player."""
 
-    title: str
+    title: Optional[str]
     rating: int
     provisional: bool
     aiLevel: int

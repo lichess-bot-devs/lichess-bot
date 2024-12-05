@@ -71,7 +71,7 @@ class Challenge:
         return ("rated" if self.rated else "casual") in challenge_cfg.modes
 
     def is_supported_recent(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]]) -> bool:
-        """Check whether we have played a lot of games with this opponent recently. Only used when the oppoennt is a BOT."""
+        """Check whether we have played a lot of games with this opponent recently. Only used when the opponent is a BOT."""
         # Filter out old challenges
         recent_bot_challenges[self.challenger.name] = [timer for timer
                                                        in recent_bot_challenges[self.challenger.name]

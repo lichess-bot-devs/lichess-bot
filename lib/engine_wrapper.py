@@ -688,7 +688,7 @@ def single_move_time(board: chess.Board, game: model.Game, search_time: datetime
     """
     pre_move_time = setup_timer.time_since_reset()
     overhead = pre_move_time + move_overhead
-    clock_time = max(msec(0), msec(game.state[wbtime(board)]) - overhead)
+    clock_time = max(msec(1), msec(game.state[wbtime(board)]) - overhead)
     search_time = min(search_time, clock_time)
     logger.info(f"Searching for time {sec_str(search_time)} seconds for game {game.id}")
     return chess.engine.Limit(time=to_seconds(search_time), clock_id="correspondence")
@@ -724,7 +724,7 @@ def game_clock_time(board: chess.Board,
     overhead = pre_move_time + move_overhead
     times = {"wtime": msec(game.state["wtime"]), "btime": msec(game.state["btime"])}
     side = wbtime(board)
-    times[side] = max(msec(0), times[side] - overhead)
+    times[side] = max(msec(1), times[side] - overhead)
     logger.info(f"Searching for wtime {msec_str(times['wtime'])} btime {msec_str(times['btime'])} for game {game.id}")
     return chess.engine.Limit(white_clock=to_seconds(times["wtime"]),
                               black_clock=to_seconds(times["btime"]),

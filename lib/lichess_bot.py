@@ -24,7 +24,7 @@ import glob
 import platform
 import importlib.metadata
 import test_bot.lichess
-from lib.config import load_config, Configuration
+from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
 from lib.types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE, CORRESPONDENCE_QUEUE_TYPE,
@@ -324,6 +324,18 @@ def log_proc_count(change: str, active_games: set[str]) -> None:
     logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games or None}")
 
 
+last_config_log = datetime.datetime.now()
+
+
+def log_config_after_rollover(config: Configuration) -> None:
+    """Log the user's config after each midnight so every log file has a copy."""
+    global last_config_log
+    now = datetime.datetime.now()
+    if now.day != last_config_log.day:
+        log_config(config.config)
+        last_config_log = now
+
+
 def lichess_bot_main(li: LICHESS_TYPE,
                      user_profile: UserProfileType,
                      config: Configuration,
@@ -420,6 +432,7 @@ def lichess_bot_main(li: LICHESS_TYPE,
             check_online_status(li, user_profile, last_check_online_time)
 
             control_queue.task_done()
+            log_config_after_rollover(config)
 
         close_pool(pool, active_games, config)
 

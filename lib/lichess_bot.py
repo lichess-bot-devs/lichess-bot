@@ -24,7 +24,7 @@ import glob
 import platform
 import importlib.metadata
 import test_bot.lichess
-from lib.config import load_config, Configuration
+from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
 from lib.types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE, CORRESPONDENCE_QUEUE_TYPE,
@@ -167,17 +167,7 @@ def write_pgn_records(pgn_queue: PGN_QUEUE_TYPE, config: Configuration, username
             pgn_queue.task_done()
 
 
-def handle_old_logs(auto_log_filename: str) -> None:
-    """Remove old logs."""
-    directory = os.path.dirname(auto_log_filename)
-    old_path = os.path.join(directory, "old.log")
-    if os.path.exists(old_path):
-        os.remove(old_path)
-    if os.path.exists(auto_log_filename):
-        os.rename(auto_log_filename, old_path)
-
-
-def logging_configurer(level: int, filename: Optional[str], auto_log_filename: Optional[str], delete_old_logs: bool) -> None:
+def logging_configurer(level: int, filename: Optional[str], disable_auto_logs: bool) -> None:
     """
     Configure the logger.
 
@@ -199,15 +189,16 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
         file_handler.setLevel(level)
         all_handlers.append(file_handler)
 
-    if auto_log_filename:
-        os.makedirs(os.path.dirname(auto_log_filename), exist_ok=True)
-
-        # Clear old logs.
-        if delete_old_logs:
-            handle_old_logs(auto_log_filename)
+    if not disable_auto_logs:
+        os.makedirs(auto_log_directory, exist_ok=True)
 
         # Set up automatic logging.
-        auto_file_handler = logging.FileHandler(auto_log_filename, delay=True, encoding="utf-8")
+        auto_log_filename = os.path.join(auto_log_directory, "lichess-bot.log")
+        auto_file_handler = logging.handlers.TimedRotatingFileHandler(auto_log_filename,
+                                                                      delay=True,
+                                                                      encoding="utf-8",
+                                                                      when='midnight',
+                                                                      backupCount=7)
         auto_file_handler.setLevel(logging.DEBUG)
 
         FORMAT = "%(asctime)s %(name)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s"
@@ -221,14 +212,14 @@ def logging_configurer(level: int, filename: Optional[str], auto_log_filename: O
 
 
 def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str],
-                          auto_log_filename: Optional[str]) -> None:
+                          disable_auto_logging: bool) -> None:
     """
     Handle events from the logging queue.
 
     This allows the logs from inside a thread to be printed.
     They are added to the queue, so they are printed outside the thread.
     """
-    logging_configurer(level, log_filename, auto_log_filename, False)
+    logging_configurer(level, log_filename, disable_auto_logging)
     logger = logging.getLogger()
     while True:
         task: Optional[logging.LogRecord] = None
@@ -258,7 +249,7 @@ def thread_logging_configurer(queue: LOGGING_QUEUE_TYPE) -> None:
 
 
 def start(li: LICHESS_TYPE, user_profile: UserProfileType, config: Configuration, logging_level: int,
-          log_filename: Optional[str], auto_log_filename: Optional[str], one_game: bool = False) -> None:
+          log_filename: Optional[str], disable_auto_logging: bool, one_game: bool = False) -> None:
     """
     Start lichess-bot.
 
@@ -287,7 +278,7 @@ def start(li: LICHESS_TYPE, user_profile: UserProfileType, config: Configuration
                                                args=(logging_queue,
                                                      logging_level,
                                                      log_filename,
-                                                     auto_log_filename))
+                                                     disable_auto_logging))
     logging_listener.start()
 
     pgn_queue = manager.Queue()
@@ -315,7 +306,7 @@ def start(li: LICHESS_TYPE, user_profile: UserProfileType, config: Configuration
         correspondence_pinger.terminate()
         correspondence_pinger.join()
         time.sleep(1.0)  # Allow final messages in logging_queue to be handled.
-        logging_configurer(logging_level, log_filename, auto_log_filename, False)
+        logging_configurer(logging_level, log_filename, disable_auto_logging)
         logging_listener.terminate()
         logging_listener.join()
         pgn_listener.terminate()
@@ -1187,13 +1178,13 @@ def start_lichess_bot() -> None:
     args = parser.parse_args()
 
     logging_level = logging.DEBUG if args.v else logging.INFO
-    auto_log_filename = None
-    if not args.disable_auto_logging:
-        auto_log_filename = os.path.join(auto_log_directory, "recent.log")
-    logging_configurer(logging_level, args.logfile, auto_log_filename, True)
+    logging_configurer(logging_level, args.logfile, args.disable_auto_logging)
     logger.info(intro(), extra={"highlighter": None})
 
     CONFIG = load_config(args.config or "./config.yml")
+    if not args.disable_auto_logging:
+        with open(os.path.join(auto_log_directory, "config.log"), "w") as config_log:
+            log_config(CONFIG.config, config_log.write)
     logger.info("Checking engine configuration ...")
     with engine_wrapper.create_engine(CONFIG):
         pass
@@ -1213,7 +1204,7 @@ def start_lichess_bot() -> None:
         is_bot = upgrade_account(li)
 
     if is_bot:
-        start(li, user_profile, CONFIG, logging_level, args.logfile, auto_log_filename)
+        start(li, user_profile, CONFIG, logging_level, args.logfile, args.disable_auto_logging)
     else:
         logger.error(f"{username} is not a bot account. Please upgrade it to a bot account!")
     logging.shutdown()

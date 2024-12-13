@@ -95,7 +95,7 @@ def download_arasan() -> None:
 os.makedirs("TEMP", exist_ok=True)
 logging_level = logging.DEBUG
 testing_log_file_name = None
-lichess_bot.logging_configurer(logging_level, testing_log_file_name, None, False)
+lichess_bot.logging_configurer(logging_level, testing_log_file_name, True)
 logger = logging.getLogger(__name__)
 
 
@@ -199,7 +199,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     results: Queue[bool] = manager.Queue()
     thr = threading.Thread(target=lichess_org_simulator, args=[opponent_path, move_queue, board_queue, clock_queue, results])
     thr.start()
-    lichess_bot.start(li, user_profile, CONFIG, logging_level, testing_log_file_name, None, one_game=True)
+    lichess_bot.start(li, user_profile, CONFIG, logging_level, testing_log_file_name, True, one_game=True)
 
     result = results.get()
     results.task_done()

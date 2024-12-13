@@ -324,18 +324,6 @@ def log_proc_count(change: str, active_games: set[str]) -> None:
     logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {active_games or None}")
 
 
-last_config_log = datetime.datetime.now()
-
-
-def log_config_after_rollover(config: Configuration) -> None:
-    """Log the user's config after each midnight so every log file has a copy."""
-    global last_config_log
-    now = datetime.datetime.now()
-    if now.day != last_config_log.day:
-        log_config(config.config)
-        last_config_log = now
-
-
 def lichess_bot_main(li: LICHESS_TYPE,
                      user_profile: UserProfileType,
                      config: Configuration,
@@ -432,7 +420,6 @@ def lichess_bot_main(li: LICHESS_TYPE,
             check_online_status(li, user_profile, last_check_online_time)
 
             control_queue.task_done()
-            log_config_after_rollover(config)
 
         close_pool(pool, active_games, config)
 
@@ -1195,6 +1182,9 @@ def start_lichess_bot() -> None:
     logger.info(intro(), extra={"highlighter": None})
 
     CONFIG = load_config(args.config or "./config.yml")
+    if not args.disable_auto_logging:
+        with open(os.path.join(auto_log_directory, "config.log")) as config_log:
+            log_config(CONFIG.config, config_log.write)
     logger.info("Checking engine configuration ...")
     with engine_wrapper.create_engine(CONFIG):
         pass

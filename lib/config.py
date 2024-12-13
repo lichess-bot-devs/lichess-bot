@@ -5,7 +5,7 @@ import os
 import logging
 import math
 from abc import ABCMeta
-from typing import Any, Union, ItemsView
+from typing import Any, Union, ItemsView, Callable
 from lib.types import CONFIG_DICT_TYPE, FilterType
 
 logger = logging.getLogger(__name__)
@@ -251,7 +251,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
         CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])
 
 
-def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
+def log_config(CONFIG: CONFIG_DICT_TYPE, alternate_log_function: Callable[[str], Any] | None = None) -> None:
     """
     Log the config to make debugging easier.
 
@@ -259,8 +259,9 @@ def log_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     """
     logger_config = CONFIG.copy()
     logger_config["token"] = "logger"
-    logger.debug(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
-    logger.debug("====================")
+    destination = alternate_log_function or logger.debug
+    destination(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
+    destination("====================")
 
 
 def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:

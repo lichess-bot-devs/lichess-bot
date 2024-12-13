@@ -37,6 +37,8 @@ jobs:
           TEMP
         key: ${{ matrix.os }}-engines
     - name: Test with pytest
+      env:
+        LICHESS_BOT_TEST_TOKEN: ${{ secrets.LICHESS_BOT_TEST_TOKEN }}
       run: |
         pytest --log-cli-level=10
     - name: Save engines

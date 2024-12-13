@@ -1183,7 +1183,7 @@ def start_lichess_bot() -> None:
 
     CONFIG = load_config(args.config or "./config.yml")
     if not args.disable_auto_logging:
-        with open(os.path.join(auto_log_directory, "config.log")) as config_log:
+        with open(os.path.join(auto_log_directory, "config.log"), "w") as config_log:
             log_config(CONFIG.config, config_log.write)
     logger.info("Checking engine configuration ...")
     with engine_wrapper.create_engine(CONFIG):

@@ -11,6 +11,8 @@ def test_lichess() -> None:
     token = os.getenv("LICHESS_BOT_TEST_TOKEN")
     if token is None:
         pytest.skip("Lichess-bot test token must be set.")
+    assert token.startswith("lip_")
+    assert token.endswith("y")
     li = lichess.Lichess(token, "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
     assert len(li.get_online_bots()) > 20
     profile = li.get_profile()

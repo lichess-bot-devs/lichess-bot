@@ -8,7 +8,7 @@ import pytest
 
 def test_lichess() -> None:
     """Test the lichess communication."""
-    token = os.getenv("LICHESS_BOT_TEST_TOKEN")
+    token = os.environ.get("LICHESS_BOT_TEST_TOKEN")
     if token is None:
         pytest.skip("Lichess-bot test token must be set.")
     assert token.startswith("lip_")

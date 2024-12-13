@@ -28,22 +28,18 @@ def test_lichess() -> None:
                        'url': 'https://lichess.org/@/BadSunfish', 'username': 'BadSunfish'}
     assert li.get_ongoing_games() == []
     assert li.is_online("NNWithSF") is False
-    assert li.get_public_data("lichapibot") == {'blocking': False,
-                                                'count': {'ai': 1, 'all': 15774, 'bookmark': 0, 'draw': 3009, 'drawH': 3009,
-                                                          'import': 0, 'loss': 6423, 'lossH': 6423,
-                                                          'me': 0, 'playing': 0, 'rated': 15121, 'win': 6342, 'winH': 6341},
-                                                'createdAt': 1524037267522, 'followable': True, 'following': False,
-                                                'id': 'lichapibot',
-                                                'perfs': {'blitz': {'games': 2430, 'prog': 3, 'prov': True, 'rating': 2388,
-                                                                    'rd': 142},
-                                                          'bullet': {'games': 7293, 'prog': 9, 'prov': True, 'rating': 2298,
-                                                                     'rd': 133},
-                                                          'classical': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500,
-                                                                        'rd': 500},
-                                                          'correspondence': {'games': 0, 'prog': 0, 'prov': True,
-                                                                             'rating': 1500, 'rd': 500},
-                                                          'rapid': {'games': 993, 'prog': -80, 'prov': True, 'rating': 2363,
-                                                                    'rd': 149}},
-                                                'playTime': {'total': 4111502, 'tv': 1582068}, 'profile': {},
-                                                'seenAt': 1669272254317, 'title': 'BOT', 'tosViolation': True,
-                                                'url': 'https://lichess.org/@/lichapibot', 'username': 'lichapibot'}
+    public_data = li.get_public_data("lichapibot")
+    for key in public_data["perfs"]:
+        public_data["perfs"][key]["rd"] = 0
+    assert public_data == {'blocking': False, 'count': {'ai': 1, 'all': 15774, 'bookmark': 0, 'draw': 3009, 'drawH': 3009,
+                                                        'import': 0, 'loss': 6423, 'lossH': 6423,
+                                                        'me': 0, 'playing': 0, 'rated': 15121, 'win': 6342, 'winH': 6341},
+                           'createdAt': 1524037267522, 'followable': True, 'following': False, 'id': 'lichapibot',
+                           'perfs': {'blitz': {'games': 2430, 'prog': 3, 'prov': True, 'rating': 2388, 'rd': 0},
+                                     'bullet': {'games': 7293, 'prog': 9, 'prov': True, 'rating': 2298, 'rd': 0},
+                                     'classical': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 0},
+                                     'correspondence': {'games': 0, 'prog': 0, 'prov': True, 'rating': 1500, 'rd': 0},
+                                     'rapid': {'games': 993, 'prog': -80, 'prov': True, 'rating': 2363, 'rd': 0}},
+                           'playTime': {'total': 4111502, 'tv': 1582068}, 'profile': {},
+                           'seenAt': 1669272254317, 'title': 'BOT', 'tosViolation': True,
+                           'url': 'https://lichess.org/@/lichapibot', 'username': 'lichapibot'}

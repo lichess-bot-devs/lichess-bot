@@ -187,9 +187,12 @@ class EngineWrapper:
                 BadMove = (chess.IllegalMoveError, chess.InvalidMoveError)
                 if any(isinstance(e, BadMove) for e in error.args):
                     logger.error("Ending game due to bot attempting an illegal move.")
+                    logger.error(error)
                     game_ender = li.abort if game.is_abortable() else li.resign
                     game_ender(game.id)
-                raise
+                    return
+                else:
+                    raise
 
         # Heed min_time
         elapsed = setup_timer.time_since_reset()

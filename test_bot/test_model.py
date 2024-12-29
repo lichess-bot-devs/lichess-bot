@@ -52,10 +52,10 @@ def test_challenge() -> None:
     assert challenge_model.speed == "bullet"
     assert challenge_model.time_control["show"] == "1.5+1"
     assert challenge_model.color == "white"
-    assert challenge_model.is_supported(configuration, recent_challenges) == (True, "")
+    assert challenge_model.is_supported(configuration, recent_challenges, []) == (True, "")
 
     CONFIG["challenge"]["min_base"] = 120
-    assert challenge_model.is_supported(configuration, recent_challenges) == (False, "timeControl")
+    assert challenge_model.is_supported(configuration, recent_challenges, []) == (False, "timeControl")
 
 
 def test_game() -> None:

@@ -614,7 +614,9 @@ def handle_challenge(event: EventType, li: LICHESS_TYPE, challenge_queue: MULTIP
     if chlng.from_self:
         return
 
-    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges)
+    players_with_active_games = list(map(lambda game: game["opponent"]["username"], li.get_ongoing_games()))
+
+    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges, players_with_active_games)
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)

@@ -1215,7 +1215,8 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
 
 
 def dtz_to_wdl(dtz: Union[int, float]) -> int:
-    """Convert DTZ scores to syzygy WDL scores.
+    """
+    Convert DTZ scores to syzygy WDL scores.
 
     A DTZ of +/-100 returns a draw score of +/-1 instead of a win/loss score of +/-2 because
     a 50-move draw can be forced before checkmate can be forced.

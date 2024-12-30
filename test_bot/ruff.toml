@@ -1,0 +1,20 @@
+target-version = "py39"
+
+# The GitHub editor is 127 chars wide.
+line-length = 127
+
+[lint]
+# D: Docstrings (pydocstyle)
+# E: Code style
+# F: Pyflakes
+# W: Warnings
+# C90: Complexity
+select = ["D", "E", "F", "W", "C90"]
+
+# D203: Require blank line after class declaration before docstring
+# D212: Start multiline docstring on same line as triple-quote
+# D404: Docstring should not start with the word "This".
+ignore = ["D203", "D212", "D404"]
+
+[lint.mccabe]
+max-complexity = 10

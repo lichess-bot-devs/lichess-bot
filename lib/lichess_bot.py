@@ -36,6 +36,7 @@ from collections.abc import Iterator, MutableSequence
 from http.client import RemoteDisconnected
 from queue import Empty
 from multiprocessing.pool import Pool
+from collections import Counter
 from typing import Optional, Union, TypedDict, cast
 from types import FrameType
 MULTIPROCESSING_LIST_TYPE = MutableSequence[model.Challenge]
@@ -614,7 +615,7 @@ def handle_challenge(event: EventType, li: LICHESS_TYPE, challenge_queue: MULTIP
     if chlng.from_self:
         return
 
-    players_with_active_games = list(map(lambda game: game["opponent"]["username"], li.get_ongoing_games()))
+    players_with_active_games = Counter(game["opponent"]["username"] for game in li.get_ongoing_games())
 
     is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges, players_with_active_games)
     if is_supported:

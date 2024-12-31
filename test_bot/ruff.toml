@@ -4,12 +4,7 @@ target-version = "py39"
 line-length = 127
 
 [lint]
-# D: Docstrings (pydocstyle)
-# E: Code style
-# F: Pyflakes
-# W: Warnings
-# C90: Complexity
-select = ["D", "E", "F", "W", "C90"]
+select = ["ALL"]
 
 # D203: Require blank line after class declaration before docstring
 # D212: Start multiline docstring on same line as triple-quote

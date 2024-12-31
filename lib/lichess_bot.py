@@ -197,7 +197,7 @@ def logging_configurer(level: int, filename: Optional[str], disable_auto_logs: b
         auto_file_handler = logging.handlers.TimedRotatingFileHandler(auto_log_filename,
                                                                       delay=True,
                                                                       encoding="utf-8",
-                                                                      when='midnight',
+                                                                      when="midnight",
                                                                       backupCount=7)
         auto_file_handler.setLevel(logging.DEBUG)
 
@@ -588,10 +588,10 @@ def start_game(event: EventType,
     game_id = event["game"]["id"]
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
-            logger.info(f'--- Enqueue {config.url + game_id}')
+            logger.info(f"--- Enqueue {config.url + game_id}")
             correspondence_queue.put_nowait(game_id)
         else:
-            logger.info(f'--- Will start {config.url + game_id} as soon as possible')
+            logger.info(f"--- Will start {config.url + game_id} as soon as possible")
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
@@ -1245,7 +1245,7 @@ def check_python_version() -> None:
 
 def start_program() -> None:
     """Start lichess-bot and restart when needed."""
-    multiprocessing.set_start_method('spawn')
+    multiprocessing.set_start_method("spawn")
     try:
         while should_restart():
             disable_restart()

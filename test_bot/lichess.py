@@ -115,7 +115,7 @@ class EventStream:
     def iter_lines(self) -> Generator[bytes, None, None]:
         """Send the events to lichess-bot."""
         if self.sent_game:
-            yield b''
+            yield b""
             time.sleep(1)
         else:
             yield json.dumps(

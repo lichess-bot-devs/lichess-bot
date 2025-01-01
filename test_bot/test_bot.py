@@ -46,9 +46,12 @@ def download_sf() -> None:
     with open(archive_name, "wb") as file:
         file.write(response.content)
 
-    archive_open = zipfile.ZipFile if archive_ext == "zip" else tarfile.TarFile
-    with archive_open(archive_name, "r") as archive_ref:
-        archive_ref.extractall("./TEMP/")
+    if archive_ext == "zip":
+        with zipfile.ZipFile(archive_name, "r") as archive_ref:
+            archive_ref.extractall("./TEMP/")  # noqa: S202
+    else:
+        with tarfile.TarFile(archive_name, "r") as archive_ref:
+            archive_ref.extractall("./TEMP/", filter="data")
 
     exe_ext = ".exe" if platform == "win32" else ""
     shutil.copyfile(f"./TEMP/stockfish/{sf_base}{exe_ext}", stockfish_path)
@@ -69,7 +72,7 @@ def download_lc0() -> None:
     with open("./TEMP/lc0_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/lc0_zip.zip", "r") as zip_ref:
-        zip_ref.extractall("./TEMP/")
+        zip_ref.extractall("./TEMP/")  # noqa: S202
 
 
 def download_arasan() -> None:
@@ -83,9 +86,12 @@ def download_arasan() -> None:
     response.raise_for_status()
     with open(f"./TEMP/arasan.{archive_ext}", "wb") as file:
         file.write(response.content)
-    archive_open = zipfile.ZipFile if archive_ext == "zip" else tarfile.TarFile
-    with archive_open(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
-        archive_ref.extractall("./TEMP/")
+    if archive_ext == "zip":
+        with zipfile.ZipFile(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
+            archive_ref.extractall("./TEMP/")  # noqa: S202
+    else:
+        with tarfile.TarFile(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
+            archive_ref.extractall("./TEMP/", filter="data")
     shutil.copyfile(f"./TEMP/arasanx-64{file_extension}", f"./TEMP/arasan{file_extension}")
     if platform != "win32":
         st = os.stat(f"./TEMP/arasan{file_extension}")

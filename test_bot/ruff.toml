@@ -6,10 +6,47 @@ line-length = 127
 [lint]
 select = ["ALL"]
 
-# D203: Require blank line after class declaration before docstring
-# D212: Start multiline docstring on same line as triple-quote
-# D404: Docstring should not start with the word "This".
-ignore = ["D203", "D212", "D404"]
+ignore = [
+    "A004", # Import is shadowing a Python builtin
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
+    "B008", # Do not perform function call in argument defaults
+    "BLE001", # Do not catch blind exception: Exception
+    "COM812", # Trailing comma missing
+    "D203", # Require blank line after class declaration before docstring
+    "D212", # Start multiline docstring on same line as triple-quote
+    "D404", # Docstring should not start with the word "This"
+    "DTZ", # datetime without timezone
+    "EM101", # Exception must not use a string literal, assign to variable first
+    "EM102", # Exception must not use an f-string literal, assign to variable first
+    "ERA001", # Found commented-out code
+    "FA100", # Add from __future__ import annotations to simplify typing
+    "FBT", # Boolean argument in function definition
+    "G", # Logging
+    "I001", # Import block is un-sorted or un-formatted
+    "N803", # Argument name should be lowercase
+    "N806", # Variable in function should be lowercase
+    "N818", # Exception name should be named with an Error suffix
+    "PERF203", # try-except within a loop incurs performance overhead
+    "PLR0913", #Too many arguments in function definition
+    "PLR0915", # Too many statements
+    "PLR2004", # Magic value used in comparison, consider replacing `20` with a constant variable
+    "PLW0603", # Using the global statement to update variable is discouraged
+    "PT018", # Assertion should be broken down into multiple parts
+    "PTH", # Replace builtin functions with Path methods
+    "RET505", # Unnecessary else after return statement
+    "RET508", # Unnecessary elif after break statement
+    "RUF005", # Consider [*list1, None] instead of concatenation (list1 + [None])
+    "RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
+    "S101", # Use of assert detected
+    "S113", # Probable use of `requests` call without timeout
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SIM108", #Use ternary operator instead of `if`-`else`-block
+    "TC001", # Move application import into a type-checking block
+    "TC003", # Move standard library import into a type-checking block
+    "TRY", # Try-except suggestions
+    "UP035", # Import from collections.abc instead of typing
+    "UP007", # Use `X | Y` for type annotations
+]
 
 [lint.mccabe]
 max-complexity = 10

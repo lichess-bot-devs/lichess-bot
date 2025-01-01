@@ -243,9 +243,9 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
         for ponder in ["ponder", "uci_ponder"]:
             set_config_default(CONFIG, section, key=ponder, default=False)
 
-    for type in ["hello", "goodbye"]:
+    for greeting in ["hello", "goodbye"]:
         for target in ["", "_spectators"]:
-            set_config_default(CONFIG, "greeting", key=type + target, default="", force_empty_values=True)
+            set_config_default(CONFIG, "greeting", key=greeting + target, default="", force_empty_values=True)
 
     if CONFIG["matchmaking"]["include_challenge_block_list"]:
         CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])

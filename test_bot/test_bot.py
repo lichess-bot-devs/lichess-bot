@@ -323,9 +323,9 @@ def test_buggy_engine() -> None:
     CONFIG["engine"]["dir"] = "test_bot"
 
     def engine_path(CONFIG: CONFIG_DICT_TYPE) -> str:
-        dir: str = CONFIG["engine"]["dir"]
+        directory: str = CONFIG["engine"]["dir"]
         name: str = CONFIG["engine"]["name"].removesuffix(".py")
-        path = os.path.join(dir, name)
+        path = os.path.join(directory, name)
         if platform == "win32":
             path += ".bat"
         else:

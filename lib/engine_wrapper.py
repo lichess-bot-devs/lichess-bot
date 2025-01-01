@@ -56,7 +56,7 @@ def create_engine(engine_config: Configuration, game: Optional[model.Game] = Non
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
-    Engine: Union[type[UCIEngine], type[XBoardEngine], type[MinimalEngine]]
+    Engine: type[Union[UCIEngine, XBoardEngine, MinimalEngine]]
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
@@ -1201,7 +1201,7 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
     return dtz + (math.copysign(board.halfmove_clock, dtz) if dtz else 0)
 
 
-def dtz_to_wdl(dtz: Union[int, float]) -> int:
+def dtz_to_wdl(dtz: float) -> int:
     """
     Convert DTZ scores to syzygy WDL scores.
 

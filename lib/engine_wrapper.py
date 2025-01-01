@@ -271,8 +271,7 @@ class EngineWrapper:
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
-        result = self.offer_draw_or_resign(result, board)
-        return result
+        return self.offer_draw_or_resign(result, board)
 
     def comment_index(self, move_stack_index: int) -> int:
         """
@@ -431,9 +430,7 @@ class EngineWrapper:
 
     def name(self) -> str:
         """Get the name of the engine."""
-        engine_info: dict[str, str] = dict(self.engine.id)
-        name = engine_info["name"]
-        return name
+        return self.engine.id["name"]
 
     def get_pid(self) -> str:
         """Get the pid of the engine."""

@@ -590,7 +590,6 @@ class MinimalEngine(EngineWrapper):
         self.engine.<method_name>(<*args>, <**kwargs>)
         self.notify(<method_name>, <*args>, <**kwargs>)
         """
-        pass
 
 
 class FillerEngine:

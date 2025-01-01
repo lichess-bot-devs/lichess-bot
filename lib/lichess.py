@@ -47,8 +47,6 @@ MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 class RateLimited(RuntimeError):
     """Exception raised when we are rate limited (status code 429)."""
 
-    pass
-
 
 def is_new_rate_limit(response: requests.models.Response) -> bool:
     """Check if the status code is 429, which means that we are rate limited."""

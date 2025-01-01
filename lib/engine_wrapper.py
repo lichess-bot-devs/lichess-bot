@@ -114,7 +114,7 @@ class EngineWrapper:
             self.engine.close()
             raise
 
-    def __enter__(self) -> EngineWrapper:
+    def __enter__(self) -> EngineWrapper:  # noqa: PYI034 (return Self not available until 3.11)
         """Enter context so engine communication will be properly shutdown."""
         self.engine.__enter__()
         return self

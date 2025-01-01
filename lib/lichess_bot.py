@@ -230,7 +230,7 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
             time.sleep(0.1)
         except InterruptedError:
             pass
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
         if task is None:

@@ -68,7 +68,7 @@ class Conversation:
         """
         from_self = line.username == self.game.username
         is_eval = cmd.startswith("eval")
-        if cmd == "commands" or cmd == "help":
+        if cmd in ("commands", "help"):
             self.send_reply(line,
                             "Supported commands: !wait (wait a minute for my first move), !name, "
                             "!eval (or any text starting with !eval), !queue")

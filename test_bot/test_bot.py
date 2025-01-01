@@ -268,7 +268,7 @@ def test_lc0() -> None:
 @pytest.mark.timeout(150, method="thread")
 def test_arasan() -> None:
     """Test lichess-bot with Arasan (XBoard)."""
-    if platform != "linux" and platform != "win32":
+    if platform not in ("linux", "win32"):
         pytest.skip("Platform must be Windows or Linux.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)

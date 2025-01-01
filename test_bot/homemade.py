@@ -8,6 +8,8 @@ from lib import model
 from typing import Optional
 from lib.types import OPTIONS_GO_EGTB_TYPE, COMMANDS_TYPE, MOVE
 
+# ruff: noqa: ARG002
+
 platform = sys.platform
 file_extension = ".exe" if platform == "win32" else ""
 

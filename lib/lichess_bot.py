@@ -89,7 +89,7 @@ def disable_restart() -> None:
     restart = False
 
 
-def signal_handler(signal: int, frame: Optional[FrameType]) -> None:
+def signal_handler(signal: int, frame: Optional[FrameType]) -> None:  # noqa: ARG001
     """Terminate lichess-bot."""
     global terminated
     global force_quit

@@ -258,7 +258,7 @@ def log_config(CONFIG: CONFIG_DICT_TYPE, alternate_log_function: Callable[[str],
     :param CONFIG: The bot's config.
     """
     logger_config = CONFIG.copy()
-    logger_config["token"] = "logger"
+    logger_config["token"] = "logger"  # noqa: S105 (Possible hardcoded password)
     destination = alternate_log_function or logger.debug
     destination(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
     destination("====================")

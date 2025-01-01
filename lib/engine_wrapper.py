@@ -23,7 +23,7 @@ from lib.types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIO
                        COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE,
                        ENGINE_INPUT_ARGS_TYPE, ENGINE_INPUT_KWARGS_TYPE)
 from extra_game_handlers import game_specific_options
-from typing import Any, Optional, Union, Literal, Type, cast
+from typing import Any, Optional, Union, Literal, cast
 from types import TracebackType
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
@@ -119,7 +119,7 @@ class EngineWrapper:
         self.engine.__enter__()
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]],
+    def __exit__(self, exc_type: Optional[type[BaseException]],
                  exc_value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
         """Exit context and allow engine to shutdown nicely if there was no exception."""

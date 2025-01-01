@@ -357,9 +357,9 @@ def lichess_bot_main(li: LICHESS_TYPE,
     startup_correspondence_games = [game["gameId"]
                                     for game in all_games
                                     if game["speed"] == "correspondence"]
-    active_games = set(game["gameId"]
-                       for game in all_games
-                       if game["gameId"] not in startup_correspondence_games)
+    active_games = {game["gameId"]
+                    for game in all_games
+                    if game["gameId"] not in startup_correspondence_games}
     low_time_games: list[GameType] = []
 
     last_check_online_time = Timer(hours(1))
@@ -775,7 +775,7 @@ def delete_takeback_record(game: model.Game) -> None:
 
 def prune_takeback_records(all_games: list[GameType]) -> None:
     """Delete takeback records from games that have ended."""
-    active_game_ids = set(game["gameId"] for game in all_games)
+    active_game_ids = {game["gameId"] for game in all_games}
     takeback_file_template = takeback_record_file_name("*")
     prefix, suffix = takeback_file_template.split("*")
     for takeback_file_name in glob.glob(takeback_file_template):

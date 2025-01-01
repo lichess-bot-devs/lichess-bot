@@ -12,6 +12,7 @@ import datetime
 import time
 import random
 import math
+import contextlib
 import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
@@ -326,10 +327,8 @@ class EngineWrapper:
 
         Used after allowing an opponent to take back a move.
         """
-        try:
+        with contextlib.suppress(IndexError):
             self.move_commentary.pop()
-        except IndexError:
-            pass
 
     def print_stats(self) -> None:
         """Print the engine stats."""
@@ -847,7 +846,7 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     action = {"best": "querypv",
               "good": "querybest",
               "all": "query"}
-    try:
+    with contextlib.suppress(Exception):
         params: dict[str, Union[str, int]] = {"action": action[quality], "board": board.fen(), "json": 1}
         data = li.online_book_get(site, params=params)
         if data["status"] == "ok":
@@ -864,8 +863,6 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
             else:
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn for game {game.id}")
-    except Exception:
-        pass
 
     return move, comment
 
@@ -887,7 +884,7 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
     multipv = 1 if quality == "best" else 5
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy.
 
-    try:
+    with contextlib.suppress(Exception):
         data = li.online_book_get("https://lichess.org/api/cloud-eval",
                                   params={"fen": board.fen(),
                                           "multiPv": multipv,
@@ -918,8 +915,6 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
                 comment["string"] = "lichess-bot-source:Lichess Cloud Analysis"
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})"
                             f" for game {game.id}")
-    except Exception:
-        pass
 
     return move, comment
 
@@ -938,7 +933,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
     move = None
     comment: chess.engine.InfoDict = {}
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy
-    try:
+    with contextlib.suppress(Exception):
         params: dict[str, Union[str, int]]
         if source == "masters":
             params = {"fen": board.fen(), "moves": 100}
@@ -971,8 +966,6 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
         move = moves[0][2]
         logger.info(f"Got move {move} from lichess opening explorer ({opening_explorer_cfg.sort}: {moves[0][0]})"
                     f" for game {game.id}")
-    except Exception:
-        pass
 
     return move, comment
 
@@ -1003,13 +996,11 @@ def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     quality = online_egtb_cfg.move_quality
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
-    try:
+    with contextlib.suppress(Exception):
         if source == "lichess":
             return get_lichess_egtb_move(li, game, board, quality, variant)
         elif source == "chessdb":
             return get_chessdb_egtb_move(li, game, board, quality)
-    except Exception:
-        pass
 
     return None, -3, {}
 

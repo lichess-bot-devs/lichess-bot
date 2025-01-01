@@ -9,6 +9,7 @@ import logging
 import traceback
 from collections import defaultdict
 import datetime
+import contextlib
 from lib.timer import Timer, seconds, sec_str
 from typing import Optional, Union, cast
 import chess.engine
@@ -315,13 +316,11 @@ class Lichess:
 
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> None:
         """Decline a challenge."""
-        try:
+        with contextlib.suppress(Exception):
             self.api_post("decline", challenge_id,
                           data=f"reason={reason}",
                           headers={"Content-Type": "application/x-www-form-urlencoded"},
                           raise_for_status=False)
-        except Exception:
-            pass
 
     def get_profile(self) -> UserProfileType:
         """Get the bot's profile (e.g. username)."""
@@ -332,11 +331,9 @@ class Lichess:
     def get_ongoing_games(self) -> list[GameType]:
         """Get the bot's ongoing games."""
         ongoing_games: list[GameType] = []
-        try:
+        with contextlib.suppress(Exception):
             response = cast(dict[str, list[GameType]], self.api_get_json("playing"))
             ongoing_games = response["nowPlaying"]
-        except Exception:
-            pass
         return ongoing_games
 
     def resign(self, game_id: str) -> None:

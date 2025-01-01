@@ -23,6 +23,7 @@ import itertools
 import glob
 import platform
 import importlib.metadata
+import contextlib
 import test_bot.lichess
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
@@ -768,10 +769,8 @@ def record_takeback(game: model.Game, accepted_count: int) -> None:
 def delete_takeback_record(game: model.Game) -> None:
     """Delete the takeback record from a game if it has finished."""
     if is_game_over(game):
-        try:
+        with contextlib.suppress(Exception):
             os.remove(takeback_record_file_name(game.id))
-        except Exception:
-            pass
 
 
 def prune_takeback_records(all_games: list[GameType]) -> None:
@@ -782,10 +781,8 @@ def prune_takeback_records(all_games: list[GameType]) -> None:
     for takeback_file_name in glob.glob(takeback_file_template):
         game_id = takeback_file_name.removeprefix(prefix).removesuffix(suffix)
         if game_id not in active_game_ids:
-            try:
+            with contextlib.suppress(Exception):
                 os.remove(takeback_file_name)
-            except Exception:
-                pass
 
 
 def takeback_record_file_name(game_id: str) -> str:

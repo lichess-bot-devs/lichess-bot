@@ -320,10 +320,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")
-    config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted "
-                                                    "volume; Using the Docker's container internal file system will prevent "
-                                                    "you accessing the saved files and can lead to disk "
-                                                    "saturation.".format(pgn_directory))
+    config_warn(not pgn_directory or not in_docker,
+                f"Games will be saved to '{pgn_directory}', please ensure this folder is in a mounted "
+                "volume; Using the Docker's container internal file system will prevent "
+                "you accessing the saved files and can lead to disk "
+                "saturation.")
 
     valid_pgn_grouping_options = ["game", "opponent", "all"]
     config_pgn_choice = CONFIG["pgn_file_grouping"]

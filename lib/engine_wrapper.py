@@ -723,7 +723,7 @@ def game_clock_time(board: chess.Board,
     times = {"wtime": msec(game.state["wtime"]), "btime": msec(game.state["btime"])}
     side = wbtime(board)
     times[side] = max(msec(1), times[side] - overhead)
-    logger.info(f"Searching for wtime {msec_str(times["wtime"])} btime {msec_str(times["btime"])} for game {game.id}")
+    logger.info(f"Searching for wtime {msec_str(times['wtime'])} btime {msec_str(times['btime'])} for game {game.id}")
     return chess.engine.Limit(white_clock=to_seconds(times["wtime"]),
                               black_clock=to_seconds(times["btime"]),
                               white_inc=to_seconds(msec(game.state["winc"])),

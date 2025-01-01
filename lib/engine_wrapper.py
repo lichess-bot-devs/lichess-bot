@@ -62,7 +62,7 @@ def create_engine(engine_config: Configuration, game: Optional[model.Game] = Non
     elif engine_type == "uci":
         Engine = UCIEngine
     elif engine_type == "homemade":
-        Engine = getHomemadeEngine(cfg.name)
+        Engine = get_homemade_engine(cfg.name)
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
@@ -618,7 +618,7 @@ class FillerEngine:
 test_suffix = "-for-lichess-bot-testing-only"
 
 
-def getHomemadeEngine(name: str) -> type[MinimalEngine]:
+def get_homemade_engine(name: str) -> type[MinimalEngine]:
     """
     Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `homemade.RandomMove`.
 

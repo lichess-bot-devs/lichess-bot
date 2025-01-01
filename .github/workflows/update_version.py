@@ -3,6 +3,9 @@ import yaml
 import datetime
 import os
 
+# File is part of an implicit namespace package. Add an `__init__.py`.
+# ruff: noqa: INP001
+
 with open("lib/versioning.yml") as version_file:
     versioning_info = yaml.safe_load(version_file)
 

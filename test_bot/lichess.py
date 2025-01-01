@@ -12,7 +12,8 @@ from lib.timer import to_msec
 from lib.types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
                        BackoffDetails)
 
-# ruff: noqa: ARG002 Unused method argument
+# Unused method argument
+# ruff: noqa: ARG002
 
 logger = logging.getLogger(__name__)
 

@@ -544,9 +544,9 @@ class MinimalEngine(EngineWrapper):
     `notify`, etc.
     """
 
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
-                 draw_or_resign: Configuration, game: Optional[model.Game] = None, name: Optional[str] = None,
-                 **popen_args: str) -> None:
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],  # noqa: ARG002
+                 draw_or_resign: Configuration, game: Optional[model.Game] = None, name: Optional[str] = None,  # noqa: ARG002
+                 **popen_args: str) -> None:  # noqa: ARG002 Unused argument popen_args
         """
         Initialize the values of the engine that all homemade engines inherit.
 

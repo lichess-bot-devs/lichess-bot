@@ -8,7 +8,7 @@ assert input() == "uci"
 
 def send_command(command: str) -> None:
     """Send UCI commands to lichess-bot without output buffering."""
-    print(command, flush=True)
+    print(command, flush=True)  # noqa: T201 (print() found)
 
 
 send_command("id name Procrastinator")

@@ -244,9 +244,9 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
         for ponder in ["ponder", "uci_ponder"]:
             set_config_default(CONFIG, section, key=ponder, default=False)
 
-    for type in ["hello", "goodbye"]:
+    for greeting in ["hello", "goodbye"]:
         for target in ["", "_spectators"]:
-            set_config_default(CONFIG, "greeting", key=type + target, default="", force_empty_values=True)
+            set_config_default(CONFIG, "greeting", key=greeting + target, default="", force_empty_values=True)
 
     if CONFIG["matchmaking"]["include_challenge_block_list"]:
         CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])
@@ -259,7 +259,7 @@ def log_config(CONFIG: CONFIG_DICT_TYPE, alternate_log_function: Callable[[str],
     :param CONFIG: The bot's config.
     """
     logger_config = CONFIG.copy()
-    logger_config["token"] = "logger"
+    logger_config["token"] = "logger"  # noqa: S105 (Possible hardcoded password)
     destination = alternate_log_function or logger.debug
     destination(f"Config:\n{yaml.dump(logger_config, sort_keys=False)}")
     destination("====================")
@@ -321,10 +321,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")
-    config_warn(not pgn_directory or not in_docker, "Games will be saved to '{}', please ensure this folder is in a mounted "
-                                                    "volume; Using the Docker's container internal file system will prevent "
-                                                    "you accessing the saved files and can lead to disk "
-                                                    "saturation.".format(pgn_directory))
+    config_warn(not pgn_directory or not in_docker,
+                f"Games will be saved to '{pgn_directory}', please ensure this folder is in a mounted "
+                "volume; Using the Docker's container internal file system will prevent "
+                "you accessing the saved files and can lead to disk "
+                "saturation.")
 
     valid_pgn_grouping_options = ["game", "opponent", "all"]
     config_pgn_choice = CONFIG["pgn_file_grouping"]

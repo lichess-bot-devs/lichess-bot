@@ -12,6 +12,8 @@ from lib.timer import to_msec
 from lib.types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
                        BackoffDetails)
 
+# Unused method argument
+# ruff: noqa: ARG002
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +117,7 @@ class EventStream:
     def iter_lines(self) -> Generator[bytes, None, None]:
         """Send the events to lichess-bot."""
         if self.sent_game:
-            yield b''
+            yield b""
             time.sleep(1)
         else:
             yield json.dumps(
@@ -150,7 +152,6 @@ class Lichess:
 
     def upgrade_to_bot_account(self) -> None:
         """Isn't used in tests."""
-        pass
 
     def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
         """Send a move to the opponent engine thread."""
@@ -158,15 +159,12 @@ class Lichess:
 
     def accept_takeback(self, game_id: str, accept: bool) -> None:
         """Isn't used in tests."""
-        pass
 
     def chat(self, game_id: str, room: str, text: str) -> None:
         """Isn't used in tests."""
-        pass
 
     def abort(self, game_id: str) -> None:
         """Isn't used in tests."""
-        pass
 
     def get_event_stream(self) -> EventStream:
         """Send the `EventStream`."""
@@ -183,11 +181,9 @@ class Lichess:
 
     def accept_challenge(self, challenge_id: str) -> None:
         """Isn't used in tests."""
-        pass
 
     def decline_challenge(self, challenge_id: str, reason: str = "generic") -> None:
         """Isn't used in tests."""
-        pass
 
     def get_profile(self) -> UserProfileType:
         """Return a simple profile for the bot that lichess-bot uses when testing."""
@@ -208,7 +204,6 @@ class Lichess:
 
     def resign(self, game_id: str) -> None:
         """Isn't used in tests."""
-        pass
 
     def get_game_pgn(self, game_id: str) -> str:
         """Return a simple PGN."""
@@ -234,7 +229,6 @@ class Lichess:
 
     def cancel(self, challenge_id: str) -> None:
         """Isn't used in tests."""
-        pass
 
     def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None,
                         stream: bool = False) -> OnlineType:

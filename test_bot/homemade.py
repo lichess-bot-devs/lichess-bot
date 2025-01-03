@@ -8,6 +8,8 @@ from lib import model
 from typing import Optional
 from lib.types import OPTIONS_GO_EGTB_TYPE, COMMANDS_TYPE, MOVE
 
+# ruff: noqa: ARG002
+
 platform = sys.platform
 file_extension = ".exe" if platform == "win32" else ""
 
@@ -16,7 +18,7 @@ class Stockfish(ExampleEngine):
     """A homemade engine that uses Stockfish."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
-                 draw_or_resign: Configuration, game: Optional[model.Game], **popen_args: str):
+                 draw_or_resign: Configuration, game: Optional[model.Game], **popen_args: str) -> None:
         """Start Stockfish."""
         super().__init__(commands, options, stderr, draw_or_resign, game, **popen_args)
         self.engine = chess.engine.SimpleEngine.popen_uci(f"./TEMP/sf{file_extension}")

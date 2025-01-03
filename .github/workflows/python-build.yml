@@ -28,17 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r test_bot/test-requirements.txt
-    - name: Lint with flake8
+    - name: Lint with ruff
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide.
-        # W503 and W504 are mutually exclusive. W504 is considered the best practice now.
-        flake8 . --count --max-complexity=10 --max-line-length=127 --statistics --ignore=D,W503
-    - name: Lint with flake8-markdown
-      run: |
-        flake8-markdown "*.md"
-        flake8-markdown "wiki/*.md"
-    - name: Lint with flake8-docstrings
-      run: |
-        flake8 . --count --max-line-length=127 --statistics --select=D
+        # Check for python syntax errors and inconsistent code style.
+        ruff check --config test_bot/ruff.toml

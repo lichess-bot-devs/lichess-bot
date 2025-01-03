@@ -28,11 +28,11 @@ from lib import lichess_bot
 platform = sys.platform
 archive_ext = "zip" if platform == "win32" else "tar"
 file_extension = ".exe" if platform == "win32" else ""
-stockfish_path = f"./TEMP/sf{file_extension}"
 
 
 def download_sf() -> None:
     """Download Stockfish 16."""
+    stockfish_path = f"./TEMP/sf{file_extension}"
     if os.path.exists(stockfish_path):
         return
 
@@ -99,7 +99,18 @@ lichess_bot.logging_configurer(logging_level, testing_log_file_name, True)
 logger = logging.getLogger(__name__)
 
 
-def lichess_org_simulator(opponent_path: str,
+class TrivialEngine:
+    """A trivial engine that should be trivial to beat."""
+
+    def play(self, board: chess.Board, limit: chess.engine.Limit, ponder: bool) -> chess.engine.PlayResult:
+        """Choose the first legal move."""
+        return chess.engine.PlayResult(list(board.legal_moves)[0], None)
+
+    def quit(self) -> None:
+        """Do nothing."""
+
+
+def lichess_org_simulator(opponent_path: Optional[str],
                           move_queue: Queue[Optional[chess.Move]],
                           board_queue: Queue[chess.Board],
                           clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]],
@@ -120,16 +131,7 @@ def lichess_org_simulator(opponent_path: str,
     wtime = start_time
     btime = start_time
 
-    if opponent_path == stockfish_path:
-        try:
-            download_sf()
-        except Exception:
-            logger.exception("Could not download the Stockfish chess engine")
-            pytest.skip("Could not download the Stockfish chess engine")
-
-    engine = chess.engine.SimpleEngine.popen_uci(opponent_path)
-    engine.configure({"Skill Level": 0, "Move Overhead": 1000, "Use NNUE": False}
-                     if opponent_path == stockfish_path else {})
+    engine = chess.engine.SimpleEngine.popen_uci(opponent_path) if opponent_path else TrivialEngine()
 
     while not board.is_game_over():
         if board.turn == chess.WHITE:
@@ -172,7 +174,7 @@ def lichess_org_simulator(opponent_path: str,
     results.put(outcome is not None and outcome.winner == chess.BLACK)
 
 
-def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str = stockfish_path) -> bool:
+def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: Optional[str] = None) -> bool:
     """
     Start lichess-bot test with a mocked version of the lichess.org site.
 

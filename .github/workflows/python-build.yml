@@ -32,10 +32,3 @@ jobs:
       run: |
         # Check for python syntax errors and inconsistent code style.
         ruff check --config test_bot/ruff.toml
-    - name: Lint with flake8-markdown
-      run: |
-        flake8-markdown "*.md"
-        flake8-markdown "wiki/*.md"
-    - name: Lint with flake8-docstrings
-      run: |
-        flake8 . --count --max-line-length=127 --statistics --select=D

@@ -108,7 +108,7 @@ logger = logging.getLogger(__name__)
 class TrivialEngine:
     """A trivial engine that should be trivial to beat."""
 
-    def play(self, board: chess.Board, limit: chess.engine.Limit, ponder: bool) -> chess.engine.PlayResult:
+    def play(self, board: chess.Board, *_: object) -> chess.engine.PlayResult:
         """Choose the first legal move."""
         return chess.engine.PlayResult(next(iter(board.legal_moves)), None)
 
@@ -142,17 +142,14 @@ def lichess_org_simulator(opponent_path: Optional[str],
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             if not board.move_stack:
-                move = engine.play(board,
-                                   chess.engine.Limit(time=1),
-                                   ponder=False)
+                move = engine.play(board, chess.engine.Limit(time=1))
             else:
                 move_timer = Timer()
                 move = engine.play(board,
                                    chess.engine.Limit(white_clock=to_seconds(wtime - seconds(2.0)),
                                                       white_inc=to_seconds(increment),
                                                       black_clock=to_seconds(btime),
-                                                      black_inc=to_seconds(increment)),
-                                   ponder=False)
+                                                      black_inc=to_seconds(increment)))
                 wtime -= move_timer.time_since_reset()
                 wtime += increment
             engine_move = move.move

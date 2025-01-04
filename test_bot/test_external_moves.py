@@ -96,8 +96,7 @@ def get_game() -> Game:
                                            "winc": 2000,
                                            "binc": 2000,
                                            "status": "started"}}
-    game = Game(game_event, "b", "https://lichess.org", timedelta(seconds=60))
-    return game
+    return Game(game_event, "b", "https://lichess.org", timedelta(seconds=60))
 
 
 def download_opening_book() -> None:

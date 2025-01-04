@@ -1,5 +1,5 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, Callable, Optional, Union, TypedDict, Literal, Type
+from typing import Any, Callable, Optional, Union, TypedDict, Literal
 from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
 from queue import Queue
@@ -455,5 +455,5 @@ class BackoffDetails(_BackoffDetails, total=False):
     value: Any  # present in the on_predicate decorator case
 
 
-ENGINE_INPUT_ARGS_TYPE = Union[None, OPTIONS_TYPE, Type[BaseException], BaseException, TracebackType, Board, Limit, str, bool]
+ENGINE_INPUT_ARGS_TYPE = Union[None, OPTIONS_TYPE, type[BaseException], BaseException, TracebackType, Board, Limit, str, bool]
 ENGINE_INPUT_KWARGS_TYPE = Union[None, int, bool, list[Move], Opponent]

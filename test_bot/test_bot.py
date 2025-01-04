@@ -46,9 +46,12 @@ def download_sf() -> None:
     with open(archive_name, "wb") as file:
         file.write(response.content)
 
-    archive_open = zipfile.ZipFile if archive_ext == "zip" else tarfile.TarFile
-    with archive_open(archive_name, "r") as archive_ref:
-        archive_ref.extractall("./TEMP/")
+    if archive_ext == "zip":
+        with zipfile.ZipFile(archive_name, "r") as archive_ref:
+            archive_ref.extractall("./TEMP/")  # noqa: S202
+    else:
+        with tarfile.TarFile(archive_name, "r") as archive_ref:
+            archive_ref.extractall("./TEMP/", filter="data")
 
     exe_ext = ".exe" if platform == "win32" else ""
     shutil.copyfile(f"./TEMP/stockfish/{sf_base}{exe_ext}", stockfish_path)
@@ -69,7 +72,7 @@ def download_lc0() -> None:
     with open("./TEMP/lc0_zip.zip", "wb") as file:
         file.write(response.content)
     with zipfile.ZipFile("./TEMP/lc0_zip.zip", "r") as zip_ref:
-        zip_ref.extractall("./TEMP/")
+        zip_ref.extractall("./TEMP/")  # noqa: S202
 
 
 def download_arasan() -> None:
@@ -83,9 +86,12 @@ def download_arasan() -> None:
     response.raise_for_status()
     with open(f"./TEMP/arasan.{archive_ext}", "wb") as file:
         file.write(response.content)
-    archive_open = zipfile.ZipFile if archive_ext == "zip" else tarfile.TarFile
-    with archive_open(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
-        archive_ref.extractall("./TEMP/")
+    if archive_ext == "zip":
+        with zipfile.ZipFile(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
+            archive_ref.extractall("./TEMP/")  # noqa: S202
+    else:
+        with tarfile.TarFile(f"./TEMP/arasan.{archive_ext}", "r") as archive_ref:
+            archive_ref.extractall("./TEMP/", filter="data")
     shutil.copyfile(f"./TEMP/arasanx-64{file_extension}", f"./TEMP/arasan{file_extension}")
     if platform != "win32":
         st = os.stat(f"./TEMP/arasan{file_extension}")
@@ -270,7 +276,7 @@ def test_lc0() -> None:
 @pytest.mark.timeout(150, method="thread")
 def test_arasan() -> None:
     """Test lichess-bot with Arasan (XBoard)."""
-    if platform != "linux" and platform != "win32":
+    if platform not in ("linux", "win32"):
         pytest.skip("Platform must be Windows or Linux.")
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
@@ -325,9 +331,9 @@ def test_buggy_engine() -> None:
     CONFIG["engine"]["dir"] = "test_bot"
 
     def engine_path(CONFIG: CONFIG_DICT_TYPE) -> str:
-        dir: str = CONFIG["engine"]["dir"]
+        directory: str = CONFIG["engine"]["dir"]
         name: str = CONFIG["engine"]["name"].removesuffix(".py")
-        path = os.path.join(dir, name)
+        path = os.path.join(directory, name)
         if platform == "win32":
             path += ".bat"
         else:

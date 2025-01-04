@@ -12,6 +12,7 @@ import datetime
 import time
 import random
 import math
+import contextlib
 import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
@@ -22,7 +23,7 @@ from lib.types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIO
                        COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE,
                        ENGINE_INPUT_ARGS_TYPE, ENGINE_INPUT_KWARGS_TYPE)
 from extra_game_handlers import game_specific_options
-from typing import Any, Optional, Union, Literal, Type, cast
+from typing import Any, Optional, Union, Literal, cast
 from types import TracebackType
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
@@ -55,13 +56,13 @@ def create_engine(engine_config: Configuration, game: Optional[model.Game] = Non
 
     stderr = None if cfg.silence_stderr else subprocess.DEVNULL
 
-    Engine: Union[type[UCIEngine], type[XBoardEngine], type[MinimalEngine]]
+    Engine: type[Union[UCIEngine, XBoardEngine, MinimalEngine]]
     if engine_type == "xboard":
         Engine = XBoardEngine
     elif engine_type == "uci":
         Engine = UCIEngine
     elif engine_type == "homemade":
-        Engine = getHomemadeEngine(cfg.name)
+        Engine = get_homemade_engine(cfg.name)
     else:
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
@@ -113,12 +114,12 @@ class EngineWrapper:
             self.engine.close()
             raise
 
-    def __enter__(self) -> EngineWrapper:
+    def __enter__(self) -> EngineWrapper:  # noqa: PYI034 (return Self not available until 3.11)
         """Enter context so engine communication will be properly shutdown."""
         self.engine.__enter__()
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]],
+    def __exit__(self, exc_type: Optional[type[BaseException]],
                  exc_value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
         """Exit context and allow engine to shutdown nicely if there was no exception."""
@@ -270,8 +271,7 @@ class EngineWrapper:
         # Use null_score to have no effect on draw/resign decisions
         null_score = chess.engine.PovScore(chess.engine.Mate(1), board.turn)
         self.scores.append(result.info.get("score", null_score))
-        result = self.offer_draw_or_resign(result, board)
-        return result
+        return self.offer_draw_or_resign(result, board)
 
     def comment_index(self, move_stack_index: int) -> int:
         """
@@ -326,10 +326,8 @@ class EngineWrapper:
 
         Used after allowing an opponent to take back a move.
         """
-        try:
+        with contextlib.suppress(IndexError):
             self.move_commentary.pop()
-        except IndexError:
-            pass
 
     def print_stats(self) -> None:
         """Print the engine stats."""
@@ -432,9 +430,7 @@ class EngineWrapper:
 
     def name(self) -> str:
         """Get the name of the engine."""
-        engine_info: dict[str, str] = dict(self.engine.id)
-        name = engine_info["name"]
-        return name
+        return self.engine.id["name"]
 
     def get_pid(self) -> str:
         """Get the pid of the engine."""
@@ -545,9 +541,9 @@ class MinimalEngine(EngineWrapper):
     `notify`, etc.
     """
 
-    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],
-                 draw_or_resign: Configuration, game: Optional[model.Game] = None, name: Optional[str] = None,
-                 **popen_args: str) -> None:
+    def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: Optional[int],  # noqa: ARG002
+                 draw_or_resign: Configuration, game: Optional[model.Game] = None, name: Optional[str] = None,  # noqa: ARG002
+                 **popen_args: str) -> None:  # noqa: ARG002 Unused argument popen_args
         """
         Initialize the values of the engine that all homemade engines inherit.
 
@@ -590,7 +586,6 @@ class MinimalEngine(EngineWrapper):
         self.engine.<method_name>(<*args>, <**kwargs>)
         self.notify(<method_name>, <*args>, <**kwargs>)
         """
-        pass
 
 
 class FillerEngine:
@@ -623,7 +618,7 @@ class FillerEngine:
 test_suffix = "-for-lichess-bot-testing-only"
 
 
-def getHomemadeEngine(name: str) -> type[MinimalEngine]:
+def get_homemade_engine(name: str) -> type[MinimalEngine]:
     """
     Get the homemade engine with name `name`. e.g. If `name` is `RandomMove` then we will return `homemade.RandomMove`.
 
@@ -848,7 +843,7 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     action = {"best": "querypv",
               "good": "querybest",
               "all": "query"}
-    try:
+    with contextlib.suppress(Exception):
         params: dict[str, Union[str, int]] = {"action": action[quality], "board": board.fen(), "json": 1}
         data = li.online_book_get(site, params=params)
         if data["status"] == "ok":
@@ -865,8 +860,6 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
             else:
                 move = data["move"]
                 logger.info(f"Got move {move} from chessdb.cn for game {game.id}")
-    except Exception:
-        pass
 
     return move, comment
 
@@ -888,7 +881,7 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
     multipv = 1 if quality == "best" else 5
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy.
 
-    try:
+    with contextlib.suppress(Exception):
         data = li.online_book_get("https://lichess.org/api/cloud-eval",
                                   params={"fen": board.fen(),
                                           "multiPv": multipv,
@@ -919,8 +912,6 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
                 comment["string"] = "lichess-bot-source:Lichess Cloud Analysis"
                 logger.info(f"Got move {move} from lichess cloud analysis (depth: {depth}, score: {score}, knodes: {knodes})"
                             f" for game {game.id}")
-    except Exception:
-        pass
 
     return move, comment
 
@@ -939,7 +930,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
     move = None
     comment: chess.engine.InfoDict = {}
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy
-    try:
+    with contextlib.suppress(Exception):
         params: dict[str, Union[str, int]]
         if source == "masters":
             params = {"fen": board.fen(), "moves": 100}
@@ -972,8 +963,6 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
         move = moves[0][2]
         logger.info(f"Got move {move} from lichess opening explorer ({opening_explorer_cfg.sort}: {moves[0][0]})"
                     f" for game {game.id}")
-    except Exception:
-        pass
 
     return move, comment
 
@@ -1004,13 +993,11 @@ def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     quality = online_egtb_cfg.move_quality
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)
 
-    try:
+    with contextlib.suppress(Exception):
         if source == "lichess":
             return get_lichess_egtb_move(li, game, board, quality, variant)
         elif source == "chessdb":
             return get_chessdb_egtb_move(li, game, board, quality)
-    except Exception:
-        pass
 
     return None, -3, {}
 
@@ -1106,16 +1093,16 @@ def get_chessdb_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
     If `move_quality` is `suggest`, then it will return a list of moves for the engine to choose from.
     """
     def score_to_wdl(score: int) -> int:
-        return piecewise_function([(-20000, 'e', -2),
-                                   (0, 'e', -1),
-                                   (0, 'i', 0),
-                                   (20000, 'i', 1)], 2, score)
+        return piecewise_function([(-20000, "e", -2),
+                                   (0, "e", -1),
+                                   (0, "i", 0),
+                                   (20000, "i", 1)], 2, score)
 
     def score_to_dtz(score: int) -> int:
-        return piecewise_function([(-20000, 'e', -30000 - score),
-                                   (0, 'e', -20000 - score),
-                                   (0, 'i', 0),
-                                   (20000, 'i', 20000 - score)], 30000 - score, score)
+        return piecewise_function([(-20000, "e", -30000 - score),
+                                   (0, "e", -20000 - score),
+                                   (0, "i", 0),
+                                   (20000, "i", 20000 - score)], 30000 - score, score)
 
     action = "querypv" if quality == "best" else "queryall"
     data = li.online_book_get("https://www.chessdb.cn/cdb.php",
@@ -1214,13 +1201,14 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> Union[i
     return dtz + (math.copysign(board.halfmove_clock, dtz) if dtz else 0)
 
 
-def dtz_to_wdl(dtz: Union[int, float]) -> int:
-    """Convert DTZ scores to syzygy WDL scores.
+def dtz_to_wdl(dtz: float) -> int:
+    """
+    Convert DTZ scores to syzygy WDL scores.
 
     A DTZ of +/-100 returns a draw score of +/-1 instead of a win/loss score of +/-2 because
     a 50-move draw can be forced before checkmate can be forced.
     """
-    return piecewise_function([(-100, 'i', -1), (0, 'e', -2), (0, 'i', 0), (100, 'e', 2)], 1, dtz)
+    return piecewise_function([(-100, "i", -1), (0, "e", -2), (0, "i", 0), (100, "e", 2)], 1, dtz)
 
 
 def get_gaviota(board: chess.Board, game: model.Game,
@@ -1282,14 +1270,14 @@ def dtm_scorer(tablebase: Union[chess.gaviota.NativeTablebase, chess.gaviota.Pyt
 
 def dtm_to_gaviota_wdl(dtm: int) -> int:
     """Convert DTM scores to gaviota WDL scores."""
-    return piecewise_function([(-1, 'i', -1), (0, 'i', 0)], 1, dtm)
+    return piecewise_function([(-1, "i", -1), (0, "i", 0)], 1, dtm)
 
 
 def dtm_to_wdl(dtm: int, min_dtm_to_consider_as_wdl_1: int) -> int:
     """Convert DTM scores to syzygy WDL scores."""
     # We use 100 and not min_dtm_to_consider_as_wdl_1, because we want to play it safe and not resign in a
     # position where dtz=-102 (only if resign_for_egtb_minus_two is enabled).
-    return piecewise_function([(-100, 'i', -1), (-1, 'i', -2), (0, 'i', 0), (min_dtm_to_consider_as_wdl_1, 'e', 2)], 1, dtm)
+    return piecewise_function([(-100, "i", -1), (-1, "i", -2), (0, "i", 0), (min_dtm_to_consider_as_wdl_1, "e", 2)], 1, dtm)
 
 
 def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm: int,
@@ -1324,15 +1312,15 @@ def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm
         return good_moves
 
 
-def piecewise_function(range_definitions: list[tuple[Union[int, float], Literal['e', 'i'], int]], last_value: int,
-                       position: Union[int, float]) -> int:
+def piecewise_function(range_definitions: list[tuple[float, Literal["e", "i"], int]], last_value: int,
+                       position: float) -> int:
     """
     Return a value according to a position argument.
 
     This function is meant to replace if-elif-else blocks that turn ranges into discrete values.
     Each tuple in the list has three parts: an upper limit, and inclusive/exclusive indicator, and
     a value. For example,
-    `piecewise_function([(-20000, 'e', 2), (0, 'e' -1), (0, 'i', 0), (20000, 'i', 1)], 2, score)` is equivalent to:
+    `piecewise_function([(-20000, "e", 2), (0, "e" -1), (0, "i", 0), (20000, "i", 1)], 2, score)` is equivalent to:
 
     if score < -20000:
         return -2
@@ -1348,16 +1336,16 @@ def piecewise_function(range_definitions: list[tuple[Union[int, float], Literal[
     Arguments:
     range_definitions:
         A list of tuples with the first element being the inclusive right border of region and the second
-        element being the associated value. An element of this list (a, 'i', b) corresponds to an
+        element being the associated value. An element of this list (a, "i", b) corresponds to an
         inclusive limit and is equivalent to
             if x <= a:
                 return b
-        where x is the value of the position argument. An element of the form (a, 'e', b) corresponds to
+        where x is the value of the position argument. An element of the form (a, "e", b) corresponds to
         an exclusive limit and is equivalent to
             if x < a:
                 return b
         For correct operation, this argument should be sorted by the first element. If two ranges have the
-        same border, one with 'e' and the other with 'i', the 'e' element should be first.
+        same border, one with "e" and the other with "i", the "e" element should be first.
     last_value:
         If the position argument does not fall in any of the ranges in the range_definition argument,
         return this value.
@@ -1366,7 +1354,7 @@ def piecewise_function(range_definitions: list[tuple[Union[int, float], Literal[
 
     """
     for border, inc_exc, value in range_definitions:
-        if position < border or (inc_exc == 'i' and position == border):
+        if position < border or (inc_exc == "i" and position == border):
             return value
     return last_value
 

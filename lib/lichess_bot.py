@@ -23,6 +23,7 @@ import itertools
 import glob
 import platform
 import importlib.metadata
+import contextlib
 import test_bot.lichess
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
@@ -90,7 +91,7 @@ def disable_restart() -> None:
     restart = False
 
 
-def signal_handler(signal: int, frame: Optional[FrameType]) -> None:
+def signal_handler(signal: int, frame: Optional[FrameType]) -> None:  # noqa: ARG001
     """Terminate lichess-bot."""
     global terminated
     global force_quit
@@ -198,7 +199,7 @@ def logging_configurer(level: int, filename: Optional[str], disable_auto_logs: b
         auto_file_handler = logging.handlers.TimedRotatingFileHandler(auto_log_filename,
                                                                       delay=True,
                                                                       encoding="utf-8",
-                                                                      when='midnight',
+                                                                      when="midnight",
                                                                       backupCount=7)
         auto_file_handler.setLevel(logging.DEBUG)
 
@@ -230,7 +231,7 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
             time.sleep(0.1)
         except InterruptedError:
             pass
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
         if task is None:
@@ -357,9 +358,9 @@ def lichess_bot_main(li: LICHESS_TYPE,
     startup_correspondence_games = [game["gameId"]
                                     for game in all_games
                                     if game["speed"] == "correspondence"]
-    active_games = set(game["gameId"]
-                       for game in all_games
-                       if game["gameId"] not in startup_correspondence_games)
+    active_games = {game["gameId"]
+                    for game in all_games
+                    if game["gameId"] not in startup_correspondence_games}
     low_time_games: list[GameType] = []
 
     last_check_online_time = Timer(hours(1))
@@ -589,10 +590,10 @@ def start_game(event: EventType,
     game_id = event["game"]["id"]
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
-            logger.info(f'--- Enqueue {config.url + game_id}')
+            logger.info(f"--- Enqueue {config.url + game_id}")
             correspondence_queue.put_nowait(game_id)
         else:
-            logger.info(f'--- Will start {config.url + game_id} as soon as possible')
+            logger.info(f"--- Will start {config.url + game_id} as soon as possible")
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
@@ -771,24 +772,20 @@ def record_takeback(game: model.Game, accepted_count: int) -> None:
 def delete_takeback_record(game: model.Game) -> None:
     """Delete the takeback record from a game if it has finished."""
     if is_game_over(game):
-        try:
+        with contextlib.suppress(Exception):
             os.remove(takeback_record_file_name(game.id))
-        except Exception:
-            pass
 
 
 def prune_takeback_records(all_games: list[GameType]) -> None:
     """Delete takeback records from games that have ended."""
-    active_game_ids = set(game["gameId"] for game in all_games)
+    active_game_ids = {game["gameId"] for game in all_games}
     takeback_file_template = takeback_record_file_name("*")
     prefix, suffix = takeback_file_template.split("*")
     for takeback_file_name in glob.glob(takeback_file_template):
         game_id = takeback_file_name.removeprefix(prefix).removesuffix(suffix)
         if game_id not in active_game_ids:
-            try:
+            with contextlib.suppress(Exception):
                 os.remove(takeback_file_name)
-            except Exception:
-                pass
 
 
 def takeback_record_file_name(game_id: str) -> str:
@@ -1248,7 +1245,7 @@ def check_python_version() -> None:
 
 def start_program() -> None:
     """Start lichess-bot and restart when needed."""
-    multiprocessing.set_start_method('spawn')
+    multiprocessing.set_start_method("spawn")
     try:
         while should_restart():
             disable_restart()

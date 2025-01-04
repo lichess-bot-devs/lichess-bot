@@ -110,7 +110,7 @@ class TrivialEngine:
 
     def play(self, board: chess.Board, limit: chess.engine.Limit, ponder: bool) -> chess.engine.PlayResult:
         """Choose the first legal move."""
-        return chess.engine.PlayResult(list(board.legal_moves)[0], None)
+        return chess.engine.PlayResult(next(iter(board.legal_moves)), None)
 
     def quit(self) -> None:
         """Do nothing."""

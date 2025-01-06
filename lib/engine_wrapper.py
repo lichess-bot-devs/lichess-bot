@@ -23,6 +23,7 @@ from lib.types import (ReadableType, ChessDBMoveType, LichessEGTBMoveType, OPTIO
                        COMMANDS_TYPE, MOVE, InfoStrDict, InfoDictKeys, InfoDictValue, GO_COMMANDS_TYPE, EGTPATH_TYPE,
                        ENGINE_INPUT_ARGS_TYPE, ENGINE_INPUT_KWARGS_TYPE)
 from extra_game_handlers import game_specific_options
+from operator import itemgetter
 from typing import Any, Optional, Union, Literal, cast
 from types import TracebackType
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
@@ -1149,28 +1150,30 @@ def get_syzygy(board: chess.Board, game: model.Game,
             or chess.popcount(board.occupied) > syzygy_cfg.max_pieces
             or board.uci_variant not in ["chess", "antichess", "atomic"]):
         return None, -3
+
     move: Union[chess.Move, list[chess.Move]]
     move_quality = syzygy_cfg.move_quality
+
     with chess.syzygy.open_tablebase(syzygy_cfg.paths[0]) as tablebase:
         for path in syzygy_cfg.paths[1:]:
             tablebase.add_directory(path)
 
         try:
             moves = score_syzygy_moves(board, dtz_scorer, tablebase)
+            converted_moves = {move: dtz_to_wdl(dtm) for move, dtm in moves.items()}
 
-            best_wdl = max(map(dtz_to_wdl, moves.values()))
-            good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
+            best_wdl = max(converted_moves.values())
+            good_moves = [(move, dtz) for move, dtz in converted_moves.items() if dtz == best_wdl]
             if move_quality == "suggest" and len(good_moves) > 1:
                 move = [chess_move for chess_move, dtz in good_moves]
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
                 return move, best_wdl
-            else:
-                # There can be multiple moves with the same dtz.
-                best_dtz = min([dtz for chess_move, dtz in good_moves])
-                best_moves = [chess_move for chess_move, dtz in good_moves if dtz == best_dtz]
-                move = random.choice(best_moves)
-                logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz}) for game {game.id}")
-                return move, best_wdl
+            # There can be multiple moves with the same dtz.
+            best_dtz = min(good_moves, key=itemgetter(1))[1]
+            best_moves = [chess_move for chess_move, dtz in good_moves if dtz == best_dtz]
+            move = random.choice(best_moves)
+            logger.info(f"Got move {move.uci()} from syzygy (wdl: {best_wdl}, dtz: {best_dtz}) for game {game.id}")
+            return move, best_wdl
         except KeyError:
             # Attempt to only get the WDL score. It returns moves of quality="suggest", even if quality is set to "best".
             try:
@@ -1222,8 +1225,10 @@ def get_gaviota(board: chess.Board, game: model.Game,
             or chess.popcount(board.occupied) > gaviota_cfg.max_pieces
             or board.uci_variant != "chess"):
         return None, -3
+
     move: Union[chess.Move, list[chess.Move]]
     move_quality = gaviota_cfg.move_quality
+
     # Since gaviota TBs use dtm and not dtz, we have to put a limit where after it the position are considered to have
     # a syzygy wdl=1/-1, so the positions are draws under the 50 move rule. We use min_dtm_to_consider_as_wdl_1 as a
     # second limit, because if a position has 5 pieces and dtm=110 it may take 98 half-moves, to go down to 4 pieces and
@@ -1231,6 +1236,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
     # guarantees that all moves have a syzygy wdl=2/-2. Setting min_dtm_to_consider_as_wdl_1 to 100 will disable it
     # because dtm >= dtz, so if abs(dtm) < 100 => abs(dtz) < 100, so wdl=2/-2.
     min_dtm_to_consider_as_wdl_1 = gaviota_cfg.min_dtm_to_consider_as_wdl_1
+
     with chess.gaviota.open_tablebase(gaviota_cfg.paths[0]) as tablebase:
         for path in gaviota_cfg.paths[1:]:
             tablebase.add_directory(path)
@@ -1238,9 +1244,10 @@ def get_gaviota(board: chess.Board, game: model.Game,
         try:
             moves = score_gaviota_moves(board, dtm_scorer, tablebase)
 
-            best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
-            good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
-            best_dtm = min([dtm for move, dtm in good_moves])
+            converted_moves = {move: dtm_to_gaviota_wdl(dtm) for move, dtm in moves.items()}
+            best_wdl = max(converted_moves.values())
+            good_moves = [(move, dtm) for move, dtm in converted_moves.items() if dtm == best_wdl]
+            best_dtm = min(good_moves, key=itemgetter(1))[1]
 
             pseudo_wdl = dtm_to_wdl(best_dtm, min_dtm_to_consider_as_wdl_1)
             if move_quality == "suggest":
@@ -1249,7 +1256,7 @@ def get_gaviota(board: chess.Board, game: model.Game,
                     move = [chess_move for chess_move, dtm in best_moves]
                     logger.info(f"Suggesting moves from gaviota (pseudo wdl: {pseudo_wdl}) for game {game.id}")
                 else:
-                    move, dtm = random.choice(best_moves)
+                    move, dtm = best_moves[0]
                     logger.info(f"Got move {move.uci()} from gaviota (pseudo wdl: {pseudo_wdl}, dtm: {dtm})"
                                 f" for game {game.id}")
             else:
@@ -1295,21 +1302,20 @@ def good_enough_gaviota_moves(good_moves: list[tuple[chess.Move, int]], best_dtm
         # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
         # dtz is still <100.
         return [(move, dtm) for move, dtm in good_moves if dtm < 100]
-    elif best_dtm < min_dtm_to_consider_as_wdl_1:
+    if best_dtm < min_dtm_to_consider_as_wdl_1:
         # If a move had wdl=2 and dtz=98, but halfmove_clock is 4 then the real wdl=1 and dtz=102, so we
         # want to avoid these positions, if there is a move where even when we add the halfmove_clock the
         # dtz is still <100.
         return [(move, dtm) for move, dtm in good_moves if dtm < min_dtm_to_consider_as_wdl_1]
-    elif best_dtm <= -min_dtm_to_consider_as_wdl_1:
+    if best_dtm <= -min_dtm_to_consider_as_wdl_1:
         # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
         # want to only choose between the moves where the real wdl=-1.
         return [(move, dtm) for move, dtm in good_moves if dtm <= -min_dtm_to_consider_as_wdl_1]
-    elif best_dtm <= -100:
+    if best_dtm <= -100:
         # If a move had wdl=-2 and dtz=-98, but halfmove_clock is 4 then the real wdl=-1 and dtz=-102, so we
         # want to only choose between the moves where the real wdl=-1.
         return [(move, dtm) for move, dtm in good_moves if dtm <= -100]
-    else:
-        return good_moves
+    return good_moves
 
 
 def piecewise_function(range_definitions: list[tuple[float, Literal["e", "i"], int]], last_value: int,
@@ -1366,9 +1372,9 @@ def score_syzygy_moves(board: chess.Board,
     """Score all the moves using syzygy egtbs."""
     moves = {}
     for move in board.legal_moves:
-        board_copy = board.copy()
-        board_copy.push(move)
-        moves[move] = scorer(tablebase, board_copy)
+        board.push(move)
+        moves[move] = scorer(tablebase, board)
+        board.pop()
     return moves
 
 
@@ -1380,7 +1386,7 @@ def score_gaviota_moves(board: chess.Board,
     """Score all the moves using gaviota egtbs."""
     moves = {}
     for move in board.legal_moves:
-        board_copy = board.copy()
-        board_copy.push(move)
-        moves[move] = scorer(tablebase, board_copy)
+        board.push(move)
+        moves[move] = scorer(tablebase, board)
+        board.pop()
     return moves

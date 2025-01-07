@@ -9,7 +9,7 @@ import test_bot.lichess
 import chess.engine
 from datetime import timedelta
 from copy import deepcopy
-from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
+from requests.exceptions import ConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
 from lib.types import OnlineType, GameEventType
 from typing import Optional, Union, cast
@@ -46,6 +46,27 @@ class MockLichess(Lichess):
             return json_response
 
         return online_book_get()
+
+    def is_chessdb_cn_up(self):
+        try:
+            self.other_session.get("https://www.chessdb.cn/cdb.php", timeout=2)
+            return True
+        except RequestException:
+            return False
+
+    def is_lichess_ovh_up(self):
+        try:
+            self.other_session.get("https://tablebase.lichess.ovh/standard", timeout=2)
+            return True
+        except RequestException:
+            return False
+
+    def is_lichess_org_up(self):
+        try:
+            self.other_session.get("https://lichess.org/api/cloud-eval", timeout=2)
+            return True
+        except RequestException:
+            return False
 
 
 def get_configs() -> tuple[Configuration, Configuration, Configuration, Configuration]:
@@ -132,39 +153,48 @@ def test_external_moves() -> None:
     endgame_wdl1_fen = "6N1/3n4/3k1b2/8/8/7Q/1r6/5K2 b - - 6 9"
     endgame_wdl0_fen = "6N1/3n4/3k1b2/8/8/7Q/5K2/1r6 b - - 8 10"
 
+    is_lichess_org_up = li.is_lichess_org_up()
+    is_lichess_ovh_up = li.is_lichess_ovh_up()
+    is_chessdb_cn_up = li.is_chessdb_cn_up()
+
     # Test lichess_cloud_analysis.
-    assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg, draw_or_resign_cfg).move is not None
-    assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg, draw_or_resign_cfg).move is not None
-    assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg, draw_or_resign_cfg).move is None
+    if is_lichess_org_up:
+        assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg, draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg, draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg, draw_or_resign_cfg).move is None
 
     # Test chessdb_book.
-    assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
-    assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
-    assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg_2, draw_or_resign_cfg).move is None
+    if is_chessdb_cn_up:
+        assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg_2, draw_or_resign_cfg).move is None
 
     # Test online_egtb with lichess.
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg, draw_or_resign_cfg).resigned
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg, draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg, draw_or_resign_cfg)
-    assert not wdl1_move.resigned and not wdl1_move.draw_offered
-    # Test with reversed colors.
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg, draw_or_resign_cfg).resigned
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg,
-                                   draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg, draw_or_resign_cfg)
-    assert not wdl1_move.resigned and not wdl1_move.draw_offered
+    if is_lichess_ovh_up:
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg, draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg, draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg, draw_or_resign_cfg)
+        assert not wdl1_move.resigned and not wdl1_move.draw_offered
+        # Test with reversed colors.
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg, draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg,
+                                       draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg, draw_or_resign_cfg)
+        assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
     # Test online_egtb with chessdb.
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg_2, draw_or_resign_cfg).resigned
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg_2, draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg_2, draw_or_resign_cfg)
-    assert not wdl1_move.resigned and not wdl1_move.draw_offered
-    # Test with reversed colors.
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg).resigned
-    assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg_2,
-                                   draw_or_resign_cfg).draw_offered
-    wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg)
-    assert not wdl1_move.resigned and not wdl1_move.draw_offered
+    if is_chessdb_cn_up:
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg_2, draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg_2, draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg_2, draw_or_resign_cfg)
+        assert not wdl1_move.resigned and not wdl1_move.draw_offered
+        # Test with reversed colors.
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg_2,
+                                       draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg_2,
+                                       draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg)
+        assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
     # Test opening book.
     assert get_book_move(chess.Board(opening_fen), game, polyglot_cfg).move == chess.Move.from_uci("h4f6")

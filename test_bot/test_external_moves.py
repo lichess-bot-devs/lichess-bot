@@ -7,6 +7,7 @@ import chess
 import logging
 import test_bot.lichess
 import chess.engine
+import pytest
 from datetime import timedelta
 from copy import deepcopy
 from requests.exceptions import ConnectionError, HTTPError, ReadTimeout, RequestException
@@ -47,26 +48,10 @@ class MockLichess(Lichess):
 
         return online_book_get()
 
-    def is_chessdb_cn_up(self) -> bool:
-        """Check if chessdb.cn is up."""
+    def is_website_up(self, url: str) -> bool:
+        """Check if a website is up."""
         try:
-            self.other_session.get("https://www.chessdb.cn/cdb.php", timeout=2)
-            return True
-        except RequestException:
-            return False
-
-    def is_lichess_ovh_up(self) -> bool:
-        """Check if tablebase.lichess.ovh is up."""
-        try:
-            self.other_session.get("https://tablebase.lichess.ovh/standard", timeout=2)
-            return True
-        except RequestException:
-            return False
-
-    def is_lichess_org_up(self) -> bool:
-        """Check if lichess.org is up."""
-        try:
-            self.other_session.get("https://lichess.org/api/cloud-eval", timeout=2)
+            self.other_session.get(url, timeout=2)
             return True
         except RequestException:
             return False
@@ -156,9 +141,9 @@ def test_external_moves() -> None:
     endgame_wdl1_fen = "6N1/3n4/3k1b2/8/8/7Q/1r6/5K2 b - - 6 9"
     endgame_wdl0_fen = "6N1/3n4/3k1b2/8/8/7Q/5K2/1r6 b - - 8 10"
 
-    is_lichess_org_up = li.is_lichess_org_up()
-    is_lichess_ovh_up = li.is_lichess_ovh_up()
-    is_chessdb_cn_up = li.is_chessdb_cn_up()
+    is_lichess_org_up = li.is_website_up("https://lichess.org/api/cloud-eval")
+    is_lichess_ovh_up = li.is_website_up("https://tablebase.lichess.ovh/standard")
+    is_chessdb_cn_up = li.is_website_up("https://www.chessdb.cn/cdb.php")
 
     # Test lichess_cloud_analysis.
     if is_lichess_org_up:

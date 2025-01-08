@@ -7,7 +7,6 @@ import chess
 import logging
 import test_bot.lichess
 import chess.engine
-import pytest
 from datetime import timedelta
 from copy import deepcopy
 from requests.exceptions import ConnectionError, HTTPError, ReadTimeout, RequestException

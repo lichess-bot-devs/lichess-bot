@@ -1160,10 +1160,9 @@ def get_syzygy(board: chess.Board, game: model.Game,
 
         try:
             moves = score_syzygy_moves(board, dtz_scorer, tablebase)
-            converted_moves = {move: dtz_to_wdl(dtm) for move, dtm in moves.items()}
 
-            best_wdl = max(converted_moves.values())
-            good_moves = [(move, dtz) for move, dtz in converted_moves.items() if dtz == best_wdl]
+            best_wdl = max(map(dtz_to_wdl, moves.values()))
+            good_moves = [(move, dtz) for move, dtz in moves.items() if dtz_to_wdl(dtz) == best_wdl]
             if move_quality == "suggest" and len(good_moves) > 1:
                 move = [chess_move for chess_move, dtz in good_moves]
                 logger.info(f"Suggesting moves from syzygy (wdl: {best_wdl}) for game {game.id}")
@@ -1244,9 +1243,8 @@ def get_gaviota(board: chess.Board, game: model.Game,
         try:
             moves = score_gaviota_moves(board, dtm_scorer, tablebase)
 
-            converted_moves = {move: dtm_to_gaviota_wdl(dtm) for move, dtm in moves.items()}
-            best_wdl = max(converted_moves.values())
-            good_moves = [(move, dtm) for move, dtm in converted_moves.items() if dtm == best_wdl]
+            best_wdl = max(map(dtm_to_gaviota_wdl, moves.values()))
+            good_moves = [(move, dtm) for move, dtm in moves.items() if dtm_to_gaviota_wdl(dtm) == best_wdl]
             best_dtm = min(good_moves, key=itemgetter(1))[1]
 
             pseudo_wdl = dtm_to_wdl(best_dtm, min_dtm_to_consider_as_wdl_1)

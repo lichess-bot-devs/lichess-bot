@@ -6,7 +6,7 @@ import yaml
 from lib import config
 from collections import defaultdict, Counter
 from lib.timer import Timer
-from lib.types import ChallengeType, UserProfileType, GameEventType, PlayerType
+from lib.lichess_types import ChallengeType, UserProfileType, GameEventType, PlayerType
 
 
 def test_challenge() -> None:

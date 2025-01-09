@@ -6,7 +6,7 @@ import sys
 from lib.config import Configuration
 from lib import model
 from typing import Optional
-from lib.types import OPTIONS_GO_EGTB_TYPE, COMMANDS_TYPE, MOVE
+from lib.lichess_types import OPTIONS_GO_EGTB_TYPE, COMMANDS_TYPE, MOVE
 
 # ruff: noqa: ARG002
 

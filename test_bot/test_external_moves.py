@@ -11,7 +11,7 @@ from datetime import timedelta
 from copy import deepcopy
 from requests.exceptions import ConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
-from lib.types import OnlineType, GameEventType
+from lib.lichess_types import OnlineType, GameEventType
 from typing import Optional, Union, cast
 from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values

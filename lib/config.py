@@ -6,7 +6,7 @@ import logging
 import math
 from abc import ABCMeta
 from typing import Any, Union, ItemsView, Callable
-from lib.types import CONFIG_DICT_TYPE, FilterType
+from lib.lichess_types import CONFIG_DICT_TYPE, FilterType
 
 logger = logging.getLogger(__name__)
 

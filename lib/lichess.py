@@ -13,7 +13,7 @@ import contextlib
 from lib.timer import Timer, seconds, sec_str
 from typing import Optional, Union, cast
 import chess.engine
-from lib.types import (UserProfileType, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType, OnlineType,
+from lib.lichess_types import (UserProfileType, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType, OnlineType,
                        ChallengeType, TOKEN_TESTS_TYPE, BackoffDetails)
 
 

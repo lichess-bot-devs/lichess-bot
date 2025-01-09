@@ -9,7 +9,7 @@ import datetime
 from queue import Queue
 from typing import Union, Optional, Generator
 from lib.timer import to_msec
-from lib.types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
+from lib.lichess_types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
                        BackoffDetails)
 
 # Unused method argument

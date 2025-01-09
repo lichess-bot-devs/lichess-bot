@@ -20,7 +20,7 @@ from lib import config
 from lib.timer import Timer, to_seconds, seconds
 from typing import Optional
 from lib.engine_wrapper import test_suffix
-from lib.types import CONFIG_DICT_TYPE
+from lib.lichess_types import CONFIG_DICT_TYPE
 if "pytest" not in sys.modules:
     sys.exit(f"The script {os.path.basename(__file__)} should only be run by pytest.")
 from lib import lichess_bot

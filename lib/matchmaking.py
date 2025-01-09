@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from lib import lichess
 from lib.config import Configuration
 from typing import Optional, Union
-from lib.types import UserProfileType, PerfType, EventType, FilterType
+from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 DAILY_TIMERS_TYPE = list[Timer]
 LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]

@@ -4,7 +4,7 @@ import test_bot.lichess
 from lib import model
 from lib.engine_wrapper import EngineWrapper
 from lib import lichess
-from lib.types import GameEventType
+from lib.lichess_types import GameEventType
 from collections.abc import Sequence
 from lib.timer import seconds
 from typing import Union

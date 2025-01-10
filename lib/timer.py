@@ -1,60 +1,62 @@
 """A timer for use in lichess-bot."""
-import time
-import datetime
+
+from datetime import datetime, timedelta
+from time import perf_counter
 from typing import Optional
 
 
-def msec(time_in_msec: float) -> datetime.timedelta:
+def msec(time_in_msec: float) -> timedelta:
     """Create a timedelta duration in milliseconds."""
-    return datetime.timedelta(milliseconds=time_in_msec)
+    return timedelta(milliseconds=time_in_msec)
 
 
-def to_msec(duration: datetime.timedelta) -> float:
+def to_msec(duration: timedelta) -> float:
     """Return a bare number representing the length of the duration in milliseconds."""
     return duration / msec(1)
 
 
-def msec_str(duration: datetime.timedelta) -> str:
+def msec_str(duration: timedelta) -> str:
     """Return a string with the duration value in whole number milliseconds."""
     return str(round(to_msec(duration)))
 
 
-def seconds(time_in_sec: float) -> datetime.timedelta:
+def seconds(time_in_sec: float) -> timedelta:
     """Create a timedelta duration in seconds."""
-    return datetime.timedelta(seconds=time_in_sec)
+    return timedelta(seconds=time_in_sec)
 
 
-def to_seconds(duration: datetime.timedelta) -> float:
+def to_seconds(duration: timedelta) -> float:
     """Return a bare number representing the length of the duration in seconds."""
     return duration.total_seconds()
 
 
-def sec_str(duration: datetime.timedelta) -> str:
+def sec_str(duration: timedelta) -> str:
     """Return a string with the duration value in whole number seconds."""
     return str(round(to_seconds(duration)))
 
 
-def minutes(time_in_minutes: float) -> datetime.timedelta:
+def minutes(time_in_minutes: float) -> timedelta:
     """Create a timedelta duration in minutes."""
-    return datetime.timedelta(minutes=time_in_minutes)
+    return timedelta(minutes=time_in_minutes)
 
 
-def hours(time_in_hours: float) -> datetime.timedelta:
+def hours(time_in_hours: float) -> timedelta:
     """Create a timedelta duration in hours."""
-    return datetime.timedelta(hours=time_in_hours)
+    return timedelta(hours=time_in_hours)
 
 
-def days(time_in_days: float) -> datetime.timedelta:
+def days(time_in_days: float) -> timedelta:
     """Create a timedelta duration in days."""
-    return datetime.timedelta(days=time_in_days)
+    return timedelta(days=time_in_days)
 
 
-def years(time_in_years: float) -> datetime.timedelta:
+def years(time_in_years: float) -> timedelta:
     """Create a timedelta duration in median years--i.e., 365 days."""
     return days(365) * time_in_years
 
 
 class Timer:
+    __slots__ = ["duration", "starting_time"]
     """
     A timer for use in lichess-bot. An instance of timer can be used both as a countdown timer and a stopwatch.
 
@@ -68,8 +70,8 @@ class Timer:
     the timer was created or since it was last reset.
     """
 
-    def __init__(self, duration: datetime.timedelta = seconds(0),
-                 backdated_timestamp: Optional[datetime.datetime] = None) -> None:
+    def __init__(self, duration: timedelta = seconds(0),
+                 backdated_timestamp: Optional[datetime] = None) -> None:
         """
         Start the timer.
 
@@ -77,10 +79,10 @@ class Timer:
         :param backdated_timestamp: When the timer should have started. Used to keep the timers between sessions.
         """
         self.duration = duration
-        self.reset()
-        if backdated_timestamp is not None:
-            time_already_used = datetime.datetime.now() - backdated_timestamp
-            self.starting_time -= to_seconds(time_already_used)
+        self.starting_time = perf_counter()
+
+        if backdated_timestamp:
+            self.starting_time -= to_seconds(datetime.now() - backdated_timestamp)
 
     def is_expired(self) -> bool:
         """Check if a timer is expired."""
@@ -88,16 +90,16 @@ class Timer:
 
     def reset(self) -> None:
         """Reset the timer."""
-        self.starting_time = time.perf_counter()
+        self.starting_time = perf_counter()
 
-    def time_since_reset(self) -> datetime.timedelta:
+    def time_since_reset(self) -> timedelta:
         """How much time has passed."""
-        return seconds(time.perf_counter() - self.starting_time)
+        return seconds(perf_counter() - self.starting_time)
 
-    def time_until_expiration(self) -> datetime.timedelta:
+    def time_until_expiration(self) -> timedelta:
         """How much time is left until it expires."""
         return max(seconds(0), self.duration - self.time_since_reset())
 
     def starting_timestamp(self, timestamp_format: str) -> str:
         """When the timer started."""
-        return (datetime.datetime.now() - self.time_since_reset()).strftime(timestamp_format)
+        return (datetime.now() - self.time_since_reset()).strftime(timestamp_format)

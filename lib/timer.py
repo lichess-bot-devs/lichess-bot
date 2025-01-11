@@ -56,7 +56,6 @@ def years(time_in_years: float) -> timedelta:
 
 
 class Timer:
-    __slots__ = ["duration", "starting_time"]
     """
     A timer for use in lichess-bot. An instance of timer can be used both as a countdown timer and a stopwatch.
 
@@ -69,6 +68,8 @@ class Timer:
     as a stopwatch by calling time_since_reset() to get the amount of time since
     the timer was created or since it was last reset.
     """
+
+    __slots__ = ["duration", "starting_time"]
 
     def __init__(self, duration: timedelta = seconds(0),
                  backdated_timestamp: Optional[datetime] = None) -> None:

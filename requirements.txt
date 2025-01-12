@@ -1,5 +1,5 @@
-chess==1.11.1
-PyYAML==6.0.2
-requests==2.32.3
-backoff==2.2.1
-rich==13.9.4
+chess~=1.11
+PyYAML~=6.0
+requests~=2.32
+backoff~=2.2
+rich~=13.9

@@ -8,12 +8,12 @@ from lib import timer
 def test_time_conversion() -> None:
     """Test conversion of time units."""
     assert timer.msec(1000) == timedelta(milliseconds=1000)
-    assert timer.to_msec(timedelta(milliseconds=1000)) == 1000.0
+    assert timer.to_msec(timedelta(milliseconds=1000)) == 1000
 
     assert timer.msec_str(timedelta(milliseconds=1000)) == "1000"
 
     assert timer.seconds(1) == timedelta(seconds=1)
-    assert timer.to_seconds(timedelta(seconds=1)) == 1.0
+    assert timer.to_seconds(timedelta(seconds=1)) == 1
 
     assert timer.sec_str(timedelta(seconds=1)) == "1"
 
@@ -22,11 +22,11 @@ def test_time_conversion() -> None:
     assert timer.days(1) == timedelta(days=1)
     assert timer.years(1) == timedelta(days=365)
 
-    assert timer.to_msec(timer.seconds(1)) == 1000.0
-    assert timer.to_seconds(timer.minutes(1)) == 60.0
-    assert timer.to_seconds(timer.hours(1)) == 3600.0
-    assert timer.to_seconds(timer.days(1)) == 86400.0
-    assert timer.to_seconds(timer.years(1)) == 31536000.0
+    assert timer.to_msec(timer.seconds(1)) == 1000
+    assert timer.to_seconds(timer.minutes(1)) == 60
+    assert timer.to_seconds(timer.hours(1)) == 60*60
+    assert timer.to_seconds(timer.days(1)) == 24*60*60
+    assert timer.to_seconds(timer.years(1)) == 365*24*60*60
 
 
 def test_init() -> None:

@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 class Challenge:
     """Store information about a challenge."""
 
+    __slots__ = ("base", "challenge_target", "challenger", "color", "days",
+                 "from_self", "id", "increment", "initial_fen", "perf_name",
+                 "rated", "speed", "time_control", "variant")
+
     def __init__(self, challenge_info: ChallengeType, user_profile: UserProfileType) -> None:
         """:param user_profile: Information about our bot."""
         self.id = challenge_info["id"]
@@ -153,6 +157,11 @@ class Termination(str, Enum):
 class Game:
     """Store information about a game."""
 
+    __slots__ = ("abort_time", "base_url", "black", "clock_increment", "clock_initial",
+                 "disconnect_time", "game_start", "id", "initial_fen", "is_white", "me",
+                 "mode", "my_color", "opponent", "opponent_color", "perf_name", "speed",
+                 "state", "terminate_time", "username", "variant_name", "white")
+
     def __init__(self, game_info: GameEventType, username: str, base_url: str, abort_time: datetime.timedelta) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
@@ -270,6 +279,8 @@ class Game:
 
 class Player:
     """Store information about a player."""
+
+    __slots__ = ("aiLevel", "is_bot", "name", "provisional", "rating", "title")
 
     def __init__(self, player_info: PlayerType) -> None:
         """:param player_info: Contains information about a player."""

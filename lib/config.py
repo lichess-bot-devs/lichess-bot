@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 class Configuration:
     """The config or a sub-config that the bot uses."""
 
+    __slots__ = ("config",)
+
     def __init__(self, parameters: CONFIG_DICT_TYPE) -> None:
         """:param parameters: A `dict` containing the config for the bot."""
         self.config = parameters

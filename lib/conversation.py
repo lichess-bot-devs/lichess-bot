@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 class ChatLine:
     """Information about the message."""
 
+    __slots__ = ("room", "text", "username")
+
     def __init__(self, message_info: GameEventType) -> None:
         """Information about the message."""
         self.room = message_info["room"]
@@ -29,6 +31,8 @@ class ChatLine:
 
 class Conversation:
     """Enables the bot to communicate with its opponent and the spectators."""
+
+    __slots__ = ("challengers", "engine", "game", "li", "version")
 
     def __init__(self, game: model.Game, engine: EngineWrapper, li: LICHESS_TYPE, version: str,
                  challenge_queue: MULTIPROCESSING_LIST_TYPE) -> None:

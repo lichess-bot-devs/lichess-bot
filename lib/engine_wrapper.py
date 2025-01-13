@@ -86,6 +86,8 @@ PONDERPV_CHARACTERS = 6  # The length of ", Pv: ".
 class EngineWrapper:
     """A wrapper used by all engines (UCI, XBoard, Homemade)."""
 
+    __slots__ = ("comment_start_index", "draw_or_resign", "engine", "go_commands", "move_commentary", "scores")
+
     def __init__(self, options: OPTIONS_GO_EGTB_TYPE, draw_or_resign: Configuration) -> None:
         """
         Initialize the values of the wrapper used by all engines (UCI, XBoard, Homemade).
@@ -596,6 +598,8 @@ class FillerEngine:
     This is only used to provide the property "self.engine"
     in "MinimalEngine" which extends "EngineWrapper"
     """
+
+    __slots__ = ("id", "main_engine", "name")
 
     def __init__(self, main_engine: MinimalEngine, name: str = "") -> None:
         """:param name: The name to send to the chat."""

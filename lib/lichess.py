@@ -70,6 +70,9 @@ def backoff_handler(details: BackoffDetails) -> None:
 class Lichess:
     """Communication with lichess.org (and chessdb.cn for getting moves)."""
 
+    __slots__ = ("baseUrl", "header", "logging_level", "max_retries", "other_session",
+                 "rate_limit_timers", "session", "version")
+
     def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
         """
         Communication with lichess.org (and chessdb.cn for getting moves).

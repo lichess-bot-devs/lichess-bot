@@ -45,6 +45,10 @@ def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
 class Matchmaking:
     """Challenge other bots."""
 
+    __slots__ = ("challenge_filter", "challenge_id", "challenge_type_acceptable", "daily_challenges",
+                 "last_challenge_created_delay", "last_game_ended_delay", "last_user_profile_update_time",
+                 "li", "matchmaking_cfg", "max_wait_time", "min_wait_time", "user_profile", "variants")
+
     def __init__(self, li: LICHESS_TYPE, config: Configuration, user_profile: UserProfileType) -> None:
         """Initialize values needed for matchmaking."""
         self.li = li

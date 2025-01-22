@@ -8,8 +8,8 @@ message: >-
   metadata from this file.
 type: software
 authors:
-  - family-names: Pantidis
-    given-names: Ioannis
+  - given-names: Ioannis
+    family-names: Pantidis
   - given-names: Mark
     family-names: Harrison
     orcid: 'https://orcid.org/0000-0001-7212-8810'

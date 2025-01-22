@@ -1,0 +1,36 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: lichess-bot
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Ioannis
+    family-names: Pantidis
+  - given-names: Mark
+    family-names: Harrison
+    orcid: 'https://orcid.org/0000-0001-7212-8810'
+  - given-names: Shail
+    family-names: Choksi
+  - given-names: Thibault
+    family-names: Duplessis
+    affiliation: lichess.org
+repository-code: 'https://github.com/lichess-bot-devs/lichess-bot'
+abstract: >-
+  lichess-bot is a free bridge between the Lichess Bot API
+  and chess engines.
+
+  With lichess-bot, you can create and operate a bot on
+  lichess. Your bot will be able to play against humans and
+  bots alike, and you will be able to view these games live
+  on lichess.
+keywords:
+  - chess
+  - chess engine
+  - lichess
+  - API
+  - game
+license: AGPL-3.0

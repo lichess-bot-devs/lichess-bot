@@ -80,7 +80,7 @@ def download_arasan() -> None:
     if os.path.exists(f"./TEMP/arasan{file_extension}"):
         return
     if platform == "win32":
-        response = requests.get("https://arasanchess.org/arasan24.2.2.zip", allow_redirects=True)
+        response = requests.get("https://arasanchess.org/arasan24.1.zip", allow_redirects=True)
     else:
         response = requests.get("https://arasanchess.org/arasan-linux-binaries-24.2.2.tar.gz", allow_redirects=True)
     response.raise_for_status()

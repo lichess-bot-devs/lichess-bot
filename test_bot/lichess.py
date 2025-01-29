@@ -1,18 +1,18 @@
 """Imitate `lichess.py`. Used in tests."""
 import time
-import chess
 import chess.engine
 import json
 import logging
 import traceback
 import datetime
 from queue import Queue
+from requests.models import Response
 from typing import Union, Optional, Generator
+from lib.lichess import Lichess as OriginalLichess
 from lib.timer import to_msec
 from lib.lichess_types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
                        BackoffDetails)
 
-# Unused method argument
 # ruff: noqa: ARG002
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def is_final(error: Exception) -> bool:
     return False
 
 
-class GameStream:
+class GameStream(Response):
     """Imitate lichess.org's GameStream. Used in tests."""
 
     def __init__(self,
@@ -47,7 +47,8 @@ class GameStream:
         self.board_queue = board_queue
         self.clock_queue = clock_queue
 
-    def iter_lines(self) -> Generator[bytes, None, None]:
+    def iter_lines(self, chunk_size: Optional[int] = 512, decode_unicode: bool = False,
+                   delimiter: Union[str, bytes, None] = None) -> Generator[bytes, None, None]:
         """Send the game events to lichess-bot."""
         yield json.dumps(
             {"id": "zzzzzzzz",
@@ -103,7 +104,7 @@ class GameStream:
                 yield json.dumps(new_game_state).encode("utf-8")
 
 
-class EventStream:
+class EventStream(Response):
     """Imitate lichess.org's EventStream. Used in tests."""
 
     def __init__(self, sent_game: bool = False) -> None:
@@ -114,7 +115,8 @@ class EventStream:
         """
         self.sent_game = sent_game
 
-    def iter_lines(self) -> Generator[bytes, None, None]:
+    def iter_lines(self, chunk_size: Optional[int] = 512, decode_unicode: bool = False,
+                   delimiter: Union[str, bytes, None] = None) -> Generator[bytes, None, None]:
         """Send the events to lichess-bot."""
         if self.sent_game:
             yield b""
@@ -129,7 +131,7 @@ class EventStream:
 
 
 # Docs: https://lichess.org/api.
-class Lichess:
+class Lichess(OriginalLichess):
     """Imitate communication with lichess.org."""
 
     def __init__(self,
@@ -157,8 +159,9 @@ class Lichess:
         """Send a move to the opponent engine thread."""
         self.move_queue.put(move.move)
 
-    def accept_takeback(self, game_id: str, accept: bool) -> None:
+    def accept_takeback(self, game_id: str, accept: bool) -> bool:
         """Isn't used in tests."""
+        return False
 
     def chat(self, game_id: str, room: str, text: str) -> None:
         """Isn't used in tests."""

@@ -59,12 +59,11 @@ class Challenge:
             # Normal clock game
             return (increment_min <= self.increment <= increment_max
                     and base_min <= self.base <= base_max)
-        elif self.days is not None:
+        if self.days is not None:
             # Correspondence game
             return days_min <= self.days <= days_max
-        else:
-            # Unlimited game
-            return days_max == math.inf
+        # Unlimited game
+        return days_max == math.inf
 
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
         """Check whether the mode is supported."""
@@ -193,8 +192,7 @@ class Game:
         """Get the event to write in the PGN file."""
         if self.variant_name in ["Standard", "From Position"]:
             return f"{self.mode.title()} {self.perf_name.title()} game"
-        else:
-            return f"{self.mode.title()} {self.variant_name} game"
+        return f"{self.mode.title()} {self.variant_name} game"
 
     def time_control(self) -> str:
         """Get the time control of the game."""
@@ -284,9 +282,8 @@ class Player:
         """Get a string representation of `Player`."""
         if self.aiLevel:
             return self.name
-        else:
-            rating = f'{self.rating}{"?" if self.provisional else ""}'
-            return f'{self.title or ""} {self.name} ({rating})'.strip()
+        rating = f'{self.rating}{"?" if self.provisional else ""}'
+        return f'{self.title or ""} {self.name} ({rating})'.strip()
 
     def __repr__(self) -> str:
         """Get a string representation of `Player`."""

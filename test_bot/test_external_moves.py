@@ -5,11 +5,10 @@ import yaml
 import os
 import chess
 import logging
-import test_bot.lichess
 import chess.engine
 from datetime import timedelta
 from copy import deepcopy
-from requests.exceptions import ConnectionError, HTTPError, ReadTimeout, RequestException
+from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
 from lib.lichess_types import OnlineType, GameEventType
 from typing import Optional, Union, cast
@@ -17,7 +16,6 @@ from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values
 from lib.model import Game
 from lib.engine_wrapper import get_online_move, get_book_move
-LICHESS_TYPE = Union[Lichess, test_bot.lichess.Lichess]
 
 
 class MockLichess(Lichess):
@@ -33,7 +31,7 @@ class MockLichess(Lichess):
         """Get an external move from online sources (chessdb or lichess.org)."""
 
         @backoff.on_exception(backoff.constant,
-                              (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
+                              (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
                               max_time=60,
                               max_tries=self.max_retries,
                               interval=0.1,
@@ -120,7 +118,7 @@ def download_opening_book() -> None:
 os.makedirs("TEMP", exist_ok=True)
 
 
-def get_online_move_wrapper(li: LICHESS_TYPE, board: chess.Board, game: Game, online_moves_cfg: Configuration,
+def get_online_move_wrapper(li: Lichess, board: chess.Board, game: Game, online_moves_cfg: Configuration,
                             draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult:
     """Wrap `lib.engine_wrapper.get_online_move` so that it only returns a PlayResult type."""
     return cast(chess.engine.PlayResult, get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))

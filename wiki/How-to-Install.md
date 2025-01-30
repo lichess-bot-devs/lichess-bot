@@ -1,11 +1,26 @@
-### Mac/Linux
+### Linux
 - **NOTE: Only Python 3.9 or later is supported!**
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
-- Install pip: `apt install python3-pip`.
-  - In non-Ubuntu distros, replace `apt` with the correct package manager (`pacman` in Arch, `dnf` in Fedora, `brew` in Mac, etc.), package name, and installation command.
-- Install virtualenv: `apt install python3-virtualenv`.
-- Setup virtualenv: `apt install python3-venv`.
+- Install dependencies: `apt install python3 python3-pip python3-virtualenv python3-venv`.
+  - In non-Ubuntu linux distros, replace `apt` with the correct package manager (`pacman` in Arch, `dnf` in Fedora, etc.), package name, and installation command.
+- Run the following commands to set up a virtual environment:
+```
+python3 -m venv venv # If this fails you probably need to add Python3 to your PATH.
+virtualenv venv -p python3
+source ./venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+- Copy `config.yml.default` to `config.yml`.
+
+**Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)
+
+### Mac/BSD
+- **NOTE: Only Python 3.9 or later is supported!**
+- Install Python and other dependencies using the [homebrew package manager](https://brew.sh/):
+  - ` brew install git python3 virtualenv # Net-/FreeBSD users might want to install: git, python311, py311-pip and py311-virtualenv.`
+- Download the repo into lichess-bot directory.
+- Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
 ```
 python3 -m venv venv # If this fails you probably need to add Python3 to your PATH.
 virtualenv venv -p python3

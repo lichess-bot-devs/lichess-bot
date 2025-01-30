@@ -18,7 +18,7 @@ python3 -m pip install -r requirements.txt
 ### Mac/BSD
 - **NOTE: Only Python 3.9 or later is supported!**
 - Install Python and other dependencies using the [homebrew package manager](https://brew.sh/):
-  - ` brew install git python3 virtualenv # Net-/FreeBSD users might want to install: git, python311, py311-pip and py311-virtualenv.`
+  - ` brew install python3 virtualenv # Net-/FreeBSD users might want to install: git, python311, py311-pip and py311-virtualenv.`
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
 ```

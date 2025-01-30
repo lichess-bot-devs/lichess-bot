@@ -53,9 +53,9 @@ PowerShell note: If the `activate` command does not work in PowerShell, execute 
 - Copy `config.yml.default` to `config.yml`.
 
 ### Docker
-If you have a [Docker](https://www.docker.com/) host, you can use the ```lichess-bot-devs/lichess-bot``` [image in DockerHub](https://hub.docker.com/r/lichessbotdevs/lichess-bot).  
+If you have a [Docker](https://www.docker.com/) host, you can use the ```lichess-bot-devs/lichess-bot``` [image in DockerHub](https://hub.docker.com/r/lichessbotdevs/lichess-bot).
 It requires a folder where you have to copy `config.yml.default` to `config.yml`.
 
-See [Running with Docker](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-use-the-Docker-image) once you've created the OAuth token and setup the engine.  
+See [Running with Docker](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-use-the-Docker-image) once you've created the OAuth token and setup the engine.
 
 **Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)

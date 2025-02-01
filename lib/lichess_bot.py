@@ -1051,10 +1051,11 @@ def get_game_file_path(config: Configuration,
 
     if config.pgn_file_grouping == "game" or not game_is_over or force_single:
         return create_valid_path(f"{white_name} vs {black_name} - {game_id}.pgn")
-    if config.pgn_file_grouping == "opponent":
+    elif config.pgn_file_grouping == "opponent":
         opponent_name = white_name if user_name == black_name else black_name
         return create_valid_path(f"{user_name} games vs. {opponent_name}.pgn")
-    return create_valid_path(f"{user_name} games.pgn")  # config.pgn_file_grouping == "all"
+    else:  # config.pgn_file_grouping == "all"
+        return create_valid_path(f"{user_name} games.pgn")
 
 
 def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> None:

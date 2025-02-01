@@ -351,7 +351,8 @@ class EngineWrapper:
         minutes, seconds = divmod(number, 60)
         if minutes >= 1:
             return f"{minutes:0.0f}m {seconds:0.1f}s"
-        return f"{seconds:0.1f}s"
+        else:
+            return f"{seconds:0.1f}s"
 
     def readable_number(self, number: int) -> str:
         """Convert number to a more human-readable format. e.g. 123456789 -> 123M."""
@@ -1065,14 +1066,16 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 wdl = best_wdl
                 logger.info(f"Suggesting moves from tablebase.lichess.ovh (wdl: {wdl}) for game {game.id}")
                 return move_list, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
-            best_move = possible_moves[0]
-            move = best_move["uci"]
-            wdl = name_to_wld[best_move["category"]] * -1
-            dtz = best_move["dtz"] * -1
-            dtm = best_move["dtm"]
-            if dtm:
-                dtm *= -1
-            logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm}) for game {game.id}")
+            else:
+                best_move = possible_moves[0]
+                move = best_move["uci"]
+                wdl = name_to_wld[best_move["category"]] * -1
+                dtz = best_move["dtz"] * -1
+                dtm = best_move["dtm"]
+                if dtm:
+                    dtm *= -1
+                logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, dtz: {dtz}, dtm: {dtm})"
+                            f" for game {game.id}")
 
         return move, wdl, {"string": "lichess-bot-source:Lichess EGTB"}
     return None, -3, {}
@@ -1119,12 +1122,13 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                 move_list = [move["uci"] for move in possible_moves]
                 logger.info(f"Suggesting moves from from chessdb.cn (wdl: {wdl}) for game {game.id}")
                 return move_list, wdl, {"string": "lichess-bot-source:ChessDB EGTB"}
-            best_move = possible_moves[0]
-            score = best_move["score"]
-            move = best_move["uci"]
-            wdl = score_to_wdl(score)
-            dtz = score_to_dtz(score)
-            logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
+            else:
+                best_move = possible_moves[0]
+                score = best_move["score"]
+                move = best_move["uci"]
+                wdl = score_to_wdl(score)
+                dtz = score_to_dtz(score)
+                logger.info(f"Got move {move} from chessdb.cn (wdl: {wdl}, dtz: {dtz}) for game {game.id}")
 
         return move, wdl, {"string": "lichess-bot-source:ChessDB EGTB"}
     return None, -3, {}

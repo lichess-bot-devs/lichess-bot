@@ -59,11 +59,12 @@ class Challenge:
             # Normal clock game
             return (increment_min <= self.increment <= increment_max
                     and base_min <= self.base <= base_max)
-        if self.days is not None:
+        elif self.days is not None:
             # Correspondence game
             return days_min <= self.days <= days_max
-        # Unlimited game
-        return days_max == math.inf
+        else:
+            # Unlimited game
+            return days_max == math.inf
 
     def is_supported_mode(self, challenge_cfg: Configuration) -> bool:
         """Check whether the mode is supported."""
@@ -192,7 +193,8 @@ class Game:
         """Get the event to write in the PGN file."""
         if self.variant_name in ["Standard", "From Position"]:
             return f"{self.mode.title()} {self.perf_name.title()} game"
-        return f"{self.mode.title()} {self.variant_name} game"
+        else:
+            return f"{self.mode.title()} {self.variant_name} game"
 
     def time_control(self) -> str:
         """Get the time control of the game."""

@@ -30,6 +30,7 @@ ignore = [
     "PLW0603", # Using the global statement to update variable is discouraged
     "PT018", # Assertion should be broken down into multiple parts
     "PTH", # Replace builtin functions with Path methods
+    "RET505", # Unnecessary else after return statement
     "RUF005", # Consider [*list1, None] instead of concatenation (list1 + [None])
     "RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
     "S101", # Use of assert detected

@@ -50,4 +50,4 @@ WantedBy=multi-user.target
 - If `quit_after_all_games_finish` is set to `true` in your config file, lichess-bot will wait for all games to exit. Otherwise, all games will exit immediately.
 - It may take several seconds for lichess-bot to quit once all games have exited.
 
-**Previous step**: [Configure lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot)
+**Previous step**: [Upgrade to a BOT account](https://github.com/lichess-bot-devs/lichess-bot/wiki/Upgrade-to-a-BOT-account)

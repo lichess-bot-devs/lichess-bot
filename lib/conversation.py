@@ -46,6 +46,7 @@ class Conversation:
         self.li = li
         self.version = version
         self.challengers = challenge_queue
+        self.messages: list[ChatLine] = []
 
     command_prefix = "!"
 
@@ -55,6 +56,7 @@ class Conversation:
 
         :param line: Information about the message.
         """
+        self.messages.append(line)
         logger.info(f"*** {self.game.url()} [{line.room}] {line.username}: {line.text}")
         if line.text[0] == self.command_prefix:
             self.command(line, line.text[1:].lower())

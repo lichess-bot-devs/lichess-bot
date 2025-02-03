@@ -185,13 +185,13 @@ class EngineWrapper:
                 best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
             except chess.engine.EngineError as error:
                 BadMove = (chess.IllegalMoveError, chess.InvalidMoveError)
-                if any(isinstance(e, BadMove) for e in error.args):
-                    logger.error("Ending game due to bot attempting an illegal move.")
-                    logger.error(error)
-                    game_ender = li.abort if game.is_abortable() else li.resign
-                    game_ender(game.id)
-                    return
-                raise
+                if not any(isinstance(e, BadMove) for e in error.args):
+                    raise
+                logger.error("Ending game due to bot attempting an illegal move.")
+                logger.error(error)
+                game_ender = li.abort if game.is_abortable() else li.resign
+                game_ender(game.id)
+                return
 
         # Heed min_time
         elapsed = setup_timer.time_since_reset()

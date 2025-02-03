@@ -29,4 +29,4 @@ As an optional convenience, there is a folder named `engines` within the lichess
 
 **Next step**: [Configure lichess-bot](https://github.com/lichess-bot-devs/lichess-bot/wiki/Configure-lichess-bot)
 
-**Previous step**: [Upgrade to a BOT accout](https://github.com/lichess-bot-devs/lichess-bot/wiki/Upgrade-to-a-BOT-account)
+**Previous step**: [Create a lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)

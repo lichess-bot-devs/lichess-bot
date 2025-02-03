@@ -55,6 +55,9 @@ def years(time_in_years: float) -> timedelta:
     return days(365) * time_in_years
 
 
+zero_seconds = seconds(0)
+
+
 class Timer:
     """
     A timer for use in lichess-bot. An instance of timer can be used both as a countdown timer and a stopwatch.
@@ -69,9 +72,7 @@ class Timer:
     the timer was created or since it was last reset.
     """
 
-    __slots__ = ["duration", "starting_time"]
-
-    def __init__(self, duration: timedelta = seconds(0),
+    def __init__(self, duration: timedelta = zero_seconds,
                  backdated_timestamp: Optional[datetime] = None) -> None:
         """
         Start the timer.

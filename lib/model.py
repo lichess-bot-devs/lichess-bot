@@ -284,9 +284,8 @@ class Player:
         """Get a string representation of `Player`."""
         if self.aiLevel:
             return self.name
-        else:
-            rating = f'{self.rating}{"?" if self.provisional else ""}'
-            return f'{self.title or ""} {self.name} ({rating})'.strip()
+        rating = f'{self.rating}{"?" if self.provisional else ""}'
+        return f'{self.title or ""} {self.name} ({rating})'.strip()
 
     def __repr__(self) -> str:
         """Get a string representation of `Player`."""

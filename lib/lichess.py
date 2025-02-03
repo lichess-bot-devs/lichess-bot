@@ -2,7 +2,7 @@
 import json
 import requests
 from urllib.parse import urljoin
-from requests.exceptions import ConnectionError, HTTPError, ReadTimeout
+from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout
 from http.client import RemoteDisconnected
 import backoff
 import logging
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
-class RateLimited(RuntimeError):
+class RateLimitedError(RuntimeError):
     """Exception raised when we are rate limited (status code 429)."""
 
 
@@ -108,7 +108,7 @@ class Lichess:
                                f"The current token has: {scopes}.")
 
     @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
+                          (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
                           max_time=60,
                           interval=0.1,
                           giveup=is_final,
@@ -184,7 +184,7 @@ class Lichess:
         return response.text
 
     @backoff.on_exception(backoff.constant,
-                          (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
+                          (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
                           max_time=60,
                           interval=0.1,
                           giveup=is_final,
@@ -234,8 +234,8 @@ class Lichess:
         """
         path_template = ENDPOINTS[endpoint_name]
         if self.is_rate_limited(path_template):
-            raise RateLimited(f"{path_template} is rate-limited. "
-                              f"Will retry in {sec_str(self.rate_limit_time_left(path_template))} seconds.")
+            raise RateLimitedError(f"{path_template} is rate-limited. "
+                                   f"Will retry in {sec_str(self.rate_limit_time_left(path_template))} seconds.")
         return path_template
 
     def set_rate_limit_delay(self, path_template: str, delay_time: datetime.timedelta) -> None:
@@ -374,7 +374,7 @@ class Lichess:
                         stream: bool = False) -> OnlineType:
         """Get an external move from online sources (chessdb or lichess.org)."""
         @backoff.on_exception(backoff.constant,
-                              (RemoteDisconnected, ConnectionError, HTTPError, ReadTimeout),
+                              (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
                               max_time=60,
                               max_tries=self.max_retries,
                               interval=0.1,

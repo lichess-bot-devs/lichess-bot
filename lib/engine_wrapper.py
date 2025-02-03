@@ -13,7 +13,6 @@ import time
 import random
 import math
 import contextlib
-import test_bot.lichess
 from collections import Counter
 from collections.abc import Callable
 from lib import model, lichess
@@ -26,7 +25,6 @@ from extra_game_handlers import game_specific_options
 from operator import itemgetter
 from typing import Any, Optional, Union, Literal, cast
 from types import TracebackType
-LICHESS_TYPE = Union[lichess.Lichess, test_bot.lichess.Lichess]
 
 
 logger = logging.getLogger(__name__)
@@ -132,7 +130,7 @@ class EngineWrapper:
     def play_move(self,
                   board: chess.Board,
                   game: model.Game,
-                  li: LICHESS_TYPE,
+                  li: lichess.Lichess,
                   setup_timer: Timer,
                   move_overhead: datetime.timedelta,
                   can_ponder: bool,
@@ -187,14 +185,13 @@ class EngineWrapper:
                 best_move = self.search(board, time_limit, can_ponder, draw_offered, best_move)
             except chess.engine.EngineError as error:
                 BadMove = (chess.IllegalMoveError, chess.InvalidMoveError)
-                if any(isinstance(e, BadMove) for e in error.args):
-                    logger.error("Ending game due to bot attempting an illegal move.")
-                    logger.error(error)
-                    game_ender = li.abort if game.is_abortable() else li.resign
-                    game_ender(game.id)
-                    return
-                else:
+                if not any(isinstance(e, BadMove) for e in error.args):
                     raise
+                logger.error("Ending game due to bot attempting an illegal move.")
+                logger.error(error)
+                game_ender = li.abort if game.is_abortable() else li.resign
+                game_ender(game.id)
+                return
 
         # Heed min_time
         elapsed = setup_timer.time_since_reset()
@@ -283,8 +280,7 @@ class EngineWrapper:
         """
         if self.comment_start_index < 0:
             return -1
-        else:
-            return move_stack_index - self.comment_start_index
+        return move_stack_index - self.comment_start_index
 
     def comment_for_board_index(self, index: int) -> InfoStrDict:
         """
@@ -362,9 +358,9 @@ class EngineWrapper:
         """Convert number to a more human-readable format. e.g. 123456789 -> 123M."""
         if number >= 1e9:
             return f"{round(number / 1e9, 1)}B"
-        elif number >= 1e6:
+        if number >= 1e6:
             return f"{round(number / 1e6, 1)}M"
-        elif number >= 1e3:
+        if number >= 1e3:
             return f"{round(number / 1e3, 1)}K"
         return str(number)
 
@@ -657,10 +653,9 @@ def move_time(board: chess.Board,
     """
     if len(board.move_stack) < 2:
         return first_move_time(game), False  # No pondering after the first move since a new clock starts afterwards.
-    elif is_correspondence:
+    if is_correspondence:
         return single_move_time(board, game, correspondence_move_time, setup_timer, move_overhead), can_ponder
-    else:
-        return game_clock_time(board, game, setup_timer, move_overhead), can_ponder
+    return game_clock_time(board, game, setup_timer, move_overhead), can_ponder
 
 
 def wbtime(board: chess.Board) -> Literal["wtime", "btime"]:
@@ -776,7 +771,7 @@ def get_book_move(board: chess.Board, game: model.Game,
     return no_book_move
 
 
-def get_online_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_moves_cfg: Configuration,
+def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: Configuration,
                     draw_or_resign_cfg: Configuration) -> Union[chess.engine.PlayResult, list[chess.Move]]:
     """
     Get a move from an online source.
@@ -828,7 +823,7 @@ def get_online_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, onli
     return chess.engine.PlayResult(None, None)
 
 
-def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
+def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                      chessdb_cfg: Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from chessdb.cn's opening book."""
     use_chessdb = chessdb_cfg.enabled
@@ -865,7 +860,7 @@ def get_chessdb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     return move, comment
 
 
-def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
+def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                            lichess_cloud_cfg: Configuration) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from the lichess's cloud analysis."""
     side = wbtime(board)
@@ -917,7 +912,7 @@ def get_lichess_cloud_move(li: LICHESS_TYPE, board: chess.Board, game: model.Gam
     return move, comment
 
 
-def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
+def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
                               opening_explorer_cfg: Configuration
                               ) -> tuple[Optional[str], chess.engine.InfoDict]:
     """Get a move from lichess's opening explorer."""
@@ -968,7 +963,7 @@ def get_opening_explorer_move(li: LICHESS_TYPE, board: chess.Board, game: model.
     return move, comment
 
 
-def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game, online_egtb_cfg: Configuration
+def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_egtb_cfg: Configuration
                          ) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from an online egtb (either by lichess or chessdb).
@@ -997,7 +992,7 @@ def get_online_egtb_move(li: LICHESS_TYPE, board: chess.Board, game: model.Game,
     with contextlib.suppress(Exception):
         if source == "lichess":
             return get_lichess_egtb_move(li, game, board, quality, variant)
-        elif source == "chessdb":
+        if source == "chessdb":
             return get_chessdb_egtb_move(li, game, board, quality)
 
     return None, -3, {}
@@ -1032,7 +1027,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: Configu
     return chess.engine.PlayResult(None, None)
 
 
-def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board, quality: str,
+def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board, quality: str,
                           variant: str) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from lichess's egtb.
@@ -1086,7 +1081,7 @@ def get_lichess_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board
     return None, -3, {}
 
 
-def get_chessdb_egtb_move(li: LICHESS_TYPE, game: model.Game, board: chess.Board,
+def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Board,
                           quality: str) -> tuple[Union[str, list[str], None], int, chess.engine.InfoDict]:
     """
     Get a move from chessdb's egtb.

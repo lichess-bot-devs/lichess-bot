@@ -29,7 +29,8 @@ from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
 from lib.lichess_types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE,
                                CORRESPONDENCE_QUEUE_TYPE, LOGGING_QUEUE_TYPE, PGN_QUEUE_TYPE)
-from requests.exceptions import ChunkedEncodingError, ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout
+from requests.exceptions import (ChunkedEncodingError, ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout,
+                                 RequestException)
 from rich.logging import RichHandler
 from collections import defaultdict
 from collections.abc import Iterator, MutableSequence
@@ -1245,10 +1246,16 @@ def check_python_version() -> None:
 def start_program() -> None:
     """Start lichess-bot and restart when needed."""
     multiprocessing.set_start_method("spawn")
+    global restart
     try:
         while should_restart():
             disable_restart()
-            start_lichess_bot()
+            # Restart on network errors.
+            try:
+                start_lichess_bot()
+            except RequestException:
+                restart = True
+                logger.exception("Restarting lichess-bot due to a network error:")
             time.sleep(10 if should_restart() else 0)
     except Exception:
         logger.exception("Quitting lichess-bot due to an error:")

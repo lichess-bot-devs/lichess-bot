@@ -1256,6 +1256,9 @@ def start_program() -> None:
             except RequestException:
                 restart = True
                 logger.exception("Restarting lichess-bot due to a network error:")
+            if terminated or force_quit:
+                logger.info("Termination requested - stopping restart cycle")
+                break
             time.sleep(10 if should_restart() else 0)
     except Exception:
         logger.exception("Quitting lichess-bot due to an error:")

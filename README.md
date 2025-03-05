@@ -30,6 +30,7 @@ Supports:
 - UCI, XBoard, and Homemade engines
 - Matchmaking (challenging other bots)
 - Offering Draws and Resigning
+- Participating in tournaments
 - Accepting move takeback requests from opponents
 - Saving games as PGN
 - Local & Online Opening Books

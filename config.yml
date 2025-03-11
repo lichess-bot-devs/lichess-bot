@@ -124,12 +124,12 @@ correspondence:
   ponder: false                    # Ponder in correspondence games the bot is connected to.
 
 challenge:                         # Incoming challenges.
-  concurrency: 1                   # Number of games to play simultaneously.
+  concurrency: 5                   # Number of games to play simultaneously.
   sort_by: "best"                  # Possible values: "best" and "first".
   preference: "none"               # Possible values: "none", "human", "bot".
   accept_bot: true                 # Accepts challenges coming from other bots.
   only_bot: false                  # Accept challenges by bots only.
-  max_increment: 20                # Maximum amount of increment to accept a challenge in seconds. The max is 180. Set to 0 for no increment.
+  max_increment: 11                # Maximum amount of increment to accept a challenge in seconds. The max is 180. Set to 0 for no increment.
   min_increment: 0                 # Minimum amount of increment to accept a challenge in seconds.
   max_base: 1800                   # Maximum amount of base time to accept a challenge in seconds. The max is 10800 (3 hours).
   min_base: 0                      # Minimum amount of base time to accept a challenge in seconds.
@@ -203,7 +203,7 @@ matchmaking:
   rating_preference: "none"        # One of "none", "high", "low".
   opponent_allow_tos_violation: true # Set to 'true' to allow challenging bots that violated the Lichess Terms of Service.
   challenge_mode: "random"         # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
-  challenge_filter: none           # If a bot declines a challenge, do not issue a similar challenge to that bot. Possible options are 'none', 'coarse', and 'fine'.
+  challenge_filter: null          # If a bot declines a challenge, do not issue a similar challenge to that bot. Possible options are 'none', 'coarse', and 
 # block_list:                      # The list of bots that will not be challenged
 #   - user1
 #   - user2
@@ -226,7 +226,7 @@ matchmaking:
 #     opponent_rating_difference:500
 #     challenge_mode: rated
 #
-#   no_pressure_correspondence:
+#   no_pressure_correspondence: false
 #     challenge_initial_time:
 #     challenge_increment:
 #     challenge_days:

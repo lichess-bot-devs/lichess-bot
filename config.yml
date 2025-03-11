@@ -18,7 +18,7 @@ engine:                            # Engine settings.
       standard:                    # List of book file paths for variant standard.
         - "Downloads/Perfect_2023/BIN/Perfect2023.bin
     min_weight: 50                  # Does not select moves with weight below min_weight (min 0, max: 65535).
-    selection: "weighted_random"   # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd and 3rd case).
+    selection: "weighted_random"   # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd an
     max_depth: 20
     move_selection: "book first"                  # How many moves from the start to take from the book.
 
@@ -34,13 +34,13 @@ engine:                            # Engine settings.
     offer_draw_pieces: 10          # Only if the pieces on board are less than or equal to this value, the bot offers/accepts draw.
 
   online_moves:
-    max_out_of_book_moves: 10      # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to the online endgame tablebases.
+    max_out_of_book_moves: 10      # Stop using online opening books after they don't have a move for 'max_out_of_book_moves' positions. Doesn't apply to 
     max_retries: 2                 # The maximum amount of retries when getting an online move.
     # max_depth: 10                # How many moves from the start to take from online books. Default is no limit.
     chessdb_book:
       enabled: true               # Whether or not to use chessdb book.
       min_time: 20                 # Minimum time (in seconds) to use chessdb book.
-      move_quality: "1.0"         # One of "all", "good", "best".
+      move_quality: "best"         # One of "all", "good", "best".
       min_depth: 20                # Only for move_quality: "best".
     lichess_cloud_analysis:
       enabled: true               # Whether or not to use lichess cloud analysis.
@@ -62,7 +62,7 @@ engine:                            # Engine settings.
       min_time: 99                # Minimum time (in seconds) the bot must have to use online EGTBs.
       max_pieces: 7                # Maximum number of pieces on the board to use endgame tablebases.
       source: "lichess"            # One of "lichess", "chessdb".
-      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
+      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will 
 
   lichess_bot_tbs:                 # The tablebases list here will be read by lichess-bot, not the engine.
     syzygy:

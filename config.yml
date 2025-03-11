@@ -53,8 +53,8 @@ engine:                            # Engine settings.
                        # The lichess username. Leave empty for the bot's username to be used. Used only when source is "player".
       sort: "popularity"              # One of "winrate", "games_played"
       min_games: 10
-      player:both                # Minimum number of times a move must have been played to be chosen.
-    online_egtb:
+      player: both                # Minimum number of times a move must have been played to be chosen.
+      online_egtb:
       enabled: true               # Whether or not to enable online endgame tablebases.
       min_time: 99                # Minimum time (in seconds) the bot must have to use online EGTBs.
       max_pieces: 7                # Maximum number of pieces on the board to use endgame tablebases.

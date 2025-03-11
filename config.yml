@@ -4,10 +4,7 @@ url: "https://lichess.org/"        # Lichess base URL.
 engine:                            # Engine settings.
   dir: "./engines/"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
   name: "stockfish-windows-x86-64-avx2.exe"              # Binary name of the engine to use.
-# interpreter: ""
-# interpreter_options:
-#   - "-jar"
-  working_dir: ""                  # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
+              # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
                                    # NOTE: If working_dir is set, the engine will look for files and directories relative to this directory, not where lichess-bot was launched. Absolute paths are unaffected.
   protocol: "uci"                  # "uci", "xboard" or "homemade"
   ponder: true                     # Think on opponent's time.
@@ -16,7 +13,7 @@ engine:                            # Engine settings.
     enabled: true                # Activate polyglot book.
     book:
       standard:                    # List of book file paths for variant standard.
-        - "Downloads/Perfect_2023/BIN/Perfect2023.bin
+        - "./Downloads/Perfect_2023/BIN/Perfect2023.bin"
     min_weight: 50                  # Does not select moves with weight below min_weight (min 0, max: 65535).
     selection: "weighted_random"   # Move selection is one of "weighted_random", "uniform_random" or "best_move" (but not below the min_weight in the 2nd an
     max_depth: 20
@@ -77,16 +74,16 @@ engine:                            # Engine settings.
         - "engines/gaviota"
       max_pieces: 5
       min_dtm_to_consider_as_wdl_1: 120 # The minimum DTM to consider as syzygy WDL=1/-1. Set to 100 to disable.
-      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will move instantly if there is only 1 "good" move).
+      move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will 
 
 # engine_options:                  # Any custom command line params to pass to the engine.
-#   cpuct: 3.1
+#   cpuct: 2.8
 
   homemade_options:
 #   Hash: 256
 
   uci_options:                     # Arbitrary UCI options passed to the engine.
-    Move Overhead: 100             # Increase if your bot flags games too often.
+    Move Overhead: 150             # Increase if your bot flags games too often.
     Threads: 4                     # Max CPU threads the engine can use.
     Hash: 512                      # Max memory (in megabytes) the engine can allocate.
     SyzygyPath: "./syzygy/"        # Paths to Syzygy endgame tablebases that the engine reads.
@@ -108,12 +105,12 @@ engine:                            # Engine settings.
 #     depth: 5                     # Search depth ply only.
 #     Do note that the go commands 'movetime' and 'nodes' are invalid and may cause bad time management for XBoard engines.
 
-  silence_stderr: false            # Some engines (yes you, Leela) are very noisy.
+  silence_stderr: true            # Some engines (yes you, Leela) are very noisy.
 
 abort_time: 30                     # Time to abort a game in seconds when there is no activity.
 fake_think_time: false             # Artificially slow down the bot to pretend like it's thinking.
 rate_limiting_delay: 0             # Time (in ms) to delay after sending a move to prevent "Too Many Requests" errors.
-move_overhead: 2000                # Increase if your bot flags games too often.
+move_overhead: 1000                # Increase if your bot flags games too often.
 max_takebacks_accepted: 4          # The number of times to allow an opponent to take back a move in a game.
 quit_after_all_games_finish: true # If set to true, then pressing Ctrl-C to quit will only stop lichess-bot after all current games have finished.
 
@@ -190,7 +187,7 @@ matchmaking:
   challenge_timeout: 30            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
     - 60
-    - 180
+    
   challenge_increment:             # Increment in seconds of the challenge (to be chosen at random).
     - 1
     - 2

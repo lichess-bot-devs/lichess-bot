@@ -27,6 +27,7 @@ import contextlib
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
+from lib.lichess import stop
 from lib.lichess_types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE,
                                CORRESPONDENCE_QUEUE_TYPE, LOGGING_QUEUE_TYPE, PGN_QUEUE_TYPE)
 from requests.exceptions import (ChunkedEncodingError, ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout,
@@ -74,35 +75,28 @@ with open("lib/versioning.yml") as version_file:
 
 __version__ = versioning_info["lichess_bot_version"]
 
-terminated = False
-force_quit = False
-restart = True
-
 
 def should_restart() -> bool:
     """Decide whether to restart lichess-bot when exiting main program."""
-    return restart
+    return stop.restart
 
 
 def disable_restart() -> None:
     """Disable restarting lichess-bot when errors occur. Used during testing."""
-    global restart
-    restart = False
+    stop.restart = False
 
 
 def signal_handler(signal: int, frame: Optional[FrameType]) -> None:  # noqa: ARG001
     """Terminate lichess-bot."""
-    global terminated
-    global force_quit
     in_starting_thread = __name__ == "__main__"
-    if not terminated:
+    if not stop.terminated:
         if in_starting_thread:
             logger.debug("Received SIGINT. Terminating client.")
-        terminated = True
+        stop.terminated = True
     else:
         if in_starting_thread:
             logger.debug("Received second SIGINT. Quitting now.")
-        force_quit = True
+        stop.force_quit = True
 
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -123,7 +117,7 @@ def upgrade_account(li: lichess.Lichess) -> bool:
 def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess) -> None:
     """Put the events in a queue."""
     error = None
-    while not terminated:
+    while not stop.terminated:
         try:
             response = li.get_event_stream()
             lines = response.iter_lines()
@@ -146,7 +140,7 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.t
 
     :param period: How many seconds to wait before sending a correspondence ping.
     """
-    while not terminated:
+    while not stop.terminated:
         time.sleep(to_seconds(period))
         control_queue.put_nowait({"type": "correspondence_ping"})
 
@@ -346,8 +340,6 @@ def lichess_bot_main(li: lichess.Lichess,
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
     :param one_game: Whether the bot should play only one game. Only used in `test_bot/test_bot.py` to test lichess-bot.
     """
-    global restart
-
     max_games = config.challenge.concurrency
 
     one_game_completed = False
@@ -378,13 +370,13 @@ def lichess_bot_main(li: lichess.Lichess,
         logger.info("Press Ctrl-C twice to quit immediately.")
 
     with multiprocessing.pool.Pool(max_games + 1) as pool:
-        while not (terminated or (one_game and one_game_completed) or restart):
+        while not (stop.terminated or (one_game and one_game_completed) or stop.restart):
             event = next_event(control_queue)
             if not event:
                 continue
 
             if event["type"] == "terminated":
-                restart = True
+                stop.restart = True
                 logger.debug(f"Terminating exception:\n{event['error']}")
                 control_queue.task_done()
                 break
@@ -513,13 +505,11 @@ def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST
 
 def check_online_status(li: lichess.Lichess, user_profile: UserProfileType, last_check_online_time: Timer) -> None:
     """Check if lichess.org thinks the bot is online or not. If it isn't, we restart it."""
-    global restart
-
     if last_check_online_time.is_expired():
         try:
             if not li.is_online(user_profile["id"]):
                 logger.info("Will restart lichess-bot")
-                restart = True
+                stop.restart = True
             last_check_online_time.reset()
         except (HTTPError, ReadTimeout):
             pass
@@ -697,7 +687,7 @@ def play_game(li: lichess.Lichess,
         game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
         quit_after_all_games_finish = config.quit_after_all_games_finish
         stay_in_game = True
-        while stay_in_game and (not terminated or quit_after_all_games_finish) and not force_quit:
+        while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
             move_attempted = False
             try:
                 upd = next_update(game_stream)
@@ -829,7 +819,7 @@ def print_move_number(board: chess.Board) -> None:
 def next_update(lines: Iterator[bytes]) -> GameEventType:
     """Get the next game state."""
     binary_chunk = next(lines)
-    upd = cast(GameEventType, json.loads(binary_chunk.decode("utf-8"))) if binary_chunk else {}
+    upd = cast("GameEventType", json.loads(binary_chunk.decode("utf-8"))) if binary_chunk else {}
     if upd:
         logger.debug(f"Game state: {upd}")
     return upd
@@ -1193,7 +1183,7 @@ def start_lichess_bot() -> None:
     max_retries = CONFIG.engine.online_moves.max_retries
     check_python_version()
     log_python_and_libraries()
-    li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
+    li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries, stop)
 
     user_profile = li.get_profile()
     username = user_profile["username"]
@@ -1246,7 +1236,6 @@ def check_python_version() -> None:
 def start_program() -> None:
     """Start lichess-bot and restart when needed."""
     multiprocessing.set_start_method("spawn")
-    global restart
     try:
         while should_restart():
             disable_restart()
@@ -1254,9 +1243,9 @@ def start_program() -> None:
             try:
                 start_lichess_bot()
             except RequestException:
-                restart = True
+                stop.restart = True
                 logger.exception("Restarting lichess-bot due to a network error:")
-            if terminated or force_quit:
+            if stop.terminated or stop.force_quit:
                 logger.info("Termination requested - stopping restart cycle")
                 break
             time.sleep(10 if should_restart() else 0)

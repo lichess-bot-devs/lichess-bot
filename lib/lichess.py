@@ -45,6 +45,19 @@ logger = logging.getLogger(__name__)
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
 
 
+class Stop:
+    """Class to stop the bot."""
+
+    def __init__(self) -> None:
+        """Initialize the Stop class."""
+        self.terminated = False
+        self.force_quit = False
+        self.restart = True
+
+
+stop = Stop()
+
+
 class RateLimitedError(RuntimeError):
     """Exception raised when we are rate limited (status code 429)."""
 
@@ -56,7 +69,8 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
 
 def is_final(exception: Exception) -> bool:
     """If `is_final` returns True then we won't retry."""
-    return isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code < 500
+    return (isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code < 500
+            or stop.restart or stop.terminated or stop.force_quit)
 
 
 def backoff_handler(details: BackoffDetails) -> None:
@@ -70,7 +84,7 @@ def backoff_handler(details: BackoffDetails) -> None:
 class Lichess:
     """Communication with lichess.org (and chessdb.cn for getting moves)."""
 
-    def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
+    def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int, stop: Stop) -> None:
         """
         Communication with lichess.org (and chessdb.cn for getting moves).
 
@@ -92,9 +106,10 @@ class Lichess:
         self.logging_level = logging_level
         self.max_retries = max_retries
         self.rate_limit_timers: defaultdict[str, Timer] = defaultdict(Timer)
+        self.stop = stop
 
         # Confirm that the OAuth token has the proper permission to play on lichess
-        token_response = cast(TOKEN_TESTS_TYPE, self.api_post("token_test", data=token))
+        token_response = cast("TOKEN_TESTS_TYPE", self.api_post("token_test", data=token))
         token_info = token_response[token]
 
         if not token_info:
@@ -324,7 +339,7 @@ class Lichess:
 
     def get_profile(self) -> UserProfileType:
         """Get the bot's profile (e.g. username)."""
-        profile = cast(UserProfileType, self.api_get_json("profile"))
+        profile = cast("UserProfileType", self.api_get_json("profile"))
         self.set_user_agent(profile["username"])
         return profile
 
@@ -332,7 +347,7 @@ class Lichess:
         """Get the bot's ongoing games."""
         ongoing_games: list[GameType] = []
         with contextlib.suppress(Exception):
-            response = cast(dict[str, list[GameType]], self.api_get_json("playing"))
+            response = cast("dict[str, list[GameType]]", self.api_get_json("playing"))
             ongoing_games = response["nowPlaying"]
         return ongoing_games
 
@@ -363,7 +378,7 @@ class Lichess:
 
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeType:
         """Create a challenge."""
-        return cast(ChallengeType,
+        return cast("ChallengeType",
                     self.api_post("challenge", username, payload=payload, raise_for_status=False))
 
     def cancel(self, challenge_id: str) -> None:
@@ -394,4 +409,4 @@ class Lichess:
 
     def get_public_data(self, user_name: str) -> PublicDataType:
         """Get the public data of a bot."""
-        return cast(PublicDataType, self.api_get_json("public_data", user_name))
+        return cast("PublicDataType", self.api_get_json("public_data", user_name))

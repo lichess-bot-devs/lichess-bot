@@ -70,7 +70,7 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
 def is_final(exception: Exception) -> bool:
     """If `is_final` returns True then we won't retry."""
     return (isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code < 500
-            or stop.restart or stop.terminated or stop.force_quit)
+            or stop.terminated or stop.force_quit)
 
 
 def backoff_handler(details: BackoffDetails) -> None:
@@ -84,7 +84,7 @@ def backoff_handler(details: BackoffDetails) -> None:
 class Lichess:
     """Communication with lichess.org (and chessdb.cn for getting moves)."""
 
-    def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int, stop: Stop) -> None:
+    def __init__(self, token: str, url: str, version: str, logging_level: int, max_retries: int) -> None:
         """
         Communication with lichess.org (and chessdb.cn for getting moves).
 
@@ -106,7 +106,6 @@ class Lichess:
         self.logging_level = logging_level
         self.max_retries = max_retries
         self.rate_limit_timers: defaultdict[str, Timer] = defaultdict(Timer)
-        self.stop = stop
 
         # Confirm that the OAuth token has the proper permission to play on lichess
         token_response = cast("TOKEN_TESTS_TYPE", self.api_post("token_test", data=token))

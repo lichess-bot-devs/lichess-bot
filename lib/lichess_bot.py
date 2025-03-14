@@ -1183,7 +1183,7 @@ def start_lichess_bot() -> None:
     max_retries = CONFIG.engine.online_moves.max_retries
     check_python_version()
     log_python_and_libraries()
-    li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries, stop)
+    li = lichess.Lichess(CONFIG.token, CONFIG.url, __version__, logging_level, max_retries)
 
     user_profile = li.get_profile()
     username = user_profile["username"]

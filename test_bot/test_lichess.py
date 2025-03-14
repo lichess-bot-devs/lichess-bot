@@ -11,7 +11,7 @@ def test_lichess() -> None:
     token = os.environ.get("LICHESS_BOT_TEST_TOKEN")
     if not token:
         pytest.skip("Lichess-bot test token must be set.")
-    li = lichess.Lichess(token, "https://lichess.org/", "0.0.0", logging.DEBUG, 3, lichess.stop)
+    li = lichess.Lichess(token, "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
     assert len(li.get_online_bots()) > 20
     profile = li.get_profile()
     profile["seenAt"] = 1700000000000

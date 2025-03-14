@@ -121,7 +121,7 @@ os.makedirs("TEMP", exist_ok=True)
 def get_online_move_wrapper(li: Lichess, board: chess.Board, game: Game, online_moves_cfg: Configuration,
                             draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult:
     """Wrap `lib.engine_wrapper.get_online_move` so that it only returns a PlayResult type."""
-    return cast(chess.engine.PlayResult, get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))
+    return cast("chess.engine.PlayResult", get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))
 
 
 def test_external_moves() -> None:

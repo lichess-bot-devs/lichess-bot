@@ -394,14 +394,14 @@ class EngineWrapper:
                 value = value.split(":", 1)[1]
             return cast(InfoDictKeys, stat.title()), value
 
-        info = cast(InfoStrDict, dict(to_readable_item(cast("InfoDictKeys", key), cast("InfoDictValue", value))
+        info = cast(InfoStrDict, dict(to_readable_item(cast(InfoDictKeys, key), cast(InfoDictValue, value))
                                       for (key, value) in info.items()))
         if "Source" not in info:
             info["Source"] = "Engine"
 
         stats = ["Source", "Evaluation", "Winrate", "Depth", "Nodes", "Speed", "Pv"]
         if for_chat and "Pv" in info:
-            bot_stats = [f"{stat}: {self.to_readable_value(cast('InfoDictKeys', stat), info)}"
+            bot_stats = [f"{stat}: {self.to_readable_value(cast(InfoDictKeys, stat), info)}"
                          for stat in stats if stat in info and stat != "Pv"]
             len_bot_stats = len(", ".join(bot_stats)) + PONDERPV_CHARACTERS
             ponder_pv = info["Pv"].split()
@@ -415,7 +415,7 @@ class EngineWrapper:
                 pass
             if not info["Pv"]:
                 info.pop("Pv")
-        return [f"{stat}: {self.to_readable_value(cast('InfoDictKeys', stat), info)}" for stat in stats if stat in info]
+        return [f"{stat}: {self.to_readable_value(cast(InfoDictKeys, stat), info)}" for stat in stats if stat in info]
 
     def get_opponent_info(self, game: model.Game) -> None:
         """Get the opponent's information and sends it to the engine."""

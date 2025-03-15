@@ -377,7 +377,7 @@ class Lichess:
 
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeType:
         """Create a challenge."""
-        return cast("ChallengeType",
+        return cast(ChallengeType,
                     self.api_post("challenge", username, payload=payload, raise_for_status=False))
 
     def cancel(self, challenge_id: str) -> None:

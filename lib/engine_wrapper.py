@@ -94,7 +94,7 @@ class EngineWrapper:
         self.engine: Union[chess.engine.SimpleEngine, FillerEngine]
         self.scores: list[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
-        self.go_commands = Configuration(cast("GO_COMMANDS_TYPE", options.pop("go_commands", {})) or {})
+        self.go_commands = Configuration(cast(GO_COMMANDS_TYPE, options.pop("go_commands", {})) or {})
         self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
 
@@ -108,7 +108,7 @@ class EngineWrapper:
         """
         try:
             extra_options = {} if game is None else game_specific_options(game)
-            self.engine.configure(cast("OPTIONS_TYPE", options | extra_options))
+            self.engine.configure(cast(OPTIONS_TYPE, options | extra_options))
         except Exception:
             self.engine.close()
             raise
@@ -308,7 +308,7 @@ class EngineWrapper:
         """
         if self.comment_start_index < 0:
             self.comment_start_index = len(board.move_stack)
-        move_info = cast("InfoStrDict", dict(move.info.copy() if move.info else {}))
+        move_info = cast(InfoStrDict, dict(move.info.copy() if move.info else {}))
         if "pv" in move_info:
             move_info["ponderpv"] = board.variation_san(move.info["pv"])
         if "refutation" in move_info:
@@ -374,7 +374,7 @@ class EngineWrapper:
         def identity(x: InfoDictValue) -> str:
             return str(x)
 
-        func = cast("Callable[[InfoDictValue], str]", readable.get(stat, identity))
+        func = cast(Callable[[InfoDictValue], str], readable.get(stat, identity))
         return str(func(info[stat]))
 
     def get_stats(self, for_chat: bool = False) -> list[str]:
@@ -388,13 +388,13 @@ class EngineWrapper:
 
         def to_readable_item(stat: InfoDictKeys, value: InfoDictValue) -> tuple[InfoDictKeys, InfoDictValue]:
             readable = {"wdl": "winrate", "ponderpv": "PV", "nps": "speed", "score": "evaluation", "time": "movetime"}
-            stat = cast("InfoDictKeys", readable.get(stat, stat))
+            stat = cast(InfoDictKeys, readable.get(stat, stat))
             if stat == "string" and isinstance(value, str) and value.startswith("lichess-bot-source:"):
                 stat = "Source"
                 value = value.split(":", 1)[1]
-            return cast("InfoDictKeys", stat.title()), value
+            return cast(InfoDictKeys, stat.title()), value
 
-        info = cast("InfoStrDict", dict(to_readable_item(cast("InfoDictKeys", key), cast("InfoDictValue", value))
+        info = cast(InfoStrDict, dict(to_readable_item(cast("InfoDictKeys", key), cast("InfoDictValue", value))
                                       for (key, value) in info.items()))
         if "Source" not in info:
             info["Source"] = "Engine"
@@ -513,8 +513,8 @@ class XBoardEngine(EngineWrapper):
         super().__init__(options, draw_or_resign)
         self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=True,
                                                              stderr=stderr, **popen_args)
-        egt_paths = cast("EGTPATH_TYPE", options.pop("egtpath", {}) or {})
-        protocol = cast("chess.engine.XBoardProtocol", self.engine.protocol)
+        egt_paths = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
+        protocol = cast(chess.engine.XBoardProtocol, self.engine.protocol)
         egt_features = protocol.features.get("egt", "")
         if isinstance(egt_features, str):
             egt_types_from_engine = egt_features.split(",")
@@ -1116,7 +1116,7 @@ def get_chessdb_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             def good_enough(move: ChessDBMoveType) -> bool:
                 return score_to_wdl(move["score"]) == best_wdl
 
-            possible_moves = list(filter(good_enough, cast("list[ChessDBMoveType]", data["moves"])))
+            possible_moves = list(filter(good_enough, cast(list[ChessDBMoveType], data["moves"])))
             if len(possible_moves) > 1:
                 wdl = score_to_wdl(possible_moves[0]["score"])
                 move_list = [move["uci"] for move in possible_moves]

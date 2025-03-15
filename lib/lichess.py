@@ -108,7 +108,7 @@ class Lichess:
         self.rate_limit_timers: defaultdict[str, Timer] = defaultdict(Timer)
 
         # Confirm that the OAuth token has the proper permission to play on lichess
-        token_response = cast("TOKEN_TESTS_TYPE", self.api_post("token_test", data=token))
+        token_response = cast(TOKEN_TESTS_TYPE, self.api_post("token_test", data=token))
         token_info = token_response[token]
 
         if not token_info:
@@ -338,7 +338,7 @@ class Lichess:
 
     def get_profile(self) -> UserProfileType:
         """Get the bot's profile (e.g. username)."""
-        profile = cast("UserProfileType", self.api_get_json("profile"))
+        profile = cast(UserProfileType, self.api_get_json("profile"))
         self.set_user_agent(profile["username"])
         return profile
 
@@ -346,7 +346,7 @@ class Lichess:
         """Get the bot's ongoing games."""
         ongoing_games: list[GameType] = []
         with contextlib.suppress(Exception):
-            response = cast("dict[str, list[GameType]]", self.api_get_json("playing"))
+            response = cast(dict[str, list[GameType]], self.api_get_json("playing"))
             ongoing_games = response["nowPlaying"]
         return ongoing_games
 
@@ -408,4 +408,4 @@ class Lichess:
 
     def get_public_data(self, user_name: str) -> PublicDataType:
         """Get the public data of a bot."""
-        return cast("PublicDataType", self.api_get_json("public_data", user_name))
+        return cast(PublicDataType, self.api_get_json("public_data", user_name))

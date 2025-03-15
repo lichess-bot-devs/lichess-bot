@@ -819,7 +819,7 @@ def print_move_number(board: chess.Board) -> None:
 def next_update(lines: Iterator[bytes]) -> GameEventType:
     """Get the next game state."""
     binary_chunk = next(lines)
-    upd = cast("GameEventType", json.loads(binary_chunk.decode("utf-8"))) if binary_chunk else {}
+    upd = cast(GameEventType, json.loads(binary_chunk.decode("utf-8"))) if binary_chunk else {}
     if upd:
         logger.debug(f"Game state: {upd}")
     return upd

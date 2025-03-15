@@ -39,6 +39,7 @@ ignore = [
     "SIM108", #Use ternary operator instead of `if`-`else`-block
     "TC001", # Move application import into a type-checking block
     "TC003", # Move standard library import into a type-checking block
+    "TC006", # Add quotes to type expression in `typing.cast()`
     "TRY", # Try-except suggestions
     "UP035", # Import from collections.abc instead of typing
     "UP007", # Use `X | Y` for type annotations

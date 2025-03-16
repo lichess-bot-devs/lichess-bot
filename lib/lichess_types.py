@@ -251,7 +251,7 @@ class GameEventType(TypedDict, total=False):
 
 
 CONTROL_QUEUE_TYPE = Queue[EventType]
-PGN_QUEUE_TYPE = Queue[EventType]
+PGN_QUEUE_TYPE = Queue[Optional[EventType]]
 
 
 class PublicDataType(TypedDict, total=False):

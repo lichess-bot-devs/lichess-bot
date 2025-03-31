@@ -92,7 +92,7 @@ class Challenge:
         return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]],
-                     players_with_active_games: Counter[str]) -> tuple[bool, str]:
+                     opponent_engagements: Counter[str]) -> tuple[bool, str]:
         """Whether the challenge is supported."""
         try:
             if self.from_self:
@@ -109,7 +109,7 @@ class Challenge:
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
                               or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later")
-                              or self.decline_due_to(players_with_active_games[self.challenger.name]
+                              or self.decline_due_to(opponent_engagements[self.challenger.name]
                                                      < config.max_simultaneous_games_per_user, "later")
                               or self.decline_due_to(is_supported_extra(self), "generic"))
 

@@ -607,9 +607,10 @@ def handle_challenge(event: EventType, li: lichess.Lichess, challenge_queue: MUL
     if chlng.from_self:
         return
 
-    players_with_active_games = Counter(game["opponent"]["username"] for game in li.get_ongoing_games())
+    opponent_engagements = Counter(game["opponent"]["username"] for game in li.get_ongoing_games())
+    opponent_engagements.update(challenge.challenger.name for challenge in challenge_queue)
 
-    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges, players_with_active_games)
+    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges, opponent_engagements)
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)

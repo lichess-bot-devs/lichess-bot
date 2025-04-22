@@ -490,7 +490,7 @@ class UCIEngine(EngineWrapper):
         :param popen_args: The cwd of the engine.
         """
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=10., debug=False, setpgrp=True, stderr=stderr,
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=60., debug=False, setpgrp=True, stderr=stderr,
                                                           **popen_args)
         self.configure(options, game)
 
@@ -511,7 +511,7 @@ class XBoardEngine(EngineWrapper):
         :param popen_args: The cwd of the engine.
         """
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=10., debug=False, setpgrp=True,
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=60., debug=False, setpgrp=True,
                                                              stderr=stderr, **popen_args)
         egt_paths = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
         protocol = cast(chess.engine.XBoardProtocol, self.engine.protocol)

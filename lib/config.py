@@ -253,6 +253,11 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
 
 
 def process_block_list(CONFIG: CONFIG_DICT_TYPE) -> None:
+    """
+    Retrieve online block lists and copy over challenge blocklist if necessary.
+
+    :param CONFIG: The bot's config.
+    """
     def parse_block_list_from_url(url: str) -> list[str]:
         block_list = requests.get(url).text.strip()
         return [username.strip() for username in block_list.split("\n")]

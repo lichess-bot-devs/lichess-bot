@@ -199,14 +199,11 @@ class Matchmaking:
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
         logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
-        allow_tos_violation = match_config.opponent_allow_tos_violation
 
         def is_suitable_opponent(bot: UserProfileType) -> bool:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and not self.in_block_list(bot["username"])
-                    and not bot.get("disabled")
-                    and (allow_tos_violation or not bot.get("tosViolation"))  # Terms of Service violation.
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 

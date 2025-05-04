@@ -251,6 +251,8 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
         for target in ["", "_spectators"]:
             set_config_default(CONFIG, "greeting", key=greeting + target, default="", force_empty_values=True)
 
+
+def process_block_list(CONFIG: CONFIG_DICT_TYPE) -> None:
     def parse_block_list_from_url(url: str) -> list[str]:
         block_list = requests.get(url).text.strip()
         return [username.strip() for username in block_list.split("\n")]
@@ -421,6 +423,7 @@ def load_config(config_file: str) -> Configuration:
         CONFIG["token"] = os.environ["LICHESS_BOT_TOKEN"]
 
     insert_default_values(CONFIG)
+    process_block_list(CONFIG)
     log_config(CONFIG)
     validate_config(CONFIG)
 

@@ -56,8 +56,6 @@ class UserProfileType(TypedDict, total=False):
     username: str
     perfs: dict[str, PerfType]
     createdAt: int
-    disabled: bool
-    tosViolation: bool
     profile: ProfileType
     seenAt: int
     patron: int

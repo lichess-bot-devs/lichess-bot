@@ -192,6 +192,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     -casual
 ```
   - `block_list`: An indented list of usernames from which the challenges are always declined. If this option is not present, then the list is considered empty.
+  - `online_block_list`: An indented list of urls from which additional block lists are retrieved. An online block list is a plain text file where each line contains a single username. If this option is not present, then the list is considered empty.
   - `allow_list`: An indented list of usernames from which challenges are exclusively accepted. A challenge from a user not on this list is declined. If this option is not present or empty, any user's challenge may be accepted.
   - `recent_bot_challenge_age`: Maximum age of a bot challenge to be considered recent in seconds
   - `max_recent_bot_challenges`: Maximum number of recent challenges that can be accepted from the same bot
@@ -254,6 +255,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 
     The `challenge_filter` option can be useful if your matchmaking settings result in a lot of declined challenges. The bots that accept challenges will be challenged more often than those that have declined. The filter will remain until lichess-bot quits or the connection with lichess.org is reset.
   - `block_list`: An indented list of usernames of bots that will not be challenged. If this option is not present, then the list is considered empty.
+  - `online_block_list`: An indented list of urls from which additional block lists are retrieved. An online block list is a plain text file where each line contains a single username. If this option is not present, then the list is considered empty.
   - `include_challenge_block_list`: If `true`, do not send challenges to the bots listed in the `challenge: block_list`. Default is `false`.
   - `overrides`: Create variations on the matchmaking settings above for more specific circumstances. If there are any subsections under `overrides`, the settings below that will override the settings in the matchmaking section. Any settings that do not appear will be taken from the settings above. <br/> <br/>
   The overrides section must have the following:

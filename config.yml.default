@@ -163,6 +163,8 @@ challenge:                         # Incoming challenges.
 # block_list:                      # List of users from which the challenges are always declined.
 #   - user1
 #   - user2
+# online_block_list:               # The urls from which to retrieve a list of bot names that will not be challenged. The list should be a text file where each line contains the name of a blocked bot
+#   - example.com/blocklist
 # allow_list:                      # List of users from which challenges are exclusively accepted, all others being declined. If empty, challenges from all users may be accepted.
 #   - user3
 #   - user4
@@ -210,6 +212,8 @@ matchmaking:
 # block_list:                      # The list of bots that will not be challenged
 #   - user1
 #   - user2
+# online_block_list:               # The urls from which to retrieve a list of bot names that will not be challenged. The list should be a text file where each line contains the name of a blocked bot
+#   - example.com/blocklist
   include_challenge_block_list: false  # Do not challenge bots in the challenge: block_list in addition to the matchmaking block list.
 
 # overrides:                       # List of overrides for the matchmaking specifications above. When a challenge is created, either the default specification above or one of the overrides will be randomly chosen.

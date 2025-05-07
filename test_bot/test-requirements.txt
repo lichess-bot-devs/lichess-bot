@@ -1,5 +1,5 @@
 pytest~=8.3
-pytest-timeout~=2.3
+pytest-timeout~=2.4
 ruff~=0.11
 mypy~=1.15
 types-requests~=2.32

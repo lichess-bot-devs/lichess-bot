@@ -765,12 +765,7 @@ def get_book_move(board: chess.Board, game: model.Game,
                 elif normalization == "max":
                     max_weight = max(weight for weight, _ in entries)
                     entries = [(weight / max_weight * 100, move) for weight, move in entries]
-                if selection == "weighted_random":
-                    move = random.choices(entries, weights=[weight for weight, _ in entries])[0][1]
-                elif selection == "uniform_random":
-                    move = random.choice(entries)[1]
-                elif selection == "best_move":
-                    move = max(entries, key=lambda x: x[0])[1]
+                move = get_move_from_entries(entries, selection)
             except IndexError:
                 # python-chess raises "IndexError" if no entries found.
                 move = None
@@ -780,6 +775,19 @@ def get_book_move(board: chess.Board, game: model.Game,
             return chess.engine.PlayResult(move, None, {"string": "lichess-bot-source:Opening Book"})
 
     return no_book_move
+
+
+def get_move_from_entries(entries: list[tuple[float, chess.Move]], selection: str) -> chess.Move:
+    """Get a move from the entries."""
+    if selection == "weighted_random":
+        move = random.choices(entries, weights=[weight for weight, _ in entries])[0][1]
+    elif selection == "uniform_random":
+        move = random.choice(entries)[1]
+    elif selection == "best_move":
+        move = max(entries, key=lambda x: x[0])[1]
+    else:
+        raise ValueError(f"Unknown selection method: {selection}")
+    return move
 
 
 def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: Configuration,

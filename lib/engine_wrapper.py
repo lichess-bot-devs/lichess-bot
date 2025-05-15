@@ -752,14 +752,29 @@ def get_book_move(board: chess.Board, game: model.Game,
     for book in books:
         with chess.polyglot.open_reader(book) as reader:
             try:
+                entries: list[tuple[float, chess.Move]] = []
+                for entry in reader.find_all(board):
+                    entries.append((entry.weight, entry.move))
+                if not entries:
+                    continue
                 selection = polyglot_cfg.selection
                 min_weight = polyglot_cfg.min_weight
+                normalization = polyglot_cfg.normalization
+                if normalization == "sum":
+                    sum_of_weights = sum(weight for weight, _ in entries)
+                    entries = [(weight / sum_of_weights * 100, move) for weight, move in entries]
+                elif normalization == "max":
+                    max_weight = max(weight for weight, _ in entries)
+                    entries = [(weight / max_weight * 100, move) for weight, move in entries]
+                entries = list(filter(lambda x: x[0] >= min_weight, entries))
+                if not entries:
+                    continue
                 if selection == "weighted_random":
-                    move = reader.weighted_choice(board).move
+                    move = random.choices(entries, weights=[weight for weight, _ in entries])[0][1]
                 elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=min_weight).move
+                    move = random.choice(entries)[1]
                 elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=min_weight).move
+                    move = max(entries, key=lambda x: x[0])[1]
             except IndexError:
                 # python-chess raises "IndexError" if no entries found.
                 move = None

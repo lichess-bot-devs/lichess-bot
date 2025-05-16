@@ -754,6 +754,12 @@ def get_book_move(board: chess.Board, game: model.Game,
             try:
                 selection = polyglot_cfg.selection
                 min_weight = polyglot_cfg.min_weight
+                normalization = polyglot_cfg.normalization
+                entries = list(reader.find_all(board))
+                scalar = (sum(entry.weight for entry in entries) if normalization == "sum" and entries else
+                          max(entry.weight for entry in entries) if normalization == "max" and entries else 100)
+                min_weight = min_weight * scalar / 100
+
                 if selection == "weighted_random":
                     move = reader.weighted_choice(board).move
                 elif selection == "uniform_random":

@@ -755,17 +755,17 @@ def get_book_move(board: chess.Board, game: model.Game,
                 selection = polyglot_cfg.selection
                 min_weight = polyglot_cfg.min_weight
                 normalization = polyglot_cfg.normalization
-                entries: list[tuple[float, chess.Move]] = [(entry.weight, entry.move) for entry in
-                                                           reader.find_all(board, minimum_weight=min_weight)]
-                if not entries:
-                    continue
-                if normalization == "sum":
-                    sum_of_weights = sum(weight for weight, _ in entries)
-                    entries = [(weight / sum_of_weights * 100, move) for weight, move in entries]
-                elif normalization == "max":
-                    max_weight = max(weight for weight, _ in entries)
-                    entries = [(weight / max_weight * 100, move) for weight, move in entries]
-                move = get_move_from_entries(entries, selection)
+                entries = list(reader.find_all(board))
+                scalar = (sum(entry.weight for entry in entries) if normalization == "sum" and entries else
+                          max(entry.weight for entry in entries) if normalization == "max" and entries else 100)
+                min_weight = min_weight * scalar / 100
+
+                if selection == "weighted_random":
+                    move = reader.weighted_choice(board).move
+                elif selection == "uniform_random":
+                    move = reader.choice(board, minimum_weight=min_weight).move
+                elif selection == "best_move":
+                    move = reader.find(board, minimum_weight=min_weight).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found.
                 move = None
@@ -775,19 +775,6 @@ def get_book_move(board: chess.Board, game: model.Game,
             return chess.engine.PlayResult(move, None, {"string": "lichess-bot-source:Opening Book"})
 
     return no_book_move
-
-
-def get_move_from_entries(entries: list[tuple[float, chess.Move]], selection: str) -> chess.Move:
-    """Get a move from the entries."""
-    if selection == "weighted_random":
-        move = random.choices(entries, weights=[weight for weight, _ in entries])[0][1]
-    elif selection == "uniform_random":
-        move = random.choice(entries)[1]
-    elif selection == "best_move":
-        move = max(entries, key=lambda x: x[0])[1]
-    else:
-        raise ValueError(f"Unknown selection method: {selection}")
-    return move
 
 
 def get_online_move(li: lichess.Lichess, board: chess.Board, game: model.Game, online_moves_cfg: Configuration,

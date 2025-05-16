@@ -388,6 +388,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                       f"`{selection}` is not a valid `engine:{select}` value. "
                       f"Please choose from {valid_selections}.")
 
+    polyglot_section = CONFIG["engine"].get("polyglot") or {}
+    config_assert(polyglot_section.get("normalization") in ["none", "max", "sum"],
+                  f"`{polyglot_section.get('normalization')}` is not a valid choice for "
+                  f"`engine:polyglot:normalization`. Please choose from ['none', 'max', 'sum'].")
+
     lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
     quality_selections = ["best", "suggest"]
     for tb in ["syzygy", "gaviota"]:

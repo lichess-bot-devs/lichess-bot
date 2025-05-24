@@ -198,6 +198,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="max_depth", default=8)
     set_config_default(CONFIG, "engine", "polyglot", key="selection", default="weighted_random")
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
+    set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
     set_config_default(CONFIG, "challenge", key="preference", default="none")
@@ -386,6 +387,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         config_assert(selection in valid_selections,
                       f"`{selection}` is not a valid `engine:{select}` value. "
                       f"Please choose from {valid_selections}.")
+
+    polyglot_section = CONFIG["engine"].get("polyglot") or {}
+    config_assert(polyglot_section.get("normalization") in ["none", "max", "sum"],
+                  f"`{polyglot_section.get('normalization')}` is not a valid choice for "
+                  f"`engine:polyglot:normalization`. Please choose from ['none', 'max', 'sum'].")
 
     lichess_tbs_config = CONFIG["engine"].get("lichess_bot_tbs") or {}
     quality_selections = ["best", "suggest"]

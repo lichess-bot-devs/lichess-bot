@@ -622,8 +622,8 @@ def get_homemade_engine(name: str) -> type[MinimalEngine]:
     :param name: The name of the homemade engine.
     :return: The engine with this name.
     """
-    import homemade
-    from test_bot import homemade as test_homemade
+    import homemade  # noqa: PLC0415
+    from test_bot import homemade as test_homemade  # noqa: PLC0415
     engine: type[MinimalEngine]
     if name.endswith(test_suffix):  # Test only.
         engine = getattr(test_homemade, name.removesuffix(test_suffix))

@@ -98,7 +98,7 @@ class Challenge:
             if self.from_self:
                 return True, ""
 
-            from extra_game_handlers import is_supported_extra
+            from extra_game_handlers import is_supported_extra  # noqa: PLC0415
 
             allowed_opponents: list[str] = list(filter(None, config.allow_list)) or [self.challenger.name]
             decline_reason = (self.decline_due_to(config.accept_bot or not self.challenger.is_bot, "noBot")

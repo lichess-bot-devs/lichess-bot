@@ -36,8 +36,7 @@ def read_daily_challenges() -> DAILY_TIMERS_TYPE:
 def write_daily_challenges(daily_challenges: DAILY_TIMERS_TYPE) -> None:
     """Write the challenges we have created in the past 24 hours to a text file."""
     with open(daily_challenges_file_name, "w") as file:
-        for timer in daily_challenges:
-            file.write(timer.starting_timestamp(timestamp_format))
+        file.writelines(timer.starting_timestamp(timestamp_format) for timer in daily_challenges)
 
 
 class Matchmaking:

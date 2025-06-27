@@ -929,7 +929,8 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     min_time = seconds(opening_explorer_cfg.min_time)
     max_time = seconds(opening_explorer_cfg.max_time)
     source = opening_explorer_cfg.source
-    if not opening_explorer_cfg.enabled or time_left < min_time or time_left > max_time or source == "master" and board.uci_variant != "chess":
+    if (not opening_explorer_cfg.enabled or time_left < min_time or time_left > max_time or source == "master"
+            and board.uci_variant != "chess"):
         return None, {}
 
     move = None

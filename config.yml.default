@@ -46,11 +46,13 @@ engine:                            # Engine settings.
     chessdb_book:
       enabled: false               # Whether or not to use chessdb book.
       min_time: 20                 # Minimum time (in seconds) to use chessdb book.
+      max_time: 10800              # Maximum time (in seconds) to use chessdb book.
       move_quality: "good"         # One of "all", "good", "best".
       min_depth: 20                # Only for move_quality: "best".
     lichess_cloud_analysis:
       enabled: false               # Whether or not to use lichess cloud analysis.
       min_time: 20                 # Minimum time (in seconds) the bot must have to use cloud analysis.
+      max_time: 10800              # Maximum time (in seconds) the bot must have to use cloud analysis.
       move_quality: "best"         # One of "good", "best".
       max_score_difference: 50     # Only for move_quality: "good". The maximum score difference (in cp) between the best move and the other moves.
       min_depth: 20
@@ -58,6 +60,7 @@ engine:                            # Engine settings.
     lichess_opening_explorer:
       enabled: false
       min_time: 20
+      max_time: 10800              # Maximum time (in seconds) the bot must have to use the lichess opening explorer.
       source: "masters"            # One of "lichess", "masters", "player"
       player_name: ""              # The lichess username. Leave empty for the bot's username to be used. Used only when source is "player".
       sort: "winrate"              # One of "winrate", "games_played"
@@ -65,6 +68,7 @@ engine:                            # Engine settings.
     online_egtb:
       enabled: false               # Whether or not to enable online endgame tablebases.
       min_time: 20                 # Minimum time (in seconds) the bot must have to use online EGTBs.
+      max_time: 10800              # Maximum time (in seconds) the bot must have to use online EGTBs.
       max_pieces: 7                # Maximum number of pieces on the board to use endgame tablebases.
       source: "lichess"            # One of "lichess", "chessdb".
       move_quality: "best"         # One of "best" or "suggest" (it takes all the moves with the same WDL and tells the engine to only consider these; will move instantly if there is only 1 "good" move).

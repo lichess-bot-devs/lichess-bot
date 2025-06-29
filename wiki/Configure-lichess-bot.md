@@ -103,7 +103,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
     - Configurations common to all:
         - `enabled`: Whether to use the database at all.
         - `min_time`: The minimum time in seconds on the game clock necessary to allow the online database to be consulted.
-        - `max_time`: The Maximum starting game time in seconds on the game clock necessary to allow the online database to be consulted.
+        - `max_time`: The maximum starting game time in seconds on the game clock necessary to allow the online database to be consulted.
         - `move_quality`: Choice of `"all"` (`chessdb_book` only), `"good"` (all except `online_egtb`), `"best"`, or `"suggest"` (`online_egtb` only).
             - `all`: Choose a random move from all legal moves.
             - `best`: Choose only the highest scoring move.

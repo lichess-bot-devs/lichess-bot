@@ -836,7 +836,7 @@ def get_chessdb_move(li: lichess.Lichess, board: chess.Board, game: model.Game,
     time_left = msec(game.state[wbtime(board)])
     min_time = seconds(chessdb_cfg.min_time)
     max_time = seconds(chessdb_cfg.max_time)
-    if not use_chessdb or time_left < min_time or time_left > max_time or board.uci_variant != "chess":
+    if not use_chessdb or time_left < min_time or game.clock_initial > max_time or board.uci_variant != "chess":
         return None, {}
 
     move = None
@@ -875,7 +875,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
     min_time = seconds(lichess_cloud_cfg.min_time)
     max_time = seconds(lichess_cloud_cfg.max_time)
     use_lichess_cloud = lichess_cloud_cfg.enabled
-    if not use_lichess_cloud or time_left < min_time or time_left > max_time:
+    if not use_lichess_cloud or time_left < min_time or game.clock_initial > max_time:
         return None, {}
 
     move = None
@@ -929,7 +929,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     min_time = seconds(opening_explorer_cfg.min_time)
     max_time = seconds(opening_explorer_cfg.max_time)
     source = opening_explorer_cfg.source
-    if (not opening_explorer_cfg.enabled or time_left < min_time or time_left > max_time or source == "master"
+    if (not opening_explorer_cfg.enabled or time_left < min_time or game.clock_initial > max_time or source == "master"
             and board.uci_variant != "chess"):
         return None, {}
 
@@ -988,7 +988,7 @@ def get_online_egtb_move(li: lichess.Lichess, board: chess.Board, game: model.Ga
     time_left = game.state[wbtime(board)]
     if (not use_online_egtb
             or msec(time_left) < minimum_time
-            or msec(time_left) > maximum_time
+            or game.clock_initial > maximum_time
             or board.uci_variant not in ["chess", "antichess", "atomic"]
             and source == "lichess"
             or board.uci_variant != "chess"

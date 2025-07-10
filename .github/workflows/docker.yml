@@ -76,12 +76,10 @@ jobs:
             ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}
 
       - name: push README to Dockerhub
-        uses: christian-korneck/update-container-description-action@v1
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_PASS: ${{ secrets.DOCKER_TOKEN }}
+        uses: peter-evans/dockerhub-description@v4
         with:
-          destination_container_repo: lichessbotdevs/lichess-bot
-          provider: dockerhub
-          short_description: 'A bridge between Lichess API and chess engines'
-          readme_file: './wiki/How-to-use-the-Docker-image.md'
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: lichessbotdevs/lichess-bot
+          short-description: 'A bridge between Lichess API and chess engines'
+          readme-filepath: './wiki/How-to-use-the-Docker-image.md'

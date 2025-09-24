@@ -75,6 +75,10 @@ def is_final(exception: Exception) -> bool:
 
 def backoff_handler(details: BackoffDetails) -> None:
     """Log exceptions inside functions with the backoff decorator."""
+    args = details["args"]
+    kwargs = details["kwargs"]
+    if "token_test" in args:
+        kwargs["data"] = "<token redacted>"
     logger.debug("Backing off {wait:0.1f} seconds after {tries} tries "
                  "calling function {target} with args {args} and kwargs {kwargs}".format(**details))
     logger.debug(f"Exception: {traceback.format_exc()}")

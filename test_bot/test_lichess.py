@@ -40,6 +40,6 @@ def test_lichess() -> None:
                                      "classical": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 0},
                                      "correspondence": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 0},
                                      "rapid": {"games": 993, "prog": -80, "prov": True, "rating": 2363, "rd": 0}},
-                           "playTime": {"total": 4111502, "tv": 1582068, 'human': 534785}, "profile": {},
+                           "playTime": {"total": 4111502, "tv": 1582068, "human": 534785}, "profile": {},
                            "seenAt": 1669272254317, "title": "BOT", "tosViolation": True,
                            "url": "https://lichess.org/@/lichapibot", "username": "lichapibot"}

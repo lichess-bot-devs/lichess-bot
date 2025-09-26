@@ -235,7 +235,17 @@ class Lichess:
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
         if is_new_rate_limit(response):
-            self.set_rate_limit_delay(path_template, seconds(60))
+            delay = seconds(60)
+            try:
+                if endpoint_name == "challenge":
+                    body = response.json()
+                    rate_limit = body.get("ratelimit", {})
+                    key = rate_limit.get("key", "")
+                    if key == "bot.vsBot.day":
+                        delay = seconds(rate_limit["seconds"])
+            except requests.exceptions.JSONDecodeError:
+                pass
+            self.set_rate_limit_delay(path_template, delay)
 
         if raise_for_status:
             response.raise_for_status()

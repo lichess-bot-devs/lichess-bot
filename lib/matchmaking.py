@@ -105,7 +105,8 @@ class Matchmaking:
             challenge_id = response.get("id", "")
             if not challenge_id:
                 logger.error(response)
-                self.add_to_block_list(username)
+                if "error" not in response:
+                    self.add_to_block_list(username)
                 self.show_earliest_challenge_time()
             return challenge_id
         except Exception as e:

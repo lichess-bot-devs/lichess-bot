@@ -1,8 +1,7 @@
 """A timer for use in lichess-bot."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from time import perf_counter
-from typing import Optional
 
 
 def msec(time_in_msec: float) -> timedelta:
@@ -72,8 +71,7 @@ class Timer:
     the timer was created or since it was last reset.
     """
 
-    def __init__(self, duration: timedelta = zero_seconds,
-                 backdated_timestamp: Optional[datetime] = None) -> None:
+    def __init__(self, duration: timedelta = zero_seconds) -> None:
         """
         Start the timer.
 
@@ -82,9 +80,6 @@ class Timer:
         """
         self.duration = duration
         self.starting_time = perf_counter()
-
-        if backdated_timestamp:
-            self.starting_time -= to_seconds(datetime.now() - backdated_timestamp)
 
     def is_expired(self) -> bool:
         """Check if a timer is expired."""
@@ -101,7 +96,3 @@ class Timer:
     def time_until_expiration(self) -> timedelta:
         """How much time is left until it expires."""
         return max(seconds(0), self.duration - self.time_since_reset())
-
-    def starting_timestamp(self, timestamp_format: str) -> str:
-        """When the timer started."""
-        return (datetime.now() - self.time_since_reset()).strftime(timestamp_format)

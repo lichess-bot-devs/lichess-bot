@@ -12,7 +12,6 @@ from lib.config import Configuration
 from typing import Optional, Union
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
-DAILY_TIMERS_TYPE = list[Timer]
 
 logger = logging.getLogger(__name__)
 

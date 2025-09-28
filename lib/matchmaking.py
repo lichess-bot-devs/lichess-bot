@@ -28,6 +28,7 @@ class Matchmaking:
         self.last_challenge_created_delay = Timer(seconds(25))  # Challenges expire after 20 seconds.
         self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
         self.last_user_profile_update_time = Timer(minutes(5))
+        self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
         self.rate_limit_timer = Timer()
 
         # Maximum time between challenges, even if there are active games
@@ -51,12 +52,13 @@ class Matchmaking:
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         time_has_passed = self.last_game_ended_delay.is_expired() and self.rate_limit_timer.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
+        min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.discard_challenge(self.challenge_id)
             self.show_earliest_challenge_time()
-        return bool(matchmaking_enabled and (time_has_passed or challenge_expired))
+        return bool(matchmaking_enabled and (time_has_passed or challenge_expired)) and min_wait_time_passed
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
@@ -242,9 +244,10 @@ class Matchmaking:
     def show_earliest_challenge_time(self) -> None:
         """Show the earliest that the next challenge will be created."""
         if self.matchmaking_cfg.allow_matchmaking:
-            game_end_delay = self.last_game_ended_delay.time_until_expiration()
+            postgame_timeout = self.last_game_ended_delay.time_until_expiration()
+            time_to_next_challenge = self.min_wait_time - self.last_challenge_created_delay.time_since_reset()
             rate_limit_delay = self.rate_limit_timer.time_until_expiration()
-            time_left = max(game_end_delay, rate_limit_delay)
+            time_left = max(postgame_timeout, time_to_next_challenge, rate_limit_delay)
             earliest_challenge_time = datetime.datetime.now() + time_left
             logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%c')}")
 

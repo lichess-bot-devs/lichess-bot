@@ -7,7 +7,7 @@ from lib import model
 from lib.timer import Timer, seconds, minutes, years
 from collections import defaultdict
 from collections.abc import Sequence
-from lib.lichess import Lichess
+from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
 from typing import Optional, Union
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType
@@ -28,6 +28,7 @@ class Matchmaking:
         self.last_challenge_created_delay = Timer(seconds(25))  # Challenges expire after 20 seconds.
         self.last_game_ended_delay = Timer(minutes(self.matchmaking_cfg.challenge_timeout))
         self.last_user_profile_update_time = Timer(minutes(5))
+        self.rate_limit_timer = Timer()
 
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
@@ -48,7 +49,7 @@ class Matchmaking:
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
-        time_has_passed = self.last_game_ended_delay.is_expired()
+        time_has_passed = self.last_game_ended_delay.is_expired() and self.rate_limit_timer.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
         if challenge_expired:
             self.li.cancel(self.challenge_id)
@@ -82,11 +83,15 @@ class Matchmaking:
                     self.add_to_block_list(username)
                 self.show_earliest_challenge_time()
             return challenge_id
+        except RateLimitedError as e:
+            logger.warning(e)
+            self.rate_limit_timer = Timer(e.timeout)
         except Exception as e:
-            logger.warning("Could not create challenge")
             logger.debug(e, exc_info=e)
-            self.show_earliest_challenge_time()
-            return ""
+
+        logger.warning("Could not create challenge")
+        self.show_earliest_challenge_time()
+        return ""
 
     def perf(self) -> dict[str, PerfType]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""
@@ -237,9 +242,11 @@ class Matchmaking:
     def show_earliest_challenge_time(self) -> None:
         """Show the earliest that the next challenge will be created."""
         if self.matchmaking_cfg.allow_matchmaking:
-            time_left = self.last_game_ended_delay.time_until_expiration()
+            game_end_delay = self.last_game_ended_delay.time_until_expiration()
+            rate_limit_delay = self.rate_limit_timer.time_until_expiration()
+            time_left = max(game_end_delay, rate_limit_delay)
             earliest_challenge_time = datetime.datetime.now() + time_left
-            logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%X')}")
+            logger.info(f"Next challenge will be created after {earliest_challenge_time.strftime('%c')}")
 
     def add_to_block_list(self, username: str) -> None:
         """Add a bot to the blocklist."""

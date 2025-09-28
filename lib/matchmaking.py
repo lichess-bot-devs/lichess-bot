@@ -58,7 +58,7 @@ class Matchmaking:
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.discard_challenge(self.challenge_id)
             self.show_earliest_challenge_time()
-        return bool(matchmaking_enabled and (time_has_passed or challenge_expired)) and min_wait_time_passed
+        return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:

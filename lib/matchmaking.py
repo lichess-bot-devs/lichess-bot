@@ -9,8 +9,8 @@ from collections import defaultdict
 from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
-from typing import Optional, Union
-from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType
+from typing import Optional, Union, cast
+from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
@@ -80,10 +80,7 @@ class Matchmaking:
             response = self.li.challenge(username, params)
             challenge_id = response.get("id", "")
             if not challenge_id:
-                logger.error(response)
-                if "error" not in response:
-                    self.add_to_block_list(username)
-                self.show_earliest_challenge_time()
+                self.handle_challenge_error_response(response, username)
             return challenge_id
         except RateLimitedError as e:
             logger.warning(e)
@@ -94,6 +91,19 @@ class Matchmaking:
         logger.warning("Could not create challenge")
         self.show_earliest_challenge_time()
         return ""
+
+    def handle_challenge_error_response(self, response: ChallengeType, username: str) -> None:
+        """If a challenge fails, print the error and adjust the challenge requirements in response."""
+        logger.error(response)
+        if "error" in response:
+            rate_limit = cast(dict[str, str], response.get("ratelimit", {}))
+            key = rate_limit.get("key", "")
+            if key == "bot.vsBot.day":
+                self.rate_limit_timer = Timer(seconds(float(rate_limit["seconds"])))
+        else:
+            self.add_to_block_list(username)
+        self.show_earliest_challenge_time()
+
 
     def perf(self) -> dict[str, PerfType]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""

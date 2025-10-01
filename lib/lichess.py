@@ -61,6 +61,11 @@ stop = Stop()
 class RateLimitedError(RuntimeError):
     """Exception raised when we are rate limited (status code 429)."""
 
+    def __init__(self, message: str, timeout: datetime.timedelta) -> None:
+        """Create a rate-limited error with the time left until the rate limit expires."""
+        super().__init__(message)
+        self.timeout = timeout
+
 
 def is_new_rate_limit(response: requests.models.Response) -> bool:
     """Check if the status code is 429, which means that we are rate limited."""
@@ -236,7 +241,17 @@ class Lichess:
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
         if is_new_rate_limit(response):
-            self.set_rate_limit_delay(path_template, seconds(60))
+            delay = seconds(60)
+            try:
+                if endpoint_name == "challenge":
+                    body = response.json()
+                    rate_limit = body.get("ratelimit", {})
+                    key = rate_limit.get("key", "")
+                    if key == "bot.vsBot.day":
+                        delay = seconds(rate_limit["seconds"])
+            except requests.exceptions.JSONDecodeError:
+                pass
+            self.set_rate_limit_delay(path_template, delay)
 
         if raise_for_status:
             response.raise_for_status()
@@ -254,7 +269,8 @@ class Lichess:
         path_template = ENDPOINTS[endpoint_name]
         if self.is_rate_limited(path_template):
             raise RateLimitedError(f"{path_template} is rate-limited. "
-                                   f"Will retry in {sec_str(self.rate_limit_time_left(path_template))} seconds.")
+                                   f"Will retry in {sec_str(self.rate_limit_time_left(path_template))} seconds.",
+                                   self.rate_limit_time_left(path_template))
         return path_template
 
     def set_rate_limit_delay(self, path_template: str, delay_time: datetime.timedelta) -> None:

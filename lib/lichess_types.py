@@ -188,6 +188,7 @@ class ChallengeType(TypedDict, total=False):
     declineReason: str
     declineReasonKey: str
     initialFen: str
+    error: dict[str, Union[str, dict[str, str]]]
 
 
 class EventType(TypedDict, total=False):

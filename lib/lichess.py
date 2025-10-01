@@ -113,13 +113,14 @@ class Lichess:
 
         # Confirm that the OAuth token has the proper permission to play on lichess
         token_response = cast(TOKEN_TESTS_TYPE, self.api_post("token_test", data=token))
-        token_info = token_response[token]
+        token_info = token_response.get(token)
 
         if not token_info:
-            raise RuntimeError("Token in config file is not recognized by lichess. "
-                               "Please check that it was copied correctly into your configuration file.")
+            raise RuntimeError("There was an error in retrieving information about the bot's token. "
+                               "Please check that it was copied correctly into your configuration file "
+                               "and try again.")
 
-        scopes = token_info["scopes"]
+        scopes = token_info.get("scopes", "")
         if "bot:play" not in scopes.split(","):
             raise RuntimeError("Please use an API access token for your bot that "
                                'has the scope "Play games with the bot API (bot:play)". '

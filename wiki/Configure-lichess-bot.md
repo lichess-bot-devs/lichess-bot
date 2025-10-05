@@ -6,7 +6,7 @@ There are many possible options within `config.yml` for configuring lichess-bot.
 Lichess allows a bot to play 100 games against other bots in a single day (games against humans are unlimited). Several settings below can influence how quickly this game allowance is used up. These include the following:
 - `challenge:`
   - `concurrency`: Playing multiple simultaneous games will use up games faster.
-  - `accept bot` and `only_bot`: Only bot games use up the allotted games.
+  - `accept_bot` and `only_bot`: Games against other bots use up the allotted games.
   - `min_increment`, `min_base`, and `time_controls`: Shorter games use up the allotted games faster.
   - `recent_bot_challenge_age`, `max_recent_bot_challenges`, `max_simultaneous_games_per_user`: To prevent a single bot from using up all your bot's games.
 - `matchmaking:`

@@ -9,7 +9,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
-from typing import Optional, Union, cast
+from typing import Optional, Union
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
@@ -96,14 +96,17 @@ class Matchmaking:
         """If a challenge fails, print the error and adjust the challenge requirements in response."""
         logger.error(response)
         if "error" in response:
-            rate_limit = cast(dict[str, str], response.get("ratelimit", {}))
+            rate_limit = response.get("ratelimit", {})
             key = rate_limit.get("key", "")
             if key == "bot.vsBot.day":
-                self.rate_limit_timer = Timer(seconds(float(rate_limit["seconds"])))
+                timeout = seconds(float(rate_limit["seconds"]))
+                if response["error"].startswith(f"{username} played 100 games"):
+                    self.add_challenge_filter(username, "", timeout)
+                else:
+                    self.rate_limit_timer = Timer(timeout)
         else:
             self.add_challenge_filter(username, "")
         self.show_earliest_challenge_time()
-
 
     def perf(self) -> dict[str, PerfType]:
         """Get the bot's rating in every variant. Bullet, blitz, rapid etc. are considered different variants."""

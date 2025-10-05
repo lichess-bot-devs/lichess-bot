@@ -255,6 +255,9 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `allow_during_games`: Whether to issue new challenges while the bot is already playing games. If true, no more than 10 minutes will pass between matchmaking challenges.
   - `challenge_variant`: The variant for the challenges. If set to `random` a variant from the ones enabled in `challenge.variants` will be chosen at random.
   - `challenge_timeout`: The time (in minutes) the bot has to be idle before it creates a challenge.
+
+  Bots are limited to playing 100 games against other bots per day, so setting `challenge_timeout` to a small value will result in this limit being reached quickly. There is no limit to the number of games a bot can play against humans.
+
   - `challenge_initial_time`: A list of initial times (in seconds and to be chosen at random) for the challenges.
   - `challenge_increment`: A list of increments (in seconds and to be chosen at random) for the challenges.
   - `challenge_days`: A list of number of days for a correspondence challenge (to be chosen at random).

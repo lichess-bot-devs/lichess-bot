@@ -332,7 +332,7 @@ class Matchmaking:
             logger.warning(f"Unknown decline reason received: {reason_key}")
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         self.add_challenge_filter(opponent.name, game_problem)
-        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game.")
+        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
 
         self.show_earliest_challenge_time()
 

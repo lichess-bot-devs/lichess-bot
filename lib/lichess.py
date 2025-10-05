@@ -268,9 +268,9 @@ class Lichess:
         """
         path_template = ENDPOINTS[endpoint_name]
         if self.is_rate_limited(path_template):
-            raise RateLimitedError(f"{path_template} is rate-limited. "
-                                   f"Will retry in {sec_str(self.rate_limit_time_left(path_template))} seconds.",
-                                   self.rate_limit_time_left(path_template))
+            time_left = self.rate_limit_time_left(path_template)
+            raise RateLimitedError(
+                f"{path_template} is rate-limited. Will retry in {sec_str(time_left)} seconds.", time_left)
         return path_template
 
     def set_rate_limit_delay(self, path_template: str, delay_time: datetime.timedelta) -> None:

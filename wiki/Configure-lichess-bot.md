@@ -1,6 +1,19 @@
 # Configuring lichess-bot
 There are many possible options within `config.yml` for configuring lichess-bot.
 
+## Note on daily game limits
+
+Lichess allows a bot to play 100 games against other bots in a single day (games against humans are unlimited). Several settings below can influence how quickly this game allowance is used up. These include the following:
+- `challenge:`
+  - `concurrency`: Playing multiple simultaneous games will use up games faster.
+  - `accept_bot` and `only_bot`: Games against other bots use up the allotted games.
+  - `min_increment`, `min_base`, and `time_controls`: Shorter games use up the allotted games faster.
+  - `recent_bot_challenge_age`, `max_recent_bot_challenges`, `max_simultaneous_games_per_user`: To prevent a single bot from using up all your bot's games.
+- `matchmaking:`
+  - `allow_during_games`: Starting simultaneous games uses up games faster.
+  - `challenge_timeout`: Longer timeouts between games will spread out games over a day.
+  - `challenge_initial_time` and `challenge_increment`: Shorter games use up the allotted games faster.
+
 ## Engine options
 - `interpreter`: Specify whether your engine requires an interpreter to run (e.g. `java`, `python`).
 - `interpreter_options`: A list of options passed to the interpreter (e.g. `-jar` for `java`).

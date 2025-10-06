@@ -5,6 +5,7 @@ import logging
 import datetime
 import chess
 from enum import Enum
+from lib.blocklist import OnlineBlocklist
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
 from collections import defaultdict, Counter
@@ -107,7 +108,7 @@ class Challenge:
         return "" if requirement_met else decline_reason
 
     def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]],
-                     opponent_engagements: Counter[str]) -> tuple[bool, str]:
+                     opponent_engagements: Counter[str], online_block_list: OnlineBlocklist) -> tuple[bool, str]:
         """Whether the challenge is supported."""
         try:
             if self.from_self:
@@ -122,6 +123,7 @@ class Challenge:
                               or self.decline_due_to(self.is_supported_variant(config), "variant")
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
+                              or self.decline_due_to(self.challenger.name not in online_block_list, "generic")
                               or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")
                               or self.decline_due_to(self.is_supported_recent(config, recent_bot_challenges), "later")
                               or self.decline_due_to(opponent_engagements[self.challenger.name]

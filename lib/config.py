@@ -8,6 +8,7 @@ import requests
 from abc import ABCMeta
 from typing import Any, Union, ItemsView, Callable
 from lib.lichess_types import CONFIG_DICT_TYPE, FilterType
+from lib.timer import minutes, days
 
 logger = logging.getLogger(__name__)
 
@@ -342,6 +343,11 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
                     "no challenges being created.")
         config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,
                     "matchmaking.opponent_rating_difference < 0 will result in no challenges being created.")
+        max_games_per_day = 100
+        game_timeout = minutes(matchmaking["challenge_timeout"])
+        config_warn(game_timeout*max_games_per_day >= days(1),
+                    f"A bot is only allowed to play {max_games_per_day} games per day against other bots. Please check your "
+                    "config file to make sure your bot won't use up all its allotted games quickly.")
 
     pgn_directory = CONFIG["pgn_directory"]
     in_docker = os.environ.get("LICHESS_BOT_DOCKER")

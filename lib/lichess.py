@@ -270,22 +270,19 @@ class Lichess:
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
-        delay = None
         bot_is_rate_limited = is_bot_rate_limit(response, endpoint_name)
         opponent_is_rate_limited = is_opponent_rate_limit(response, endpoint_name)
         if bot_is_rate_limited or opponent_is_rate_limited:
-            body = response.json()
-            delay = get_challenge_timeout(body)
             challenge_response: ChallengeType = response.json()
+            delay = cast(datetime.timedelta, get_challenge_timeout(challenge_response))
+            self.set_rate_limit_delay(path_template, delay)
             challenge_response["bot_is_rate_limited"] = bot_is_rate_limited
             challenge_response["opponent_is_rate_limited"] = opponent_is_rate_limited
-            challenge_response["rate_limit_timeout"] = cast(datetime.timedelta, delay)
+            challenge_response["rate_limit_timeout"] = delay
             return challenge_response
-        elif is_new_rate_limit(response):
-            delay = seconds(60)
 
-        if delay:
-            self.set_rate_limit_delay(path_template, delay)
+        if is_new_rate_limit(response):
+            self.set_rate_limit_delay(path_template, seconds(60))
 
         if raise_for_status:
             response.raise_for_status()

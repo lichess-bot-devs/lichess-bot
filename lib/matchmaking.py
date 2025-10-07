@@ -7,7 +7,7 @@ from lib import model
 from lib.timer import Timer, days, seconds, minutes, years
 from collections import defaultdict
 from collections.abc import Sequence
-from lib.lichess import Lichess, RateLimitedError
+from lib.lichess import Lichess, RateLimitedError, get_challenge_timeout
 from lib.config import Configuration
 from typing import Optional, Union
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
@@ -96,10 +96,8 @@ class Matchmaking:
         """If a challenge fails, print the error and adjust the challenge requirements in response."""
         logger.error(response)
         if "error" in response:
-            rate_limit = response.get("ratelimit", {})
-            key = rate_limit.get("key", "")
-            if key == "bot.vsBot.day":
-                timeout = seconds(float(rate_limit["seconds"]))
+            timeout = get_challenge_timeout(response)
+            if timeout:
                 if response["error"].startswith(f"{username} played 100 games"):
                     self.add_challenge_filter(username, "", timeout)
                 else:

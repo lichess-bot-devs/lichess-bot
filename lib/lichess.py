@@ -72,6 +72,15 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
     return response.status_code == 429
 
 
+def get_challenge_timeout(challenge_response: ChallengeType) -> Optional[datetime.timedelta]:
+    """Return the timeout in a challenge response if the bot or the opponent cannot play another game."""
+    rate_limit = challenge_response.get("ratelimit", {})
+    key = rate_limit.get("key", "")
+    if key == "bot.vsBot.day":
+        return seconds(float(rate_limit["seconds"]))
+    return None
+
+
 def is_final(exception: Exception) -> bool:
     """If `is_final` returns True then we won't retry."""
     return (isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code < 500
@@ -245,10 +254,7 @@ class Lichess:
             try:
                 if endpoint_name == "challenge":
                     body = response.json()
-                    rate_limit = body.get("ratelimit", {})
-                    key = rate_limit.get("key", "")
-                    if key == "bot.vsBot.day":
-                        delay = seconds(rate_limit["seconds"])
+                    delay = get_challenge_timeout(body) or delay
             except requests.exceptions.JSONDecodeError:
                 pass
             self.set_rate_limit_delay(path_template, delay)

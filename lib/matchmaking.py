@@ -7,9 +7,9 @@ from lib import model
 from lib.timer import Timer, days, seconds, minutes, years
 from collections import defaultdict
 from collections.abc import Sequence
-from lib.lichess import Lichess, RateLimitedError, get_challenge_timeout
+from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
-from typing import Optional, Union
+from typing import Optional, Union, cast
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
 MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
 
@@ -95,13 +95,11 @@ class Matchmaking:
     def handle_challenge_error_response(self, response: ChallengeType, username: str) -> None:
         """If a challenge fails, print the error and adjust the challenge requirements in response."""
         logger.error(response)
-        if "error" in response:
-            timeout = get_challenge_timeout(response)
-            if timeout:
-                if response["error"].startswith(f"{username} played 100 games"):
-                    self.add_challenge_filter(username, "", timeout)
-                else:
-                    self.rate_limit_timer = Timer(timeout)
+        if response.get("bot_is_rate_limited"):
+            timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
+            self.rate_limit_timer = Timer(timeout)
+        elif response.get("opponent_is_rate_limited"):
+            self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
         else:
             self.add_challenge_filter(username, "")
         self.show_earliest_challenge_time()

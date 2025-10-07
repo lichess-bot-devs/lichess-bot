@@ -4,6 +4,7 @@ from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
 from queue import Queue
 import logging
+import datetime
 from enum import Enum
 from types import TracebackType
 
@@ -190,6 +191,9 @@ class ChallengeType(TypedDict, total=False):
     initialFen: str
     error: str
     ratelimit: dict[str, Union[str, int]]
+    bot_is_rate_limited: bool
+    opponent_is_rate_limited: bool
+    rate_limit_timeout: datetime.timedelta
 
 
 class EventType(TypedDict, total=False):

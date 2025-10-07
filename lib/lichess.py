@@ -275,7 +275,8 @@ class Lichess:
         if bot_is_rate_limited or opponent_is_rate_limited:
             challenge_response: ChallengeType = response.json()
             delay = cast(datetime.timedelta, get_challenge_timeout(challenge_response))
-            self.set_rate_limit_delay(path_template, delay)
+            if bot_is_rate_limited:
+                self.set_rate_limit_delay(path_template, delay)
             challenge_response["bot_is_rate_limited"] = bot_is_rate_limited
             challenge_response["opponent_is_rate_limited"] = opponent_is_rate_limited
             challenge_response["rate_limit_timeout"] = delay

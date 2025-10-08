@@ -71,9 +71,9 @@ def is_new_rate_limit(response: requests.models.Response) -> bool:
     """Check if the status code is 429, which means that we are rate limited."""
     return response.status_code == 429
 
-def is_daily_game_rate_limit(response: requests.models.Response, endpoint_name: str, rate_limit_status_code: int) -> bool:
+def is_daily_game_rate_limit(response: requests.models.Response, rate_limit_status_code: int) -> bool:
     """Check if response to challenge is a rate limit, either of the bot or the opponent."""
-    if response.status_code != rate_limit_status_code or endpoint_name != "challenge":
+    if response.status_code != rate_limit_status_code:
         return False
 
     try:
@@ -83,14 +83,14 @@ def is_daily_game_rate_limit(response: requests.models.Response, endpoint_name: 
         return False
 
 
-def is_opponent_rate_limit(response: requests.models.Response, endpoint_name: str) -> bool:
+def is_opponent_rate_limit(response: requests.models.Response) -> bool:
     """Check if response to a challenge is 400, which means opponent is rate limited."""
-    return is_daily_game_rate_limit(response, endpoint_name, 400)
+    return is_daily_game_rate_limit(response, 400)
 
 
-def is_bot_rate_limit(response: requests.models.Response, endpoint_name: str) -> bool:
+def is_bot_rate_limit(response: requests.models.Response) -> bool:
     """Check if response to a challenge is 429, which means the bot is rate limited."""
-    return is_daily_game_rate_limit(response, endpoint_name, 429)
+    return is_daily_game_rate_limit(response, 429)
 
 
 def get_challenge_timeout(challenge_response: ChallengeType) -> Optional[datetime.timedelta]:
@@ -270,17 +270,8 @@ class Lichess:
         url = urljoin(self.baseUrl, path_template.format(*template_args))
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
 
-        bot_is_rate_limited = is_bot_rate_limit(response, endpoint_name)
-        opponent_is_rate_limited = is_opponent_rate_limit(response, endpoint_name)
-        if bot_is_rate_limited or opponent_is_rate_limited:
-            challenge_response: ChallengeType = response.json()
-            delay = cast(datetime.timedelta, get_challenge_timeout(challenge_response))
-            if bot_is_rate_limited:
-                self.set_rate_limit_delay(path_template, delay)
-            challenge_response["bot_is_rate_limited"] = bot_is_rate_limited
-            challenge_response["opponent_is_rate_limited"] = opponent_is_rate_limited
-            challenge_response["rate_limit_timeout"] = delay
-            return challenge_response
+        if endpoint_name == "challenge":
+            return self.handle_challenge(response)
 
         if is_new_rate_limit(response):
             self.set_rate_limit_delay(path_template, seconds(60))
@@ -304,6 +295,21 @@ class Lichess:
             raise RateLimitedError(
                 f"{path_template} is rate-limited. Will retry in {sec_str(time_left)} seconds.", time_left)
         return path_template
+
+    def handle_challenge(self, response: requests.models.Response) -> ChallengeType:
+        """Handle the response to a challenge and, if necessary, the daily game timeout."""
+        bot_is_rate_limited = is_bot_rate_limit(response)
+        opponent_is_rate_limited = is_opponent_rate_limit(response)
+        challenge_response: ChallengeType = response.json()
+        if bot_is_rate_limited or opponent_is_rate_limited:
+            delay = cast(datetime.timedelta, get_challenge_timeout(challenge_response))
+            if bot_is_rate_limited:
+                self.set_rate_limit_delay(ENDPOINTS["challenge"], delay)
+            challenge_response["bot_is_rate_limited"] = bot_is_rate_limited
+            challenge_response["opponent_is_rate_limited"] = opponent_is_rate_limited
+            challenge_response["rate_limit_timeout"] = delay
+
+        return challenge_response
 
     def set_rate_limit_delay(self, path_template: str, delay_time: datetime.timedelta) -> None:
         """

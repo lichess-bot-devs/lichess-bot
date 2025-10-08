@@ -1,4 +1,4 @@
-target-version = "py39"
+target-version = "py310"
 
 # The GitHub editor is 127 chars wide.
 line-length = 127

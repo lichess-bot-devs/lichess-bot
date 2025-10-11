@@ -18,7 +18,6 @@ from queue import Queue
 import test_bot.lichess
 from lib import config
 from lib.timer import Timer, to_seconds, seconds
-from typing import Optional
 from lib.engine_wrapper import test_suffix
 from lib.lichess_types import CONFIG_DICT_TYPE
 if "pytest" not in sys.modules:
@@ -116,8 +115,8 @@ class TrivialEngine:
         """Do nothing."""
 
 
-def lichess_org_simulator(opponent_path: Optional[str],
-                          move_queue: Queue[Optional[chess.Move]],
+def lichess_org_simulator(opponent_path: str | None,
+                          move_queue: Queue[chess.Move | None],
                           board_queue: Queue[chess.Board],
                           clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]],
                           results: Queue[bool]) -> None:
@@ -177,7 +176,7 @@ def lichess_org_simulator(opponent_path: Optional[str],
     results.put(outcome is not None and outcome.winner == chess.BLACK)
 
 
-def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: Optional[str] = None) -> bool:
+def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str | None = None) -> bool:
     """
     Start lichess-bot test with a mocked version of the lichess.org site.
 
@@ -191,7 +190,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: Opt
     manager = Manager()
     board_queue: Queue[chess.Board] = manager.Queue()
     clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]] = manager.Queue()
-    move_queue: Queue[Optional[chess.Move]] = manager.Queue()
+    move_queue: Queue[chess.Move | None] = manager.Queue()
     li = test_bot.lichess.Lichess(move_queue, board_queue, clock_queue)
 
     user_profile = li.get_profile()

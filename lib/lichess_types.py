@@ -1,5 +1,5 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, Callable, Optional, Union, TypedDict, Literal
+from typing import Any, Callable, TypedDict, Literal, TypeAlias
 from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
 from queue import Queue
@@ -8,19 +8,19 @@ import datetime
 from enum import Enum
 from types import TracebackType
 
-COMMANDS_TYPE = list[str]
-MOVE = Union[PlayResult, list[Move]]
-CORRESPONDENCE_QUEUE_TYPE = Queue[str]
-LOGGING_QUEUE_TYPE = Queue[logging.LogRecord]
-REQUESTS_PAYLOAD_TYPE = dict[str, Union[str, int, bool]]
-GO_COMMANDS_TYPE = dict[str, str]
-EGTPATH_TYPE = dict[str, str]
-OPTIONS_GO_EGTB_TYPE = dict[str, Union[str, int, bool, None, EGTPATH_TYPE, GO_COMMANDS_TYPE]]
-OPTIONS_TYPE = dict[str, Union[str, int, bool, None]]
-HOMEMADE_ARGS_TYPE = Union[Limit, bool, MOVE]
+COMMANDS_TYPE: TypeAlias = list[str]
+MOVE: TypeAlias = PlayResult | list[Move]
+CORRESPONDENCE_QUEUE_TYPE: TypeAlias = Queue[str]
+LOGGING_QUEUE_TYPE: TypeAlias = Queue[logging.LogRecord]
+REQUESTS_PAYLOAD_TYPE: TypeAlias = dict[str, str | int | bool]
+GO_COMMANDS_TYPE: TypeAlias = dict[str, str]
+EGTPATH_TYPE: TypeAlias = dict[str, str]
+OPTIONS_GO_EGTB_TYPE: TypeAlias = dict[str, str | int | bool | None | EGTPATH_TYPE | GO_COMMANDS_TYPE]
+OPTIONS_TYPE: TypeAlias = dict[str, str | int | bool | None]
+HOMEMADE_ARGS_TYPE: TypeAlias = Limit | bool | MOVE
 
 # Types that still use `Any`.
-CONFIG_DICT_TYPE = dict[str, Any]
+CONFIG_DICT_TYPE: TypeAlias = dict[str, Any]
 
 
 class PerfType(TypedDict, total=False):
@@ -97,11 +97,11 @@ class InfoStrDict(TypedDict, total=False):
     nps: int
     tbhits: int
     multipv: int
-    currmove: Union[str, Move]
+    currmove: str | Move
     currmovenumber: int
     hashfull: int
     cpuload: int
-    refutation: Union[str, dict[Move, list[Move]]]
+    refutation: str | dict[Move, list[Move]]
     currline: dict[int, list[Move]]
     ebf: float
     wdl: PovWdl
@@ -111,18 +111,19 @@ class InfoStrDict(TypedDict, total=False):
     Pv: str
 
 
-InfoDictKeys = Literal["score", "pv", "depth", "seldepth", "time", "nodes", "nps", "tbhits", "multipv", "currmove",
+InfoDictKeys: TypeAlias = Literal["score", "pv", "depth", "seldepth", "time", "nodes", "nps", "tbhits", "multipv", "currmove",
                        "currmovenumber", "hashfull", "cpuload", "refutation", "currline", "ebf", "wdl", "string",
                        "ponderpv", "Source", "Pv"]
 
 
-InfoDictValue = Union[PovScore, list[Move], int, float, str, Move, dict[Move, list[Move]], dict[int, list[Move]], PovWdl]
+InfoDictValue: TypeAlias = (PovScore | list[Move] | int | float | str | Move | dict[Move, list[Move]] |
+                            dict[int, list[Move]] | PovWdl)
 
 
 class PlayerType(TypedDict, total=False):
     """Type hint for information on a player."""
 
-    title: Optional[str]
+    title: str | None
     rating: int
     provisional: bool
     aiLevel: int
@@ -147,7 +148,7 @@ class GameType(TypedDict, total=False):
     rated: bool
     secondsLeft: int
     source: str
-    status: dict[str, Union[str, int]]
+    status: dict[str, str | int]
     speed: str
     variant: dict[str, str]
     compat: dict[str, bool]
@@ -190,7 +191,7 @@ class ChallengeType(TypedDict, total=False):
     declineReasonKey: str
     initialFen: str
     error: str
-    ratelimit: dict[str, Union[str, int]]
+    ratelimit: dict[str, str | int]
     bot_is_rate_limited: bool
     opponent_is_rate_limited: bool
     rate_limit_timeout: datetime.timedelta
@@ -202,7 +203,7 @@ class EventType(TypedDict, total=False):
     type: str
     game: GameType
     challenge: ChallengeType
-    error: Optional[str]
+    error: str | None
 
 
 class GameStateType(TypedDict, total=False):
@@ -254,8 +255,8 @@ class GameEventType(TypedDict, total=False):
     btakeback: bool
 
 
-CONTROL_QUEUE_TYPE = Queue[EventType]
-PGN_QUEUE_TYPE = Queue[Optional[EventType]]
+CONTROL_QUEUE_TYPE: TypeAlias = Queue[EventType]
+PGN_QUEUE_TYPE: TypeAlias = Queue[EventType | None]
 
 
 class PublicDataType(TypedDict, total=False):
@@ -321,11 +322,11 @@ class LichessExplorerGameType(TypedDict, total=False):
     """Type hint for a game returned by lichess explorer."""
 
     id: str
-    winner: Optional[str]
+    winner: str | None
     speed: str
     mode: str
-    black: dict[str, Union[str, int]]
-    white: dict[str, Union[str, int]]
+    black: dict[str, str | int]
+    white: dict[str, str | int]
     year: int
     month: str
 
@@ -342,8 +343,8 @@ class LichessEGTBMoveType(TypedDict):
     variant_loss: bool
     insufficient_material: bool
     dtz: int
-    precise_dtz: Optional[int]
-    dtm: Optional[int]
+    precise_dtz: int | None
+    dtm: int | None
     category: str
 
 
@@ -366,7 +367,7 @@ class OnlineMoveType(TypedDict):
     white: int
     black: int
     draws: int
-    game: Optional[LichessExplorerGameType]
+    game: LichessExplorerGameType | None
 
     # lichess egtb
     # uci: str  (duplicate)
@@ -378,8 +379,8 @@ class OnlineMoveType(TypedDict):
     variant_loss: bool
     insufficient_material: bool
     dtz: int
-    precise_dtz: Optional[int]
-    dtm: Optional[int]
+    precise_dtz: int | None
+    dtm: int | None
     category: str
 
 
@@ -393,8 +394,8 @@ class OnlineType(TypedDict, total=False):
     variant_loss: bool
     insufficient_material: bool
     dtz: int
-    precise_dtz: Optional[int]
-    dtm: Optional[int]
+    precise_dtz: int | None
+    dtm: int | None
     category: str
     # moves: list[LichessEGTBMoveType]
 
@@ -405,7 +406,7 @@ class OnlineType(TypedDict, total=False):
     # moves: list[LichessExplorerMoveType]
     topGames: list[LichessExplorerGameType]
     recentGames: list[LichessExplorerGameType]
-    opening: Optional[dict[str, str]]
+    opening: dict[str, str] | None
     queuePosition: int
 
     # lichess cloud
@@ -439,7 +440,7 @@ class TokenTestType(TypedDict, total=False):
     expires: int
 
 
-TOKEN_TESTS_TYPE = dict[str, TokenTestType]
+TOKEN_TESTS_TYPE: TypeAlias = dict[str, TokenTestType]
 
 
 class _BackoffDetails(TypedDict):
@@ -459,5 +460,6 @@ class BackoffDetails(_BackoffDetails, total=False):
     value: Any  # present in the on_predicate decorator case
 
 
-ENGINE_INPUT_ARGS_TYPE = Union[None, OPTIONS_TYPE, type[BaseException], BaseException, TracebackType, Board, Limit, str, bool]
-ENGINE_INPUT_KWARGS_TYPE = Union[None, int, bool, list[Move], Opponent]
+ENGINE_INPUT_ARGS_TYPE: TypeAlias = (OPTIONS_TYPE | type[BaseException] | BaseException | TracebackType | Board | Limit |
+                                     str | bool | None)
+ENGINE_INPUT_KWARGS_TYPE: TypeAlias = int | bool | list[Move] | Opponent | None

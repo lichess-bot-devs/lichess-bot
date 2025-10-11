@@ -1,5 +1,5 @@
 ### Linux
-- **NOTE: Only Python 3.9 or later is supported!**
+- **NOTE: Only Python 3.10 or later is supported!**
 - Download the repo into lichess-bot directory.
 - Navigate to the directory in cmd/Terminal: `cd lichess-bot`.
 - Install dependencies: `apt install python3 python3-pip python3-virtualenv python3-venv`.
@@ -16,7 +16,7 @@ python3 -m pip install -r requirements.txt
 **Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)
 
 ### Mac/BSD
-- **NOTE: Only Python 3.9 or later is supported!**
+- **NOTE: Only Python 3.10 or later is supported!**
 - Install Python and other dependencies using the [homebrew package manager](https://brew.sh/):
   - ` brew install python3 virtualenv # Net-/FreeBSD users might want to install: git, python311, py311-pip and py311-virtualenv.`
 - Download the repo into lichess-bot directory.
@@ -32,7 +32,7 @@ python3 -m pip install -r requirements.txt
 **Next step**: [Create a Lichess OAuth token](https://github.com/lichess-bot-devs/lichess-bot/wiki/How-to-create-a-Lichess-OAuth-token)
 
 ### Windows
-- **NOTE: Only Python 3.9 or later is supported!**
+- **NOTE: Only Python 3.10 or later is supported!**
 - If needed, install Python:
   - [Download Python here](https://www.python.org/downloads/).
   - When installing, enable "add Python to PATH".

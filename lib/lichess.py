@@ -11,7 +11,7 @@ from collections import defaultdict
 import datetime
 import contextlib
 from lib.timer import Timer, seconds, sec_str
-from typing import Optional, Union, cast
+from typing import cast
 import chess.engine
 from lib.lichess_types import (UserProfileType, REQUESTS_PAYLOAD_TYPE, GameType, PublicDataType, OnlineType,
                        ChallengeType, TOKEN_TESTS_TYPE, BackoffDetails)
@@ -93,7 +93,7 @@ def is_bot_rate_limit(response: requests.models.Response) -> bool:
     return is_daily_game_rate_limit(response, 429)
 
 
-def get_challenge_timeout(challenge_response: ChallengeType) -> Optional[datetime.timedelta]:
+def get_challenge_timeout(challenge_response: ChallengeType) -> datetime.timedelta | None:
     """Return the timeout in a challenge response if the bot or the opponent cannot play another game."""
     rate_limit = challenge_response.get("ratelimit", {})
     key = rate_limit.get("key", "")
@@ -170,7 +170,7 @@ class Lichess:
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
     def api_get(self, endpoint_name: str, *template_args: str,
-                params: Optional[dict[str, str]] = None,
+                params: dict[str, str] | None = None,
                 stream: bool = False, timeout: int = 2) -> requests.Response:
         """
         Send a GET to lichess.org.
@@ -196,8 +196,8 @@ class Lichess:
         return response
 
     def api_get_json(self, endpoint_name: str, *template_args: str,
-                     params: Optional[dict[str, str]] = None
-                     ) -> Union[PublicDataType, UserProfileType, dict[str, list[GameType]]]:
+                     params: dict[str, str] | None = None
+                     ) -> PublicDataType | UserProfileType | dict[str, list[GameType]]:
         """
         Send a GET to the lichess.org endpoints that return a JSON.
 
@@ -207,11 +207,11 @@ class Lichess:
         :return: lichess.org's response in a dict.
         """
         response = self.api_get(endpoint_name, *template_args, params=params)
-        json_response: Union[PublicDataType, UserProfileType, dict[str, list[GameType]]] = response.json()
+        json_response: PublicDataType | UserProfileType | dict[str, list[GameType]] = response.json()
         return json_response
 
     def api_get_list(self, endpoint_name: str, *template_args: str,
-                     params: Optional[dict[str, str]] = None) -> list[UserProfileType]:
+                     params: dict[str, str] | None = None) -> list[UserProfileType]:
         """
         Send a GET to the lichess.org endpoints that return a list containing JSON.
 
@@ -225,7 +225,7 @@ class Lichess:
         return json_response
 
     def api_get_raw(self, endpoint_name: str, *template_args: str,
-                    params: Optional[dict[str, str]] = None) -> str:
+                    params: dict[str, str] | None = None) -> str:
         """
         Send a GET to lichess.org that returns plain text (UTF-8).
 
@@ -248,11 +248,11 @@ class Lichess:
     def api_post(self,
                  endpoint_name: str,
                  *template_args: str,
-                 data: Union[str, dict[str, str], None] = None,
-                 headers: Optional[dict[str, str]] = None,
-                 params: Optional[dict[str, str]] = None,
-                 payload: Optional[REQUESTS_PAYLOAD_TYPE] = None,
-                 raise_for_status: bool = True) -> Union[ChallengeType, Optional[TOKEN_TESTS_TYPE]]:
+                 data: str | dict[str, str] | None = None,
+                 headers: dict[str, str] | None = None,
+                 params: dict[str, str] | None = None,
+                 payload: REQUESTS_PAYLOAD_TYPE | None = None,
+                 raise_for_status: bool = True) -> ChallengeType | TOKEN_TESTS_TYPE | None:
         """
         Send a POST to lichess.org.
 
@@ -279,7 +279,7 @@ class Lichess:
         if raise_for_status:
             response.raise_for_status()
 
-        json_response: Union[ChallengeType, Optional[TOKEN_TESTS_TYPE]] = response.json()
+        json_response: ChallengeType | TOKEN_TESTS_TYPE | None = response.json()
         return json_response
 
     def get_path_template(self, endpoint_name: str) -> str:
@@ -443,7 +443,7 @@ class Lichess:
         """Cancel a challenge."""
         self.api_post("cancel", challenge_id, raise_for_status=False)
 
-    def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None,
+    def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
                         stream: bool = False) -> OnlineType:
         """Get an external move from online sources (chessdb or lichess.org)."""
         @backoff.on_exception(backoff.constant,

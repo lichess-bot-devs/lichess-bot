@@ -1,7 +1,6 @@
 """Test functions dedicated to time measurement and conversion."""
 
 from datetime import timedelta
-
 from lib import timer
 
 

@@ -9,9 +9,9 @@ from collections import defaultdict
 from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
-from typing import Optional, Union, cast
+from typing import cast, TypeAlias
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
-MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
+MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class Matchmaking:
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
         """Create a challenge."""
-        params: dict[str, Union[str, int, bool]] = {"rated": mode == "rated", "variant": variant}
+        params: dict[str, str | int | bool] = {"rated": mode == "rated", "variant": variant}
 
         if days:
             params["days"] = days
@@ -141,7 +141,7 @@ class Matchmaking:
             weights = [1] * len(online_bots)
         return weights
 
-    def choose_opponent(self) -> tuple[Optional[str], int, int, int, str, str]:
+    def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:
         """Choose an opponent."""
         override_choice = random.choice(self.matchmaking_cfg.overrides.keys() + [None])
         logger.info(f"Using the {override_choice or 'default'} matchmaking configuration.")
@@ -268,7 +268,7 @@ class Matchmaking:
         """Check if an opponent is in the block list to prevent future challenges."""
         return not self.should_accept_challenge(username, "")
 
-    def add_challenge_filter(self, username: str, game_aspect: str, timeout: Union[datetime.timedelta, None] = None) -> None:
+    def add_challenge_filter(self, username: str, game_aspect: str, timeout: datetime.timedelta | None = None) -> None:
         """
         Prevent creating another challenge for a timeout when an opponent has declined a challenge.
 

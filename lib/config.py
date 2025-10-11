@@ -6,7 +6,7 @@ import logging
 import math
 import requests
 from abc import ABCMeta
-from typing import Any, Union, ItemsView, Callable
+from typing import Any, ItemsView, Callable
 from lib.lichess_types import CONFIG_DICT_TYPE, FilterType
 from lib.timer import minutes, days
 
@@ -47,7 +47,7 @@ class Configuration:
         """:return: All of the keys in this config."""
         return list(self.config.keys())
 
-    def __or__(self, other: Union[Configuration, CONFIG_DICT_TYPE]) -> Configuration:
+    def __or__(self, other: Configuration | CONFIG_DICT_TYPE) -> Configuration:
         """Create a copy of this configuration that is updated with values from the parameter."""
         other_dict = other.config if isinstance(other, Configuration) else other
         return Configuration(self.config | other_dict)

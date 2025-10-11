@@ -11,7 +11,7 @@ from copy import deepcopy
 from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout, RequestException
 from http.client import RemoteDisconnected
 from lib.lichess_types import OnlineType, GameEventType
-from typing import Optional, Union, cast
+from typing import cast
 from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values
 from lib.model import Game
@@ -26,7 +26,7 @@ class MockLichess(Lichess):
         self.max_retries = 3
         self.other_session = requests.Session()
 
-    def online_book_get(self, path: str, params: Optional[dict[str, Union[str, int]]] = None,
+    def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
                         stream: bool = False) -> OnlineType:
         """Get an external move from online sources (chessdb or lichess.org)."""
 

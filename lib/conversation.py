@@ -6,7 +6,8 @@ from lib.lichess import Lichess
 from lib.lichess_types import GameEventType
 from collections.abc import Sequence
 from lib.timer import seconds
-MULTIPROCESSING_LIST_TYPE = Sequence[model.Challenge]
+from typing import TypeAlias
+MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
 

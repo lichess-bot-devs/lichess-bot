@@ -24,6 +24,7 @@ ignore = [
     "N803", # Argument name should be lowercase
     "N806", # Variable in function should be lowercase
     "PERF203", # try-except within a loop incurs performance overhead
+    "PLC0415", # `import` should be at the top-level of a file
     "PLR0913", # Too many arguments in function definition
     "PLR0915", # Too many statements
     "PLR2004", # Magic value used in comparison, consider replacing `20` with a constant variable
@@ -36,14 +37,12 @@ ignore = [
     "S101", # Use of assert detected
     "S113", # Probable use of `requests` call without timeout
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "SIM108", #Use ternary operator instead of `if`-`else`-block
+    "SIM108", # Use ternary operator instead of `if`-`else`-block
     "TC001", # Move application import into a type-checking block
     "TC003", # Move standard library import into a type-checking block
     "TC006", # Add quotes to type expression in `typing.cast()`
     "TRY", # Try-except suggestions
-    "UP007", # Use `X | Y` for type annotations
     "UP035", # Import from collections.abc instead of typing
-    "UP045" # Use `X | None` for type annotations
 ]
 
 [lint.mccabe]

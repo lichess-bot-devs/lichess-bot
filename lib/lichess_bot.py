@@ -39,10 +39,10 @@ from http.client import RemoteDisconnected
 from queue import Empty
 from multiprocessing.pool import Pool
 from collections import Counter
-from typing import Optional, Union, TypedDict, cast
+from typing import TypedDict, cast, TypeAlias
 from types import FrameType
-MULTIPROCESSING_LIST_TYPE = MutableSequence[model.Challenge]
-POOL_TYPE = Pool
+MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
+POOL_TYPE: TypeAlias = Pool
 
 
 class PlayGameArgsType(TypedDict, total=False):
@@ -86,7 +86,7 @@ def disable_restart() -> None:
     stop.restart = False
 
 
-def signal_handler(signal: int, frame: Optional[FrameType]) -> None:  # noqa: ARG001
+def signal_handler(signal: int, frame: FrameType | None) -> None:  # noqa: ARG001
     """Terminate lichess-bot."""
     in_starting_thread = __name__ == "__main__"
     if not stop.terminated:
@@ -163,7 +163,7 @@ def write_pgn_records(pgn_queue: PGN_QUEUE_TYPE, config: Configuration, username
             pgn_queue.task_done()
 
 
-def logging_configurer(level: int, filename: Optional[str], disable_auto_logs: bool) -> None:
+def logging_configurer(level: int, filename: str | None, disable_auto_logs: bool) -> None:
     """
     Configure the logger.
 
@@ -207,7 +207,7 @@ def logging_configurer(level: int, filename: Optional[str], disable_auto_logs: b
                         force=True)
 
 
-def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: Optional[str],
+def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: str | None,
                           disable_auto_logging: bool) -> None:
     """
     Handle events from the logging queue.
@@ -218,7 +218,7 @@ def logging_listener_proc(queue: LOGGING_QUEUE_TYPE, level: int, log_filename: O
     logging_configurer(level, log_filename, disable_auto_logging)
     logger = logging.getLogger()
     while True:
-        task: Optional[logging.LogRecord] = None
+        task: logging.LogRecord | None = None
         try:
             task = queue.get(block=False)
         except Empty:
@@ -245,7 +245,7 @@ def thread_logging_configurer(queue: LOGGING_QUEUE_TYPE) -> None:
 
 
 def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configuration, logging_level: int,
-          log_filename: Optional[str], disable_auto_logging: bool, one_game: bool = False) -> None:
+          log_filename: str | None, disable_auto_logging: bool, one_game: bool = False) -> None:
     """
     Start lichess-bot.
 
@@ -846,7 +846,7 @@ def setup_board(game: model.Game) -> chess.Board:
     return board
 
 
-def is_engine_move(game: model.Game, prior_game: Optional[model.Game], board: chess.Board) -> bool:
+def is_engine_move(game: model.Game, prior_game: model.Game | None, board: chess.Board) -> bool:
     """Check whether it is the engine's turn."""
     return game_changed(game, prior_game) and bot_to_move(game, board)
 
@@ -868,7 +868,7 @@ def is_game_over(game: model.Game) -> bool:
     return status != "started"
 
 
-def should_exit_game(board: chess.Board, game: model.Game, prior_game: Optional[model.Game], li: lichess.Lichess,
+def should_exit_game(board: chess.Board, game: model.Game, prior_game: model.Game | None, li: lichess.Lichess,
                      is_correspondence: bool) -> bool:
     """Whether we should exit a game."""
     if (is_correspondence
@@ -906,7 +906,7 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
                                    "complete": is_game_over(game)}})
 
 
-def game_changed(current_game: model.Game, prior_game: Optional[model.Game]) -> bool:
+def game_changed(current_game: model.Game, prior_game: model.Game | None) -> bool:
     """Check whether the current game state is different from the previous game state."""
     if prior_game is None:
         return True
@@ -1006,8 +1006,8 @@ def pgn_game_record(li: lichess.Lichess, config: Configuration, game: model.Game
 
     fill_missing_pgn_headers(game_record, game)
 
-    current_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = game_record.game()
-    lichess_node: Union[chess.pgn.Game, chess.pgn.ChildNode] = lichess_game_record.game()
+    current_node: chess.pgn.Game | chess.pgn.ChildNode = game_record.game()
+    lichess_node: chess.pgn.Game | chess.pgn.ChildNode = lichess_game_record.game()
     for index, move in enumerate(board.move_stack):
         next_node = current_node.next()
         if next_node is None or next_node.move != move:
@@ -1065,14 +1065,14 @@ def fill_missing_pgn_headers(game_record: chess.pgn.Game, game: model.Game) -> N
             game_record.headers[header] = str(game_value)
 
 
-def get_headers(game: model.Game) -> dict[str, Union[str, int]]:
+def get_headers(game: model.Game) -> dict[str, str | int]:
     """
     Create local headers to be written in the PGN file.
 
     :param game: Contains information about the game (e.g. the players' names).
     :return: The headers in a dict.
     """
-    headers: dict[str, Union[str, int]] = {}
+    headers: dict[str, str | int] = {}
     headers["Event"] = game.pgn_event()
     headers["Site"] = game.short_url()
     headers["Date"] = game.game_start.strftime("%Y.%m.%d")

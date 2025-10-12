@@ -3,10 +3,9 @@ import shutil
 import os
 from _pytest.config import ExitCode
 from _pytest.main import Session
-from typing import Union
 
 
-def pytest_sessionfinish(session: Session, exitstatus: Union[int, ExitCode]) -> None:  # noqa: ARG001
+def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:  # noqa: ARG001
     """
     Remove files created when testing lichess-bot.
 

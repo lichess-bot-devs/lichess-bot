@@ -3,6 +3,7 @@ import math
 from urllib.parse import urljoin
 import logging
 import datetime
+import chess
 from enum import Enum
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
@@ -10,6 +11,11 @@ from collections import defaultdict, Counter
 from lib.lichess_types import UserProfileType, ChallengeType, GameEventType, PlayerType
 
 logger = logging.getLogger(__name__)
+
+
+def is_chess_960(fen: str) -> bool:
+    """Determine whether an FEN string represents a chess960 game."""
+    return chess.Board(fen) != chess.Board(fen, chess960=True)
 
 
 class Challenge:
@@ -35,7 +41,16 @@ class Challenge:
 
     def is_supported_variant(self, challenge_cfg: Configuration) -> bool:
         """Check whether the variant is supported."""
-        return self.variant in challenge_cfg.variants
+        if self.variant not in challenge_cfg.variants:
+            return False
+
+        if self.initial_fen == "startpos":
+            return True
+
+        if is_chess_960(self.initial_fen):
+            return "chess960" in challenge_cfg.variants
+
+        return True
 
     def is_supported_time_control(self, challenge_cfg: Configuration) -> bool:
         """Check whether the time control is supported."""

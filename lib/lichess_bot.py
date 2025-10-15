@@ -832,7 +832,9 @@ def setup_board(game: model.Game) -> chess.Board:
     if game.variant_name.lower() == "chess960":
         board = chess.Board(game.initial_fen, chess960=True)
     elif game.variant_name == "From Position":
-        board = chess.Board(game.initial_fen)
+        fen = cast(str, game.initial_fen)
+        board = chess.Board(fen, chess960=model.is_chess_960(fen))
+
     else:
         VariantBoard = find_variant(game.variant_name)
         board = VariantBoard()

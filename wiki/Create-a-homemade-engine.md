@@ -3,7 +3,7 @@ As an alternative to creating an entire chess engine and implementing one of the
 
 Steps to create a homemade bot:
 
-1. Do all the steps in the [How to Install](#how-to-install)
+1. Do all the steps in the [How to Install](./How-to-Install)
 2. In the `config.yml`, change the engine protocol to `homemade`
 3. Create a class in `homemade.py` that extends `MinimalEngine`.
 4. Create a method called `search()` with an argument `board` that chooses a legal move from the board.

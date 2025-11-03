@@ -15,28 +15,19 @@ class OnlineBlocklist:
 
     def __init__(self, urls: list[str]) -> None:
         """Initialize the OnlineBlockList class."""
-        self.urls = urls
-        self.blocklist: list[str] = []
+        self.blocklist: dict[str, list[str]] = {url : [] for url in urls}
         self.refresh()
 
     def refresh(self) -> None:
         """Pull updated blocklists from the list of blocklist urls."""
-        if len(self.urls) == 0:
-            self.blocklist = []
-            return
+        logger.info(f"Refreshing {len(self.blocklist)} online blocklists")
 
-        blocklist: list[str] = []
-        logger.info(f"Refreshing {len(self.urls)} online blocklists")
-
-        try:
-            for url in self.urls:
-                blocklist.extend(_parse_block_list_from_url(url))
-        except Exception:
-            logger.warning("Failed to refresh online blocklists")
-            return
-
-        self.blocklist = blocklist
+        for url in self.blocklist.keys():
+            try:
+                self.blocklist[url] = _parse_block_list_from_url(url)
+            except Exception:
+                logger.warning(f"Failed to refresh online blocklist {url}")
 
     def __contains__(self, item: str) -> bool:
         """Check if an username is in the blocklist."""
-        return item in self.blocklist
+        return any(item in blocklist for blocklist in self.blocklist)

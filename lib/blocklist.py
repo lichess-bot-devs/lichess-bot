@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class BlocklistData:
+    """Dataclass for online blocklist requests, including usernames and etag."""
+
     users: list[str]
     etag: str | None
 

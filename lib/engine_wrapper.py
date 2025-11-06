@@ -67,7 +67,8 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
     logger.debug(f"Starting engine: {commands}")
-    return Engine(commands, options, stderr, cfg.draw_or_resign, game, cwd=cfg.working_dir)
+    return Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
+                  cwd=cfg.working_dir)
 
 
 def remove_managed_options(config: Configuration) -> OPTIONS_GO_EGTB_TYPE:
@@ -478,7 +479,8 @@ class UCIEngine(EngineWrapper):
     """The class used to communicate with UCI engines."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: int | None,
-                 draw_or_resign: Configuration, game: model.Game | None, **popen_args: str) -> None:
+                 draw_or_resign: Configuration, game: model.Game | None, debug: bool,
+                 **popen_args: str) -> None:
         """
         Communicate with UCI engines.
 
@@ -487,10 +489,11 @@ class UCIEngine(EngineWrapper):
         :param stderr: Whether we should silence the stderr.
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         :param game: The first Game message from the game stream.
+        :param debug: Wether to debug or not.
         :param popen_args: The cwd of the engine.
         """
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=60., debug=False, setpgrp=True, stderr=stderr,
+        self.engine = chess.engine.SimpleEngine.popen_uci(commands, timeout=60., debug=debug, setpgrp=True, stderr=stderr,
                                                           **popen_args)
         self.configure(options, game)
 
@@ -499,7 +502,8 @@ class XBoardEngine(EngineWrapper):
     """The class used to communicate with XBoard engines."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: int | None,
-                 draw_or_resign: Configuration, game: model.Game | None, **popen_args: str) -> None:
+                 draw_or_resign: Configuration, game: model.Game | None, debug: bool,
+                 **popen_args: str) -> None:
         """
         Communicate with XBoard engines.
 
@@ -508,10 +512,11 @@ class XBoardEngine(EngineWrapper):
         :param stderr: Whether we should silence the stderr.
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         :param game: The first Game message from the game stream.
+        :param debug: Wether to debug or not.
         :param popen_args: The cwd of the engine.
         """
         super().__init__(options, draw_or_resign)
-        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=60., debug=False, setpgrp=True,
+        self.engine = chess.engine.SimpleEngine.popen_xboard(commands, timeout=60., debug=debug, setpgrp=True,
                                                              stderr=stderr, **popen_args)
         egt_paths = cast(EGTPATH_TYPE, options.pop("egtpath", {}) or {})
         protocol = cast(chess.engine.XBoardProtocol, self.engine.protocol)

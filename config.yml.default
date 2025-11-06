@@ -4,6 +4,7 @@ url: "https://lichess.org/"        # Lichess base URL.
 engine:                            # Engine settings.
   dir: "./engines/"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
   name: "engine_name"              # Binary name of the engine to use.
+  debug: False                     # Should all commands between Lichess & bot be logged?
 # interpreter: "java"
 # interpreter_options:
 #   - "-jar"

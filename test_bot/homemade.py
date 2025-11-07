@@ -17,9 +17,10 @@ class Stockfish(ExampleEngine):
     """A homemade engine that uses Stockfish."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: int | None,
-                 draw_or_resign: Configuration, game: model.Game | None, **popen_args: str) -> None:
+                 draw_or_resign: Configuration, game: model.Game | None, debug: bool,
+                 **popen_args: str) -> None:
         """Start Stockfish."""
-        super().__init__(commands, options, stderr, draw_or_resign, game, **popen_args)
+        super().__init__(commands, options, stderr, draw_or_resign, game, debug, **popen_args)
         self.engine = chess.engine.SimpleEngine.popen_uci(f"./TEMP/sf{file_extension}")
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,

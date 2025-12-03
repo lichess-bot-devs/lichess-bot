@@ -1,5 +1,4 @@
 """Test lichess-bot."""
-import pytest
 import yaml
 import chess
 import chess.engine

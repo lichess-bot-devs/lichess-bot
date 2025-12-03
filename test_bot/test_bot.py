@@ -5,7 +5,6 @@ import chess.engine
 import threading
 import os
 import sys
-import stat
 import datetime
 import logging
 import tempfile
@@ -42,8 +41,7 @@ class TrivialEngine:
         """Do nothing."""
 
 
-def lichess_org_simulator(opponent_path: str | None,
-                          move_queue: Queue[chess.Move | None],
+def lichess_org_simulator(move_queue: Queue[chess.Move | None],
                           board_queue: Queue[chess.Board],
                           clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]],
                           results: Queue[bool]) -> None:
@@ -63,7 +61,7 @@ def lichess_org_simulator(opponent_path: str | None,
     wtime = start_time
     btime = start_time
 
-    engine = chess.engine.SimpleEngine.popen_uci(opponent_path) if opponent_path else TrivialEngine()
+    engine = TrivialEngine()
 
     while not board.is_game_over():
         if board.turn == chess.WHITE:
@@ -103,7 +101,7 @@ def lichess_org_simulator(opponent_path: str | None,
     results.put(outcome is not None and outcome.winner == chess.BLACK)
 
 
-def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str | None = None) -> bool:
+def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int) -> bool:
     """
     Start lichess-bot test with a mocked version of the lichess.org site.
 
@@ -128,7 +126,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int, opponent_path: str
     lichess_bot.disable_restart()
 
     results: Queue[bool] = manager.Queue()
-    thr = threading.Thread(target=lichess_org_simulator, args=[opponent_path, move_queue, board_queue, clock_queue, results])
+    thr = threading.Thread(target=lichess_org_simulator, args=[move_queue, board_queue, clock_queue, results])
     thr.start()
     lichess_bot.start(li, user_profile, CONFIG, logging_level, testing_log_file_name, True, one_game=True)
 
@@ -212,21 +210,7 @@ def test_buggy_engine() -> None:
         CONFIG["engine"]["interpreter"] = python
         CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 100}}
         CONFIG["pgn_directory"] = os.path.join(temp, "bug_game_record")
-
-        def engine_path(CONFIG: CONFIG_DICT_TYPE) -> str:
-            directory: str = CONFIG["engine"]["dir"]
-            name: str = CONFIG["engine"]["name"].removesuffix(".py")
-            path = os.path.join(directory, name)
-            if platform == "win32":
-                path += ".bat"
-            else:
-                if platform == "darwin":
-                    path += "_macos"
-                st = os.stat(path)
-                os.chmod(path, st.st_mode | stat.S_IEXEC)
-            return path
-
-        win = run_bot(CONFIG, logging_level, engine_path(CONFIG))
+        win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing Buggy Engine")
         assert win
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],

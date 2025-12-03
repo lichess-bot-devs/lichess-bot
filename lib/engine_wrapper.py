@@ -1206,7 +1206,7 @@ def dtz_scorer(tablebase: chess.syzygy.Tablebase, board: chess.Board) -> int | f
     For a zeroing move (capture or pawn move), a DTZ of +/-0.5 is returned.
     """
     dtz: int | float = -tablebase.probe_dtz(board)
-    dtz = dtz if board.halfmove_clock else math.copysign(.5, dtz)
+    dtz = dtz if board.halfmove_clock or not dtz else math.copysign(.5, dtz)
     return dtz + (math.copysign(board.halfmove_clock, dtz) if dtz else 0)
 
 

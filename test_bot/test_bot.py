@@ -20,9 +20,6 @@ if "pytest" not in sys.modules:
 from lib import lichess_bot
 from test_bot.test_games import scholars_mate
 
-platform = sys.platform
-python = "python" if platform == "win32" else "python3"
-
 
 logging_level = logging.DEBUG
 testing_log_file_name = None
@@ -152,7 +149,7 @@ def test_uci() -> None:
         CONFIG["token"] = ""
         CONFIG["engine"]["dir"] = "test_bot"
         CONFIG["engine"]["name"] = "uci_engine.py"
-        CONFIG["engine"]["interpreter"] = python
+        CONFIG["engine"]["interpreter"] = sys.executable
         CONFIG["pgn_directory"] = os.path.join(temp, "uci_game_record")
         CONFIG["engine"]["uci_options"] = {}
         win = run_bot(CONFIG, logging_level)
@@ -172,7 +169,7 @@ def test_xboard() -> None:
         CONFIG["engine"]["dir"] = "test_bot"
         CONFIG["engine"]["name"] = "xboard_engine.py"
         CONFIG["engine"]["protocol"] = "xboard"
-        CONFIG["engine"]["interpreter"] = python
+        CONFIG["engine"]["interpreter"] = sys.executable
         CONFIG["pgn_directory"] = os.path.join(temp, "lc0_game_record")
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing XBoard")
@@ -207,7 +204,7 @@ def test_buggy_engine() -> None:
         CONFIG["token"] = ""
         CONFIG["engine"]["dir"] = "test_bot"
         CONFIG["engine"]["name"] = "buggy_engine.py"
-        CONFIG["engine"]["interpreter"] = python
+        CONFIG["engine"]["interpreter"] = sys.executable
         CONFIG["engine"]["uci_options"] = {"go_commands": {"movetime": 100}}
         CONFIG["pgn_directory"] = os.path.join(temp, "bug_game_record")
         win = run_bot(CONFIG, logging_level)

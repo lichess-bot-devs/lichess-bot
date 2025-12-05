@@ -32,7 +32,9 @@ class TrivialEngine:
 
     def play(self, board: chess.Board, *_: object) -> chess.engine.PlayResult:
         """Choose the first legal move."""
-        return chess.engine.PlayResult(board.parse_uci(scholars_mate[len(board.move_stack)]), None)
+        move_count = len(board.move_stack)
+        next_move = board.parse_uci(scholars_mate[move_count])
+        return chess.engine.PlayResult(next_move, None)
 
     def quit(self) -> None:
         """Do nothing."""

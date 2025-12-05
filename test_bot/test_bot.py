@@ -12,7 +12,7 @@ from multiprocessing import Manager
 from queue import Queue
 import test_bot.lichess
 from lib import config
-from lib.timer import Timer, to_seconds, seconds
+from lib.timer import Timer, seconds
 from lib.engine_wrapper import test_suffix
 from lib.lichess_types import CONFIG_DICT_TYPE
 if "pytest" not in sys.modules:
@@ -25,19 +25,6 @@ logging_level = logging.DEBUG
 testing_log_file_name = None
 lichess_bot.logging_configurer(logging_level, testing_log_file_name, True)
 logger = logging.getLogger(__name__)
-
-
-class TrivialEngine:
-    """A trivial engine that only plays the scholar's mate."""
-
-    def play(self, board: chess.Board, *_: object) -> chess.engine.PlayResult:
-        """Choose the first legal move."""
-        move_count = len(board.move_stack)
-        next_move = board.parse_uci(scholars_mate[move_count])
-        return chess.engine.PlayResult(next_move, None)
-
-    def quit(self) -> None:
-        """Do nothing."""
 
 
 def lichess_org_simulator(move_queue: Queue[chess.Move | None],
@@ -60,27 +47,17 @@ def lichess_org_simulator(move_queue: Queue[chess.Move | None],
     wtime = start_time
     btime = start_time
 
-    engine = TrivialEngine()
-
     while not board.is_game_over():
+        move_timer = Timer()
         if board.turn == chess.WHITE:
-            if not board.move_stack:
-                move = engine.play(board, chess.engine.Limit(time=1))
-            else:
-                move_timer = Timer()
-                move = engine.play(board,
-                                   chess.engine.Limit(white_clock=to_seconds(wtime - seconds(2.0)),
-                                                      white_inc=to_seconds(increment),
-                                                      black_clock=to_seconds(btime),
-                                                      black_inc=to_seconds(increment)))
-                wtime -= move_timer.time_since_reset()
-                wtime += increment
-            engine_move = move.move
-            if engine_move is None:
-                raise RuntimeError("Engine attempted to make null move.")
+            move_count = len(board.move_stack)
+            engine_move = board.parse_uci(scholars_mate[move_count])
             board.push(engine_move)
             board_queue.put(board)
             clock_queue.put((wtime, btime, increment))
+            if len(board.move_stack) > 1:
+                wtime -= move_timer.time_since_reset()
+                wtime += increment
         else:
             move_timer = Timer()
             while (bot_move := move_queue.get()) is None:
@@ -95,7 +72,6 @@ def lichess_org_simulator(move_queue: Queue[chess.Move | None],
 
     board_queue.put(board)
     clock_queue.put((wtime, btime, increment))
-    engine.quit()
     outcome = board.outcome()
     results.put(outcome is not None and outcome.winner == chess.BLACK)
 

@@ -1,7 +1,12 @@
 """An engine mimics a UCI engine."""
 
 import chess
-from test_games import scholars_mate
+import typing
+
+if typing.TYPE_CHECKING:
+    from test_bot.test_games import scholars_mate
+else:
+    from test_games import scholars_mate
 
 assert input() == "uci"
 

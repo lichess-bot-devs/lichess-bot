@@ -17,6 +17,7 @@ Lichess allows a bot to play 100 games against other bots in a single day (games
 ## Engine options
 - `interpreter`: Specify whether your engine requires an interpreter to run (e.g. `java`, `python`).
 - `interpreter_options`: A list of options passed to the interpreter (e.g. `-jar` for `java`).
+- `debug`: When enabled, log all startup communication with the engine.
 - `protocol`: Specify which protocol your engine uses. Choices are:
     1. `"uci"` for the [Universal Chess Interface](https://wbec-ridderkerk.nl/html/UCIProtocol.html)
     2. `"xboard"` for the XBoard/WinBoard/[Chess Engine Communication Protocol](https://www.gnu.org/software/xboard/engine-intf.html)

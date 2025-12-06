@@ -109,13 +109,12 @@ def download_opening_book() -> None:
     """Download gm2001.bin."""
     if os.path.exists("./TEMP/gm2001.bin"):
         return
+
+    os.makedirs("TEMP", exist_ok=True)
     response = requests.get("https://github.com/gmcheems-org/free-opening-books/raw/main/books/bin/gm2001.bin",
                             allow_redirects=True)
     with open("./TEMP/gm2001.bin", "wb") as file:
         file.write(response.content)
-
-
-os.makedirs("TEMP", exist_ok=True)
 
 
 def get_online_move_wrapper(li: Lichess, board: chess.Board, game: Game, online_moves_cfg: Configuration,

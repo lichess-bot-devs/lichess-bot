@@ -4,7 +4,6 @@ import yaml
 import os
 import logging
 import math
-import requests
 from abc import ABCMeta
 from typing import Any, ItemsView, Callable
 from lib.lichess_types import CONFIG_DICT_TYPE, FilterType
@@ -263,16 +262,6 @@ def process_block_list(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     :param CONFIG: The bot's config.
     """
-    def parse_block_list_from_url(url: str) -> list[str]:
-        block_list = requests.get(url).text.strip()
-        return [username.strip() for username in block_list.split("\n")]
-
-    for url in CONFIG["matchmaking"]["online_block_list"]:
-        CONFIG["matchmaking"]["block_list"].extend(parse_block_list_from_url(url))
-
-    for url in CONFIG["challenge"]["online_block_list"]:
-        CONFIG["challenge"]["block_list"].extend(parse_block_list_from_url(url))
-
     if CONFIG["matchmaking"]["include_challenge_block_list"]:
         CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])
 

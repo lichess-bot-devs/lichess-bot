@@ -1,4 +1,5 @@
 """Test the functions that get the external moves."""
+import pytest
 import backoff
 import requests
 import yaml
@@ -113,14 +114,20 @@ def download_opening_book() -> None:
     os.makedirs("TEMP", exist_ok=True)
     response = requests.get("https://github.com/gmcheems-org/free-opening-books/raw/main/books/bin/gm2001.bin",
                             allow_redirects=True)
+    if response.status_code != 200:
+        pytest.xfail("Could not download opening book.")
     with open("./TEMP/gm2001.bin", "wb") as file:
         file.write(response.content)
 
 
 def get_online_move_wrapper(li: Lichess, board: chess.Board, game: Game, online_moves_cfg: Configuration,
-                            draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult:
+                            draw_or_resign_cfg: Configuration, *, expect_none: bool = False) -> chess.engine.PlayResult:
     """Wrap `lib.engine_wrapper.get_online_move` so that it only returns a PlayResult type."""
-    return cast(chess.engine.PlayResult, get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))
+    online_move = get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg)
+    online_move = cast(chess.engine.PlayResult, online_move)
+    if not expect_none and online_move.move is None:
+        pytest.xfail("Could not contact external move source.")
+    return online_move
 
 
 class TestExternalMoves:
@@ -155,7 +162,8 @@ class TestExternalMoves:
                                            chess.Board(self.middlegame_fen),
                                            self.game,
                                            self.online_cfg,
-                                           self.draw_or_resign_cfg).move is None
+                                           self.draw_or_resign_cfg,
+                                           expect_none=True).move is None
 
     def test_chessdb_book(self) -> None:
         """Test chessdb_book."""
@@ -175,7 +183,8 @@ class TestExternalMoves:
                                            chess.Board(self.middlegame_fen),
                                            self.game,
                                            self.online_cfg_2,
-                                           self.draw_or_resign_cfg).move is None
+                                           self.draw_or_resign_cfg,
+                                           expect_none=True).move is None
 
     def test_online_egtb_with_lichess(self) -> None:
         """Test online_egtb with lichess."""

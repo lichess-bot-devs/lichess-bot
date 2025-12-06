@@ -207,10 +207,16 @@ class TestExternalMoves:
                                                 self.draw_or_resign_cfg)
             assert not wdl1_move.resigned and not wdl1_move.draw_offered
             # Test with reversed colors.
-            assert get_online_move_wrapper(self.li, chess.Board(self.endgame_wdl2_fen).mirror(), self.game, self.online_cfg,
-                                        self.draw_or_resign_cfg).resigned
-            assert get_online_move_wrapper(self.li, chess.Board(self.endgame_wdl0_fen).mirror(), self.game, self.online_cfg,
-                                        self.draw_or_resign_cfg).draw_offered
+            assert get_online_move_wrapper(self.li,
+                                           chess.Board(self.endgame_wdl2_fen).mirror(),
+                                           self.game,
+                                           self.online_cfg,
+                                           self.draw_or_resign_cfg).resigned
+            assert get_online_move_wrapper(self.li,
+                                           chess.Board(self.endgame_wdl0_fen).mirror(),
+                                           self.game,
+                                           self.online_cfg,
+                                           self.draw_or_resign_cfg).draw_offered
             wdl1_move = get_online_move_wrapper(self.li,
                                                 chess.Board(self.endgame_wdl1_fen).mirror(),
                                                 self.game,
@@ -239,10 +245,16 @@ class TestExternalMoves:
                                                 self.draw_or_resign_cfg)
             assert not wdl1_move.resigned and not wdl1_move.draw_offered
             # Test with reversed colors.
-            assert get_online_move_wrapper(self.li, chess.Board(self.endgame_wdl2_fen).mirror(), self.game, self.online_cfg_2,
-                                        self.draw_or_resign_cfg).resigned
-            assert get_online_move_wrapper(self.li, chess.Board(self.endgame_wdl0_fen).mirror(), self.game, self.online_cfg_2,
-                                        self.draw_or_resign_cfg).draw_offered
+            assert get_online_move_wrapper(self.li,
+                                           chess.Board(self.endgame_wdl2_fen).mirror(),
+                                           self.game,
+                                           self.online_cfg_2,
+                                           self.draw_or_resign_cfg).resigned
+            assert get_online_move_wrapper(self.li,
+                                           chess.Board(self.endgame_wdl0_fen).mirror(),
+                                           self.game,
+                                           self.online_cfg_2,
+                                           self.draw_or_resign_cfg).draw_offered
             wdl1_move = get_online_move_wrapper(self.li,
                                                 chess.Board(self.endgame_wdl1_fen).mirror(),
                                                 self.game,

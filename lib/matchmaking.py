@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
 from typing import cast, TypeAlias
+from lib.blocklist import OnlineBlocklist
 from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
 MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
@@ -46,6 +47,8 @@ class Matchmaking:
 
         for name in self.matchmaking_cfg.block_list:
             self.add_to_block_list(name)
+
+        self.online_block_list = OnlineBlocklist(self.matchmaking_cfg.online_block_list)
 
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""
@@ -181,6 +184,7 @@ class Matchmaking:
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 
+        self.online_block_list.refresh()
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
 
@@ -266,7 +270,7 @@ class Matchmaking:
 
     def in_block_list(self, username: str) -> bool:
         """Check if an opponent is in the block list to prevent future challenges."""
-        return not self.should_accept_challenge(username, "")
+        return not (self.should_accept_challenge(username, "") or username in self.online_block_list)
 
     def add_challenge_filter(self, username: str, game_aspect: str, timeout: datetime.timedelta | None = None) -> None:
         """

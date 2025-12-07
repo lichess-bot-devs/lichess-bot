@@ -24,6 +24,7 @@ import glob
 import platform
 import importlib.metadata
 import contextlib
+from lib.blocklist import OnlineBlocklist
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
@@ -363,6 +364,8 @@ def lichess_bot_main(li: lichess.Lichess,
 
     recent_bot_challenges: defaultdict[str, list[Timer]] = defaultdict(list)
 
+    online_block_list = OnlineBlocklist(config.challenge.online_block_list)
+
     if config.quit_after_all_games_finish:
         logger.info("When quitting, lichess-bot will first wait for all running games to finish.")
         logger.info("Press Ctrl-C twice to quit immediately.")
@@ -385,7 +388,13 @@ def lichess_bot_main(li: lichess.Lichess,
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
             elif event["type"] == "challenge":
-                handle_challenge(event, li, challenge_queue, config.challenge, user_profile, recent_bot_challenges)
+                handle_challenge(event,
+                                 li,
+                                 challenge_queue,
+                                 config.challenge,
+                                 user_profile,
+                                 recent_bot_challenges,
+                                 online_block_list)
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "gameStart":
@@ -598,7 +607,7 @@ def enough_time_to_queue(event: EventType, config: Configuration) -> bool:
 
 def handle_challenge(event: EventType, li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE,
                      challenge_config: Configuration, user_profile: UserProfileType,
-                     recent_bot_challenges: defaultdict[str, list[Timer]]) -> None:
+                     recent_bot_challenges: defaultdict[str, list[Timer]], online_block_list: OnlineBlocklist) -> None:
     """Handle incoming challenges. It either accepts, declines, or queues them to accept later."""
     chlng = model.Challenge(event["challenge"], user_profile)
     if chlng.from_self:
@@ -607,7 +616,12 @@ def handle_challenge(event: EventType, li: lichess.Lichess, challenge_queue: MUL
     opponent_engagements = Counter(game["opponent"]["username"] for game in li.get_ongoing_games())
     opponent_engagements.update(challenge.challenger.name for challenge in challenge_queue)
 
-    is_supported, decline_reason = chlng.is_supported(challenge_config, recent_bot_challenges, opponent_engagements)
+    online_block_list.refresh()
+
+    is_supported, decline_reason = chlng.is_supported(challenge_config,
+                                                      recent_bot_challenges,
+                                                      opponent_engagements,
+                                                      online_block_list)
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)

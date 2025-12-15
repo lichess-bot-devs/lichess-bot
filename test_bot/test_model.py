@@ -5,6 +5,7 @@ from lib import model
 import yaml
 from lib import config
 from collections import defaultdict, Counter
+from lib.blocklist import OnlineBlocklist
 from lib.timer import Timer
 from lib.lichess_types import ChallengeType, UserProfileType, GameEventType, PlayerType
 
@@ -44,6 +45,7 @@ def test_challenge() -> None:
     configuration = config.Configuration(CONFIG).challenge
     recent_challenges: defaultdict[str, list[Timer]] = defaultdict()
     recent_challenges["c"] = []
+    online_block_list = OnlineBlocklist([])
 
     challenge_model = model.Challenge(challenge, user_profile)
     assert challenge_model.id == "zzzzzzzz"
@@ -52,10 +54,13 @@ def test_challenge() -> None:
     assert challenge_model.speed == "bullet"
     assert challenge_model.time_control["show"] == "1.5+1"
     assert challenge_model.color == "white"
-    assert challenge_model.is_supported(configuration, recent_challenges, Counter()) == (True, "")
+    assert challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list) == (True, "")
 
     CONFIG["challenge"]["min_base"] = 120
-    assert challenge_model.is_supported(configuration, recent_challenges, Counter()) == (False, "timeControl")
+    assert challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list) == (
+        False,
+        "timeControl",
+    )
 
 
 def test_game() -> None:

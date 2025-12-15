@@ -13,7 +13,7 @@ class ScholarsMate(ExampleEngine):
     """A homemade engine that plays the scholar's mate."""
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: int | None,
-                 draw_or_resign: Configuration, game: model.Game | None, **popen_args: str) -> None:
+                 draw_or_resign: Configuration, game: model.Game | None, debug: bool, **popen_args: str) -> None:
         """Set up engine."""
         super().__init__(commands, options, stderr, draw_or_resign, game, **popen_args)
 

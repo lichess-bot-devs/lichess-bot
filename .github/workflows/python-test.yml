@@ -19,7 +19,7 @@ jobs:
 
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v6
       with:
@@ -31,7 +31,7 @@ jobs:
         pip install -r test_bot/test-requirements.txt
     - name: Restore engines
       id: cache-temp-restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: |
           TEMP
@@ -43,7 +43,7 @@ jobs:
         pytest --log-cli-level=10
     - name: Save engines
       id: cache-temp-save
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: |
           TEMP

@@ -1,4 +1,5 @@
 """Test the functions that get the external moves."""
+import pytest
 import backoff
 import requests
 import yaml
@@ -109,26 +110,31 @@ def download_opening_book() -> None:
     """Download gm2001.bin."""
     if os.path.exists("./TEMP/gm2001.bin"):
         return
+
+    os.makedirs("TEMP", exist_ok=True)
     response = requests.get("https://github.com/gmcheems-org/free-opening-books/raw/main/books/bin/gm2001.bin",
                             allow_redirects=True)
+    if response.status_code != 200:
+        pytest.xfail("Could not download opening book.")
     with open("./TEMP/gm2001.bin", "wb") as file:
         file.write(response.content)
 
 
-os.makedirs("TEMP", exist_ok=True)
-
-
 def get_online_move_wrapper(li: Lichess, board: chess.Board, game: Game, online_moves_cfg: Configuration,
-                            draw_or_resign_cfg: Configuration) -> chess.engine.PlayResult:
+                            draw_or_resign_cfg: Configuration, *, expect_none: bool = False) -> chess.engine.PlayResult:
     """Wrap `lib.engine_wrapper.get_online_move` so that it only returns a PlayResult type."""
-    return cast(chess.engine.PlayResult, get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg))
+    online_move = get_online_move(li, board, game, online_moves_cfg, draw_or_resign_cfg)
+    online_move = cast(chess.engine.PlayResult, online_move)
+    if not expect_none and online_move.move is None:
+        pytest.xfail("Could not contact external move source.")
+    return online_move
 
 
-def test_external_moves() -> None:
+class TestExternalMoves:
     """Test that the code for external moves works properly."""
+
     li = MockLichess()
     game = get_game()
-    download_opening_book()
     online_cfg, online_cfg_2, draw_or_resign_cfg, polyglot_cfg = get_configs()
 
     starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -138,49 +144,131 @@ def test_external_moves() -> None:
     endgame_wdl1_fen = "6N1/3n4/3k1b2/8/8/7Q/1r6/5K2 b - - 6 9"
     endgame_wdl0_fen = "6N1/3n4/3k1b2/8/8/7Q/5K2/1r6 b - - 8 10"
 
-    is_lichess_org_up = li.is_website_up("https://lichess.org/api/cloud-eval")
-    is_lichess_ovh_up = li.is_website_up("https://tablebase.lichess.ovh/standard")
-    is_chessdb_cn_up = li.is_website_up("https://www.chessdb.cn/cdb.php")
+    def test_lichess_cloud_analysis(self) -> None:
+        """Test lichess_cloud_analysis."""
+        if not self.li.is_website_up("https://lichess.org/api/cloud-eval"):
+            pytest.xfail("Lichess cloud eval is down.")
 
-    # Test lichess_cloud_analysis.
-    if is_lichess_org_up:
-        assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg, draw_or_resign_cfg).move is not None
-        assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg, draw_or_resign_cfg).move is not None
-        assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg, draw_or_resign_cfg).move is None
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.starting_fen),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.opening_fen),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.middlegame_fen),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg,
+                                        expect_none=True).move is None
 
-    # Test chessdb_book.
-    if is_chessdb_cn_up:
-        assert get_online_move_wrapper(li, chess.Board(starting_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
-        assert get_online_move_wrapper(li, chess.Board(opening_fen), game, online_cfg_2, draw_or_resign_cfg).move is not None
-        assert get_online_move_wrapper(li, chess.Board(middlegame_fen), game, online_cfg_2, draw_or_resign_cfg).move is None
+    def test_chessdb_book(self) -> None:
+        """Test chessdb_book."""
+        if not self.li.is_website_up("https://www.chessdb.cn/cdb.php"):
+            pytest.xfail("ChessDB is down.")
 
-    # Test online_egtb with lichess.
-    if is_lichess_ovh_up:
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg, draw_or_resign_cfg).resigned
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg, draw_or_resign_cfg).draw_offered
-        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg, draw_or_resign_cfg)
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.starting_fen),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.opening_fen),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg).move is not None
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.middlegame_fen),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg,
+                                        expect_none=True).move is None
+
+    def test_online_egtb_with_lichess(self) -> None:
+        """Test online_egtb with lichess."""
+        if not self.li.is_website_up("https://tablebase.lichess.ovh/standard"):
+            pytest.xfail("Lichess tablebase is down.")
+
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl2_fen),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl0_fen),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(self.li,
+                                            chess.Board(self.endgame_wdl1_fen),
+                                            self.game,
+                                            self.online_cfg,
+                                            self.draw_or_resign_cfg)
         assert not wdl1_move.resigned and not wdl1_move.draw_offered
+
         # Test with reversed colors.
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg,
-                                       draw_or_resign_cfg).resigned
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg,
-                                       draw_or_resign_cfg).draw_offered
-        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg, draw_or_resign_cfg)
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl2_fen).mirror(),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl0_fen).mirror(),
+                                        self.game,
+                                        self.online_cfg,
+                                        self.draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(self.li,
+                                            chess.Board(self.endgame_wdl1_fen).mirror(),
+                                            self.game,
+                                            self.online_cfg,
+                                            self.draw_or_resign_cfg)
         assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
-    # Test online_egtb with chessdb.
-    if is_chessdb_cn_up:
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen), game, online_cfg_2, draw_or_resign_cfg).resigned
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen), game, online_cfg_2, draw_or_resign_cfg).draw_offered
-        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen), game, online_cfg_2, draw_or_resign_cfg)
+    def test_online_egtb_with_chessdb(self) -> None:
+        """Test online_egtb with chessdb."""
+        if not self.li.is_website_up("https://www.chessdb.cn/cdb.php"):
+            pytest.xfail("ChessDB is down.")
+
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl2_fen),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl0_fen),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(self.li,
+                                            chess.Board(self.endgame_wdl1_fen),
+                                            self.game,
+                                            self.online_cfg_2,
+                                            self.draw_or_resign_cfg)
         assert not wdl1_move.resigned and not wdl1_move.draw_offered
+
         # Test with reversed colors.
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl2_fen).mirror(), game, online_cfg_2,
-                                       draw_or_resign_cfg).resigned
-        assert get_online_move_wrapper(li, chess.Board(endgame_wdl0_fen).mirror(), game, online_cfg_2,
-                                       draw_or_resign_cfg).draw_offered
-        wdl1_move = get_online_move_wrapper(li, chess.Board(endgame_wdl1_fen).mirror(), game, online_cfg_2, draw_or_resign_cfg)
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl2_fen).mirror(),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg).resigned
+        assert get_online_move_wrapper(self.li,
+                                        chess.Board(self.endgame_wdl0_fen).mirror(),
+                                        self.game,
+                                        self.online_cfg_2,
+                                        self.draw_or_resign_cfg).draw_offered
+        wdl1_move = get_online_move_wrapper(self.li,
+                                            chess.Board(self.endgame_wdl1_fen).mirror(),
+                                            self.game,
+                                            self.online_cfg_2,
+                                            self.draw_or_resign_cfg)
         assert not wdl1_move.resigned and not wdl1_move.draw_offered
 
-    # Test opening book.
-    assert get_book_move(chess.Board(opening_fen), game, polyglot_cfg).move == chess.Move.from_uci("h4f6")
+    def test_opening_book(self) -> None:
+        """Test opening book."""
+        download_opening_book()
+        assert get_book_move(chess.Board(self.opening_fen), self.game, self.polyglot_cfg).move == chess.Move.from_uci("h4f6")

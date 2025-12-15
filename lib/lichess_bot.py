@@ -88,14 +88,11 @@ def disable_restart() -> None:
 
 def signal_handler(signal: int, frame: FrameType | None) -> None:  # noqa: ARG001
     """Terminate lichess-bot."""
-    in_starting_thread = __name__ == "__main__"
     if not stop.terminated:
-        if in_starting_thread:
-            logger.debug("Received SIGINT. Terminating client.")
+        logger.debug("Received SIGINT. Terminating client.")
         stop.terminated = True
     else:
-        if in_starting_thread:
-            logger.debug("Received second SIGINT. Quitting now.")
+        logger.debug("Received second SIGINT. Quitting now.")
         stop.force_quit = True
 
 

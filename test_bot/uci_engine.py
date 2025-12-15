@@ -1,7 +1,6 @@
-"""An engine that takes too much time to make a move during tests."""
+"""An engine mimics a UCI engine."""
 
 import chess
-import time
 import typing
 
 if typing.TYPE_CHECKING:
@@ -17,12 +16,10 @@ def send_command(command: str) -> None:
     print(command, flush=True)  # noqa: T201 (print() found)
 
 
-send_command("id name Procrastinator")
+send_command("id name UCI_Test_Bot")
 send_command("id author lichess-bot-devs")
 send_command("uciok")
 
-delay_performed = False
-just_started = True
 board = chess.Board()
 while True:
     command, *remaining = input().split()
@@ -39,14 +36,7 @@ while True:
             assert moves_label == "moves"
             for move in move_list:
                 board.push_uci(move)
-        if just_started and len(board.move_stack) > 1:
-            delay_performed = True
     elif command == "go":
         move_count = len(board.move_stack)
-        if move_count == 3 and not delay_performed:
-            send_command("info string delaying move")
-            delay_performed = True
-            time.sleep(11)
         move = scholars_mate[move_count]
         send_command(f"bestmove {move}")
-        just_started = False

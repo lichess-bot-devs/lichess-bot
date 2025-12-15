@@ -343,7 +343,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
     one_game_completed = False
 
-    all_games = li.get_ongoing_games()
+    all_games = li.get_ongoing_games() or []
     prune_takeback_records(all_games)
     startup_correspondence_games = [game["gameId"]
                                     for game in all_games
@@ -540,7 +540,10 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
 
 def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
     """Determine if a game is still being played."""
-    return game_id in (ongoing_game["gameId"] for ongoing_game in li.get_ongoing_games())
+    active_games = li.get_ongoing_games()
+    if active_games is None:
+        return True
+    return game_id in (ongoing_game["gameId"] for ongoing_game in active_games)
 
 
 def start_game_thread(active_games: set[str], game_id: str, play_game_args: PlayGameArgsType, pool: POOL_TYPE) -> None:
@@ -613,7 +616,8 @@ def handle_challenge(event: EventType, li: lichess.Lichess, challenge_queue: MUL
     if chlng.from_self:
         return
 
-    opponent_engagements = Counter(game["opponent"]["username"] for game in li.get_ongoing_games())
+    active_games = li.get_ongoing_games() or []
+    opponent_engagements = Counter(game["opponent"]["username"] for game in active_games)
     opponent_engagements.update(challenge.challenger.name for challenge in challenge_queue)
 
     online_block_list.refresh()

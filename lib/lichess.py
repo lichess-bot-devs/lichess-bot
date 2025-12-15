@@ -401,13 +401,16 @@ class Lichess:
         self.set_user_agent(profile["username"])
         return profile
 
-    def get_ongoing_games(self) -> list[GameType]:
-        """Get the bot's ongoing games."""
-        ongoing_games: list[GameType] = []
+    def get_ongoing_games(self) -> list[GameType] | None:
+        """
+        Get the bot's ongoing games.
+
+        If an error occurs when retreiving the games, None is returned.
+        """
         with contextlib.suppress(Exception):
             response = cast(dict[str, list[GameType]], self.api_get_json("playing"))
-            ongoing_games = response["nowPlaying"]
-        return ongoing_games
+            return response["nowPlaying"]
+        return None
 
     def resign(self, game_id: str) -> None:
         """Resign a game."""

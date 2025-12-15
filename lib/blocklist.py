@@ -34,8 +34,7 @@ class OnlineBlocklist:
     def __init__(self, urls: list[str]) -> None:
         """Initialize the OnlineBlockList class."""
         self.blocklist: dict[str, BlocklistData] = {url : BlocklistData([], None) for url in urls}
-        for _ in range(5):
-            self.refresh()
+        self.refresh()
 
     def refresh(self) -> None:
         """Pull updated blocklists from the list of blocklist urls."""

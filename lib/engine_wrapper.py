@@ -489,7 +489,7 @@ class UCIEngine(EngineWrapper):
         :param stderr: Whether we should silence the stderr.
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         :param game: The first Game message from the game stream.
-        :param debug: Wether to debug or not.
+        :param debug: Whether to debug or not.
         :param popen_args: The cwd of the engine.
         """
         super().__init__(options, draw_or_resign)
@@ -512,7 +512,7 @@ class XBoardEngine(EngineWrapper):
         :param stderr: Whether we should silence the stderr.
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         :param game: The first Game message from the game stream.
-        :param debug: Wether to debug or not.
+        :param debug: Whether to debug or not.
         :param popen_args: The cwd of the engine.
         """
         super().__init__(options, draw_or_resign)

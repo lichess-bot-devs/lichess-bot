@@ -544,7 +544,7 @@ class MinimalEngine(EngineWrapper):
     """
 
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: int | None,  # noqa: ARG002
-                 draw_or_resign: Configuration, game: model.Game | None = None, name: str | None = None,  # noqa: ARG002
+                 draw_or_resign: Configuration, game: model.Game | None, debug: bool,  # noqa: ARG002
                  **popen_args: str) -> None:  # noqa: ARG002 Unused argument popen_args
         """
         Initialize the values of the engine that all homemade engines inherit.
@@ -553,9 +553,7 @@ class MinimalEngine(EngineWrapper):
         :param draw_or_resign: Options on whether the bot should resign or offer draws.
         """
         super().__init__(options, draw_or_resign)
-
-        self.engine_name = self.__class__.__name__ if name is None else name
-
+        self.engine_name = self.__class__.__name__
         self.engine = FillerEngine(self, name=self.engine_name)
 
     def get_pid(self) -> str:

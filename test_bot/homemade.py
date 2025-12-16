@@ -15,7 +15,7 @@ class ScholarsMate(ExampleEngine):
     def __init__(self, commands: COMMANDS_TYPE, options: OPTIONS_GO_EGTB_TYPE, stderr: int | None,
                  draw_or_resign: Configuration, game: model.Game | None, debug: bool, **popen_args: str) -> None:
         """Set up engine."""
-        super().__init__(commands, options, stderr, draw_or_resign, game, **popen_args)
+        super().__init__(commands, options, stderr, draw_or_resign, game, debug, **popen_args)
 
     def search(self, board: chess.Board, time_limit: chess.engine.Limit, ponder: bool, draw_offered: bool,
                root_moves: MOVE) -> chess.engine.PlayResult:

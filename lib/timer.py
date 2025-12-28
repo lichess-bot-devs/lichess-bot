@@ -62,7 +62,7 @@ class Timer:
     A timer for use in lichess-bot. An instance of timer can be used both as a countdown timer and a stopwatch.
 
     If the duration argument in the __init__() method is greater than zero, then
-    the method is_expired() indicates when the intial duration has passed. The
+    the method is_expired() indicates when the initial duration has passed. The
     method time_until_expiration() gives the amount of time left until the timer
     expires.
 

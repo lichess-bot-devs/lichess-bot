@@ -1,3 +1,4 @@
+"""Tests for the blocklist module."""
 from unittest.mock import Mock, patch
 
 import pytest
@@ -174,9 +175,8 @@ def test_parse_block_list_from_url__exception() -> None:
 
     old_data = BlocklistData([], None)
 
-    with patch("lib.blocklist.requests.get", return_value=mock_response):
-        with pytest.raises(HTTPError):
-            _parse_block_list_from_url("http://example.com/blocklist", old_data)
+    with patch("lib.blocklist.requests.get", return_value=mock_response), pytest.raises(HTTPError):
+        _parse_block_list_from_url("http://example.com/blocklist", old_data)
 
 
 def test_online_blocklist_refresh_success() -> None:

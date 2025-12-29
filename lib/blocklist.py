@@ -16,14 +16,14 @@ class BlocklistData:
 
 def _parse_block_list_from_url(url: str, old_data: BlocklistData) -> BlocklistData:
     headers =  {"If-None-Match": old_data.etag} if old_data.etag else {}
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=15)
 
     response.raise_for_status()
 
     if response.status_code == 304:
         return old_data
 
-    block_list = [username.strip() for username in response.text.strip().split("\n")]
+    block_list = [username for line in response.text.strip().splitlines() if (username := line.strip())]
 
     return BlocklistData(block_list, response.headers.get("ETag"))
 

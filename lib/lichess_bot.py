@@ -398,7 +398,7 @@ def lichess_bot_main(li: lichess.Lichess,
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event)
             elif event["type"] == "challengeCanceled":
-                active_games.discard(event["game"]["id"])
+                active_games.discard(event["challenge"]["id"])
                 log_proc_count("Freed", active_games)
             elif event["type"] == "gameStart":
                 matchmaker.accepted_challenge(event)

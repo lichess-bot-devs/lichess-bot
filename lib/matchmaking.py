@@ -210,7 +210,7 @@ class Matchmaking:
             else:
                 logger.error("No suitable bots found to challenge.")
 
-        return bot_username, base_time, increment, days, variant, mode
+        return bot_username, base_time, increment, num_days, variant, mode
 
     def get_random_config_value(self, config: Configuration, parameter: str, choices: list[str]) -> str:
         """Choose a random value from `choices` if the parameter value in the config is `random`."""

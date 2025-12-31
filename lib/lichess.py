@@ -405,7 +405,7 @@ class Lichess:
         """
         Get the bot's ongoing games.
 
-        If an error occurs when retreiving the games, None is returned.
+        If an error occurs when retrieving the games, None is returned.
         """
         with contextlib.suppress(Exception):
             response = cast(dict[str, list[GameType]], self.api_get_json("playing"))

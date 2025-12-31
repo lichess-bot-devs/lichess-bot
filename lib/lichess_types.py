@@ -1,5 +1,6 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, Callable, TypedDict, Literal, TypeAlias
+from typing import Any, TypedDict, Literal, TypeAlias
+from collections.abc import Callable
 from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
 from queue import Queue

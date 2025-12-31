@@ -42,7 +42,6 @@ ignore = [
     "TC003", # Move standard library import into a type-checking block
     "TC006", # Add quotes to type expression in `typing.cast()`
     "TRY", # Try-except suggestions
-    "UP035", # Import from collections.abc instead of typing
 ]
 
 [lint.mccabe]

@@ -4,7 +4,8 @@ import yaml
 import os
 import logging
 import math
-from typing import Any, ItemsView, Callable
+from typing import Any
+from collections.abc import ItemsView, Callable
 from lib.lichess_types import CONFIG_DICT_TYPE, FilterType
 from lib.timer import minutes, days
 

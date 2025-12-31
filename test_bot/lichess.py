@@ -7,7 +7,7 @@ import traceback
 import datetime
 from queue import Queue
 from requests.models import Response
-from typing import Generator
+from collections.abc import Generator
 from lib.lichess import Lichess as OriginalLichess
 from lib.timer import to_msec
 from lib.lichess_types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,

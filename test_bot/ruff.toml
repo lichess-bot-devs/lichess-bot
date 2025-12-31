@@ -17,7 +17,6 @@ ignore = [
     "EM101", # Exception must not use a string literal, assign to variable first
     "EM102", # Exception must not use an f-string literal, assign to variable first
     "ERA001", # Found commented-out code
-    "FA100", # Add from __future__ import annotations to simplify typing
     "FBT", # Boolean argument in function definition
     "G", # Logging
     "I001", # Import block is un-sorted or un-formatted
@@ -42,7 +41,6 @@ ignore = [
     "TC003", # Move standard library import into a type-checking block
     "TC006", # Add quotes to type expression in `typing.cast()`
     "TRY", # Try-except suggestions
-    "UP035", # Import from collections.abc instead of typing
 ]
 
 [lint.mccabe]

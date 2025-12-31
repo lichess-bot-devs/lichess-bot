@@ -4,8 +4,8 @@ import yaml
 import os
 import logging
 import math
-from abc import ABCMeta
-from typing import Any, ItemsView, Callable
+from typing import Any
+from collections.abc import ItemsView, Callable
 from lib.lichess_types import CONFIG_DICT_TYPE, FilterType
 from lib.timer import minutes, days
 
@@ -76,7 +76,7 @@ def config_warn(assertion: bool, warning_message: str) -> None:
         logger.warning(warning_message)
 
 
-def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: ABCMeta, subsection: str = "") -> None:
+def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: type, subsection: str = "") -> None:
     """
     Check the validity of a config section.
 
@@ -88,8 +88,9 @@ def check_config_section(config: CONFIG_DICT_TYPE, data_name: str, data_type: AB
     config_part = config[subsection] if subsection else config
     sub = f"`{subsection}` sub" if subsection else ""
     data_location = f"`{data_name}` subsection in `{subsection}`" if subsection else f"Section `{data_name}`"
-    type_error_message = {str: f"{data_location} must be a string wrapped in quotes.",
-                          dict: f"{data_location} must be a dictionary with indented keys followed by colons."}
+    type_error_message: dict[type, str] = {
+        str: f"{data_location} must be a string wrapped in quotes.",
+        dict: f"{data_location} must be a dictionary with indented keys followed by colons."}
     config_assert(data_name in config_part, f"Your config.yml does not have required {sub}section `{data_name}`.")
     config_assert(isinstance(config_part[data_name], data_type), type_error_message[data_type])
 

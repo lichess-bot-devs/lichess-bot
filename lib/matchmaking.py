@@ -157,16 +157,16 @@ class Matchmaking:
 
         base_time = random.choice(match_config.challenge_initial_time)
         increment = random.choice(match_config.challenge_increment)
-        days = random.choice(match_config.challenge_days)
+        num_days = random.choice(match_config.challenge_days)
 
-        play_correspondence = [bool(days), not bool(base_time or increment)]
+        play_correspondence = [bool(num_days), not bool(base_time or increment)]
         if random.choice(play_correspondence):
             base_time = 0
             increment = 0
         else:
-            days = 0
+            num_days = 0
 
-        game_type = game_category(variant, base_time, increment, days)
+        game_type = game_category(variant, base_time, increment, num_days)
 
         min_rating = match_config.opponent_min_rating
         max_rating = match_config.opponent_max_rating
@@ -210,7 +210,7 @@ class Matchmaking:
             else:
                 logger.error("No suitable bots found to challenge.")
 
-        return bot_username, base_time, increment, days, variant, mode
+        return bot_username, base_time, increment, num_days, variant, mode
 
     def get_random_config_value(self, config: Configuration, parameter: str, choices: list[str]) -> str:
         """Choose a random value from `choices` if the parameter value in the config is `random`."""
@@ -337,20 +337,20 @@ class Matchmaking:
         self.show_earliest_challenge_time()
 
 
-def game_category(variant: str, base_time: int, increment: int, days: int) -> str:
+def game_category(variant: str, base_time: int, increment: int, num_days: int) -> str:
     """
     Get the game type (e.g. bullet, atomic, classical). Lichess has one rating for every variant regardless of time control.
 
     :param variant: The game's variant.
     :param base_time: The base time in seconds.
     :param increment: The increment in seconds.
-    :param days: If the game is correspondence, we have some days to play the move.
+    :param num_days: If the game is correspondence, we have some days to play the move.
     :return: The game category.
     """
     game_duration = base_time + increment * 40
     if variant != "standard":
         return variant
-    if days:
+    if num_days:
         return "correspondence"
     if game_duration < 179:
         return "bullet"

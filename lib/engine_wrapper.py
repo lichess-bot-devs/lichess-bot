@@ -39,6 +39,7 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
     Use in a with-block to automatically close the engine when exiting the game.
 
     :param engine_config: The options for the engine.
+    :param game: The game to create the engine from.
     :return: An engine. Either UCI, XBoard, or Homemade.
     """
     cfg = engine_config.engine

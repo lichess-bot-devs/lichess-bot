@@ -1,5 +1,8 @@
 """Test functions for matchmaking module."""
-from lib.matchmaking import game_category
+from unittest.mock import Mock
+from lib.matchmaking import game_category, Matchmaking
+from lib.config import Configuration
+from lib.lichess_types import UserProfileType
 
 
 def test_game_category_standard_bullet() -> None:
@@ -165,3 +168,59 @@ def test_game_category_realistic_scenarios() -> None:
 
     # 30+20 classical
     assert game_category("standard", 1800, 20, 0) == "classical"
+
+
+def test_get_random_config_value__returns_specific_value() -> None:
+    """Test that get_random_config_value returns the config value when it's not 'random'."""
+    # Create mock objects
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": False,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {}}
+
+    # Create matchmaking instance
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    # Create config with a specific value
+    test_config = Configuration({"challenge_variant": "atomic"})
+
+    # Test that it returns the specific value, not a random choice
+    choices = ["standard", "chess960", "atomic", "horde"]
+    result = matchmaking.get_random_config_value(test_config, "challenge_variant", choices)
+
+    assert result == "atomic", f"Expected 'atomic' but got '{result}'"
+
+
+def test_get_random_config_value__returns_from_choices_when_random() -> None:
+    """Test that get_random_config_value returns a value from choices when config value is 'random'."""
+    # Create mock objects
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": False,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 30
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {}}
+
+    # Create matchmaking instance
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+
+    # Create config with "random" value
+    test_config = Configuration({"challenge_mode": "random"})
+
+    # Test that it returns one of the choices
+    choices = ["casual", "rated"]
+    result = matchmaking.get_random_config_value(test_config, "challenge_mode", choices)
+
+    assert result in choices, f"Expected result to be in {choices} but got '{result}'"

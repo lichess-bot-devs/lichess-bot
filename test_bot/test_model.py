@@ -80,6 +80,12 @@ def test_game() -> None:
     assert game_model.id == "zzzzzzzz"
     assert game_model.mode == "casual"
     assert game_model.is_white is False
+    assert game_model.my_color == "black"
+    assert game_model.url() == "https://lichess.org/zzzzzzzz/black"
+    assert game_model.short_url() == "https://lichess.org/zzzzzzzz"
+    assert game_model.pgn_event() == "Casual Bullet game"
+    assert game_model.time_control() == "90+1"
+    assert game_model.is_abortable() is True
 
 
 def test_player() -> None:
@@ -88,3 +94,17 @@ def test_player() -> None:
     player_model = model.Player(player)
     assert player_model.is_bot is True
     assert str(player_model) == "BOT b (3000)"
+
+
+def test_is_chess_960() -> None:
+    """Test the is_chess_960 function."""
+    items = [
+        {"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "type": "standard", "is_960": False},
+        {"fen": "brnkrqnb/pppppppp/8/8/8/8/PPPPPPPP/BRNKRQNB w KQkq - 0 1", "type": "960", "is_960": True},  # pos1
+        {"fen": "nrbbnkqr/pppppppp/8/8/8/8/PPPPPPPP/NRBBNKQR w KQkq - 0 1", "type": "960", "is_960": True},  # pos2
+    ]
+    for item in items:
+        fen = str(item["fen"])
+        expected = item["is_960"]
+        result = model.is_chess_960(fen)
+        assert result == expected

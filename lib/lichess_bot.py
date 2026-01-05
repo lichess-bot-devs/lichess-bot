@@ -1274,5 +1274,5 @@ def start_program() -> None:
                 logger.info("Termination requested - stopping restart cycle")
                 break
             time.sleep(10 if should_restart() else 0)
-    except Exception as e:
-        logger.exception("Quitting lichess-bot due to an error: %s", e)
+    except Exception:
+        logger.exception("Quitting lichess-bot due to an error:")

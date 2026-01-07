@@ -136,6 +136,7 @@ def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.t
     """
     Tell the engine to check the correspondence games.
 
+    :param control_queue: Queue to put events in.
     :param period: How many seconds to wait before sending a correspondence ping.
     """
     while not stop.terminated:
@@ -167,7 +168,7 @@ def logging_configurer(level: int, filename: str | None, disable_auto_logs: bool
 
     :param level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
-    :param auto_log_filename: The filename for the automatic logger. If it is `None` then the logs aren't written to a file.
+    :param disable_auto_logs: Whether to disable automatic logging.
     """
     console_handler = RichHandler()
     console_formatter = logging.Formatter("%(message)s")
@@ -252,7 +253,7 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
     :param config: The config that the bot will use.
     :param logging_level: The logging level. Either `logging.INFO` or `logging.DEBUG`.
     :param log_filename: The filename to write the logs to. If it is `None` then the logs aren't written to a file.
-    :param auto_log_filename: The filename for the automatic logger. If it is `None` then the logs aren't written to a file.
+    :param disable_auto_logging: Whether to disable automatic logging.
     :param one_game: Whether the bot should play only one game. Only used in `test_bot/test_bot.py` to test lichess-bot.
     """
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
@@ -337,6 +338,7 @@ def lichess_bot_main(li: lichess.Lichess,
     :param control_queue: The queue containing all the events.
     :param correspondence_queue: The queue containing the correspondence games.
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
+    :param pgn_queue: The queue containing the PGN games.
     :param one_game: Whether the bot should play only one game. Only used in `test_bot/test_bot.py` to test lichess-bot.
     """
     max_games = config.challenge.concurrency
@@ -661,6 +663,7 @@ def play_game(li: lichess.Lichess,
     :param challenge_queue: The queue containing the challenges.
     :param correspondence_queue: The queue containing the correspondence games.
     :param logging_queue: The logging queue. Used by `logging_listener_proc`.
+    :param pgn_queue: The queue containing the PGN games.
     """
     thread_logging_configurer(logging_queue)
     logger = logging.getLogger(__name__)
@@ -766,7 +769,7 @@ def play_game(li: lichess.Lichess,
 
 
 def read_takeback_record(game: model.Game) -> int:
-    """Read the number of move takeback requests accepeted in a game."""
+    """Read the number of move takeback requests accepted in a game."""
     try:
         with open(takeback_record_file_name(game.id)) as takeback_file:
             return int(takeback_file.read())
@@ -775,7 +778,7 @@ def read_takeback_record(game: model.Game) -> int:
 
 
 def record_takeback(game: model.Game, accepted_count: int) -> None:
-    """Record the number of move takeback requests accepeted in a game."""
+    """Record the number of move takeback requests accepted in a game."""
     with open(takeback_record_file_name(game.id), "w") as takeback_file:
         takeback_file.write(str(accepted_count))
 

@@ -37,7 +37,7 @@ Supports:
 - Local & Online Endgame Tablebases
 
 Can run on:
-- Python 3.9 and later
+- Python 3.10 and later
 - Windows, Linux and MacOS
 - Docker
 

@@ -113,7 +113,7 @@ def download_opening_book() -> None:
 
     os.makedirs("TEMP", exist_ok=True)
     response = requests.get("https://github.com/gmcheems-org/free-opening-books/raw/main/books/bin/gm2001.bin",
-                            allow_redirects=True)
+                            allow_redirects=True, timeout=60)
     if response.status_code != 200:
         pytest.xfail("Could not download opening book.")
     with open("./TEMP/gm2001.bin", "wb") as file:

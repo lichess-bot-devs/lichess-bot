@@ -22,6 +22,7 @@ ignore = [
     "N803", # Argument name should be lowercase
     "N806", # Variable in function should be lowercase
     "PERF203", # try-except within a loop incurs performance overhead
+    "PLC0415", # `import` should be at the top-level of a file
     "PLR0913", # Too many arguments in function definition
     "PLR0915", # Too many statements
     "PLR2004", # Magic value used in comparison, consider replacing `20` with a constant variable

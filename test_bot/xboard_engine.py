@@ -13,7 +13,7 @@ assert input() == "protover 2"
 
 
 def send_command(command: str) -> None:
-    """Send UCI commands to lichess-bot without output buffering."""
+    """Send XBoard commands to lichess-bot without output buffering."""
     print(command, flush=True)  # noqa: T201 (print() found)
 
 

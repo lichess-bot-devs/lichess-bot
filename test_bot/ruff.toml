@@ -12,8 +12,7 @@ ignore = [
     "COM812", # Trailing comma missing
     "D203", # Require blank line after class declaration before docstring
     "D212", # Start multiline docstring on same line as triple-quote
-    "D404", # Docstring should not start with the word "This"
-    "DTZ", # datetime without timezone
+    "DTZ005", # datetime without timezone
     "EM101", # Exception must not use a string literal, assign to variable first
     "EM102", # Exception must not use an f-string literal, assign to variable first
     "ERA001", # Found commented-out code
@@ -34,7 +33,6 @@ ignore = [
     "RUF005", # Consider [*list1, None] instead of concatenation (list1 + [None])
     "RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
     "S101", # Use of assert detected
-    "S113", # Probable use of `requests` call without timeout
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SIM108", # Use ternary operator instead of `if`-`else`-block
     "TC001", # Move application import into a type-checking block

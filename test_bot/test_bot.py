@@ -6,6 +6,7 @@ import threading
 import os
 import sys
 import datetime
+import time
 import logging
 import tempfile
 from multiprocessing import Manager
@@ -133,6 +134,7 @@ def test_uci() -> None:
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing UCI")
         assert win
+        time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))
 
@@ -152,6 +154,7 @@ def test_xboard() -> None:
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing XBoard")
         assert win
+        time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))
 
@@ -169,6 +172,7 @@ def test_homemade() -> None:
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing Homemade")
         assert win
+        time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))
 
@@ -188,5 +192,6 @@ def test_buggy_engine() -> None:
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing Buggy Engine")
         assert win
+        time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))

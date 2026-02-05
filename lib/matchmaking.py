@@ -237,7 +237,7 @@ class Matchmaking:
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
-        logger.info(f"Challenge id is {challenge_id if challenge_id else 'None'}.")
+        logger.info(f"Challenge id is {challenge_id or 'None'}.")
         self.challenge_id = challenge_id
 
     def discard_challenge(self, challenge_id: str) -> None:

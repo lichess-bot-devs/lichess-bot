@@ -10,6 +10,10 @@ from lib.engine_wrapper import MinimalEngine
 from lib.lichess_types import MOVE, HOMEMADE_ARGS_TYPE
 import logging
 
+# Import the StonksfishCrew engine so lichess-bot can find it via
+# get_homemade_engine() which does ``getattr(homemade, name)``.
+from strategies.stonksfish_crew import StonksfishCrewEngine  # noqa: F401
+
 
 # Use this logger variable to print messages to the console or log files.
 # logger.info("message") will always print "message" to the console or log file.

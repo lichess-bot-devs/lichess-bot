@@ -117,14 +117,14 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
     error = None
     while not stop.terminated:
         try:
-            response = li.get_event_stream()
-            lines = response.iter_lines()
-            for line in lines:
-                if line:
-                    event = json.loads(line.decode("utf-8"))
-                    control_queue.put_nowait(event)
-                else:
-                    control_queue.put_nowait({"type": "ping"})
+            with li.get_event_stream() as response:
+                lines = response.iter_lines()
+                for line in lines:
+                    if line:
+                        event = json.loads(line.decode("utf-8"))
+                        control_queue.put_nowait(event)
+                    else:
+                        control_queue.put_nowait({"type": "ping"})
         except Exception:
             error = traceback.format_exc()
             break
@@ -668,104 +668,104 @@ def play_game(li: lichess.Lichess,
     thread_logging_configurer(logging_queue)
     logger = logging.getLogger(__name__)
 
-    response = li.get_game_stream(game_id)
-    lines = response.iter_lines()
+    with li.get_game_stream(game_id) as response:
+        lines = response.iter_lines()
 
-    # Initial response of stream will be the full game info. Store it.
-    initial_state = json.loads(next(lines).decode("utf-8"))
-    logger.debug(f"Initial state: {initial_state}")
-    abort_time = seconds(config.abort_time)
-    game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
+        # Initial response of stream will be the full game info. Store it.
+        initial_state = json.loads(next(lines).decode("utf-8"))
+        logger.debug(f"Initial state: {initial_state}")
+        abort_time = seconds(config.abort_time)
+        game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
 
-    with engine_wrapper.create_engine(config, game) as engine:
-        engine.get_opponent_info(game)
-        logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
-        conversation = Conversation(game, engine, li, __version__, challenge_queue)
+        with engine_wrapper.create_engine(config, game) as engine:
+            engine.get_opponent_info(game)
+            logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
+            conversation = Conversation(game, engine, li, __version__, challenge_queue)
 
-        logger.info(f"+++ {game}")
+            logger.info(f"+++ {game}")
 
-        is_correspondence = game.speed == "correspondence"
-        correspondence_cfg = config.correspondence
-        correspondence_move_time = seconds(correspondence_cfg.move_time)
-        correspondence_disconnect_time = seconds(correspondence_cfg.disconnect_time)
+            is_correspondence = game.speed == "correspondence"
+            correspondence_cfg = config.correspondence
+            correspondence_move_time = seconds(correspondence_cfg.move_time)
+            correspondence_disconnect_time = seconds(correspondence_cfg.disconnect_time)
 
-        engine_cfg = config.engine
-        ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
-        can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
-        move_overhead = msec(config.move_overhead)
-        delay = msec(config.rate_limiting_delay)
+            engine_cfg = config.engine
+            ponder_cfg = correspondence_cfg if is_correspondence else engine_cfg
+            can_ponder = ponder_cfg.uci_ponder or ponder_cfg.ponder
+            move_overhead = msec(config.move_overhead)
+            delay = msec(config.rate_limiting_delay)
 
-        takebacks_accepted = read_takeback_record(game)
-        max_takebacks_accepted = config.max_takebacks_accepted
+            takebacks_accepted = read_takeback_record(game)
+            max_takebacks_accepted = config.max_takebacks_accepted
 
-        keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
-        hello = get_greeting("hello", config.greeting, keyword_map)
-        goodbye = get_greeting("goodbye", config.greeting, keyword_map)
-        hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
-        goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
+            keyword_map: defaultdict[str, str] = defaultdict(str, me=game.me.name, opponent=game.opponent.name)
+            hello = get_greeting("hello", config.greeting, keyword_map)
+            goodbye = get_greeting("goodbye", config.greeting, keyword_map)
+            hello_spectators = get_greeting("hello_spectators", config.greeting, keyword_map)
+            goodbye_spectators = get_greeting("goodbye_spectators", config.greeting, keyword_map)
 
-        disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else seconds(0)
-        prior_game = None
-        board = chess.Board()
-        game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
-        quit_after_all_games_finish = config.quit_after_all_games_finish
-        stay_in_game = True
-        while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
-            move_attempted = False
-            try:
-                upd = next_update(game_stream)
-                u_type = upd["type"] if upd else "ping"
-                if u_type == "chatLine":
-                    conversation.react(ChatLine(upd))
-                elif u_type == "gameState":
-                    game.state = upd
-                    board = setup_board(game)
-                    takeback_field = game.state.get("btakeback") if game.is_white else game.state.get("wtakeback")
+            disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else seconds(0)
+            prior_game = None
+            board = chess.Board()
+            game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
+            quit_after_all_games_finish = config.quit_after_all_games_finish
+            stay_in_game = True
+            while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
+                move_attempted = False
+                try:
+                    upd = next_update(game_stream)
+                    u_type = upd["type"] if upd else "ping"
+                    if u_type == "chatLine":
+                        conversation.react(ChatLine(upd))
+                    elif u_type == "gameState":
+                        game.state = upd
+                        board = setup_board(game)
+                        takeback_field = game.state.get("btakeback") if game.is_white else game.state.get("wtakeback")
 
-                    if not is_game_over(game) and is_engine_move(game, prior_game, board):
-                        disconnect_time = correspondence_disconnect_time
-                        say_hello(conversation, hello, hello_spectators, board)
-                        setup_timer = Timer()
-                        print_move_number(board)
-                        move_attempted = True
-                        engine.play_move(board,
-                                         game,
-                                         li,
-                                         setup_timer,
-                                         move_overhead,
-                                         can_ponder,
-                                         is_correspondence,
-                                         correspondence_move_time,
-                                         engine_cfg,
-                                         fake_think_time(config, board, game))
-                        time.sleep(to_seconds(delay))
-                    elif is_game_over(game):
-                        tell_user_game_result(game, board)
-                        engine.send_game_result(game, board)
-                        conversation.send_message("player", goodbye)
-                        conversation.send_message("spectator", goodbye_spectators)
-                    elif (takeback_field
-                            and not bot_to_move(game, board)
-                            and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
-                        takebacks_accepted += 1
-                        record_takeback(game, takebacks_accepted)
-                        engine.discard_last_move_commentary()
+                        if not is_game_over(game) and is_engine_move(game, prior_game, board):
+                            disconnect_time = correspondence_disconnect_time
+                            say_hello(conversation, hello, hello_spectators, board)
+                            setup_timer = Timer()
+                            print_move_number(board)
+                            move_attempted = True
+                            engine.play_move(board,
+                                             game,
+                                             li,
+                                             setup_timer,
+                                             move_overhead,
+                                             can_ponder,
+                                             is_correspondence,
+                                             correspondence_move_time,
+                                             engine_cfg,
+                                             fake_think_time(config, board, game))
+                            time.sleep(to_seconds(delay))
+                        elif is_game_over(game):
+                            tell_user_game_result(game, board)
+                            engine.send_game_result(game, board)
+                            conversation.send_message("player", goodbye)
+                            conversation.send_message("spectator", goodbye_spectators)
+                        elif (takeback_field
+                                and not bot_to_move(game, board)
+                                and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
+                            takebacks_accepted += 1
+                            record_takeback(game, takebacks_accepted)
+                            engine.discard_last_move_commentary()
 
-                    wbtime = upd[engine_wrapper.wbtime(board)]
-                    wbinc = upd[engine_wrapper.wbinc(board)]
-                    terminate_time = msec(wbtime) + msec(wbinc) + seconds(60)
-                    game.ping(abort_time, terminate_time, disconnect_time)
-                    prior_game = copy.deepcopy(game)
-                elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
-                    stay_in_game = False
-            except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
-                    StopIteration) as e:
-                stopped = isinstance(e, StopIteration)
-                stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
+                        wbtime = upd[engine_wrapper.wbtime(board)]
+                        wbinc = upd[engine_wrapper.wbinc(board)]
+                        terminate_time = msec(wbtime) + msec(wbinc) + seconds(60)
+                        game.ping(abort_time, terminate_time, disconnect_time)
+                        prior_game = copy.deepcopy(game)
+                    elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
+                        stay_in_game = False
+                except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
+                        StopIteration) as e:
+                    stopped = isinstance(e, StopIteration)
+                    stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
 
-        pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
-    final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record, pgn_queue)
-    delete_takeback_record(game)
+            pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
+        final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record, pgn_queue)
+        delete_takeback_record(game)
 
 
 def read_takeback_record(game: model.Game) -> int:

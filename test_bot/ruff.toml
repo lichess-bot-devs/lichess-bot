@@ -36,6 +36,7 @@ ignore = [
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SIM108", # Use ternary operator instead of `if`-`else`-block
     "TC001", # Move application import into a type-checking block
+    "TC002", # Move third-party import into a type-checking block
     "TC003", # Move standard library import into a type-checking block
     "TC006", # Add quotes to type expression in `typing.cast()`
     "TRY", # Try-except suggestions

@@ -1,4 +1,5 @@
 """Imitate `lichess.py`. Used in tests."""
+from __future__ import annotations
 import time
 import chess.engine
 import json
@@ -103,6 +104,13 @@ class GameStream(Response):
                 new_game_state["status"] = "started"
                 yield json.dumps(new_game_state).encode("utf-8")
 
+    def __enter__(self) -> GameStream:  # noqa: PYI034
+        """Enter game stream context."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """Exit game stream context."""
+
 
 class EventStream(Response):
     """Imitate lichess.org's EventStream. Used in tests."""
@@ -128,6 +136,13 @@ class EventStream(Response):
                           "source": "friend",
                           "compat": {"bot": True,
                                      "board": True}}}).encode("utf-8")
+
+    def __enter__(self) -> EventStream:  # noqa: PYI034
+        """Enter context block."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """Exit context block."""
 
 
 # Docs: https://lichess.org/api.

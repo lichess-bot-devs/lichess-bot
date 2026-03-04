@@ -26,13 +26,13 @@ jobs:
           echo "version:'"$version"'"
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Login to Github container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.GB_REGISTRY }}
           username: ${{ secrets.GB_REPO_USER }}

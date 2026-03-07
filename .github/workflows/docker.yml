@@ -45,7 +45,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: build and push alpine image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/Dockerfile
@@ -61,7 +61,7 @@ jobs:
             ${{ env.GB_REGISTRY }}/${{ vars.GHCR_DOCKER_ORGANIZATION }}/${{ vars.DOCKER_IMG }}:${{ env.version }}-alpine
 
       - name: build and push fat image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/Dockerfile

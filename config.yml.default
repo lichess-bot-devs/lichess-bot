@@ -176,6 +176,9 @@ challenge:                         # Incoming challenges.
 #   - user4
 # recent_bot_challenge_age: 60     # Maximum age of a bot challenge to be considered recent in seconds
 # max_recent_bot_challenges: 2     # Maximum number of recent challenges that can be accepted from the same bot
+# min_rating: 0                   # Minimum rating of the challenger to accept a challenge.
+# max_rating: 4000                # Maximum rating of the challenger to accept a challenge. The maximum rating in lichess is 4000.
+# rating_difference: 300          # Maximum rating difference between the bot and the challenger. Overrides min_rating and max_rating if set.
   bullet_requires_increment: false # Require that bullet game challenges from bots have a non-zero increment
   max_simultaneous_games_per_user: 5  # Maximum number of simultaneous games with the same user
 

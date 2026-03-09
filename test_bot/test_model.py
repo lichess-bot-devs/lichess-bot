@@ -57,7 +57,8 @@ def test_challenge() -> None:
     assert challenge_model.speed == "bullet"
     assert challenge_model.time_control["show"] == "1.5+1"
     assert challenge_model.color == "white"
-    assert challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile) == (True, "")
+    supported = challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile)
+    assert supported == (True, "")
 
     CONFIG["challenge"]["min_base"] = 120
     assert challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile) == (
@@ -95,7 +96,8 @@ def test_challenge_rating_filters() -> None:
     challenge_model = model.Challenge(challenge, user_profile)
 
     # Default config should accept all ratings
-    assert challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile) == (True, "")
+    supported = challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile)
+    assert supported == (True, "")
 
     # Test max_rating filter
     CONFIG["challenge"]["max_rating"] = 1500
@@ -116,9 +118,11 @@ def test_challenge_rating_filters() -> None:
 
     # Rating difference large enough to accept
     CONFIG["challenge"]["rating_difference"] = 1500
-    assert challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile) == (True, "")
+    supported = challenge_model.is_supported(configuration, recent_challenges, Counter(), online_block_list, user_profile)
+    assert supported == (True, "")
 
-    # Test that rating_difference narrows the range (min_rating=0, max_rating=4000, but diff=500 from bot rating 3000)
+    # Test that rating_difference narrows the range
+    # min_rating=0, max_rating=4000, but diff=500 from bot rating 3000
     CONFIG["challenge"]["rating_difference"] = 500
     CONFIG["challenge"]["min_rating"] = 0
     CONFIG["challenge"]["max_rating"] = 4000

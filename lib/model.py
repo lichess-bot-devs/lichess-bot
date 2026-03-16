@@ -127,7 +127,7 @@ class Challenge:
 
     def is_supported(self, config: Configuration, recent_bot_challenges: defaultdict[str, list[Timer]],
                      opponent_engagements: Counter[str], online_block_list: OnlineBlocklist,
-                     user_profile: UserProfileType | None = None) -> tuple[bool, str]:
+                     user_profile: UserProfileType) -> tuple[bool, str]:
         """Whether the challenge is supported."""
         try:
             if self.from_self:
@@ -141,7 +141,7 @@ class Challenge:
                               or self.decline_due_to(self.is_supported_time_control(config), "timeControl")
                               or self.decline_due_to(self.is_supported_variant(config), "variant")
                               or self.decline_due_to(self.is_supported_mode(config), "casual" if self.rated else "rated")
-                              or self.decline_due_to(self.is_supported_rating(config, user_profile or {}), "generic")
+                              or self.decline_due_to(self.is_supported_rating(config, user_profile), "generic")
                               or self.decline_due_to(self.challenger.name not in config.block_list, "generic")
                               or self.decline_due_to(self.challenger.name not in online_block_list, "generic")
                               or self.decline_due_to(self.challenger.name in allowed_opponents, "generic")

@@ -630,7 +630,8 @@ def handle_challenge(event: EventType, li: lichess.Lichess, challenge_queue: MUL
     is_supported, decline_reason = chlng.is_supported(challenge_config,
                                                       recent_bot_challenges,
                                                       opponent_engagements,
-                                                      online_block_list)
+                                                      online_block_list,
+                                                      user_profile)
     if is_supported:
         challenge_queue.append(chlng)
         sort_challenges(challenge_queue, challenge_config)

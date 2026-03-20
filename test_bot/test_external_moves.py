@@ -282,6 +282,8 @@ class TestExternalMoves:
 
 
 class TestExternalMoveHelpers:
+    """Test the helper functions for external moves."""
+
     def test_op1_positions(self) -> None:
         """Test that a position is op1."""
         fens_op1 = ["r7/p1b1k3/8/8/P7/8/8/K2R1R2 w - - 1 2", "3qk3/1n1pp3/8/8/8/8/4P2P/4K3 w - - 0 1"]

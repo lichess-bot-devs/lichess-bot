@@ -1044,9 +1044,7 @@ def get_egtb_move(board: chess.Board, game: model.Game, lichess_bot_tbs: Configu
 
 
 def is_op1_position(board: chess.Board) -> bool:
-    """
-    Determines if a given python-chess board represents an 'op1' 8-piece tablebase position.
-    """
+    """Determine if a given python-chess board represents an 'op1' 8-piece tablebase position."""
     if len(board.piece_map()) != 8 or board.castling_rights:
         return False
 
@@ -1063,9 +1061,8 @@ def is_op1_position(board: chess.Board) -> bool:
         wp_ranks = [chess.square_rank(sq) for sq in white_pawns if chess.square_file(sq) == file_idx]
         bp_ranks = [chess.square_rank(sq) for sq in black_pawns if chess.square_file(sq) == file_idx]
 
-        if wp_ranks and bp_ranks:
-            if min(wp_ranks) < max(bp_ranks):
-                return True
+        if wp_ranks and bp_ranks and min(wp_ranks) < max(bp_ranks):
+            return True
 
     return False
 
@@ -1098,7 +1095,8 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
             dtm = data["moves"][0]["dtm"]
             if dtm:
                 dtm *= -1
-            logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, {metric}: {dtz}, dtm: {dtm}) for game {game.id}")
+            logger.info(f"Got move {move} from tablebase.lichess.ovh (wdl: {wdl}, {metric}: {dtz}, dtm: {dtm})"
+                        f" for game {game.id}")
         else:  # quality == "suggest":
             best_wdl = name_to_wld[data["moves"][0]["category"]] * -1
 

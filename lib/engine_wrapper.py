@@ -1086,7 +1086,7 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
                    "win": 2}
     pieces = chess.popcount(board.occupied)
     max_pieces = 8 if board.uci_variant == "chess" else 6
-    metric = "dtz" if pieces < 8 else "dtc"
+    metric: Literal["dtz", "dtc"] = "dtz" if pieces < 8 else "dtc"
     is_op1 = is_op1_position(board)
     if pieces <= max_pieces and (pieces < 8 or is_op1):
         data = li.online_book_get(f"https://tablebase.lichess.ovh/{variant}",

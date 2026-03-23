@@ -1057,12 +1057,13 @@ def is_op1_position(board: chess.Board) -> bool:
     white_pawns = board.pieces(chess.PAWN, chess.WHITE)
     black_pawns = board.pieces(chess.PAWN, chess.BLACK)
 
-    for file_idx in range(8):
-        wp_ranks = [chess.square_rank(sq) for sq in white_pawns if chess.square_file(sq) == file_idx]
-        bp_ranks = [chess.square_rank(sq) for sq in black_pawns if chess.square_file(sq) == file_idx]
+    if not white_pawns or not black_pawns:
+        return False
 
-        if wp_ranks and bp_ranks and min(wp_ranks) < max(bp_ranks):
-            return True
+    for wp in white_pawns:
+        for bp in black_pawns:
+            if chess.square_file(wp) == chess.square_file(bp) and chess.square_rank(wp) < chess.square_rank(bp):
+                return True
 
     return False
 

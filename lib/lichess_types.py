@@ -382,6 +382,7 @@ class OnlineMoveType(TypedDict):
     dtz: int
     precise_dtz: int | None
     dtm: int | None
+    dtc: int
     category: str
 
 
@@ -397,6 +398,7 @@ class OnlineType(TypedDict, total=False):
     dtz: int
     precise_dtz: int | None
     dtm: int | None
+    dtc: int
     category: str
     # moves: list[LichessEGTBMoveType]
 

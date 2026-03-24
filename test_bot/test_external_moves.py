@@ -16,7 +16,7 @@ from typing import cast
 from lib.lichess import is_final, backoff_handler, Lichess
 from lib.config import Configuration, insert_default_values
 from lib.model import Game
-from lib.engine_wrapper import get_online_move, get_book_move
+from lib.engine_wrapper import get_online_move, get_book_move, is_op1_position
 
 
 class MockLichess(Lichess):
@@ -143,6 +143,7 @@ class TestExternalMoves:
     endgame_wdl2_fen = "2k5/4n2Q/5N2/8/8/8/1r6/2K5 b - - 0 123"
     endgame_wdl1_fen = "6N1/3n4/3k1b2/8/8/7Q/1r6/5K2 b - - 6 9"
     endgame_wdl0_fen = "6N1/3n4/3k1b2/8/8/7Q/5K2/1r6 b - - 8 10"
+    endgame_op1_fen = "r7/p1b1k3/8/8/P7/8/8/K2R1R2 w - - 1 2"
 
     def test_lichess_cloud_analysis(self) -> None:
         """Test lichess_cloud_analysis."""
@@ -209,6 +210,12 @@ class TestExternalMoves:
                                             self.online_cfg,
                                             self.draw_or_resign_cfg)
         assert not wdl1_move.resigned and not wdl1_move.draw_offered
+        op1_move = get_online_move_wrapper(self.li,
+                                           chess.Board(self.endgame_op1_fen),
+                                           self.game,
+                                           self.online_cfg,
+                                           self.draw_or_resign_cfg)
+        assert op1_move.move == chess.Move.from_uci("f1e1")
 
         # Test with reversed colors.
         assert get_online_move_wrapper(self.li,
@@ -272,3 +279,16 @@ class TestExternalMoves:
         """Test opening book."""
         download_opening_book()
         assert get_book_move(chess.Board(self.opening_fen), self.game, self.polyglot_cfg).move == chess.Move.from_uci("h4f6")
+
+
+class TestExternalMoveHelpers:
+    """Test the helper functions for external moves."""
+
+    def test_op1_positions(self) -> None:
+        """Test that a position is op1."""
+        fens_op1 = ["r7/p1b1k3/8/8/P7/8/8/K2R1R2 w - - 1 2", "3qk3/1n1pp3/8/8/8/8/4P2P/4K3 w - - 0 1"]
+        fens_not_op1 = ["r3k3/2b5/8/p7/P7/8/8/K2R1R2 w q - 0 2", "3qk3/1n1pp1n1/8/8/8/8/4P3/4K3 w - - 0 1"]
+        for fen in fens_op1:
+            assert is_op1_position(chess.Board(fen))
+        for fen in fens_not_op1:
+            assert not is_op1_position(chess.Board(fen))

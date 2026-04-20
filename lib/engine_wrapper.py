@@ -54,7 +54,7 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
         for k, v in cfg.engine_options.items():
             commands.append(f"--{k}={v}" if v is not None else f"--{k}")
 
-    stderr = None if cfg.silence_stderr else subprocess.DEVNULL
+    stderr = subprocess.DEVNULL if cfg.silence_stderr else None
 
     Engine: type[UCIEngine | XBoardEngine | MinimalEngine]
     if engine_type == "xboard":

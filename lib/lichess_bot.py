@@ -126,10 +126,12 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                     else:
                         control_queue.put_nowait({"type": "ping"})
         except Exception:
-            error = traceback.format_exc()
-            break
+            if stop.terminated:
+                break
+            logger.warning(f"Control stream error, reconnecting:\n{traceback.format_exc()}")
+            time.sleep(1)
 
-    control_queue.put_nowait({"type": "terminated", "error": error})
+    control_queue.put_nowait({"type": "terminated", "error": None})
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.timedelta) -> None:

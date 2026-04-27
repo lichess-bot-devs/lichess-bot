@@ -114,7 +114,6 @@ def upgrade_account(li: lichess.Lichess) -> bool:
 
 def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess) -> None:
     """Put the events in a queue."""
-    error = None
     while not stop.terminated:
         try:
             with li.get_event_stream() as response:

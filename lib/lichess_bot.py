@@ -114,7 +114,6 @@ def upgrade_account(li: lichess.Lichess) -> bool:
 
 def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess) -> None:
     """Put the events in a queue."""
-    error = None
     while not stop.terminated:
         try:
             with li.get_event_stream() as response:
@@ -126,10 +125,10 @@ def watch_control_stream(control_queue: CONTROL_QUEUE_TYPE, li: lichess.Lichess)
                     else:
                         control_queue.put_nowait({"type": "ping"})
         except Exception:
-            error = traceback.format_exc()
-            break
+            logger.warning(f"Control stream error, reconnecting:\n{traceback.format_exc()}")
+            time.sleep(1)
 
-    control_queue.put_nowait({"type": "terminated", "error": error})
+    control_queue.put_nowait({"type": "terminated"})
 
 
 def do_correspondence_ping(control_queue: CONTROL_QUEUE_TYPE, period: datetime.timedelta) -> None:
@@ -380,7 +379,6 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "terminated":
                 stop.restart = True
-                logger.debug(f"Terminating exception:\n{event['error']}")
                 control_queue.task_done()
                 break
 

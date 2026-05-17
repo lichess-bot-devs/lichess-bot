@@ -46,6 +46,11 @@ class MockLichess(Lichess):
 
         return online_book_get()
 
+    def authenticated_online_book_get(self, path: str, params: dict[str, str | int] | None = None,
+                                      stream: bool = False) -> OnlineType:
+        """Use online_book_get for tests."""
+        return self.online_book_get(path, params, stream)
+
     def is_website_up(self, url: str) -> bool:
         """Check if a website is up."""
         try:

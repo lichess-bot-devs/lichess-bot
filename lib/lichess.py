@@ -448,7 +448,7 @@ class Lichess:
 
     def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
                         stream: bool = False) -> OnlineType:
-        """Get an external move from online sources (chessdb or lichess.org)."""
+        """Get an external move from chessdb."""
         @backoff.on_exception(backoff.constant,
                               (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
                               max_time=60,
@@ -462,6 +462,23 @@ class Lichess:
             json_response: OnlineType = self.other_session.get(path, timeout=2, params=params, stream=stream).json()
             return json_response
         return online_book_get()
+
+    def authenticated_online_book_get(self, path: str, params: dict[str, str | int] | None = None,
+                                      stream: bool = False) -> OnlineType:
+        """Get an external move from lichess.org."""
+        @backoff.on_exception(backoff.constant,
+                              (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
+                              max_time=60,
+                              max_tries=self.max_retries,
+                              interval=0.1,
+                              giveup=is_final,
+                              on_backoff=backoff_handler,
+                              backoff_log_level=logging.DEBUG,
+                              giveup_log_level=logging.DEBUG)
+        def authenticated_online_book_get() -> OnlineType:
+            json_response: OnlineType = self.session.get(path, timeout=2, params=params, stream=stream).json()
+            return json_response
+        return authenticated_online_book_get()
 
     def is_online(self, user_id: str) -> bool:
         """Check if lichess.org thinks the bot is online or not."""

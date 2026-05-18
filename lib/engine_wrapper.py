@@ -890,10 +890,9 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy.
 
     with contextlib.suppress(Exception):
-        data = li.authenticated_online_book_get("https://lichess.org/api/cloud-eval",
-                                                params={"fen": board.fen(),
-                                                        "multiPv": multipv,
-                                                        "variant": variant})
+        data = li.online_book_get("https://lichess.org/api/cloud-eval",
+                                  params={"fen": board.fen(), "multiPv": multipv, "variant": variant},
+                                  authenticated=True)
         if "error" not in data:
             depth = data["depth"]
             knodes = data["knodes"]
@@ -944,7 +943,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
         params: dict[str, str | int]
         if source == "masters":
             params = {"fen": board.fen(), "moves": 100}
-            response = li.authenticated_online_book_get("https://explorer.lichess.ovh/masters", params)
+            response = li.online_book_get("https://explorer.lichess.ovh/masters", params, authenticated=True)
             comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Masters)"}
         elif source == "player":
             player = opening_explorer_cfg.player_name
@@ -952,11 +951,11 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
                 player = game.username
             params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
                       "recentGames": 0, "color": "white" if side == "wtime" else "black"}
-            response = li.authenticated_online_book_get("https://explorer.lichess.ovh/player", params, True)
+            response = li.online_book_get("https://explorer.lichess.ovh/player", params, True, authenticated=True)
             comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
         else:
             params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
-            response = li.authenticated_online_book_get("https://explorer.lichess.ovh/lichess", params)
+            response = li.online_book_get("https://explorer.lichess.ovh/lichess", params, authenticated=True)
             comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
         moves = []
         for possible_move in response["moves"]:
@@ -1087,8 +1086,8 @@ def get_lichess_egtb_move(li: lichess.Lichess, game: model.Game, board: chess.Bo
     metric: Literal["dtz", "dtc"] = "dtz" if pieces < 8 else "dtc"
     is_op1 = is_op1_position(board)
     if pieces <= max_pieces and (pieces < 8 or is_op1):
-        data = li.authenticated_online_book_get(f"https://tablebase.lichess.ovh/{variant}",
-                                                params={"fen": board.fen()})
+        data = li.online_book_get(f"https://tablebase.lichess.ovh/{variant}",
+                                  params={"fen": board.fen()}, authenticated=True)
         if quality == "best":
             move = data["moves"][0]["uci"]
             wdl = name_to_wld[data["moves"][0]["category"]] * -1

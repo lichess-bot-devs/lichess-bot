@@ -28,8 +28,12 @@ class MockLichess(Lichess):
         self.other_session = requests.Session()
 
     def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
-                        stream: bool = False) -> OnlineType:
-        """Get an external move from online sources (chessdb or lichess.org)."""
+                        stream: bool = False, authenticated: bool = False) -> OnlineType:
+        """
+        Get an external move from online sources (chessdb or lichess.org).
+
+        Ignore authentication for tests.
+        """
 
         @backoff.on_exception(backoff.constant,
                               (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),

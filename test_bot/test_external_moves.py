@@ -28,7 +28,7 @@ class MockLichess(Lichess):
         self.other_session = requests.Session()
 
     def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
-                        stream: bool = False, authenticated: bool = False) -> OnlineType:
+                        stream: bool = False, **_: dict[str, bool]) -> OnlineType:
         """
         Get an external move from online sources (chessdb or lichess.org).
 
@@ -45,9 +45,7 @@ class MockLichess(Lichess):
                               backoff_log_level=logging.DEBUG,
                               giveup_log_level=logging.DEBUG)
         def online_book_get() -> OnlineType:
-            # Always choose the unauthenticated session for tests.
-            session = self.other_session if authenticated else self.other_session
-            json_response: OnlineType = session.get(path, timeout=2, params=params, stream=stream).json()
+            json_response: OnlineType = self.other_session.get(path, timeout=2, params=params, stream=stream).json()
             return json_response
 
         return online_book_get()

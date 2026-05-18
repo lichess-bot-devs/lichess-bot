@@ -951,7 +951,7 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
                 player = game.username
             params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
                       "recentGames": 0, "color": "white" if side == "wtime" else "black"}
-            response = li.online_book_get("https://explorer.lichess.ovh/player", params, True, authenticated=True)
+            response = li.online_book_get("https://explorer.lichess.ovh/player", params, stream=True, authenticated=True)
             comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
         else:
             params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}

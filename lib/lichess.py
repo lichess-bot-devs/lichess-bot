@@ -446,7 +446,7 @@ class Lichess:
         """Cancel a challenge."""
         self.api_post("cancel", challenge_id, raise_for_status=False)
 
-    def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
+    def online_book_get(self, path: str, params: dict[str, str | int] | None = None, *,
                         stream: bool = False, authenticated: bool = False) -> OnlineType:
         """Get an external move from online sources (chessdb or lichess.org)."""
         @backoff.on_exception(backoff.constant,

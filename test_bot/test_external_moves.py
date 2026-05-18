@@ -27,7 +27,7 @@ class MockLichess(Lichess):
         self.max_retries = 3
         self.other_session = requests.Session()
 
-    def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
+    def online_book_get(self, path: str, params: dict[str, str | int] | None = None, *,
                         stream: bool = False, authenticated: bool = False) -> OnlineType:
         """
         Get an external move from online sources (chessdb or lichess.org).

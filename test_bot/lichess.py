@@ -248,8 +248,8 @@ class Lichess(OriginalLichess):
     def cancel(self, challenge_id: str) -> None:
         """Isn't used in tests."""
 
-    def online_book_get(self, path: str, params: dict[str, str | int] | None = None,
-                        stream: bool = False) -> OnlineType:
+    def online_book_get(self, path: str, params: dict[str, str | int] | None = None, *,
+                        stream: bool = False, authenticated: bool = False) -> OnlineType:
         """Isn't used in tests."""
         return {}
 

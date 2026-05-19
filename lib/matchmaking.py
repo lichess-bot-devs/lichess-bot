@@ -186,7 +186,9 @@ class Matchmaking:
 
         self.online_block_list.refresh()
         online_bots = self.li.get_online_bots()
+        logger.info(f"Found {len(online_bots)} online bots")
         online_bots = list(filter(is_suitable_opponent, online_bots))
+        logger.info(f"Choosing from {len(online_bots)} suitable opponents")
 
         def ready_for_challenge(bot: UserProfileType) -> bool:
             aspects = [variant, game_type, mode] if self.challenge_filter == FilterType.FINE else []

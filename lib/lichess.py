@@ -431,7 +431,7 @@ class Lichess:
     def get_online_bots(self) -> list[UserProfileType]:
         """Get a list of bots that are online."""
         try:
-            online_bots_str = self.api_get_raw("online_bots")
+            online_bots_str = self.api_get_raw("online_bots", params={"nb": "512"})
             online_bots = list(filter(bool, online_bots_str.split("\n")))
             return list(map(json.loads, online_bots))
         except Exception:

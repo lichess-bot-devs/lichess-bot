@@ -41,7 +41,7 @@ option name Threads type spin default 1 min 1 max 512
 option name Hash type spin default 16 min 1 max 33554432
 option name Clear Hash type button
 option name Ponder type check default false
-option name MultiPV type spin default 1 min 1 max 500
+option name  type spin default 1 min 1 max 500
 option name Skill Level type spin default 20 min 0 max 20
 option name Move Overhead type spin default 10 min 0 max 5000
 option name Slow Mover type spin default 100 min 10 max 1000
@@ -65,7 +65,7 @@ Any of the names following `option name` can be listed in `uci_options` in order
     Move Overhead: 100
     Skill Level: 10
 ```
-The exceptions to this are the options `uci_chess960`, `uci_variant`, `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
+The exceptions to this are the options `uci_chess960`, `uci_variant`, ``, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `uci_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't understand the option. The word after `type` indicates the expected type of the options: `string` for a text string, `spin` for a numeric value, `check` for a boolean True/False value.
 
 One last option is `go_commands`. Beneath this option, arguments to the UCI `go` command can be passed. For example,
 ```yml
@@ -89,7 +89,7 @@ Any of the options can be listed under `xboard_options` in order to configure th
     PGN File: lichess_games.pgn
     CPU Count: 1
 ```
-The exceptions to this are the options `multipv`, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `xboard_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't know how to handle the option. The word prefixed with a hyphen indicates the expected type of the options: `-string` for a text string, `-spin` for a numeric value, `-check` for a boolean True/False value.
+The exceptions to this are the options ``, and `ponder`. These will be handled by lichess-bot after a game starts and should not be listed in `config.yml`. Also, if an option is listed under `xboard_options` that is not in the list printed by the engine, it will cause an error when the engine starts because the engine won't know how to handle the option. The word prefixed with a hyphen indicates the expected type of the options: `-string` for a text string, `-spin` for a numeric value, `-check` for a boolean True/False value.
 
 One last option is `go_commands`. Beneath this option, commands prior to the `go` command can be passed. For example,
 ```yml

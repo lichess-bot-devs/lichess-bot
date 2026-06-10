@@ -1,1 +1,1 @@
-Put your engines and opening books here.
+Put your engines here.

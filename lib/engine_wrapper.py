@@ -67,6 +67,7 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
         raise ValueError(
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
+    options = randomize_options(options)
     logger.debug(f"Starting engine: {commands}")
     return Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
                   cwd=cfg.working_dir)
@@ -78,6 +79,23 @@ def remove_managed_options(config: Configuration) -> OPTIONS_GO_EGTB_TYPE:
         return chess.engine.Option(key, "", None, None, None, None).is_managed()
 
     return {name: value for (name, value) in config.items() if not is_managed(name)}
+
+
+def randomize_options(options: OPTIONS_GO_EGTB_TYPE) -> OPTIONS_GO_EGTB_TYPE:
+    """
+    Process engine options and randomly select values from list options.
+
+    :param options: The options dictionary that may contain list values.
+    :return: The options with list values replaced by random selections.
+    """
+    randomized = {}
+    for name, value in options.items():
+        if isinstance(value, list):
+            randomized[name] = random.choice(value)
+            logger.info(f"The wheel has dictated that the'{name}' has been randomly selected: {randomized[name]} from {value}")
+        else:
+            randomized[name] = value
+    return randomized
 
 
 PONDERPV_CHARACTERS = 6  # The length of ", Pv: ".
@@ -96,11 +114,13 @@ class EngineWrapper:
         self.engine: chess.engine.SimpleEngine | FillerEngine
         self.scores: list[chess.engine.PovScore] = []
         self.draw_or_resign = draw_or_resign
+        self.options = dict(options)
         self.go_commands = Configuration(cast(GO_COMMANDS_TYPE, options.pop("go_commands", {})) or {})
         self.move_commentary: list[InfoStrDict] = []
         self.comment_start_index = -1
 
     def configure(self, options: OPTIONS_GO_EGTB_TYPE, game: model.Game | None) -> None:
+        
         """
         Send configurations to the engine.
 
@@ -886,7 +906,7 @@ def get_lichess_cloud_move(li: lichess.Lichess, board: chess.Board, game: model.
     comment: chess.engine.InfoDict = {}
 
     quality = lichess_cloud_cfg.move_quality
-    multipv = 1 if quality == "best" else 5
+    multipv = 1 if quality == "best" else 20 - randomized
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy.
 
     with contextlib.suppress(Exception):

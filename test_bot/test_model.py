@@ -150,8 +150,9 @@ def test_game() -> None:
     username = "b"
     base_url = "https://lichess.org/"
     abort_time = datetime.timedelta(seconds=30)
+    dummy_config = config.Configuration({"engine": {"uci_options": {"Skill Level": [0]}}})
 
-    game_model = model.Game(game, username, base_url, abort_time)
+    game_model = model.Game(game, username, base_url, dummy_config, abort_time)
     assert game_model.id == "zzzzzzzz"
     assert game_model.mode == "casual"
     assert game_model.is_white is False

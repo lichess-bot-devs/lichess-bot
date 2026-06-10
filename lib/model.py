@@ -190,9 +190,11 @@ class Termination(str, Enum):
 class Game:
     """Store information about a game."""
 
-    def __init__(self, game_info: GameEventType, username: str, base_url: str, abort_time: datetime.timedelta) -> None:
+    def __init__(self, game_info: GameEventType, username: str, base_url: str,
+                 config: Configuration, abort_time: datetime.timedelta) -> None:
         """:param abort_time: How long to wait before aborting the game."""
         self.username = username
+        self.skill_level = config.engine.uci_options.lookup("Skill Level")
         self.id = game_info["id"]
         self.speed = game_info.get("speed")
         clock = game_info.get("clock") or {}

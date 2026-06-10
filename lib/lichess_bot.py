@@ -674,9 +674,10 @@ def play_game(li: lichess.Lichess,
         initial_state = json.loads(next(lines).decode("utf-8"))
         logger.debug(f"Initial state: {initial_state}")
         abort_time = seconds(config.abort_time)
-        game = model.Game(initial_state, user_profile["username"], li.baseUrl, abort_time)
+        game = model.Game(initial_state, user_profile["username"], li.baseUrl, config, abort_time)
 
         with engine_wrapper.create_engine(config, game) as engine:
+            game.skill_level = engine.options.get("Skill Level")
             engine.get_opponent_info(game)
             logger.debug(f"The engine for game {game_id} has pid={engine.get_pid()}")
             conversation = Conversation(game, engine, li, __version__, challenge_queue)
@@ -1161,9 +1162,9 @@ def intro() -> str:
     return fr"""
     .   _/|
     .  // o\
-    .  || ._)  lichess-bot {__version__} on {platform.system()} {platform.release()}
+    .  || ._)  ChronicGambler {__version__} on {platform.system()} {platform.release()}
     .  //__\
-    .  )___(   Play on Lichess with a bot
+    .  )___(   A randomised bot based off the origional liichess-bot.
     """
 
 

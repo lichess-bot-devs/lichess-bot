@@ -53,7 +53,8 @@ class Matchmaking:
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
-        time_has_passed = self.last_game_ended_delay.is_expired() and self.rate_limit_timer.is_expired()
+        rate_limit_ok = self.rate_limit_timer.is_expired()
+        time_has_passed = self.last_game_ended_delay.is_expired()
         challenge_expired = self.last_challenge_created_delay.is_expired() and self.challenge_id
         min_wait_time_passed = self.last_challenge_created_delay.time_since_reset() > self.min_wait_time
         if challenge_expired:
@@ -61,7 +62,7 @@ class Matchmaking:
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
             self.discard_challenge(self.challenge_id)
             self.show_earliest_challenge_time()
-        return bool(matchmaking_enabled and (time_has_passed or challenge_expired) and min_wait_time_passed)
+        return bool(matchmaking_enabled and rate_limit_ok and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
     def create_challenge(self, username: str, base_time: int, increment: int, days: int, variant: str,
                          mode: str) -> str:
@@ -237,8 +238,14 @@ class Matchmaking:
         logger.info("Challenging a random bot")
         self.update_user_profile()
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
+        if not bot_username:
+            logger.info("No challenge will be created.")
+            self.challenge_id = ""
+            self.rate_limit_timer = Timer(seconds(60))
+            return
+
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
-        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else ""
+        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode)
         logger.info(f"Challenge id is {challenge_id or 'None'}.")
         self.challenge_id = challenge_id
 

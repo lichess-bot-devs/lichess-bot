@@ -1,9 +1,60 @@
 """Tests for the lichess communication."""
 
 from lib import lichess
+from lib.timer import Timer, seconds
+from collections import defaultdict
+from requests.models import Response
 import logging
 import os
 import pytest
+from typing import cast
+
+
+def mock_response(status_code: int, body: dict[str, object], headers: dict[str, str] | None = None) -> Response:
+    """Create a mock HTTP response."""
+    class MockResponse:
+        def __init__(self) -> None:
+            self.status_code = status_code
+            self.headers = headers or {}
+
+        def json(self) -> dict[str, object]:
+            return dict(body)
+
+    return cast(Response, MockResponse())
+
+
+def lichess_without_init() -> lichess.Lichess:
+    """Create a minimal Lichess instance without checking a real token."""
+    li = object.__new__(lichess.Lichess)
+    li.rate_limit_timers = defaultdict(Timer)
+    li.challenge_rate_limit_backoff = seconds(60)
+    return li
+
+
+def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:
+    """Generic challenge 429s should still block new challenge attempts."""
+    li = lichess_without_init()
+    response = mock_response(429, {"error": "Too many requests. Try again later."}, {"Retry-After": "120"})
+
+    challenge_response = li.handle_challenge(response)
+
+    assert challenge_response["bot_is_rate_limited"] is True
+    assert challenge_response["opponent_is_rate_limited"] is False
+    assert challenge_response["rate_limit_timeout"] == seconds(120)
+    assert li.is_rate_limited(lichess.ENDPOINTS["challenge"])
+
+
+def test_challenge_429_without_retry_after_uses_exponential_backoff() -> None:
+    """Repeated generic challenge 429s should increase the local cooldown."""
+    li = lichess_without_init()
+    response = mock_response(429, {"error": "Too many requests. Try again later."})
+
+    first_response = li.handle_challenge(response)
+    second_response = li.handle_challenge(response)
+
+    assert first_response["rate_limit_timeout"] == seconds(60)
+    assert second_response["rate_limit_timeout"] == seconds(120)
+    assert li.challenge_rate_limit_backoff == seconds(240)
 
 
 def test_lichess() -> None:

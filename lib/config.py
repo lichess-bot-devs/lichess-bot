@@ -268,6 +268,7 @@ def process_block_list(CONFIG: CONFIG_DICT_TYPE) -> None:
     """
     if CONFIG["matchmaking"]["include_challenge_block_list"]:
         CONFIG["matchmaking"]["block_list"].extend(CONFIG["challenge"]["block_list"])
+        CONFIG["matchmaking"]["online_block_list"].extend(CONFIG["challenge"]["online_block_list"])
 
 
 def log_config(CONFIG: CONFIG_DICT_TYPE, alternate_log_function: Callable[[str], Any] | None = None) -> None:

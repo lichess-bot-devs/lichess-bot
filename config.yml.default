@@ -223,7 +223,7 @@ matchmaking:
 #   - user2
 # online_block_list:               # The urls from which to retrieve a list of bot names that will not be challenged. The list should be a text file where each line contains the name of a blocked bot
 #   - example.com/blocklist
-  include_challenge_block_list: false  # Do not challenge bots in the challenge: block_list in addition to the matchmaking block list.
+  include_challenge_block_list: false  # Do not challenge bots in the challenge: block_list/online_block_list in addition to the matchmaking block list.
 
 # overrides:                       # List of overrides for the matchmaking specifications above. When a challenge is created, either the default specification above or one of the overrides will be randomly chosen.
 #   bullet_only_horde:             # Name of the override. Can be anything as long as each override has a unique name ("bullet_only_horde" and "easy_chess960" in these examples).

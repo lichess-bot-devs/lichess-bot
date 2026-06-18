@@ -17,7 +17,7 @@ jobs:
         python: ["3.10", "3.14"]
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v6
       with:

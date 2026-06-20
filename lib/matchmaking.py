@@ -220,15 +220,17 @@ class Matchmaking:
         value: str = config.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE, max_games: int) -> None:
+    def challenge(self, active_games: dict[str, str], challenge_queue: MULTIPROCESSING_LIST_TYPE,
+                  max_bot_games: int) -> None:
         """
         Challenge an opponent.
 
-        :param active_games: The games that the bot is playing.
+        :param active_games: The games that the bot is playing (game ID -> opponent name).
         :param challenge_queue: The queue containing the challenges.
-        :param max_games: The maximum allowed number of simultaneous games.
+        :param max_bot_games: The maximum allowed number of simultaneous games against bots.
         """
-        max_games_for_matchmaking = max_games if self.matchmaking_cfg.allow_during_games else min(1, max_games)
+        max_games_for_matchmaking = (max_bot_games if self.matchmaking_cfg.allow_during_games
+                                     else min(1, max_bot_games))
         game_count = len(active_games) + len(challenge_queue)
         if (game_count >= max_games_for_matchmaking
                 or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)

@@ -205,6 +205,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
+    set_config_default(CONFIG, "challenge", key="games_reserved_for_humans", default=0)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
     set_config_default(CONFIG, "challenge", key="preference", default="none")
     set_config_default(CONFIG, "challenge", key="accept_bot", default=False)

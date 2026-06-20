@@ -5,6 +5,7 @@ import logging
 import datetime
 import chess
 from enum import Enum
+from typing import ClassVar
 from lib.blocklist import OnlineBlocklist
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
@@ -308,6 +309,17 @@ class Game:
 class Player:
     """Store information about a player."""
 
+    # Names of players known to be bots. Populated as bot players are seen
+    # (from challenge and gameFull events, which carry the title) so that any
+    # part of lichess-bot can later tell whether a player is a bot given only
+    # their name -- e.g. in the gameStart event, which omits the title.
+    bot_names: ClassVar[set[str]] = set()
+
+    @classmethod
+    def is_bot_name(cls, name: str) -> bool:
+        """Whether a player name has been seen to belong to a bot."""
+        return name in cls.bot_names
+
     def __init__(self, player_info: PlayerType) -> None:
         """:param player_info: Contains information about a player."""
         self.title = player_info.get("title")
@@ -316,6 +328,8 @@ class Player:
         self.aiLevel = player_info.get("aiLevel")
         self.is_bot = self.title == "BOT" or self.aiLevel is not None
         self.name = f"AI level {self.aiLevel}" if self.aiLevel else player_info.get("name", "")
+        if self.is_bot and self.name:
+            Player.bot_names.add(self.name)
 
     def __str__(self) -> str:
         """Get a string representation of `Player`."""

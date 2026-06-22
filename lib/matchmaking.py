@@ -231,9 +231,14 @@ class Matchmaking:
         """
         max_games_for_matchmaking = (max_bot_games if self.matchmaking_cfg.allow_during_games
                                      else min(1, max_bot_games))
-        game_count = len(active_games) + len(challenge_queue)
-        if (game_count >= max_games_for_matchmaking
-                or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
+        # Count only games against bots: matchmaking only challenges bots, and
+        # human games must not count toward the bot-game limit (otherwise a bot
+        # whose slots are filled by humans would stop matchmaking even though
+        # bot slots remain free).
+        bot_game_count = (sum(1 for name in active_games.values() if model.Player.is_bot_name(name))
+                          + len(challenge_queue))
+        if (bot_game_count >= max_games_for_matchmaking
+                or (bot_game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
                 or not self.should_create_challenge()):
             return
 

@@ -502,8 +502,15 @@ def start_low_time_games(low_time_games: list[GameType], active_games: dict[str,
 
 
 def count_bot_games(active_games: dict[str, str]) -> int:
-    """Count active games whose opponent is known to be a bot."""
-    return sum(1 for name in active_games.values() if model.Player.is_bot_name(name))
+    """
+    Count active games whose opponent is known to be a bot.
+
+    Opponent names in `active_games` may be prefixed with a title (e.g.
+    "BOT sseh-c"), while `Player.bot_names` stores bare usernames. Compare the
+    bare username (the last whitespace-separated token) so the two match.
+    """
+    return sum(1 for name in active_games.values()
+               if model.Player.is_bot_name(name.split()[-1] if name else name))
 
 
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: dict[str, str],

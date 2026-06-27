@@ -229,15 +229,18 @@ class Matchmaking:
         :param challenge_queue: The queue containing the challenges.
         :param max_bot_games: The maximum allowed number of simultaneous games against bots.
         """
-        max_games_for_matchmaking = (max_bot_games if self.matchmaking_cfg.allow_during_games
-                                     else min(1, max_bot_games))
+        # If matchmaking is not allowed while playing other games, don't create
+        # a challenge when any game (against a bot or a human) is in progress.
+        if not self.matchmaking_cfg.allow_during_games and active_games:
+            return
+
         # Count only games against bots: matchmaking only challenges bots, and
         # human games must not count toward the bot-game limit (otherwise a bot
         # whose slots are filled by humans would stop matchmaking even though
         # bot slots remain free).
         bot_game_count = (sum(1 for name in active_games.values() if model.Player.is_bot_name(name))
                           + len(challenge_queue))
-        if (bot_game_count >= max_games_for_matchmaking
+        if (bot_game_count >= max_bot_games
                 or (bot_game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
                 or not self.should_create_challenge()):
             return

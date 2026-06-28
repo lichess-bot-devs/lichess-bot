@@ -320,6 +320,18 @@ class Player:
         """Whether a player name has been seen to belong to a bot."""
         return name in cls.bot_names
 
+    @classmethod
+    def count_bot_games(cls, active_games: dict[str, str]) -> int:
+        """
+        Count active games whose opponent is known to be a bot.
+
+        Opponent names in `active_games` may be prefixed with a title (e.g.
+        "BOT sseh-c"), while `bot_names` holds bare usernames. Compare the bare
+        username (the last whitespace-separated token) so the two match.
+        """
+        return sum(1 for name in active_games.values()
+                   if cls.is_bot_name(name.split()[-1] if name else name))
+
     def __init__(self, player_info: PlayerType) -> None:
         """:param player_info: Contains information about a player."""
         self.title = player_info.get("title")

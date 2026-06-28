@@ -501,18 +501,6 @@ def start_low_time_games(low_time_games: list[GameType], active_games: dict[str,
         start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
 
 
-def count_bot_games(active_games: dict[str, str]) -> int:
-    """
-    Count active games whose opponent is known to be a bot.
-
-    Opponent names in `active_games` may be prefixed with a title (e.g.
-    "BOT sseh-c"), while `Player.bot_names` stores bare usernames. Compare the
-    bare username (the last whitespace-separated token) so the two match.
-    """
-    return sum(1 for name in active_games.values()
-               if model.Player.is_bot_name(name.split()[-1] if name else name))
-
-
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: dict[str, str],
                       max_games: int, max_bot_games: int) -> None:
     """Accept a challenge."""
@@ -524,7 +512,7 @@ def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST
 
         # Reserve slots for humans: don't accept a bot challenge if doing so
         # would exceed the bot-game limit, but keep looking for human ones.
-        if chlng.challenger.is_bot and count_bot_games(active_games) >= max_bot_games:
+        if chlng.challenger.is_bot and model.Player.count_bot_games(active_games) >= max_bot_games:
             break
 
         challenge_queue.pop(0)

@@ -237,12 +237,8 @@ class Matchmaking:
         # Count only games against bots: matchmaking only challenges bots, and
         # human games must not count toward the bot-game limit (otherwise a bot
         # whose slots are filled by humans would stop matchmaking even though
-        # bot slots remain free). Opponent names may be title-prefixed (e.g.
-        # "BOT sseh-c") while bot_names holds bare usernames, so compare the
-        # bare username (the last whitespace-separated token).
-        bot_game_count = (sum(1 for name in active_games.values()
-                              if model.Player.is_bot_name(name.split()[-1] if name else name))
-                          + len(challenge_queue))
+        # bot slots remain free).
+        bot_game_count = model.Player.count_bot_games(active_games) + len(challenge_queue)
         if (bot_game_count >= max_bot_games
                 or (bot_game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
                 or not self.should_create_challenge()):

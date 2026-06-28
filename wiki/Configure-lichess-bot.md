@@ -173,6 +173,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
 ## Challenges the BOT should accept
 - `challenge`: Control what kind of games for which the bot should accept challenges. All of the following options must be satisfied by a challenge to be accepted.
   - `concurrency`: The maximum number of games to play simultaneously.
+  - `games_reserved_for_humans`: The number of game slots (out of `concurrency`) to keep open for human challengers. Bot challenges are limited to `concurrency` minus this value, so humans can still challenge the bot even when other bots are filling its games. Should be between 0 and `concurrency`. Works best with `preference` set to `"human"`.
   - `sort_by`: Whether to start games by the best rated/titled opponent `"best"` or by first-come-first-serve `"first"`.
   - `preference`: Whether to prioritize human opponents, bot opponents, or treat them equally.
   - `accept_bot`: Whether to accept challenges from other bots.

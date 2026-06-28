@@ -220,18 +220,27 @@ class Matchmaking:
         value: str = config.lookup(parameter)
         return value if value != "random" else random.choice(choices)
 
-    def challenge(self, active_games: set[str], challenge_queue: MULTIPROCESSING_LIST_TYPE, max_games: int) -> None:
+    def challenge(self, active_games: dict[str, str], challenge_queue: MULTIPROCESSING_LIST_TYPE,
+                  max_bot_games: int) -> None:
         """
         Challenge an opponent.
 
-        :param active_games: The games that the bot is playing.
+        :param active_games: The games that the bot is playing (game ID -> opponent name).
         :param challenge_queue: The queue containing the challenges.
-        :param max_games: The maximum allowed number of simultaneous games.
+        :param max_bot_games: The maximum allowed number of simultaneous games against bots.
         """
-        max_games_for_matchmaking = max_games if self.matchmaking_cfg.allow_during_games else min(1, max_games)
-        game_count = len(active_games) + len(challenge_queue)
-        if (game_count >= max_games_for_matchmaking
-                or (game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
+        # If matchmaking is not allowed while playing other games, don't create
+        # a challenge when any game (against a bot or a human) is in progress.
+        if not self.matchmaking_cfg.allow_during_games and active_games:
+            return
+
+        # Count only games against bots: matchmaking only challenges bots, and
+        # human games must not count toward the bot-game limit (otherwise a bot
+        # whose slots are filled by humans would stop matchmaking even though
+        # bot slots remain free).
+        bot_game_count = model.Player.count_bot_games(active_games) + len(challenge_queue)
+        if (bot_game_count >= max_bot_games
+                or (bot_game_count > 0 and self.last_challenge_created_delay.time_since_reset() < self.max_wait_time)
                 or not self.should_create_challenge()):
             return
 

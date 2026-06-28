@@ -205,6 +205,7 @@ def insert_default_values(CONFIG: CONFIG_DICT_TYPE) -> None:
     set_config_default(CONFIG, "engine", "polyglot", key="min_weight", default=1)
     set_config_default(CONFIG, "engine", "polyglot", key="normalization", default="none")
     set_config_default(CONFIG, "challenge", key="concurrency", default=1)
+    set_config_default(CONFIG, "challenge", key="games_reserved_for_humans", default=0)
     set_config_default(CONFIG, "challenge", key="sort_by", default="best")
     set_config_default(CONFIG, "challenge", key="preference", default="none")
     set_config_default(CONFIG, "challenge", key="accept_bot", default=False)
@@ -316,6 +317,15 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
 
     config_warn(CONFIG["challenge"]["concurrency"] > 0, "With challenge.concurrency set to 0, the bot won't accept or create "
                                                         "any challenges.")
+
+    config_assert(0 <= CONFIG["challenge"]["games_reserved_for_humans"] <= CONFIG["challenge"]["concurrency"],
+                  "challenge.games_reserved_for_humans must be between 0 and challenge.concurrency.")
+
+    config_warn(CONFIG["challenge"]["games_reserved_for_humans"] == 0
+                or CONFIG["challenge"]["preference"] == "human",
+                'challenge.games_reserved_for_humans reserves slots for humans, but challenge.preference is not '
+                '"human", so human challenges may be stalled behind bot challenges in the queue. Set '
+                'challenge.preference to "human" to prioritize human challengers.')
 
     config_assert(CONFIG["challenge"]["sort_by"] in ["best", "first"], "challenge.sort_by can be either `first` or `best`.")
     config_assert(CONFIG["challenge"]["preference"] in ["none", "human", "bot"],

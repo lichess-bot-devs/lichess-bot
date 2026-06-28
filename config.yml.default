@@ -135,6 +135,7 @@ correspondence:
 
 challenge:                         # Incoming challenges.
   concurrency: 1                   # Number of games to play simultaneously.
+  games_reserved_for_humans: 0     # Number of game slots (out of concurrency) kept free for human challengers. Bot games are limited to (concurrency - this) so humans can always challenge.
   sort_by: "best"                  # Possible values: "best" and "first".
   preference: "none"               # Possible values: "none", "human", "bot".
   accept_bot: true                 # Accepts challenges coming from other bots.

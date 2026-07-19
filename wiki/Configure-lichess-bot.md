@@ -280,6 +280,7 @@ will precede the `go` command to start thinking with `sd 5`. The other `go_comma
   - `block_list`: An indented list of usernames of bots that will not be challenged. If this option is not present, then the list is considered empty.
   - `online_block_list`: An indented list of urls from which additional block lists are retrieved. An online block list is a plain text file where each line contains a single username. If this option is not present, then the list is considered empty.
   - `include_challenge_block_list`: If `true`, do not send challenges to the bots listed in the `challenge: block_list` or `challenge: online_block_list`. Default is `false`.
+  - `permablock_after_declined_challenge`: If `true`, permanently block other bots that decline challenges. These blocks follow the `challenge_filter` setting. 
   - `overrides`: Create variations on the matchmaking settings above for more specific circumstances. If there are any subsections under `overrides`, the settings below that will override the settings in the matchmaking section. Any settings that do not appear will be taken from the settings above. <br/> <br/>
   The overrides section must have the following:
     - Name: A unique name must be given for each override. In the example configuration below, `easy_chess960` and `no_pressure_correspondence` are arbitrary strings to name the subsections and they are unique.

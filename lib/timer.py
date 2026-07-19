@@ -1,6 +1,6 @@
 """A timer for use in lichess-bot."""
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from time import perf_counter
 
 
@@ -96,3 +96,7 @@ class Timer:
     def time_until_expiration(self) -> timedelta:
         """How much time is left until it expires."""
         return max(seconds(0), self.duration - self.time_since_reset())
+
+    def expiration(self) -> datetime:
+        """Return datetime the timer will expire."""
+        return datetime.now() + self.time_until_expiration()

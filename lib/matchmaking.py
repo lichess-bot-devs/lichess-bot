@@ -3,6 +3,7 @@ import random
 import logging
 import datetime
 import contextlib
+from pathlib import Path
 from lib import model
 from lib.timer import Timer, days, seconds, minutes, years
 from collections import defaultdict
@@ -49,6 +50,44 @@ class Matchmaking:
             self.add_to_block_list(name)
 
         self.online_block_list = OnlineBlocklist(self.matchmaking_cfg.online_block_list)
+
+        self.local_block_list: Path | None = None
+        self.datetime_format = "%Y-%m-%d %H:%M:%S.$f"
+        if self.matchmaking_cfg.permablock_after_declined_challenge:
+            self.local_block_list = Path("blocked_challenge_decliners.csv")
+            self.prune_expired_local_blocks()
+            try:
+                with self.local_block_list.open(encoding="utf8") as local_list:
+                    for line in local_list:
+                        name, reason, timeout_expiration_str = line.split(",")
+                        timeout_expiration = datetime.datetime.strptime(timeout_expiration_str, self.datetime_format)
+                        timeout = timeout_expiration - datetime.datetime.now()
+                        self.add_challenge_filter(name, reason, timeout, add_to_file=False)
+            except FileNotFoundError:
+                pass
+
+    def prune_expired_local_blocks(self) -> None:
+        """Prune expired blocks from the local blocked users list."""
+        if not self.local_block_list:
+            return
+
+        try:
+            with self.local_block_list.open(encoding="utf8") as source:
+                valid_lines: list[str] = []
+                for line_raw in source:
+                    line = line_raw.strip()
+                    if not line:
+                        continue
+
+                    _, _, expire_str = line.split(",")
+                    expiration = datetime.datetime.strptime(expire_str, self.datetime_format)
+                    if expiration < datetime.datetime.now():
+                        valid_lines.append(line_raw)
+
+            with self.local_block_list.open("w", encoding="utf8") as source:
+                source.writelines(valid_lines)
+        except FileNotFoundError:
+            return
 
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""
@@ -103,9 +142,9 @@ class Matchmaking:
             timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
             self.rate_limit_timer = Timer(timeout)
         elif response.get("opponent_is_rate_limited"):
-            self.add_challenge_filter(username, "", response.get("rate_limit_timeout"))
+            self.add_challenge_filter(username, "", response.get("rate_limit_timeout"), add_to_file=False)
         else:
-            self.add_challenge_filter(username, "")
+            self.add_challenge_filter(username, "", add_to_file=False)
         self.show_earliest_challenge_time()
 
     def perf(self) -> dict[str, PerfType]:
@@ -286,13 +325,18 @@ class Matchmaking:
 
     def add_to_block_list(self, username: str) -> None:
         """Add a bot to the blocklist."""
-        self.add_challenge_filter(username, "", years(10))
+        self.add_challenge_filter(username, "", years(10), add_to_file=False)
 
     def in_block_list(self, username: str) -> bool:
         """Check if an opponent is in the block list to prevent future challenges."""
         return (not self.should_accept_challenge(username, "")) or username in self.online_block_list
 
-    def add_challenge_filter(self, username: str, game_aspect: str, timeout: datetime.timedelta | None = None) -> None:
+    def add_challenge_filter(self,
+                             username: str,
+                             game_aspect: str,
+                             timeout: datetime.timedelta | None = None,
+                             *,
+                             add_to_file: bool) -> None:
         """
         Prevent creating another challenge for a timeout when an opponent has declined a challenge.
 
@@ -301,7 +345,11 @@ class Matchmaking:
         challenge. If the parameter is empty, that is equivalent to adding the opponent to the block list.
         :param timeout: The amount of time to not challenge an opponent. If None, the default is a day.
         """
-        self.challenge_type_acceptable[(username, game_aspect)] = Timer(timeout or days(1))
+        timeout_timer = Timer(timeout or days(1))
+        self.challenge_type_acceptable[(username, game_aspect)] = timeout_timer
+        if add_to_file and self.local_block_list:
+            block_expiration = datetime.datetime.strftime(timeout_timer.expiration(), self.datetime_format)
+            self.local_block_list.write_text(f"{self.username},{game_aspect},{block_expiration}\n")
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
         """
@@ -351,7 +399,7 @@ class Matchmaking:
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
-        self.add_challenge_filter(opponent.name, game_problem)
+        self.add_challenge_filter(opponent.name, game_problem, add_to_file=True)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
 
         self.show_earliest_challenge_time()

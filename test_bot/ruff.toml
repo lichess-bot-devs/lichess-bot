@@ -12,7 +12,7 @@ ignore = [
     "COM812", # Trailing comma missing
     "D203", # Require blank line after class declaration before docstring
     "D212", # Start multiline docstring on same line as triple-quote
-    "DTZ005", # datetime without timezone
+    "DTZ", # handling datetimes without timezone
     "EM101", # Exception must not use a string literal, assign to variable first
     "EM102", # Exception must not use an f-string literal, assign to variable first
     "ERA001", # Found commented-out code

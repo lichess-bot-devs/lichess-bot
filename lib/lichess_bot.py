@@ -24,6 +24,7 @@ import glob
 import platform
 import importlib.metadata
 import contextlib
+from lib.acceptance_profile import acceptance_profile
 from lib.blocklist import OnlineBlocklist
 from lib.config import load_config, Configuration, log_config
 from lib.conversation import Conversation, ChatLine
@@ -256,6 +257,7 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
     :param one_game: Whether the bot should play only one game. Only used in `test_bot/test_bot.py` to test lichess-bot.
     """
     logger.info(f"You're now connected to {config.url} and awaiting challenges.")
+    logger.info(f"Challenge acceptance profile: {json.dumps(acceptance_profile(config))}")
     manager = multiprocessing.Manager()
     challenge_queue: MULTIPROCESSING_LIST_TYPE = manager.list()
     control_queue: CONTROL_QUEUE_TYPE = manager.Queue()

@@ -18,6 +18,8 @@ MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 logger = logging.getLogger(__name__)
 
 
+forever = years(1000)
+
 class Matchmaking:
     """Challenge other bots."""
 
@@ -34,7 +36,7 @@ class Matchmaking:
         self.rate_limit_timer = Timer()
 
         # Maximum time between challenges, even if there are active games
-        self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else years(10)
+        self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else forever
         self.challenge_id = ""
 
         # (opponent name, game aspect) --> other bot is likely to accept challenge
@@ -325,7 +327,7 @@ class Matchmaking:
 
     def add_to_block_list(self, username: str) -> None:
         """Add a bot to the blocklist."""
-        self.add_challenge_filter(username, "", years(10), add_to_file=False)
+        self.add_challenge_filter(username, "", forever, add_to_file=False)
 
     def in_block_list(self, username: str) -> bool:
         """Check if an opponent is in the block list to prevent future challenges."""

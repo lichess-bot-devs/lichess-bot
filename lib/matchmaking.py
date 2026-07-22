@@ -406,7 +406,8 @@ class Matchmaking:
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
         timeout = forever if self.permablock else days(1)
         self.add_challenge_filter(opponent.name, game_problem, timeout, add_to_file=True)
-        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
+        time_span = "" if self.permablock else " today"
+        logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + f" game{time_span}.")
 
         self.show_earliest_challenge_time()
 

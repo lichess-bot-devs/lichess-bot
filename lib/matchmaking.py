@@ -146,9 +146,10 @@ class Matchmaking:
             timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
             self.rate_limit_timer = Timer(timeout)
         elif response.get("opponent_is_rate_limited"):
-            self.add_challenge_filter(username, "", response.get("rate_limit_timeout"), add_to_file=False)
+            timeout = cast(datetime.timedelta, response.get("rate_limit_timeout"))
+            self.add_challenge_filter(username, "", timeout, add_to_file=False)
         else:
-            self.add_challenge_filter(username, "", add_to_file=False)
+            self.add_challenge_filter(username, "", days(1), add_to_file=False)
         self.show_earliest_challenge_time()
 
     def perf(self) -> dict[str, PerfType]:
@@ -338,7 +339,7 @@ class Matchmaking:
     def add_challenge_filter(self,
                              username: str,
                              game_aspect: str,
-                             timeout: datetime.timedelta | None = None,
+                             timeout: datetime.timedelta,
                              *,
                              add_to_file: bool) -> None:
         """
@@ -349,7 +350,7 @@ class Matchmaking:
         challenge. If the parameter is empty, that is equivalent to adding the opponent to the block list.
         :param timeout: The amount of time to not challenge an opponent. If None, the default is a day.
         """
-        timeout_timer = Timer(timeout or days(1))
+        timeout_timer = Timer(timeout)
         self.challenge_type_acceptable[(username, game_aspect)] = timeout_timer
         if add_to_file and self.local_block_list:
             block_expiration = datetime.datetime.strftime(timeout_timer.expiration(), self.datetime_format)
@@ -403,7 +404,8 @@ class Matchmaking:
         if reason_key not in decline_details:
             logger.warning(f"Unknown decline reason received: {reason_key}")
         game_problem = decline_details.get(reason_key, "") if self.challenge_filter == FilterType.FINE else ""
-        self.add_challenge_filter(opponent.name, game_problem, add_to_file=True)
+        timeout = forever if self.permablock else days(1)
+        self.add_challenge_filter(opponent.name, game_problem, timeout, add_to_file=True)
         logger.info(f"Will not challenge {opponent} to another {game_problem}".strip() + " game today.")
 
         self.show_earliest_challenge_time()

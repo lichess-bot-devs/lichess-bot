@@ -67,7 +67,11 @@ class Matchmaking:
             return
 
         with self.local_block_list.open(encoding="utf8") as local_list:
-            for line in local_list:
+            for line_raw in local_list:
+                line = line_raw.strip()
+                if not line:
+                    continue
+                
                 name, reason, timeout_expiration_str = line.split(",")
                 timeout_expiration = datetime.datetime.strptime(timeout_expiration_str, self.datetime_format)
                 timeout = timeout_expiration - datetime.datetime.now()

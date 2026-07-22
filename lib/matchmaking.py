@@ -71,7 +71,7 @@ class Matchmaking:
                 line = line_raw.strip()
                 if not line:
                     continue
-                
+
                 name, reason, timeout_expiration_str = line.split(",")
                 timeout_expiration = datetime.datetime.strptime(timeout_expiration_str, self.datetime_format)
                 timeout = timeout_expiration - datetime.datetime.now()

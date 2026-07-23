@@ -1,4 +1,5 @@
-"""Derive a machine-readable acceptance profile from the bot's challenge configuration.
+"""
+Derive a machine-readable acceptance profile from the bot's challenge configuration.
 
 The profile summarizes which challenges this bot will accept, as declared in the
 `challenge:` section of the configuration file. It is logged at startup so bot
@@ -12,7 +13,7 @@ from typing import Any
 from lib.config import Configuration
 
 
-def finite_or_none(value: float | int | None) -> float | int | None:
+def finite_or_none(value: float | None) -> float | int | None:
     """Convert infinite config values (e.g. `max_days: .inf`) to None for JSON serialization."""
     if value is None or (isinstance(value, float) and math.isinf(value)):
         return None

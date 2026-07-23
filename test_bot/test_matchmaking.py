@@ -1,6 +1,6 @@
 """Test functions for matchmaking module."""
 from unittest.mock import Mock
-from lib.matchmaking import game_category, Matchmaking
+from lib.matchmaking import game_category, has_bot_games_remaining, Matchmaking
 from lib.config import Configuration
 from lib.timer import Timer, seconds
 from lib.lichess_types import UserProfileType
@@ -246,3 +246,23 @@ def test_get_random_config_value__returns_from_choices_when_random() -> None:
     result = matchmaking.get_random_config_value(test_config, "challenge_mode", choices)
 
     assert result in choices, f"Expected result to be in {choices} but got '{result}'"
+
+
+def test_has_bot_games_remaining_without_field() -> None:
+    """Bots without the botGames field are assumed to have games remaining."""
+    bot: UserProfileType = {"username": "somebot", "perfs": {}}
+    assert has_bot_games_remaining(bot)
+
+
+def test_has_bot_games_remaining_maxed_out() -> None:
+    """Bots marked as maxed out by the server are excluded."""
+    bot: UserProfileType = {"username": "busybot",
+                            "perfs": {},
+                            "botGames": {"maxedOut": True, "resetAt": "2026-07-21T18:04:00Z"}}
+    assert not has_bot_games_remaining(bot)
+
+
+def test_has_bot_games_remaining_not_maxed_out() -> None:
+    """Bots with the botGames field but not maxed out remain available."""
+    bot: UserProfileType = {"username": "freshbot", "perfs": {}, "botGames": {"maxedOut": False}}
+    assert has_bot_games_remaining(bot)

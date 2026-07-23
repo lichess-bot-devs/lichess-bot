@@ -51,6 +51,13 @@ class ProfileType(TypedDict, total=False):
     links: str
 
 
+class BotGamesType(TypedDict, total=False):
+    """Type hint for the daily bot-vs-bot game allowance status of a bot."""
+
+    maxedOut: bool
+    resetAt: str
+
+
 class UserProfileType(TypedDict, total=False):
     """Type hint for `user_profile`."""
 
@@ -71,6 +78,7 @@ class UserProfileType(TypedDict, total=False):
     blocking: bool
     followsYou: bool
     count: dict[str, int]
+    botGames: BotGamesType
 
 
 class ReadableType(TypedDict):

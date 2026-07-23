@@ -11,7 +11,7 @@ from lib.lichess import Lichess, RateLimitedError
 from lib.config import Configuration
 from typing import cast, TypeAlias
 from lib.blocklist import OnlineBlocklist
-from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType
+from lib.lichess_types import UserProfileType, PerfType, EventType, FilterType, ChallengeType, BotGamesType
 MULTIPROCESSING_LIST_TYPE: TypeAlias = Sequence[model.Challenge]
 
 logger = logging.getLogger(__name__)
@@ -182,6 +182,7 @@ class Matchmaking:
             perf = bot.get("perfs", {}).get(game_type, {})
             return (bot["username"] != self.username()
                     and not self.in_block_list(bot["username"])
+                    and has_bot_games_remaining(bot)
                     and perf.get("games", 0) > 0
                     and min_rating <= perf.get("rating", 0) <= max_rating)
 
@@ -379,3 +380,19 @@ def game_category(variant: str, base_time: int, increment: int, num_days: int) -
     if game_duration < 1499:
         return "rapid"
     return "classical"
+
+
+def has_bot_games_remaining(bot: UserProfileType) -> bool:
+    """
+    Whether a bot can still play games against other bots today.
+
+    Lichess limits bots to 100 bot-vs-bot games per day. If the server marks a bot
+    as maxed out in the online bots listing (proposed `botGames` field), challenging
+    it is guaranteed to fail, so it is excluded from opponent selection. Bots without
+    the field are assumed to be available, so this is fully backward compatible.
+
+    :param bot: The user profile of the bot, as returned by the online bots endpoint.
+    :return: Whether the bot has bot-vs-bot games remaining today.
+    """
+    bot_games: BotGamesType = bot.get("botGames", {})
+    return not bot_games.get("maxedOut", False)

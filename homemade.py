@@ -94,3 +94,6 @@ class ComboEngine(ExampleEngine):
             possible_moves.sort(key=str)
             move = possible_moves[0]
         return PlayResult(move, None, draw_offered=draw_offered)
+
+
+from llm_engine import LLMEngine  # noqa: E402, F401

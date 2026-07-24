@@ -1,9 +1,9 @@
-token: "xxxxxxxxxxxxxxxxxxxxxx"    # Lichess OAuth2 Token.
+token: "lip_IeCqa9RFb2pZlmcuo9hW"    # Lichess OAuth2 Token.
 url: "https://lichess.org/"        # Lichess base URL.
 
 engine:                            # Engine settings.
   dir: "./engines/"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
-  name: "engine_name"              # Binary name of the engine to use.
+  name: "Stockfish"              # Binary name of the engine to use.
   debug: False                     # When enabled, log all startup communication with the engine.
 # interpreter: "java"
 # interpreter_options:
@@ -94,6 +94,25 @@ engine:                            # Engine settings.
 
   homemade_options:
 #   Hash: 256
+
+# LLM engine settings (used when protocol is "homemade" and name is "LLMEngine").
+# To play with an LLM, set protocol: "homemade", name: "LLMEngine", then configure llm below.
+  llm:
+    provider: "openai"             # openai | anthropic | ollama | openai_compatible
+    model: "gpt-4o"                # Active model — change provider + model to switch LLMs.
+    api_key_env: "OPENAI_API_KEY"  # Read API key from this environment variable.
+#   api_key: ""                    # Optional inline API key (prefer api_key_env).
+    base_url: ""                   # Required for ollama / openai_compatible.
+    timeout: 45                    # Seconds per API call.
+    max_retries: 2                 # Retries when the LLM returns an invalid move.
+    temperature: 0.2
+    accept_draw_when_offered: true
+    system_prompt: ""              # Optional override; leave empty for the default prompt.
+# Presets (copy provider + model + api_key_env + base_url above, then restart the bot):
+# OpenAI:       provider: openai,            model: gpt-4o,                         api_key_env: OPENAI_API_KEY
+# Anthropic:    provider: anthropic,         model: claude-sonnet-4-20250514,       api_key_env: ANTHROPIC_API_KEY
+# Ollama:       provider: ollama,            model: llama3,                         base_url: http://localhost:11434/v1
+# Groq:         provider: openai_compatible, model: llama-3.3-70b-versatile,         api_key_env: GROQ_API_KEY, base_url: https://api.groq.com/openai/v1
 
   uci_options:                     # Arbitrary UCI options passed to the engine.
     Move Overhead: 100             # Increase if your bot flags games too often.

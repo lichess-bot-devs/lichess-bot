@@ -68,8 +68,11 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
             f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
     logger.debug(f"Starting engine: {commands}")
+    extra_kwargs: dict[str, Configuration] = {}
+    if engine_type == "homemade" and cfg.name == "LLMEngine":
+        extra_kwargs["llm_config"] = cfg.lookup("llm") or Configuration({})
     return Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
-                  cwd=cfg.working_dir)
+                  cwd=cfg.working_dir, **extra_kwargs)
 
 
 def remove_managed_options(config: Configuration) -> OPTIONS_GO_EGTB_TYPE:

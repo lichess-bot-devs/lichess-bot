@@ -58,7 +58,6 @@ class Matchmaking:
         self.permablock = bool(self.matchmaking_cfg.permablock_after_declined_challenge)
         if self.permablock:
             self.local_block_list = Path("blocked_challenge_decliners.csv")
-            self.prune_expired_local_blocks()
             self.read_local_block_list()
 
     def read_local_block_list(self) -> None:
@@ -74,26 +73,6 @@ class Matchmaking:
 
                 name, reason = line.split(",")
                 self.add_challenge_filter(name, reason, forever, add_to_file=False)
-
-    def prune_expired_local_blocks(self) -> None:
-        """Prune expired blocks from the local blocked users list."""
-        if not self.local_block_list or not self.local_block_list.is_file():
-            return
-
-        with self.local_block_list.open(encoding="utf8") as source:
-            valid_lines: list[str] = []
-            for line_raw in source:
-                line = line_raw.strip()
-                if not line:
-                    continue
-
-                _, _, expire_str = line.split(",")
-                expiration = datetime.datetime.strptime(expire_str, self.datetime_format)
-                if datetime.datetime.now() < expiration:
-                    valid_lines.append(line_raw)
-
-        with self.local_block_list.open("w", encoding="utf8") as source:
-            source.writelines(valid_lines)
 
     def should_create_challenge(self) -> bool:
         """Whether we should create a challenge."""

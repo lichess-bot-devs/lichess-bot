@@ -72,10 +72,8 @@ class Matchmaking:
                 if not line:
                     continue
 
-                name, reason, timeout_expiration_str = line.split(",")
-                timeout_expiration = datetime.datetime.strptime(timeout_expiration_str, self.datetime_format)
-                timeout = timeout_expiration - datetime.datetime.now()
-                self.add_challenge_filter(name, reason, timeout, add_to_file=False)
+                name, reason = line.split(",")
+                self.add_challenge_filter(name, reason, forever, add_to_file=False)
 
     def prune_expired_local_blocks(self) -> None:
         """Prune expired blocks from the local blocked users list."""
@@ -357,8 +355,7 @@ class Matchmaking:
         timeout_timer = Timer(timeout)
         self.challenge_type_acceptable[(username, game_aspect)] = timeout_timer
         if add_to_file and self.local_block_list:
-            block_expiration = datetime.datetime.strftime(timeout_timer.expiration(), self.datetime_format)
-            self.local_block_list.write_text(f"{username},{game_aspect},{block_expiration}\n")
+            self.local_block_list.write_text(f"{username},{game_aspect}\n")
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
         """

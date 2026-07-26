@@ -10,6 +10,7 @@ ignore = [
     "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
     "BLE001", # Do not catch blind exception: Exception
     "COM812", # Trailing comma missing
+    "CPY001", # Missing copyright notice at top of file
     "D203", # Require blank line after class declaration before docstring
     "D212", # Start multiline docstring on same line as triple-quote
     "DTZ005", # datetime without timezone
@@ -44,3 +45,6 @@ ignore = [
 
 [lint.mccabe]
 max-complexity = 10
+
+[lint.pylint]
+max-positional-args = 10

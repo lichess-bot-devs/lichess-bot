@@ -570,7 +570,7 @@ def start_game_thread(active_games: dict[str, str], game_id: str, opponent_name:
     play_game_args["game_id"] = game_id
 
     def game_error_handler(error: BaseException) -> None:
-        logger.exception("Game ended due to error:", exc_info=error)
+        logger.error("Game ended due to error:", exc_info=error)
         control_queue = play_game_args["control_queue"]
         pgn_queue = play_game_args["pgn_queue"]
         li = play_game_args["li"]

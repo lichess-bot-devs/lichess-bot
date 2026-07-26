@@ -55,9 +55,9 @@ class Matchmaking:
 
         self.local_block_list: Path | None = None
         self.datetime_format = "%Y-%m-%d %H:%M:%S.%f"
-        self.permablock = bool(self.matchmaking_cfg.permablock_after_declined_challenge)
+        self.permablock = bool(self.matchmaking_cfg.challenge_decliner_file_name)
         if self.permablock:
-            self.local_block_list = Path("blocked_challenge_decliners.csv")
+            self.local_block_list = Path(self.matchmaking_cfg.challenge_decliner_file_name)
             self.read_local_block_list()
 
     def read_local_block_list(self) -> None:

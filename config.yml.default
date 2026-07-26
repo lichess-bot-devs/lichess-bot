@@ -225,7 +225,7 @@ matchmaking:
 # online_block_list:               # The urls from which to retrieve a list of bot names that will not be challenged. The list should be a text file where each line contains the name of a blocked bot
 #   - example.com/blocklist
   include_challenge_block_list: false  # Do not challenge bots in the challenge: block_list/online_block_list in addition to the matchmaking block list.
-  permablock_after_declined_challenge: false  # Whether a bot that declines a challenge should be added to the blocklists
+#  challenge_decliner_file_name:   # If the user wants to permanently stop challenging bots that decline challenges, specify the name of the file to store the bot names. If the path is not absolute, it will be relative to the current directory.
 
 
 # overrides:                       # List of overrides for the matchmaking specifications above. When a challenge is created, either the default specification above or one of the overrides will be randomly chosen.

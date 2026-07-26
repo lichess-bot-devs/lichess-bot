@@ -16,7 +16,7 @@ LOGGING_QUEUE_TYPE: TypeAlias = Queue[logging.LogRecord]
 REQUESTS_PAYLOAD_TYPE: TypeAlias = dict[str, str | int | bool]
 GO_COMMANDS_TYPE: TypeAlias = dict[str, str]
 EGTPATH_TYPE: TypeAlias = dict[str, str]
-OPTIONS_GO_EGTB_TYPE: TypeAlias = dict[str, str | int | bool | None | EGTPATH_TYPE | GO_COMMANDS_TYPE]
+OPTIONS_GO_EGTB_TYPE: TypeAlias = dict[str, str | int | bool | EGTPATH_TYPE | GO_COMMANDS_TYPE | None]
 OPTIONS_TYPE: TypeAlias = dict[str, str | int | bool | None]
 HOMEMADE_ARGS_TYPE: TypeAlias = Limit | bool | MOVE
 

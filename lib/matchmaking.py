@@ -334,7 +334,8 @@ class Matchmaking:
         timeout_timer = Timer(timeout)
         self.challenge_type_acceptable[(username, game_aspect)] = timeout_timer
         if add_to_file and self.local_block_list:
-            self.local_block_list.write_text(f"{username},{game_aspect}\n")
+            with self.local_block_list.open("a", encoding="utf8") as block_list:
+                block_list.write(f"{username},{game_aspect}\n")
 
     def should_accept_challenge(self, username: str, game_aspect: str) -> bool:
         """

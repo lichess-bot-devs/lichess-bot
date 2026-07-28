@@ -54,7 +54,6 @@ class Matchmaking:
         self.online_block_list = OnlineBlocklist(self.matchmaking_cfg.online_block_list)
 
         self.local_block_list: Path | None = None
-        self.datetime_format = "%Y-%m-%d %H:%M:%S.%f"
         self.permablock = bool(self.matchmaking_cfg.challenge_decliner_file_name)
         if self.permablock:
             self.local_block_list = Path(self.matchmaking_cfg.challenge_decliner_file_name)

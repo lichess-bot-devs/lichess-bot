@@ -61,9 +61,14 @@ class Matchmaking:
 
     def read_local_block_list(self) -> None:
         """Read the local block list file and reload blocks from previous session."""
-        if not self.local_block_list or not self.local_block_list.is_file():
+        if not self.local_block_list or not self.local_block_list.exists():
             return
 
+        if not self.local_block_list.is_file():
+            raise ValueError(
+                f"Configuration matchmaking: challenge_decliner_file_name: {self.local_block_list} is not a file.")
+
+        logger.debug(f"Reading challenge decliner block list: {self.local_block_list}")
         with self.local_block_list.open(encoding="utf8") as local_list:
             for line_raw in local_list:
                 line = line_raw.strip()

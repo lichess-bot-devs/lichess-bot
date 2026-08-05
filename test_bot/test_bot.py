@@ -139,6 +139,27 @@ def test_uci() -> None:
                                            "bo vs b - zzzzzzzz.pgn"))
 
 
+def test_uci_ponder() -> None:
+    """Test lichess-bot with a UCI engine that supports pondering."""
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+
+    with tempfile.TemporaryDirectory() as temp:
+        CONFIG["token"] = ""
+        CONFIG["engine"]["dir"] = "test_bot"
+        CONFIG["engine"]["name"] = "ponder_engine.py"
+        CONFIG["engine"]["ponder"] = True
+        CONFIG["engine"]["interpreter"] = sys.executable
+        CONFIG["pgn_directory"] = os.path.join(temp, "ponder_game_record")
+        CONFIG["engine"]["uci_options"] = {}
+        win = run_bot(CONFIG, logging_level)
+        logger.info("Finished Testing UCI with pondering")
+        assert win
+        time.sleep(0.1)  # Wait for file to be written.
+        assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                           "bo vs b - zzzzzzzz.pgn"))
+
+
 def test_xboard() -> None:
     """Test lichess-bot with an XBoard engine."""
     with open("./config.yml.default") as file:
@@ -191,6 +212,27 @@ def test_buggy_engine() -> None:
         CONFIG["pgn_directory"] = os.path.join(temp, "bug_game_record")
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing Buggy Engine")
+        assert win
+        time.sleep(0.1)  # Wait for file to be written.
+        assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                           "bo vs b - zzzzzzzz.pgn"))
+
+
+def test_slow_ponder_engine() -> None:
+    """Test lichess-bot with an engine whose ponder searches always miss and are slow to stop."""
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+
+    with tempfile.TemporaryDirectory() as temp:
+        CONFIG["token"] = ""
+        CONFIG["engine"]["dir"] = "test_bot"
+        CONFIG["engine"]["name"] = "slow_ponder_engine.py"
+        CONFIG["engine"]["ponder"] = True
+        CONFIG["engine"]["interpreter"] = sys.executable
+        CONFIG["pgn_directory"] = os.path.join(temp, "slow_ponder_game_record")
+        CONFIG["engine"]["uci_options"] = {}
+        win = run_bot(CONFIG, logging_level)
+        logger.info("Finished Testing Slow Ponder Engine")
         assert win
         time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],

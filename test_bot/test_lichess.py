@@ -8,6 +8,8 @@ import logging
 import os
 import pytest
 from typing import cast
+from unittest.mock import patch
+from lib.lichess_types import GameType, PublicDataType, TOKEN_TESTS_TYPE, UserProfileType
 
 
 def mock_response(status_code: int, body: dict[str, object], headers: dict[str, str] | None = None) -> Response:
@@ -29,6 +31,126 @@ def lichess_without_init() -> lichess.Lichess:
     li.rate_limit_timers = defaultdict(Timer)
     li.challenge_rate_limit_backoff = seconds(60)
     return li
+
+
+def test_init_accepts_bot_play_scope() -> None:
+    """A token with the bot:play scope should initialize the client."""
+    test_value = "test-token"
+    token_response: TOKEN_TESTS_TYPE = {test_value: {"scopes": "challenge:read,bot:play"}}
+
+    with patch.object(lichess.Lichess, "api_post", return_value=token_response) as api_post:
+        li = lichess.Lichess(test_value, "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
+
+    assert li.header["Authorization"] == f"Bearer {test_value}"
+    api_post.assert_called_once_with("token_test", data=test_value)
+
+
+def test_init_rejects_unknown_token() -> None:
+    """Initialization should fail when the token test does not return the token."""
+    with (
+        patch.object(lichess.Lichess, "api_post", return_value={}),
+        pytest.raises(RuntimeError, match="retrieving information about the bot's token"),
+    ):
+        lichess.Lichess("test-token", "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
+
+
+def test_init_rejects_token_without_bot_play_scope() -> None:
+    """Initialization should fail when the token lacks the bot:play scope."""
+    test_value = "test-token"
+    token_response: TOKEN_TESTS_TYPE = {test_value: {"scopes": "challenge:read"}}
+
+    with (
+        patch.object(lichess.Lichess, "api_post", return_value=token_response),
+        pytest.raises(RuntimeError, match="bot:play"),
+    ):
+        lichess.Lichess(test_value, "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
+
+
+def test_get_profile_returns_profile_and_sets_user_agent() -> None:
+    """Profile data should be returned and used for the user agent."""
+    li = lichess_without_init()
+    profile: UserProfileType = {"username": "testbot", "perfs": {}}
+
+    with (
+        patch.object(li, "api_get_json", return_value=profile) as api_get_json,
+        patch.object(li, "set_user_agent") as set_user_agent,
+    ):
+        assert li.get_profile() == profile
+
+    api_get_json.assert_called_once_with("profile")
+    set_user_agent.assert_called_once_with("testbot")
+
+
+def test_get_ongoing_games_returns_now_playing() -> None:
+    """The ongoing-games response should be unwrapped from nowPlaying."""
+    li = lichess_without_init()
+    game: GameType = {"gameId": "game-id", "isMyTurn": True}
+    response: dict[str, list[GameType]] = {"nowPlaying": [game]}
+
+    with patch.object(li, "api_get_json", return_value=response) as api_get_json:
+        assert li.get_ongoing_games() == [game]
+
+    api_get_json.assert_called_once_with("playing")
+
+
+def test_get_ongoing_games_returns_none_on_error() -> None:
+    """An API error while getting ongoing games should return None."""
+    li = lichess_without_init()
+
+    with patch.object(li, "api_get_json", side_effect=RuntimeError):
+        assert li.get_ongoing_games() is None
+
+
+def test_get_online_bots_parses_ndjson_and_ignores_empty_lines() -> None:
+    """Online bots should be parsed from newline-delimited JSON."""
+    li = lichess_without_init()
+    response = '{"id":"bot-a","username":"BotA"}\n\n{"id":"bot-b","username":"BotB"}\n'
+    expected: list[UserProfileType] = [
+        {"id": "bot-a", "username": "BotA"},
+        {"id": "bot-b", "username": "BotB"},
+    ]
+
+    with patch.object(li, "api_get_raw", return_value=response) as api_get_raw:
+        assert li.get_online_bots() == expected
+
+    api_get_raw.assert_called_once_with("online_bots", params={"nb": "512"})
+
+
+def test_get_online_bots_returns_empty_list_on_error() -> None:
+    """An API error while getting online bots should return an empty list."""
+    li = lichess_without_init()
+
+    with patch.object(li, "api_get_raw", side_effect=RuntimeError):
+        assert li.get_online_bots() == []
+
+
+@pytest.mark.parametrize(
+    ("users", "expected"),
+    [
+        ([{"username": "testbot", "online": True}], True),
+        ([{"username": "testbot", "online": False}], False),
+        ([], False),
+    ],
+)
+def test_is_online_uses_status_response(users: list[UserProfileType], expected: bool) -> None:
+    """Online status should reflect the first returned user, or False if absent."""
+    li = lichess_without_init()
+
+    with patch.object(li, "api_get_list", return_value=users) as api_get_list:
+        assert li.is_online("testbot") is expected
+
+    api_get_list.assert_called_once_with("status", params={"ids": "testbot"})
+
+
+def test_get_public_data_returns_user_data() -> None:
+    """Public user data should be returned for the requested username."""
+    li = lichess_without_init()
+    public_data: PublicDataType = {"username": "opponent", "perfs": {}}
+
+    with patch.object(li, "api_get_json", return_value=public_data) as api_get_json:
+        assert li.get_public_data("opponent") == public_data
+
+    api_get_json.assert_called_once_with("public_data", "opponent")
 
 
 def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:

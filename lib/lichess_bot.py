@@ -724,58 +724,137 @@ def play_game(li: lichess.Lichess,
             game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
             quit_after_all_games_finish = config.quit_after_all_games_finish
             stay_in_game = True
-            while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
-                move_attempted = False
-                try:
-                    upd = next_update(game_stream)
-                    u_type = upd["type"] if upd else "ping"
-                    if u_type == "chatLine":
-                        conversation.react(ChatLine(upd))
-                    elif u_type == "gameState":
-                        game.state = upd
-                        board = setup_board(game)
-                        takeback_field = game.state.get("btakeback") if game.is_white else game.state.get("wtakeback")
+            # Track stream health. Empty lines are keepalives ("ping") and still
+            # arrive while the HTTP connection is alive. Previously, a mid-game
+            # StopIteration / connection error always ended the game (even when
+            # /api/account/playing still listed it), so a dropped game stream
+            # could flag a bot with plenty of clock remaining. Reopen the stream
+            # while the game is still active, matching watch_control_stream.
+            last_game_state_at = time.monotonic()
+            stream_silence_warned = False
+            stream_silence_warn_s = 10.0
+            stream_response = response
+            try:
+                while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
+                    move_attempted = False
+                    try:
+                        upd = next_update(game_stream)
+                        u_type = upd["type"] if upd else "ping"
+                        if u_type == "chatLine":
+                            conversation.react(ChatLine(upd))
+                        elif u_type == "gameState":
+                            last_game_state_at = time.monotonic()
+                            stream_silence_warned = False
+                            game.state = upd
+                            board = setup_board(game)
+                            takeback_field = game.state.get("btakeback") if game.is_white else game.state.get("wtakeback")
 
-                        if not is_game_over(game) and is_engine_move(game, prior_game, board):
-                            disconnect_time = correspondence_disconnect_time
-                            say_hello(conversation, hello, hello_spectators, board)
-                            setup_timer = Timer()
-                            print_move_number(board)
-                            move_attempted = True
-                            engine.play_move(board,
-                                             game,
-                                             li,
-                                             setup_timer,
-                                             move_overhead,
-                                             can_ponder,
-                                             is_correspondence,
-                                             correspondence_move_time,
-                                             engine_cfg,
-                                             fake_think_time(config, board, game))
-                            time.sleep(to_seconds(delay))
-                        elif is_game_over(game):
-                            tell_user_game_result(game, board)
-                            engine.send_game_result(game, board)
-                            conversation.send_message("player", goodbye)
-                            conversation.send_message("spectator", goodbye_spectators)
-                        elif (takeback_field
-                                and not bot_to_move(game, board)
-                                and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
-                            takebacks_accepted += 1
-                            record_takeback(game, takebacks_accepted)
-                            engine.discard_last_move_commentary()
+                            if not is_game_over(game) and is_engine_move(game, prior_game, board):
+                                disconnect_time = correspondence_disconnect_time
+                                say_hello(conversation, hello, hello_spectators, board)
+                                setup_timer = Timer()
+                                print_move_number(board)
+                                move_attempted = True
+                                engine.play_move(board,
+                                                 game,
+                                                 li,
+                                                 setup_timer,
+                                                 move_overhead,
+                                                 can_ponder,
+                                                 is_correspondence,
+                                                 correspondence_move_time,
+                                                 engine_cfg,
+                                                 fake_think_time(config, board, game))
+                                time.sleep(to_seconds(delay))
+                            elif is_game_over(game):
+                                tell_user_game_result(game, board)
+                                engine.send_game_result(game, board)
+                                conversation.send_message("player", goodbye)
+                                conversation.send_message("spectator", goodbye_spectators)
+                            elif (takeback_field
+                                    and not bot_to_move(game, board)
+                                    and li.accept_takeback(game.id, takebacks_accepted < max_takebacks_accepted)):
+                                takebacks_accepted += 1
+                                record_takeback(game, takebacks_accepted)
+                                engine.discard_last_move_commentary()
 
-                        wbtime = upd[engine_wrapper.wbtime(board)]
-                        wbinc = upd[engine_wrapper.wbinc(board)]
-                        terminate_time = msec(wbtime) + msec(wbinc) + seconds(60)
-                        game.ping(abort_time, terminate_time, disconnect_time)
-                        prior_game = copy.deepcopy(game)
-                    elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
-                        stay_in_game = False
-                except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
-                        StopIteration) as e:
-                    stopped = isinstance(e, StopIteration)
-                    stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
+                            wbtime = upd[engine_wrapper.wbtime(board)]
+                            wbinc = upd[engine_wrapper.wbinc(board)]
+                            terminate_time = msec(wbtime) + msec(wbinc) + seconds(60)
+                            game.ping(abort_time, terminate_time, disconnect_time)
+                            prior_game = copy.deepcopy(game)
+                        elif u_type == "ping":
+                            silence = time.monotonic() - last_game_state_at
+                            if (silence >= stream_silence_warn_s
+                                    and not stream_silence_warned
+                                    and not is_game_over(game)):
+                                stream_silence_warned = True
+                                logger.warning(
+                                    "Game stream has had no gameState for %.0fs on %s "
+                                    "(our_turn=%s, ply=%d, status=%s)",
+                                    silence,
+                                    game.url(),
+                                    bot_to_move(game, board),
+                                    len(board.move_stack),
+                                    game.state.get("status"),
+                                )
+                            if should_exit_game(board, game, prior_game, li, is_correspondence):
+                                stay_in_game = False
+                    except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
+                            StopIteration) as e:
+                        active = False if is_game_over(game) else game_is_active(li, game.id)
+                        if not active:
+                            if not is_game_over(game):
+                                logger.warning(
+                                    "Game stream ended for %s (reason=%s, status=%s)",
+                                    game.url(),
+                                    type(e).__name__,
+                                    game.state.get("status"),
+                                )
+                            stay_in_game = False
+                            continue
+
+                        # Stream died mid-game but Lichess still lists us as
+                        # playing: reopen /api/bot/game/stream/{id} and resume.
+                        logger.warning(
+                            "Game stream lost for %s (%s: %s); game still active — reconnecting",
+                            game.url(),
+                            type(e).__name__,
+                            e,
+                        )
+                        try:
+                            if stream_response is not None:
+                                with contextlib.suppress(Exception):
+                                    stream_response.close()
+                            stream_response = li.get_game_stream(game_id)
+                            re_lines = stream_response.iter_lines()
+                            full = json.loads(next(re_lines).decode("utf-8"))
+                            logger.info("Reconnected game stream for %s", game.url())
+                            if "state" in full:
+                                game.state = full["state"]
+                            board = setup_board(game)
+                            game_stream = re_lines
+                            last_game_state_at = time.monotonic()
+                            stream_silence_warned = False
+                            # If it is our turn after the gap, force play_move
+                            # by treating state as changed.
+                            if not is_game_over(game) and bot_to_move(game, board):
+                                prior_game = None
+                                logger.warning(
+                                    "Our turn on %s after stream reconnect — searching now (ply=%d)",
+                                    game.url(),
+                                    len(board.move_stack),
+                                )
+                            stay_in_game = True
+                        except Exception:
+                            logger.exception("Failed to reconnect game stream for %s", game.url())
+                            # Keep previous behaviour if we were mid-move (engine
+                            # may still post a move); otherwise give up.
+                            stay_in_game = bool(move_attempted)
+            finally:
+                if stream_response is not response:
+                    with contextlib.suppress(Exception):
+                        stream_response.close()
 
             pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
         final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record, pgn_queue)

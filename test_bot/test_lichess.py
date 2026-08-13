@@ -39,7 +39,7 @@ def test_init_accepts_bot_play_scope() -> None:
     token_response: TOKEN_TESTS_TYPE = {test_value: {"scopes": "challenge:read,bot:play"}}
 
     with patch.object(lichess.Lichess, "api_post", return_value=token_response) as api_post:
-        li = lichess.Lichess(test_value, "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
+        li = lichess.Lichess(test_value, "lichess", "0.0.0", logging.DEBUG, 3)
 
     assert li.header["Authorization"] == f"Bearer {test_value}"
     api_post.assert_called_once_with("token_test", data=test_value)
@@ -51,7 +51,7 @@ def test_init_rejects_unknown_token() -> None:
         patch.object(lichess.Lichess, "api_post", return_value={}),
         pytest.raises(RuntimeError, match="retrieving information about the bot's token"),
     ):
-        lichess.Lichess("test-token", "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
+        lichess.Lichess("test-token", "lichess", "0.0.0", logging.DEBUG, 3)
 
 
 def test_init_rejects_token_without_bot_play_scope() -> None:
@@ -63,7 +63,7 @@ def test_init_rejects_token_without_bot_play_scope() -> None:
         patch.object(lichess.Lichess, "api_post", return_value=token_response),
         pytest.raises(RuntimeError, match="bot:play"),
     ):
-        lichess.Lichess(test_value, "https://lichess.org/", "0.0.0", logging.DEBUG, 3)
+        lichess.Lichess(test_value, "lichess", "0.0.0", logging.DEBUG, 3)
 
 
 def test_get_profile_returns_profile_and_sets_user_agent() -> None:

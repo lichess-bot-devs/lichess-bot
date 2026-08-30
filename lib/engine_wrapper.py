@@ -205,7 +205,12 @@ class EngineWrapper:
         if best_move.resigned and len(board.move_stack) >= 2:
             li.resign(game.id)
         else:
-            li.make_move(game.id, best_move)
+            # Leave enough clock for one complete HTTP attempt even when the configured
+            # engine overhead is lower than the move endpoint's two-second timeout.
+            submission_reserve = max(move_overhead, seconds(lichess.API_TIMEOUT_SECONDS))
+            remaining = max(seconds(0),
+                            game.my_remaining_time() - setup_timer.time_since_reset() - submission_reserve)
+            li.make_move(game.id, best_move, remaining)
 
     def add_go_commands(self, time_limit: chess.engine.Limit) -> chess.engine.Limit:
         """Add extra commands to send to the engine. For example, to search for 1000 nodes or up to depth 10."""

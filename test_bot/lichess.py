@@ -170,7 +170,8 @@ class Lichess(OriginalLichess):
     def upgrade_to_bot_account(self) -> None:
         """Isn't used in tests."""
 
-    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
+    def make_move(self, game_id: str, move: chess.engine.PlayResult,
+                  retry_budget: datetime.timedelta | None = None) -> None:
         """Send a move to the opponent engine thread."""
         self.move_queue.put(move.move)
 

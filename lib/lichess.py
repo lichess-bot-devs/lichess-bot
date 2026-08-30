@@ -10,6 +10,7 @@ import traceback
 from collections import defaultdict
 import datetime
 import contextlib
+import time
 from lib.timer import Timer, seconds, sec_str
 from typing import cast
 import chess.engine
@@ -43,6 +44,7 @@ ENDPOINTS = {
 logger = logging.getLogger(__name__)
 
 MAX_CHAT_MESSAGE_LEN = 140  # The maximum characters in a chat message.
+API_TIMEOUT_SECONDS = 2
 
 
 class Stop:
@@ -266,10 +268,23 @@ class Lichess:
         :param raise_for_status: Whether to raise an exception if the response contains an error code.
         :return: lichess.org's response in a dict.
         """
+        return self._api_post_once(endpoint_name, *template_args, data=data, headers=headers,
+                                   params=params, payload=payload, raise_for_status=raise_for_status)
+
+    def _api_post_once(self,
+                       endpoint_name: str,
+                       *template_args: str,
+                       data: str | dict[str, str] | None = None,
+                       headers: dict[str, str] | None = None,
+                       params: dict[str, str] | None = None,
+                       payload: REQUESTS_PAYLOAD_TYPE | None = None,
+                       raise_for_status: bool = True) -> ChallengeType | TOKEN_TESTS_TYPE | None:
+        """Send one POST attempt. Retry policy belongs to the calling operation."""
         logging.getLogger("backoff").setLevel(self.logging_level)
         path_template = self.get_path_template(endpoint_name)
         url = urljoin(self.baseUrl, path_template.format(*template_args))
-        response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
+        response = self.session.post(url, data=data, headers=headers, params=params, json=payload,
+                                     timeout=API_TIMEOUT_SECONDS)
 
         if endpoint_name == "challenge":
             return self.handle_challenge(response)
@@ -356,15 +371,44 @@ class Lichess:
         """Upgrade the account to a BOT account."""
         self.api_post("upgrade")
 
-    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
+    def make_move(self, game_id: str, move: chess.engine.PlayResult,
+                  retry_budget: datetime.timedelta | None = None) -> None:
         """
         Make a move.
 
         :param game_id: The id of the game.
         :param move: The move to make.
         """
-        self.api_post("move", game_id, str(move.move),
-                      params={"offeringDraw": str(move.draw_offered).lower()})
+        move_text = str(move.move)
+        started = time.perf_counter()
+        attempts = 0
+
+        def submit() -> None:
+            nonlocal attempts
+            attempts += 1
+            logger.info(f"Submitting move {move_text} for game {game_id} (attempt {attempts}).")
+            self._api_post_once("move", game_id, move_text,
+                                params={"offeringDraw": str(move.draw_offered).lower()})
+
+        max_retry_seconds = 60 if retry_budget is None else max(0, retry_budget.total_seconds())
+        retry = backoff.on_exception(backoff.constant,
+                                     (RemoteDisconnected, RequestsConnectionError, HTTPError, ReadTimeout),
+                                     max_time=max_retry_seconds,
+                                     interval=0.1,
+                                     giveup=is_final,
+                                     on_backoff=backoff_handler,
+                                     backoff_log_level=logging.DEBUG,
+                                     giveup_log_level=logging.DEBUG)(submit)
+        try:
+            retry()
+        except Exception:
+            elapsed = time.perf_counter() - started
+            logger.exception(f"Move {move_text} for game {game_id} was not confirmed after "
+                             f"{attempts} attempt(s) in {elapsed:.3f}s.")
+            raise
+        elapsed = time.perf_counter() - started
+        logger.info(f"Move {move_text} for game {game_id} was accepted after "
+                    f"{attempts} attempt(s) in {elapsed:.3f}s.")
 
     def accept_takeback(self, game_id: str, accept: bool) -> bool:
         """Answer an opponent's move takeback request."""

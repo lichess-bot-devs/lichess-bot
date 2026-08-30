@@ -7,6 +7,8 @@ from requests.models import Response
 import logging
 import os
 import pytest
+import chess.engine
+from requests.exceptions import ReadTimeout
 from typing import cast
 
 
@@ -55,6 +57,44 @@ def test_challenge_429_without_retry_after_uses_exponential_backoff() -> None:
     assert first_response["rate_limit_timeout"] == seconds(60)
     assert second_response["rate_limit_timeout"] == seconds(120)
     assert li.challenge_rate_limit_backoff == seconds(240)
+
+
+def test_make_move_retries_transient_failure_then_returns(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A transient failure is retried within the move's clock-derived budget."""
+    li = lichess_without_init()
+    attempts = 0
+
+    def post_once(*_args: object, **_kwargs: object) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise ReadTimeout("temporary timeout")
+
+    monkeypatch.setattr(li, "_api_post_once", post_once)
+    result = chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None)
+
+    li.make_move("game-id", result, seconds(1))
+
+    assert attempts == 2
+
+
+def test_make_move_does_not_retry_without_clock_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Even the first attempt is made, but no retry may outlive an exhausted clock."""
+    li = lichess_without_init()
+    attempts = 0
+
+    def post_once(*_args: object, **_kwargs: object) -> None:
+        nonlocal attempts
+        attempts += 1
+        raise ReadTimeout("timeout")
+
+    monkeypatch.setattr(li, "_api_post_once", post_once)
+    result = chess.engine.PlayResult(chess.Move.from_uci("e2e4"), None)
+
+    with pytest.raises(ReadTimeout):
+        li.make_move("game-id", result, seconds(0))
+
+    assert attempts == 1
 
 
 def test_lichess() -> None:

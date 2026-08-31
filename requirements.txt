@@ -3,3 +3,5 @@ PyYAML~=6.0
 requests~=2.34
 backoff~=2.2
 rich~=15.0
+# Only needed on Python 3.10 for typing.NotRequired (see lib/lichess_types.py).
+typing_extensions>=4.0; python_version < "3.11"

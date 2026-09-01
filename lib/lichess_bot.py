@@ -40,14 +40,8 @@ from http.client import RemoteDisconnected
 from queue import Empty
 from multiprocessing.pool import Pool
 from collections import Counter
-from typing import TypedDict, cast, TypeAlias
+from typing import TypedDict, cast, TypeAlias, NotRequired
 from types import FrameType
-
-if sys.version_info >= (3, 11):
-    from typing import NotRequired
-else:
-    from typing_extensions import NotRequired
-
 MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
 POOL_TYPE: TypeAlias = Pool
 

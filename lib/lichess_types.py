@@ -1,6 +1,5 @@
 """Some type hints that can be accessed by all other python files."""
-import sys
-from typing import Any, TypedDict, Literal, TypeAlias
+from typing import Any, TypedDict, Literal, TypeAlias, NotRequired
 from collections.abc import Callable
 from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
@@ -9,11 +8,6 @@ import logging
 import datetime
 from enum import Enum
 from types import TracebackType
-
-if sys.version_info >= (3, 11):
-    from typing import NotRequired
-else:
-    from typing_extensions import NotRequired
 
 COMMANDS_TYPE: TypeAlias = list[str]
 MOVE: TypeAlias = PlayResult | list[Move]

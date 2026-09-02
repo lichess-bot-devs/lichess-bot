@@ -286,14 +286,15 @@ class Game:
         winner = self.state.get("winner")
         termination = self.state.get("status")
 
-        if winner == "white":
-            result = GameEnding.WHITE_WINS
-        elif winner == "black":
-            result = GameEnding.BLACK_WINS
-        elif termination in [Termination.DRAW, Termination.TIMEOUT]:
-            result = GameEnding.DRAW
-        else:
-            result = GameEnding.INCOMPLETE
+        match winner:
+            case "white":
+                result = GameEnding.WHITE_WINS
+            case "black":
+                result = GameEnding.BLACK_WINS
+            case _ if termination in [Termination.DRAW, Termination.TIMEOUT]:
+                result = GameEnding.DRAW
+            case _:
+                result = GameEnding.INCOMPLETE
 
         return result.value
 

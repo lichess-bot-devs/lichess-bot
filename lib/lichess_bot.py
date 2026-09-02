@@ -380,39 +380,40 @@ def lichess_bot_main(li: lichess.Lichess,
             if not event:
                 continue
 
-            if event["type"] == "terminated":
-                stop.restart = True
-                control_queue.task_done()
-                break
+            match event["type"]:
+                case "terminated":
+                    stop.restart = True
+                    control_queue.task_done()
+                    break
 
-            if event["type"] == "local_game_done":
-                active_games.pop(event["game"]["id"], None)
-                matchmaker.game_done()
-                log_proc_count("Freed", active_games)
-                one_game_completed = True
-            elif event["type"] == "challenge":
-                handle_challenge(event,
-                                 li,
-                                 challenge_queue,
-                                 config.challenge,
-                                 user_profile,
-                                 recent_bot_challenges,
-                                 online_block_list)
-            elif event["type"] == "challengeDeclined":
-                matchmaker.declined_challenge(event)
-            elif event["type"] == "challengeCanceled":
-                active_games.pop(event["challenge"]["id"], None)
-                log_proc_count("Freed", active_games)
-            elif event["type"] == "gameStart":
-                matchmaker.accepted_challenge(event)
-                start_game(event,
-                           pool,
-                           play_game_args,
-                           config,
-                           startup_correspondence_games,
-                           correspondence_queue,
-                           active_games,
-                           low_time_games)
+                case "local_game_done":
+                    active_games.pop(event["game"]["id"], None)
+                    matchmaker.game_done()
+                    log_proc_count("Freed", active_games)
+                    one_game_completed = True
+                case "challenge":
+                    handle_challenge(event,
+                                     li,
+                                     challenge_queue,
+                                     config.challenge,
+                                     user_profile,
+                                     recent_bot_challenges,
+                                     online_block_list)
+                case "challengeDeclined":
+                    matchmaker.declined_challenge(event)
+                case "challengeCanceled":
+                    active_games.pop(event["challenge"]["id"], None)
+                    log_proc_count("Freed", active_games)
+                case "gameStart":
+                    matchmaker.accepted_challenge(event)
+                    start_game(event,
+                               pool,
+                               play_game_args,
+                               config,
+                               startup_correspondence_games,
+                               correspondence_queue,
+                               active_games,
+                               low_time_games)
 
             start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args)
             check_in_on_correspondence_games(pool,

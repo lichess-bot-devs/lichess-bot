@@ -57,15 +57,16 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
     stderr = subprocess.DEVNULL if cfg.silence_stderr else None
 
     Engine: type[UCIEngine | XBoardEngine | MinimalEngine]
-    if engine_type == "xboard":
-        Engine = XBoardEngine
-    elif engine_type == "uci":
-        Engine = UCIEngine
-    elif engine_type == "homemade":
-        Engine = get_homemade_engine(cfg.name)
-    else:
-        raise ValueError(
-            f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
+    match engine_type:
+        case "xboard":
+            Engine = XBoardEngine
+        case "uci":
+            Engine = UCIEngine
+        case "homemade":
+            Engine = get_homemade_engine(cfg.name)
+        case _:
+            raise ValueError(
+                f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
     logger.debug(f"Starting engine: {commands}")
     return Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
@@ -453,23 +454,24 @@ class EngineWrapper:
         winner = game.state.get("winner")
         winning_color = chess.WHITE if winner == "white" else chess.BLACK
 
-        if termination == model.Termination.MATE:
-            self.engine.send_game_result(board)
-        elif termination == model.Termination.RESIGN:
-            resigner = "White" if winner == "black" else "Black"
-            self.engine.send_game_result(board, winning_color, f"{resigner} resigned")
-        elif termination == model.Termination.ABORT:
-            self.engine.send_game_result(board, None, "Game aborted", False)
-        elif termination == model.Termination.DRAW:
-            draw_reason = None if board.is_game_over(claim_draw=True) else "Draw by agreement"
-            self.engine.send_game_result(board, None, draw_reason)
-        elif termination == model.Termination.TIMEOUT:
-            if winner:
-                self.engine.send_game_result(board, winning_color, "Time forfeiture")
-            else:
-                self.engine.send_game_result(board, None, "Time out with insufficient material")
-        else:
-            self.engine.send_game_result(board, None, termination)
+        match termination:
+            case model.Termination.MATE:
+                self.engine.send_game_result(board)
+            case model.Termination.RESIGN:
+                resigner = "White" if winner == "black" else "Black"
+                self.engine.send_game_result(board, winning_color, f"{resigner} resigned")
+            case model.Termination.ABORT:
+                self.engine.send_game_result(board, None, "Game aborted", False)
+            case model.Termination.DRAW:
+                draw_reason = None if board.is_game_over(claim_draw=True) else "Draw by agreement"
+                self.engine.send_game_result(board, None, draw_reason)
+            case model.Termination.TIMEOUT:
+                if winner:
+                    self.engine.send_game_result(board, winning_color, "Time forfeiture")
+                else:
+                    self.engine.send_game_result(board, None, "Time out with insufficient material")
+            case _:
+                self.engine.send_game_result(board, None, termination)
 
     def quit(self) -> None:
         """Tell the engine to shut down."""

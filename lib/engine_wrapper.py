@@ -766,12 +766,13 @@ def get_book_move(board: chess.Board, game: model.Game,
                           max(weights) if normalization == "max" and weights else 100)
                 min_weight = min_weight * scalar / 100
 
-                if selection == "weighted_random":
-                    move = reader.weighted_choice(board).move
-                elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=min_weight).move
-                elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=min_weight).move
+                match selection:
+                    case "weighted_random":
+                        move = reader.weighted_choice(board).move
+                    case "uniform_random":
+                        move = reader.choice(board, minimum_weight=min_weight).move
+                    case "best_move":
+                        move = reader.find(board, minimum_weight=min_weight).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found.
                 move = None
@@ -943,22 +944,24 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy
     with contextlib.suppress(Exception):
         params: dict[str, str | int]
-        if source == "masters":
-            params = {"fen": board.fen(), "moves": 100}
-            response = li.online_book_get("https://explorer.lichess.ovh/masters", params, authenticated=True)
-            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Masters)"}
-        elif source == "player":
-            player = opening_explorer_cfg.player_name
-            if not player:
-                player = game.username
-            params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
-                      "recentGames": 0, "color": "white" if side == "wtime" else "black"}
-            response = li.online_book_get("https://explorer.lichess.ovh/player", params, stream=True, authenticated=True)
-            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
-        else:
-            params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
-            response = li.online_book_get("https://explorer.lichess.ovh/lichess", params, authenticated=True)
-            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
+        match source:
+            case "masters":
+                params = {"fen": board.fen(), "moves": 100}
+                response = li.online_book_get("https://explorer.lichess.ovh/masters", params, authenticated=True)
+                comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Masters)"}
+            case "player":
+                player = opening_explorer_cfg.player_name
+                if not player:
+                    player = game.username
+                params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
+                          "recentGames": 0, "color": "white" if side == "wtime" else "black"}
+                response = li.online_book_get("https://explorer.lichess.ovh/player", params, stream=True,
+                                              authenticated=True)
+                comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
+            case _:
+                params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
+                response = li.online_book_get("https://explorer.lichess.ovh/lichess", params, authenticated=True)
+                comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
         moves = []
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]

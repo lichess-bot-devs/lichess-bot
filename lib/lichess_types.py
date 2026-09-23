@@ -11,7 +11,7 @@ from types import TracebackType
 
 COMMANDS_TYPE: TypeAlias = list[str]
 MOVE: TypeAlias = PlayResult | list[Move]
-CORRESPONDENCE_QUEUE_TYPE: TypeAlias = Queue[str]
+CORRESPONDENCE_QUEUE_TYPE: TypeAlias = Queue[tuple[str, str]]
 LOGGING_QUEUE_TYPE: TypeAlias = Queue[logging.LogRecord]
 REQUESTS_PAYLOAD_TYPE: TypeAlias = dict[str, str | int | bool]
 GO_COMMANDS_TYPE: TypeAlias = dict[str, str]

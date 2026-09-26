@@ -1,5 +1,5 @@
 """Test functions for matchmaking module."""
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.timer import Timer, seconds
@@ -246,3 +246,38 @@ def test_get_random_config_value__returns_from_choices_when_random() -> None:
     result = matchmaking.get_random_config_value(test_config, "challenge_mode", choices)
 
     assert result in choices, f"Expected result to be in {choices} but got '{result}'"
+
+
+def test_no_opponent_backs_off_and_resets_when_one_is_found() -> None:
+    """A failed opponent lookup doubles the wait up to 600 seconds, and finding an opponent resets it."""
+    mock_li = Mock()
+    mock_config = Configuration({
+        "challenge": {"variants": ["standard"]},
+        "matchmaking": {
+            "allow_matchmaking": True,
+            "block_list": [],
+            "online_block_list": [],
+            "challenge_timeout": 0
+        }
+    })
+    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {}}
+    matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
+    no_opponent = (None, 180, 2, 0, "standard", "rated")
+    opponent = ("otherbot", 180, 2, 0, "standard", "rated")
+
+    def attempt(choice: tuple[str | None, int, int, int, str, str]) -> None:
+        matchmaking.last_challenge_created_delay.starting_time -= 100
+        matchmaking.rate_limit_timer = Timer()
+        with patch.object(matchmaking, "choose_opponent", return_value=choice), \
+                patch.object(matchmaking, "create_challenge", return_value=""):
+            matchmaking.challenge({}, [], 1)
+
+    waits = []
+    for _ in range(6):
+        attempt(no_opponent)
+        waits.append(matchmaking.rate_limit_timer.duration)
+    assert waits == [seconds(60), seconds(120), seconds(240), seconds(480), seconds(600), seconds(600)]
+
+    attempt(opponent)
+    attempt(no_opponent)
+    assert matchmaking.rate_limit_timer.duration == seconds(60)

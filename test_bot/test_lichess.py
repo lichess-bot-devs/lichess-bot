@@ -45,10 +45,7 @@ def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:
 
     challenge_response = li.handle_challenge(response)
     
-    print( f" asdasjkd ansdkajdnkd {challenge_response} ")
     
-
-
     assert challenge_response["bot_is_rate_limited"] is True
     assert challenge_response["opponent_is_rate_limited"] is False
     assert challenge_response["rate_limit_timeout"] == seconds(120)

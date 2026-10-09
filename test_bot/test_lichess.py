@@ -1,8 +1,6 @@
 """Tests for the lichess communication."""
 
 from lib import lichess
-import datetime
-from datetime import timedelta
 from lib.timer import Timer, seconds
 from collections import defaultdict
 from requests.models import Response

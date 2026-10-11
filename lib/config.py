@@ -342,7 +342,7 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
     config_warn(CONFIG["challenge"]["min_rating"] <= CONFIG["challenge"]["max_rating"],
                 "challenge.max_rating < challenge.min_rating will result in no challenges being accepted.")
     config_warn(CONFIG["challenge"].get("rating_difference") is None
-                or CONFIG["challenge"].get("rating_difference", 0) >= 0,
+                or CONFIG["challenge"].get("rating_difference") >= 0,
                 "challenge.rating_difference < 0 will result in no challenges being accepted.")
 
     matchmaking = CONFIG["matchmaking"]
@@ -352,7 +352,8 @@ def validate_config(CONFIG: CONFIG_DICT_TYPE) -> None:
         config_warn(matchmaking["opponent_min_rating"] <= matchmaking["opponent_max_rating"],
                     "matchmaking.opponent_max_rating < matchmaking.opponent_min_rating will result in "
                     "no challenges being created.")
-        config_warn(matchmaking.get("opponent_rating_difference", 0) >= 0,
+        config_warn(matchmaking.get("opponent_rating_difference") is None
+                    or matchmaking.get("opponent_rating_difference") >= 0,
                     "matchmaking.opponent_rating_difference < 0 will result in no challenges being created.")
         max_games_per_day = 100
         game_timeout = minutes(matchmaking["challenge_timeout"])

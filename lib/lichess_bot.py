@@ -344,6 +344,7 @@ def lichess_bot_main(li: lichess.Lichess,
     max_games = config.challenge.concurrency
     reserved_for_humans = min(config.challenge.games_reserved_for_humans, max_games)
     max_bot_games = max_games - reserved_for_humans
+    games_in_progress.clear()  # A restart abandons the old pool and the games it was playing.
 
     one_game_completed = False
 
@@ -387,6 +388,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "local_game_done":
                 active_games.pop(event["game"]["id"], None)
+                games_in_progress.discard(event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
@@ -422,7 +424,8 @@ def lichess_bot_main(li: lichess.Lichess,
                                              play_game_args,
                                              active_games,
                                              max_games)
-            accept_challenges(li, challenge_queue, active_games, max_games, max_bot_games)
+            accept_challenges(li, challenge_queue, active_games, max_games, max_bot_games,
+                              int(bool(matchmaker.challenge_id)))
             matchmaker.challenge(active_games, challenge_queue, max_bot_games)
             check_online_status(li, user_profile, last_check_online_time)
 
@@ -487,7 +490,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
         opponent_name = event["game"].get("opponent", {}).get("username", "")
-        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
+        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool, max_games)
 
 
 def start_low_time_games(low_time_games: list[GameType], active_games: dict[str, str], max_games: int,
@@ -498,13 +501,19 @@ def start_low_time_games(low_time_games: list[GameType], active_games: dict[str,
         low_time_game = low_time_games.pop(0)
         game_id = low_time_game["id"]
         opponent_name = low_time_game.get("opponent", {}).get("username", "")
-        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
+        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool, max_games)
 
 
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: dict[str, str],
-                      max_games: int, max_bot_games: int) -> None:
-    """Accept a challenge."""
-    while len(active_games) < max_games and challenge_queue:
+                      max_games: int, max_bot_games: int, pending_outgoing_challenges: int = 0) -> None:
+    """
+    Accept a challenge.
+
+    :param pending_outgoing_challenges: The number of not-yet-answered challenges this bot has sent (matchmaking).
+        Each one reserves a game slot: if the opponent accepts it while we also accept an incoming challenge,
+        more games than `challenge.concurrency` start at once.
+    """
+    while len(active_games) + pending_outgoing_challenges < max_games and challenge_queue:
         chlng = challenge_queue[0]
         if chlng.from_self:
             challenge_queue.pop(0)
@@ -562,9 +571,53 @@ def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
     return game_id in (ongoing_game["gameId"] for ongoing_game in active_games)
 
 
+# The games that currently hold a process in the pool. This differs from
+# `active_games`, which also counts accepted challenges whose game has not
+# started yet.
+games_in_progress: set[str] = set()
+
+
+def abort_overflow_game(li: lichess.Lichess, game_id: str, active_games: dict[str, str], max_games: int) -> None:
+    """
+    Abort a game that started while every process in the pool is busy, and free its slot.
+
+    :param li: Provides communication with lichess.org.
+    :param game_id: The id of the game that has no process to play it.
+    :param active_games: A dict mapping active game IDs to opponent names.
+    :param max_games: The maximum number of simultaneous games (`challenge.concurrency`).
+    """
+    logger.warning(f"Aborting game {game_id}: already playing {max_games} game(s), the limit set by "
+                   "challenge.concurrency. An aborted game is unrated and harmless, a game left to sit "
+                   "unplayed until lichess abandons it is not.")
+    try:
+        li.abort(game_id)
+    except (HTTPError, ReadTimeout, RemoteDisconnected, RequestsConnectionError) as e:
+        # Lichess only refuses an abort once a game has moves, so this game has
+        # moves that lichess-bot never made. Do not play it: it would share the
+        # host with the games already running. Do not resign it either: if
+        # another client is playing on this account, resigning throws away that
+        # client's live game. Leave it alone and say so loudly.
+        logger.error(f"Could not abort game {game_id} ({e}). Lichess refuses to abort a game that has moves, "
+                     "so this game has moves lichess-bot never made -- another client is probably playing on "
+                     f"this account. Leaving game {game_id} alone.")
+    active_games.pop(game_id, None)
+    log_proc_count("Freed", active_games)
+
+
 def start_game_thread(active_games: dict[str, str], game_id: str, opponent_name: str,
-                      play_game_args: PlayGameArgsType, pool: POOL_TYPE) -> None:
-    """Start a game thread."""
+                      play_game_args: PlayGameArgsType, pool: POOL_TYPE, max_games: int) -> None:
+    """Start a game thread, or abort the game if no process in the pool is free to play it."""
+    if len(games_in_progress) >= max_games and game_id not in games_in_progress:
+        # Races when games start -- an opponent accepting an outgoing matchmaking
+        # challenge just as an incoming challenge is accepted, or games replayed
+        # after a reconnect -- can start more games than `challenge.concurrency`.
+        # Such a game must not be quietly queued behind the games already holding
+        # the pool's processes: it would sit unplayed until lichess abandons it,
+        # with the bot online but never moving.
+        abort_overflow_game(play_game_args["li"], game_id, active_games, max_games)
+        return
+
+    games_in_progress.add(game_id)
     active_games[game_id] = opponent_name
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
@@ -615,7 +668,7 @@ def start_game(event: EventType,
         startup_correspondence_games.remove(game_id)
     else:
         opponent_name = event["game"].get("opponent", {}).get("username", "")
-        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
+        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool, config.challenge.concurrency)
 
 
 def enough_time_to_queue(event: EventType, config: Configuration) -> bool:

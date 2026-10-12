@@ -68,27 +68,28 @@ class Conversation:
         """
         from_self = line.username == self.game.username
         is_eval = cmd.startswith("eval")
-        if cmd in ("commands", "help"):
-            self.send_reply(line,
-                            "Supported commands: !wait (wait a minute for my first move), !name, "
-                            "!eval (or any text starting with !eval), !queue")
-        elif cmd == "wait" and self.game.is_abortable():
-            self.game.ping(seconds(60), seconds(120), seconds(120))
-            self.send_reply(line, "Waiting 60 seconds...")
-        elif cmd == "name":
-            name = self.game.me.name
-            self.send_reply(line, f"{name} running {self.engine.name()} (lichess-bot v{self.version})")
-        elif is_eval and (from_self or line.room == "spectator"):
-            stats = self.engine.get_stats(for_chat=True)
-            self.send_reply(line, ", ".join(stats))
-        elif is_eval:
-            self.send_reply(line, "I don't tell that to my opponent, sorry.")
-        elif cmd == "queue":
-            if self.challengers:
-                challengers = ", ".join([f"@{challenger.challenger.name}" for challenger in reversed(self.challengers)])
-                self.send_reply(line, f"Challenge queue: {challengers}")
-            else:
-                self.send_reply(line, "No challenges queued.")
+        match cmd:
+            case "commands" | "help":
+                self.send_reply(line,
+                                "Supported commands: !wait (wait a minute for my first move), !name, "
+                                "!eval (or any text starting with !eval), !queue")
+            case "wait" if self.game.is_abortable():
+                self.game.ping(seconds(60), seconds(120), seconds(120))
+                self.send_reply(line, "Waiting 60 seconds...")
+            case "name":
+                name = self.game.me.name
+                self.send_reply(line, f"{name} running {self.engine.name()} (lichess-bot v{self.version})")
+            case _ if is_eval and (from_self or line.room == "spectator"):
+                stats = self.engine.get_stats(for_chat=True)
+                self.send_reply(line, ", ".join(stats))
+            case _ if is_eval:
+                self.send_reply(line, "I don't tell that to my opponent, sorry.")
+            case "queue":
+                if self.challengers:
+                    challengers = ", ".join([f"@{challenger.challenger.name}" for challenger in reversed(self.challengers)])
+                    self.send_reply(line, f"Challenge queue: {challengers}")
+                else:
+                    self.send_reply(line, "No challenges queued.")
 
     def send_reply(self, line: ChatLine, reply: str) -> None:
         """

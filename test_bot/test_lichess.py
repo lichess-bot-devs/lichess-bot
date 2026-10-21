@@ -9,10 +9,7 @@ import os
 import pytest
 from typing import cast
 from unittest.mock import patch
-from typing import get_type_hints
-from lib.lichess_types import GameType, PublicDataType, TOKEN_TESTS_TYPE, UserProfileType
-from requests.exceptions import ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout
-from unittest.mock import Mock
+from lib.lichess_types import GameType
 from lib.lichess import RateLimitedError
 
 def mock_response(status_code: int, body: dict[str, object], headers: dict[str, str] | None = None) -> Response:
@@ -42,7 +39,6 @@ def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:
     response = mock_response(429, {"error": "Too many requests. Try again later."}, {"Retry-After": "120"})
 
     challenge_response = li.handle_challenge(response)
-    
     
     assert challenge_response["bot_is_rate_limited"] is True
     assert challenge_response["opponent_is_rate_limited"] is False
@@ -101,15 +97,19 @@ def test_lichess() -> None:
                            "seenAt": 1669272254317, "title": "BOT", "tosViolation": True,
                            "url": "https://lichess.org/@/lichapibot", "username": "lichapibot"}
     
-    
             
-@pytest.mark.parametrize(("endpoint_name","url"), [("profile","/api/account"), ("playing","/api/account/playing"),("stream","/api/bot/game/stream/{}"),("stream_event","/api/stream/event"),
-                                 ("move","/api/bot/game/{}/move/{}"),("takeback","/api/bot/game/{}/takeback/{}"),("chat","/api/bot/game/{}/chat"),
-                                 ("abort","/api/bot/game/{}/abort"),("accept","/api/challenge/{}/accept"),("decline","/api/challenge/{}/decline"),
-                                 ("upgrade","/api/bot/account/upgrade"),("resign","/api/bot/game/{}/resign"),("export","/game/export/{}"),("online_bots","/api/bot/online"),
-                                 ("challenge","/api/challenge/{}"),("cancel","/api/challenge/{}/cancel"),("status","/api/users/status"),("public_data","/api/user/{}"),("token_test","/api/token/test")])
+@pytest.mark.parametrize(("endpoint_name","url"), [("profile","/api/account"), ("playing","/api/account/playing"),
+                                 ("stream","/api/bot/game/stream/{}"),("stream_event","/api/stream/event"),
+                                 ("move","/api/bot/game/{}/move/{}"),("takeback","/api/bot/game/{}/takeback/{}"),
+                                 ("chat","/api/bot/game/{}/chat"),
+                                 ("abort","/api/bot/game/{}/abort"),("accept","/api/challenge/{}/accept"),
+                                 ("decline","/api/challenge/{}/decline"),
+                                 ("upgrade","/api/bot/account/upgrade"),("resign","/api/bot/game/{}/resign"),
+                                 ("export","/game/export/{}"),("online_bots","/api/bot/online"),
+                                 ("challenge","/api/challenge/{}"),("cancel","/api/challenge/{}/cancel"),
+                                 ("status","/api/users/status"),("public_data","/api/user/{}"),("token_test","/api/token/test")])
 def test_rate_limited_path_template(endpoint_name: str,url: str) -> None:
-    """An exception will be thrown if the path template is rate limited"""
+    """An exception will be thrown if the path template is rate limited."""
     li = lichess_without_init()
     with (patch.object(li,"is_rate_limited",return_value=True) as is_rate_limi,
         pytest.raises(RateLimitedError, match=f"{url} is rate-limited")
@@ -118,11 +118,9 @@ def test_rate_limited_path_template(endpoint_name: str,url: str) -> None:
     is_rate_limi.assert_called_once_with(url)
 
         
-    
 def test_get_game_pgn_returns_empty_string_on_error() -> None:
     """An API error while getting PGN record of a game return an empty string."""
     li = lichess_without_init()
     game: GameType = {"gameId": "game-id"}
     with patch.object(li, "api_get_raw", side_effect=RuntimeError):
         assert li.get_game_pgn(game["gameId"]) == ""
-        

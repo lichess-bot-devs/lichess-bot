@@ -39,7 +39,7 @@ def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:
     response = mock_response(429, {"error": "Too many requests. Try again later."}, {"Retry-After": "120"})
 
     challenge_response = li.handle_challenge(response)
-    
+
     assert challenge_response["bot_is_rate_limited"] is True
     assert challenge_response["opponent_is_rate_limited"] is False
     assert challenge_response["rate_limit_timeout"] == seconds(120)
@@ -96,8 +96,8 @@ def test_lichess() -> None:
                            "playTime": {"total": 4111502, "tv": 1582068, "human": 534785}, "profile": {},
                            "seenAt": 1669272254317, "title": "BOT", "tosViolation": True,
                            "url": "https://lichess.org/@/lichapibot", "username": "lichapibot"}
-    
-            
+
+
 @pytest.mark.parametrize(("endpoint_name","url"), [("profile","/api/account"), ("playing","/api/account/playing"),
                                  ("stream","/api/bot/game/stream/{}"),("stream_event","/api/stream/event"),
                                  ("move","/api/bot/game/{}/move/{}"),("takeback","/api/bot/game/{}/takeback/{}"),
@@ -117,7 +117,7 @@ def test_rate_limited_path_template(endpoint_name: str,url: str) -> None:
         li.get_path_template(endpoint_name)
     is_rate_limi.assert_called_once_with(url)
 
-        
+
 def test_get_game_pgn_returns_empty_string_on_error() -> None:
     """An API error while getting PGN record of a game return an empty string."""
     li = lichess_without_init()

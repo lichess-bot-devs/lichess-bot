@@ -287,7 +287,8 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode)
         logger.info(f"Challenge id is {challenge_id or 'None'}.")
-        active_games[challenge_id] = bot_username
+        if challenge_id:
+            active_games[challenge_id] = bot_username
         self.challenge_id = challenge_id
 
     def discard_challenge(self, challenge_id: str, active_games: dict[str, str]) -> None:

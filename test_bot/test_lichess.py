@@ -9,7 +9,9 @@ import logging
 import os
 import pytest
 from typing import cast
-
+from unittest.mock import patch
+from lib.lichess_types import GameType
+from lib.lichess import RateLimitedError
 
 def mock_response(status_code: int, body: dict[str, object], headers: dict[str, str] | None = None) -> Response:
     """Create a mock HTTP response."""
@@ -104,3 +106,31 @@ def test_lichess() -> None:
                            "playTime": {"total": 4111502, "tv": 1582068, "human": 534785}, "profile": {},
                            "seenAt": 1669272254317, "title": "BOT", "tosViolation": True,
                            "url": "https://lichess.org/@/lichapibot", "username": "lichapibot"}
+
+
+@pytest.mark.parametrize(("endpoint_name","url"), [("profile","/api/account"), ("playing","/api/account/playing"),
+                                 ("stream","/api/bot/game/stream/{}"),("stream_event","/api/stream/event"),
+                                 ("move","/api/bot/game/{}/move/{}"),("takeback","/api/bot/game/{}/takeback/{}"),
+                                 ("chat","/api/bot/game/{}/chat"),
+                                 ("abort","/api/bot/game/{}/abort"),("accept","/api/challenge/{}/accept"),
+                                 ("decline","/api/challenge/{}/decline"),
+                                 ("upgrade","/api/bot/account/upgrade"),("resign","/api/bot/game/{}/resign"),
+                                 ("export","/game/export/{}"),("online_bots","/api/bot/online"),
+                                 ("challenge","/api/challenge/{}"),("cancel","/api/challenge/{}/cancel"),
+                                 ("status","/api/users/status"),("public_data","/api/user/{}"),("token_test","/api/token/test")])
+def test_rate_limited_path_template(endpoint_name: str,url: str) -> None:
+    """An exception will be thrown if the path template is rate limited."""
+    li = lichess_without_init()
+    with (patch.object(li,"is_rate_limited",return_value=True) as is_rate_limi,
+        pytest.raises(RateLimitedError, match=f"{url} is rate-limited")
+    ):
+        li.get_path_template(endpoint_name)
+    is_rate_limi.assert_called_once_with(url)
+
+
+def test_get_game_pgn_returns_empty_string_on_error() -> None:
+    """An API error while getting PGN record of a game return an empty string."""
+    li = lichess_without_init()
+    game: GameType = {"gameId": "game-id"}
+    with patch.object(li, "api_get_raw", side_effect=RuntimeError):
+        assert li.get_game_pgn(game["gameId"]) == ""

@@ -2,6 +2,7 @@
 
 from lib import lichess
 from lib.timer import Timer, seconds
+from lib.lichess_types import UserProfileType, PublicDataType
 from collections import defaultdict
 from requests.models import Response
 import logging
@@ -29,6 +30,13 @@ def lichess_without_init() -> lichess.Lichess:
     li.rate_limit_timers = defaultdict(Timer)
     li.challenge_rate_limit_backoff = seconds(60)
     return li
+
+
+def add_default_profile_values(profile: UserProfileType | PublicDataType) -> None:
+    """Add default False values for profiles downloaded from Lichess."""
+    profile.setdefault("blocking", False)
+    profile.setdefault("followable", False)
+    profile.setdefault("following", False)
 
 
 def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:
@@ -66,10 +74,11 @@ def test_lichess() -> None:
     assert len(li.get_online_bots()) > 20
     profile = li.get_profile()
     profile["seenAt"] = 1700000000000
+    add_default_profile_values(profile)
     assert profile == {"blocking": False,
                        "count": {"all": 12, "bookmark": 0, "draw": 1, "import": 0,
                                  "loss": 8, "me": 0, "playing": 0, "rated": 0, "win": 3},
-                       "createdAt": 1627834995597, "followable": True, "following": False, "id": "badsunfish",
+                       "createdAt": 1627834995597, "followable": False, "following": False, "id": "badsunfish",
                        "perfs": {"blitz": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 500},
                                  "bullet": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 500},
                                  "classical": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 500},
@@ -82,10 +91,11 @@ def test_lichess() -> None:
     public_data = li.get_public_data("lichapibot")
     for key in public_data["perfs"]:
         public_data["perfs"][key]["rd"] = 0
+    add_default_profile_values(public_data)
     assert public_data == {"blocking": False, "count": {"all": 15774, "bookmark": 0, "draw": 3009,
                                                         "import": 0, "loss": 6423,
                                                         "me": 0, "playing": 0, "rated": 15121, "win": 6342},
-                           "createdAt": 1524037267522, "followable": True, "following": False, "id": "lichapibot",
+                           "createdAt": 1524037267522, "followable": False, "following": False, "id": "lichapibot",
                            "perfs": {"blitz": {"games": 2430, "prog": 3, "prov": True, "rating": 2388, "rd": 0},
                                      "bullet": {"games": 7293, "prog": 9, "prov": True, "rating": 2298, "rd": 0},
                                      "classical": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 0},

@@ -78,7 +78,7 @@ class Matchmaking:
                 name, reason = line.split(",")
                 self.add_challenge_filter(name, reason, forever, add_to_file=False)
 
-    def should_create_challenge(self) -> bool:
+    def should_create_challenge(self, active_games: dict[str, str]) -> bool:
         """Whether we should create a challenge."""
         matchmaking_enabled = self.matchmaking_cfg.allow_matchmaking
         rate_limit_ok = self.rate_limit_timer.is_expired()
@@ -88,7 +88,7 @@ class Matchmaking:
         if challenge_expired:
             self.li.cancel(self.challenge_id)
             logger.info(f"Challenge id {self.challenge_id} cancelled.")
-            self.discard_challenge(self.challenge_id)
+            self.discard_challenge(self.challenge_id, active_games)
             self.show_earliest_challenge_time()
         return bool(matchmaking_enabled and rate_limit_ok and (time_has_passed or challenge_expired) and min_wait_time_passed)
 
@@ -258,7 +258,7 @@ class Matchmaking:
         :param challenge_queue: The queue containing the challenges.
         :param max_bot_games: The maximum allowed number of simultaneous games against bots.
         """
-        if not self.should_create_challenge():
+        if not self.should_create_challenge(active_games):
             return
 
         # If matchmaking is not allowed while playing other games, don't create
@@ -287,15 +287,18 @@ class Matchmaking:
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode)
         logger.info(f"Challenge id is {challenge_id or 'None'}.")
+        if challenge_id:
+            active_games[challenge_id] = bot_username
         self.challenge_id = challenge_id
 
-    def discard_challenge(self, challenge_id: str) -> None:
+    def discard_challenge(self, challenge_id: str, active_games: dict[str, str]) -> None:
         """
         Clear the ID of the most recent challenge if it is no longer needed.
 
         :param challenge_id: The ID of the challenge that is expired, accepted, or declined.
         """
         if self.challenge_id == challenge_id:
+            active_games.pop(challenge_id, "")
             self.challenge_id = ""
 
     def game_done(self) -> None:
@@ -351,15 +354,15 @@ class Matchmaking:
         """
         return self.challenge_type_acceptable[(username, game_aspect)].is_expired()
 
-    def accepted_challenge(self, event: EventType) -> None:
+    def accepted_challenge(self, event: EventType, active_games: dict[str, str]) -> None:
         """
         Set the challenge id to an empty string, if the challenge was accepted.
 
         Otherwise, we would attempt to cancel the challenge later.
         """
-        self.discard_challenge(event["game"]["id"])
+        self.discard_challenge(event["game"]["id"], active_games)
 
-    def declined_challenge(self, event: EventType) -> None:
+    def declined_challenge(self, event: EventType, active_games: dict[str, str]) -> None:
         """
         Handle a challenge that was declined by the opponent.
 
@@ -369,7 +372,7 @@ class Matchmaking:
         opponent = challenge.challenge_target
         reason = event["challenge"]["declineReason"]
         logger.info(f"{opponent} declined {challenge}: {reason}")
-        self.discard_challenge(challenge.id)
+        self.discard_challenge(challenge.id, active_games)
         if not challenge.from_self or self.challenge_filter == FilterType.NONE:
             return
 

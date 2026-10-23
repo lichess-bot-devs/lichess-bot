@@ -399,12 +399,12 @@ def lichess_bot_main(li: lichess.Lichess,
                                  recent_bot_challenges,
                                  online_block_list)
             elif event["type"] == "challengeDeclined":
-                matchmaker.declined_challenge(event)
+                matchmaker.declined_challenge(event, active_games)
             elif event["type"] == "challengeCanceled":
                 active_games.pop(event["challenge"]["id"], None)
                 log_proc_count("Freed", active_games)
             elif event["type"] == "gameStart":
-                matchmaker.accepted_challenge(event)
+                matchmaker.accepted_challenge(event, active_games)
                 start_game(event,
                            pool,
                            play_game_args,

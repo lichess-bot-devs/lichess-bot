@@ -2,6 +2,7 @@
 import logging
 
 import pytest
+import yaml
 
 from lib import config
 
@@ -31,3 +32,14 @@ def test_config_warn__false(caplog: pytest.LogCaptureFixture) -> None:
         assert "test warning message" in caplog.text
         assert len(caplog.records) == 1
         assert caplog.records[0].levelname == "WARNING"
+
+
+def test_validate_config__empty_opponent_rating_difference() -> None:
+    """Test that an empty matchmaking opponent_rating_difference does not crash the config validation."""
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+    CONFIG["engine"]["protocol"] = "homemade"
+    CONFIG["matchmaking"]["allow_matchmaking"] = True
+    CONFIG["matchmaking"]["opponent_rating_difference"] = None
+    config.insert_default_values(CONFIG)
+    config.validate_config(CONFIG)

@@ -217,7 +217,7 @@ def test_should_create_challenge_respects_rate_limit_when_previous_challenge_exp
     matchmaking.last_challenge_created_delay.starting_time -= 100
     matchmaking.rate_limit_timer = Timer(seconds(60))
 
-    assert matchmaking.should_create_challenge() is False
+    assert matchmaking.should_create_challenge({}) is False
 
 
 def test_get_random_config_value__returns_from_choices_when_random() -> None:

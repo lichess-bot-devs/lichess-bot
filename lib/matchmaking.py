@@ -5,7 +5,7 @@ import datetime
 import contextlib
 from pathlib import Path
 from lib import model
-from lib.timer import Timer, days, seconds, minutes, years
+from lib.timer import Timer, days, seconds, minutes, years, sec_str
 from collections import defaultdict
 from collections.abc import Sequence
 from lib.lichess import Lichess, RateLimitedError
@@ -34,6 +34,9 @@ class Matchmaking:
         self.last_user_profile_update_time = Timer(minutes(5))
         self.min_wait_time = seconds(60)  # Wait before new challenge to avoid api rate limits.
         self.rate_limit_timer = Timer()
+        # Doubles after each attempt that found no opponent, so a failing lookup
+        # (a 429 on the profile endpoint among them) is not retried every minute.
+        self.no_opponent_backoff = seconds(60)
 
         # Maximum time between challenges, even if there are active games
         self.max_wait_time = minutes(10) if self.matchmaking_cfg.allow_during_games else forever
@@ -279,10 +282,13 @@ class Matchmaking:
         self.update_user_profile()
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
         if not bot_username:
-            logger.info("No challenge will be created.")
+            logger.info(f"No challenge will be created. Next attempt in {sec_str(self.no_opponent_backoff)} seconds.")
             self.challenge_id = ""
-            self.rate_limit_timer = Timer(seconds(60))
+            self.rate_limit_timer = Timer(self.no_opponent_backoff)
+            self.no_opponent_backoff = min(seconds(600), self.no_opponent_backoff * 2)
             return
+
+        self.no_opponent_backoff = seconds(60)
 
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
         challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode)

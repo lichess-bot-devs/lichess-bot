@@ -440,12 +440,26 @@ def close_pool(pool: POOL_TYPE, active_games: dict[str, str], config: Configurat
         pool.join()
 
 
+# A healthy lichess event stream sends a keepalive line every few seconds,
+# which arrives here as a "ping" event. If nothing arrives for this long, the
+# event stream (or the process reading it) is dead, even though the connection
+# may look fine, and the bot would otherwise wait forever while appearing
+# online. Restarting re-creates the stream process and its connection.
+EVENT_STREAM_SILENCE_LIMIT = seconds(60)
+
+
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
     """Get the next event from the control queue."""
     try:
-        event = control_queue.get()
+        event = control_queue.get(timeout=to_seconds(EVENT_STREAM_SILENCE_LIMIT))
         if event is None:
             return {}
+    except Empty:
+        logger.error(f"No events or pings from the lichess event stream in the last "
+                     f"{to_seconds(EVENT_STREAM_SILENCE_LIMIT):.0f} seconds even though the stream "
+                     "pings every few seconds. The event stream is assumed dead. Restarting lichess-bot.")
+        stop.restart = True
+        return {}
     except InterruptedError:
         return {}
 

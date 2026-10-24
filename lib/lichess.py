@@ -390,9 +390,13 @@ class Lichess:
             logger.warning(f"This chat message is {len(text)} characters, which is longer "
                            f"than the maximum of {MAX_CHAT_MESSAGE_LEN}. It will not be sent.")
             logger.warning(f"Message: {text}")
+            return
 
         data = {"room": room, "text": text}
-        self.api_post("chat", game_id, data=data)
+        try:
+            self.api_post("chat", game_id, data=data)
+        except (HTTPError, ReadTimeout, RemoteDisconnected, RequestsConnectionError, RateLimitedError) as e:
+            logger.warning(f"Could not send chat message to the {room} room of game {game_id}: {e}")
 
     def abort(self, game_id: str) -> None:
         """Aborts a game."""

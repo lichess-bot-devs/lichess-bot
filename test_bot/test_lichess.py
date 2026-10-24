@@ -4,6 +4,7 @@ from lib import lichess
 from lib.timer import Timer, seconds
 from lib.lichess_types import UserProfileType, PublicDataType
 from collections import defaultdict
+from requests.exceptions import HTTPError
 from requests.models import Response
 import logging
 import os
@@ -63,6 +64,33 @@ def test_challenge_429_without_retry_after_uses_exponential_backoff() -> None:
     assert first_response["rate_limit_timeout"] == seconds(60)
     assert second_response["rate_limit_timeout"] == seconds(120)
     assert li.challenge_rate_limit_backoff == seconds(240)
+
+
+def test_over_long_chat_message_is_not_sent() -> None:
+    """A message longer than the limit is rejected by lichess, so it must not be sent at all."""
+    li = lichess_without_init()
+    posted: list[str] = []
+
+    def record_api_post(path: str, *_args: object, **_kwargs: object) -> None:
+        posted.append(path)
+
+    li.api_post = record_api_post  # type: ignore[assignment]
+
+    li.chat("game_id", "player", "x" * (lichess.MAX_CHAT_MESSAGE_LEN + 1))
+
+    assert posted == []
+
+
+def test_failed_chat_message_does_not_raise() -> None:
+    """Chat is cosmetic: a failed chat message must never interrupt the game it was sent from."""
+    li = lichess_without_init()
+
+    def failing_api_post(*_args: object, **_kwargs: object) -> None:
+        raise HTTPError("400 Client Error")
+
+    li.api_post = failing_api_post  # type: ignore[method-assign]
+
+    li.chat("game_id", "player", "Good luck!")
 
 
 def test_lichess() -> None:

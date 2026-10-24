@@ -40,24 +40,24 @@ from http.client import RemoteDisconnected
 from queue import Empty
 from multiprocessing.pool import Pool
 from collections import Counter
-from typing import TypedDict, cast, TypeAlias
+from typing import TypedDict, cast, TypeAlias, NotRequired
 from types import FrameType
 MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
 POOL_TYPE: TypeAlias = Pool
 
 
-class PlayGameArgsType(TypedDict, total=False):
+class PlayGameArgsType(TypedDict):
     """Type hint for `play_game_args`."""
 
-    li: lichess.Lichess
-    control_queue: CONTROL_QUEUE_TYPE
-    user_profile: UserProfileType
-    config: Configuration
-    challenge_queue: MULTIPROCESSING_LIST_TYPE
-    correspondence_queue: CORRESPONDENCE_QUEUE_TYPE
-    logging_queue: LOGGING_QUEUE_TYPE
-    pgn_queue: PGN_QUEUE_TYPE
-    game_id: str
+    li: NotRequired[lichess.Lichess]
+    control_queue: NotRequired[CONTROL_QUEUE_TYPE]
+    user_profile: NotRequired[UserProfileType]
+    config: NotRequired[Configuration]
+    challenge_queue: NotRequired[MULTIPROCESSING_LIST_TYPE]
+    correspondence_queue: NotRequired[CORRESPONDENCE_QUEUE_TYPE]
+    logging_queue: NotRequired[LOGGING_QUEUE_TYPE]
+    pgn_queue: NotRequired[PGN_QUEUE_TYPE]
+    game_id: NotRequired[str]
 
 
 class VersioningType(TypedDict):

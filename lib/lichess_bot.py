@@ -775,6 +775,9 @@ def play_game(li: lichess.Lichess,
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         StopIteration) as e:
                     stopped = isinstance(e, StopIteration)
+                    if stopped and game_is_active(li, game.id):
+                        logger.warning(f"Game stream ended for {game.url()} but the game is still active")
+                        raise
                     stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
 
             pgn_record = try_get_pgn_game_record(li, config, game, board, engine)

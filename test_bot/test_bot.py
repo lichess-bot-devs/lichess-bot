@@ -77,13 +77,15 @@ def lichess_org_simulator(move_queue: Queue[chess.Move | None],
     results.put(outcome is not None and outcome.winner == chess.BLACK)
 
 
-def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int) -> bool:
+def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int,
+            lichess_class: type[test_bot.lichess.Lichess] = test_bot.lichess.Lichess) -> bool:
     """
     Start lichess-bot test with a mocked version of the lichess.org site.
 
     :param raw_config: A dictionary of values to specify the engine to test. This engine will play as white.
     :param logging_level: The level of logging to use during the test. Usually logging.DEBUG.
     :param opponent_path: The path to the executable that will play the opponent. The opponent plays as black.
+    :param lichess_class: The mocked version of lichess.org.
     """
     config.insert_default_values(raw_config)
     CONFIG = config.Configuration(raw_config)
@@ -92,7 +94,7 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int) -> bool:
     board_queue: Queue[chess.Board] = manager.Queue()
     clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]] = manager.Queue()
     move_queue: Queue[chess.Move | None] = manager.Queue()
-    li = test_bot.lichess.Lichess(move_queue, board_queue, clock_queue)
+    li = lichess_class(move_queue, board_queue, clock_queue)
 
     user_profile = li.get_profile()
     username = user_profile["username"]
@@ -175,6 +177,21 @@ def test_homemade() -> None:
         time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))
+
+
+def test_game_stream_reconnect() -> None:
+    """Test that lichess-bot finishes a game whose game stream ends while the game is still being played."""
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+
+    with tempfile.TemporaryDirectory() as temp:
+        CONFIG["token"] = ""
+        CONFIG["engine"]["name"] = f"ScholarsMate{test_suffix}"
+        CONFIG["engine"]["protocol"] = "homemade"
+        CONFIG["pgn_directory"] = os.path.join(temp, "reconnect_game_record")
+        win = run_bot(CONFIG, logging_level, test_bot.lichess.LichessWithDroppedGameStream)
+        logger.info("Finished Testing Game Stream Reconnect")
+        assert win
 
 
 def test_buggy_engine() -> None:

@@ -260,3 +260,40 @@ class Lichess(OriginalLichess):
     def get_public_data(self, user_name: str) -> PublicDataType:
         """Isn't used in tests."""
         return {}
+
+
+class DroppedGameStream(GameStream):
+    """A game stream that ends after the first move, while the game is still being played."""
+
+    def iter_lines(self, chunk_size: int | None = 512, decode_unicode: bool = False,
+                   delimiter: str | bytes | None = None) -> Generator[bytes, None, None]:
+        """Send the full game info and the first move, then end."""
+        lines = super().iter_lines()
+        yield next(lines)
+        yield next(lines)
+
+
+class LichessWithDroppedGameStream(Lichess):
+    """Imitate lichess.org ending the first game stream mid-game, as it does during a server disruption."""
+
+    def __init__(self,
+                 move_queue: Queue[chess.Move | None],
+                 board_queue: Queue[chess.Board],
+                 clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]]) -> None:
+        """Count the game streams that lichess-bot opens."""
+        super().__init__(move_queue, board_queue, clock_queue)
+        self.game_streams_opened = 0
+
+    def get_game_stream(self, game_id: str) -> GameStream:
+        """End the first game stream after the first move."""
+        self.game_streams_opened += 1
+        stream = super().get_game_stream(game_id)
+        if self.game_streams_opened == 1:
+            return DroppedGameStream(self.board_queue, self.clock_queue)
+        return stream
+
+    def get_ongoing_games(self) -> list[GameType]:
+        """Report the game as ongoing until its second game stream has been opened."""
+        if self.game_streams_opened == 1:
+            return [{"gameId": "zzzzzzzz"}]
+        return []

@@ -59,6 +59,7 @@ def test_correspondence_ping_with_queued_game_does_not_crash() -> None:
         play_game_args=_make_play_game_args(correspondence_queue, challenge_queue),
         active_games=active_games,
         max_games=5,
+        games_in_progress=set(),
     )
 
     assert active_games == {"d5qiLiZH": "SomeOpponent"}
@@ -85,6 +86,7 @@ def test_local_game_done_does_not_crash() -> None:
         play_game_args=_make_play_game_args(correspondence_queue, challenge_queue),
         active_games=active_games,
         max_games=5,
+        games_in_progress=set(),
     )
 
     assert active_games == {"abcdefgh": "BotOpponent"}
@@ -107,6 +109,7 @@ def test_correspondence_queue_does_not_crash_with_no_queue() -> None:
         play_game_args=_make_play_game_args(correspondence_queue, challenge_queue),
         active_games=active_games,
         max_games=5,
+        games_in_progress=set(),
     )
 
     assert active_games == {}
@@ -129,6 +132,7 @@ def test_challenges_block_correspondence_start() -> None:
         play_game_args=_make_play_game_args(correspondence_queue, challenge_queue),
         active_games=active_games,
         max_games=5,
+        games_in_progress=set(),
     )
 
     assert active_games == {}
@@ -155,6 +159,7 @@ def test_opponent_name_preserved_across_queue_roundtrip() -> None:
         play_game_args=_make_play_game_args(correspondence_queue, challenge_queue),
         active_games=active_games,
         max_games=5,
+        games_in_progress=set(),
     )
 
     assert active_games == {"gameA": "Alice", "gameB": "Bob"}

@@ -356,6 +356,7 @@ def lichess_bot_main(li: lichess.Lichess,
                     for game in all_games
                     if game["gameId"] not in startup_correspondence_games}
     low_time_games: list[GameType] = []
+    games_in_progress: set[str] = set()
 
     last_check_online_time = Timer(hours(1))
     matchmaker = matchmaking.Matchmaking(li, config, user_profile)
@@ -387,6 +388,7 @@ def lichess_bot_main(li: lichess.Lichess,
 
             if event["type"] == "local_game_done":
                 active_games.pop(event["game"]["id"], None)
+                games_in_progress.discard(event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
@@ -412,16 +414,18 @@ def lichess_bot_main(li: lichess.Lichess,
                            startup_correspondence_games,
                            correspondence_queue,
                            active_games,
-                           low_time_games)
+                           low_time_games,
+                           games_in_progress)
 
-            start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args)
+            start_low_time_games(low_time_games, active_games, max_games, pool, play_game_args, games_in_progress)
             check_in_on_correspondence_games(pool,
                                              event,
                                              correspondence_queue,
                                              challenge_queue,
                                              play_game_args,
                                              active_games,
-                                             max_games)
+                                             max_games,
+                                             games_in_progress)
             accept_challenges(li, challenge_queue, active_games, max_games, max_bot_games)
             matchmaker.challenge(active_games, challenge_queue, max_bot_games)
             check_online_status(li, user_profile, last_check_online_time)
@@ -470,7 +474,8 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
                                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                                      play_game_args: PlayGameArgsType,
                                      active_games: dict[str, str],
-                                     max_games: int) -> None:
+                                     max_games: int,
+                                     games_in_progress: set[str]) -> None:
     """Start correspondence games."""
     global correspondence_games_to_start
 
@@ -486,18 +491,18 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         game_id, opponent_name = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
-        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
+        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool, games_in_progress)
 
 
 def start_low_time_games(low_time_games: list[GameType], active_games: dict[str, str], max_games: int,
-                         pool: POOL_TYPE, play_game_args: PlayGameArgsType) -> None:
+                         pool: POOL_TYPE, play_game_args: PlayGameArgsType, games_in_progress: set[str]) -> None:
     """Start the games based on how much time we have left."""
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
     while low_time_games and len(active_games) < max_games:
         low_time_game = low_time_games.pop(0)
         game_id = low_time_game["id"]
         opponent_name = low_time_game.get("opponent", {}).get("username", "")
-        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
+        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool, games_in_progress)
 
 
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE, active_games: dict[str, str],
@@ -562,8 +567,12 @@ def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
 
 
 def start_game_thread(active_games: dict[str, str], game_id: str, opponent_name: str,
-                      play_game_args: PlayGameArgsType, pool: POOL_TYPE) -> None:
-    """Start a game thread."""
+                      play_game_args: PlayGameArgsType, pool: POOL_TYPE, games_in_progress: set[str]) -> None:
+    """Start a game thread, unless the game already has one (e.g., a repeated `gameStart` after a reconnect)."""
+    if game_id in games_in_progress:
+        logger.info(f"Game {game_id} is already being played. Not starting it again.")
+        return
+    games_in_progress.add(game_id)
     active_games[game_id] = opponent_name
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
@@ -590,7 +599,8 @@ def start_game(event: EventType,
                startup_correspondence_games: list[str],
                correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                active_games: dict[str, str],
-               low_time_games: list[GameType]) -> None:
+               low_time_games: list[GameType],
+               games_in_progress: set[str]) -> None:
     """
     Start a game.
 
@@ -602,6 +612,7 @@ def start_game(event: EventType,
     :param correspondence_queue: The queue that correspondence games are added to, to be started.
     :param active_games: A set of all the games that aren't correspondence games.
     :param low_time_games: A list of games, in which we don't have much time remaining.
+    :param games_in_progress: The games that have a running `play_game` process.
     """
     game_id = event["game"]["id"]
     opponent_name = event["game"].get("opponent", {}).get("username", "")
@@ -614,7 +625,7 @@ def start_game(event: EventType,
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
-        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
+        start_game_thread(active_games, game_id, opponent_name, play_game_args, pool, games_in_progress)
 
 
 def enough_time_to_queue(event: EventType, config: Configuration) -> bool:
@@ -681,8 +692,8 @@ def play_game(li: lichess.Lichess,
     thread_logging_configurer(logging_queue)
     logger = logging.getLogger(__name__)
 
-    with li.get_game_stream(game_id) as response:
-        lines = response.iter_lines()
+    with contextlib.ExitStack() as game_streams:
+        lines = game_streams.enter_context(li.get_game_stream(game_id)).iter_lines()
 
         # Initial response of stream will be the full game info. Store it.
         initial_state = json.loads(next(lines).decode("utf-8"))
@@ -720,7 +731,7 @@ def play_game(li: lichess.Lichess,
             disconnect_time = correspondence_disconnect_time if not game.state.get("moves") else seconds(0)
             prior_game = None
             board = chess.Board()
-            game_stream = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
+            game_stream: Iterator[bytes] = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
             quit_after_all_games_finish = config.quit_after_all_games_finish
             stay_in_game = True
             while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
@@ -775,13 +786,31 @@ def play_game(li: lichess.Lichess,
                         StopIteration) as e:
                     stopped = isinstance(e, StopIteration)
                     if stopped and game_is_active(li, game.id):
-                        logger.warning(f"Game stream ended for {game.url()} but the game is still active")
-                        raise
-                    stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
+                        logger.warning(f"Game stream ended for {game.url()} but the game is still active. Reconnecting.")
+                        game_stream = reconnected_game_stream(li, game.id, game_streams)
+                        prior_game = None
+                    else:
+                        stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
 
             pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
         final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record, pgn_queue)
         delete_takeback_record(game)
+
+
+def reconnected_game_stream(li: lichess.Lichess, game_id: str,
+                            game_streams: contextlib.ExitStack[bool | None]) -> Iterator[bytes]:
+    """
+    Open a new stream for a game that is still being played, starting with the current game state.
+
+    The stream is opened on the first `next()`, so connection errors reach the same handler as errors on the old stream.
+    If the new stream ends at once, so does this one.
+    """
+    lines = game_streams.enter_context(li.get_game_stream(game_id)).iter_lines()
+    game_full = next(lines, None)
+    if game_full is None:
+        return
+    yield json.dumps(json.loads(game_full.decode("utf-8"))["state"]).encode("utf-8")
+    yield from lines
 
 
 def read_takeback_record(game: model.Game) -> int:

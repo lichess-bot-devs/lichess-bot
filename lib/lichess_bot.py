@@ -35,7 +35,7 @@ from requests.exceptions import (ChunkedEncodingError, ConnectionError as Reques
                                  RequestException)
 from rich.logging import RichHandler
 from collections import defaultdict
-from collections.abc import Iterator, MutableSequence
+from collections.abc import Generator, Iterator, MutableSequence
 from http.client import RemoteDisconnected
 from queue import Empty
 from multiprocessing.pool import Pool
@@ -693,7 +693,7 @@ def play_game(li: lichess.Lichess,
     logger = logging.getLogger(__name__)
 
     with contextlib.ExitStack() as game_streams:
-        lines = game_streams.enter_context(li.get_game_stream(game_id)).iter_lines()
+        lines = game_streams.enter_context(contextlib.closing(game_stream_lines(li, game_id)))
 
         # Initial response of stream will be the full game info. Store it.
         initial_state = json.loads(next(lines).decode("utf-8"))
@@ -787,7 +787,9 @@ def play_game(li: lichess.Lichess,
                     stopped = isinstance(e, StopIteration)
                     if stopped and game_is_active(li, game.id):
                         logger.warning(f"Game stream ended for {game.url()} but the game is still active. Reconnecting.")
-                        game_stream = reconnected_game_stream(li, game.id, game_streams)
+                        lines.close()
+                        lines = game_streams.enter_context(contextlib.closing(reconnected_game_stream(li, game.id)))
+                        game_stream = lines
                         prior_game = None
                     else:
                         stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
@@ -797,20 +799,29 @@ def play_game(li: lichess.Lichess,
         delete_takeback_record(game)
 
 
-def reconnected_game_stream(li: lichess.Lichess, game_id: str,
-                            game_streams: contextlib.ExitStack[bool | None]) -> Iterator[bytes]:
+def game_stream_lines(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:
+    """
+    Yield the lines of a game stream.
+
+    The stream is opened on the first `next()` and closed when the generator ends or is closed.
+    """
+    with li.get_game_stream(game_id) as response:
+        yield from response.iter_lines()
+
+
+def reconnected_game_stream(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:
     """
     Open a new stream for a game that is still being played, starting with the current game state.
 
     The stream is opened on the first `next()`, so connection errors reach the same handler as errors on the old stream.
-    If the new stream ends at once, so does this one.
+    If the new stream ends at once, so does this one. Closing the generator closes the stream.
     """
-    lines = game_streams.enter_context(li.get_game_stream(game_id)).iter_lines()
-    game_full = next(lines, None)
-    if game_full is None:
-        return
-    yield json.dumps(json.loads(game_full.decode("utf-8"))["state"]).encode("utf-8")
-    yield from lines
+    with contextlib.closing(game_stream_lines(li, game_id)) as lines:
+        game_full = next(lines, None)
+        if game_full is None:
+            return
+        yield json.dumps(json.loads(game_full.decode("utf-8"))["state"]).encode("utf-8")
+        yield from lines
 
 
 def read_takeback_record(game: model.Game) -> int:

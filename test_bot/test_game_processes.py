@@ -1,5 +1,4 @@
 """Test that each game is played by one `play_game` process and that a dropped game stream is reopened."""
-import contextlib
 import json
 from collections.abc import Callable, Generator
 from typing import cast
@@ -59,6 +58,7 @@ class FakeGameStream:
     def __init__(self, lines: list[bytes]) -> None:
         """Store the lines."""
         self.lines = lines
+        self.closed = False
 
     def iter_lines(self) -> Generator[bytes, None, None]:
         """Send the lines."""
@@ -69,7 +69,8 @@ class FakeGameStream:
         return self
 
     def __exit__(self, *args: object) -> None:
-        """Exit the stream context."""
+        """Close the stream."""
+        self.closed = True
 
 
 class FakeLichess:
@@ -78,12 +79,17 @@ class FakeLichess:
     def __init__(self, lines: list[bytes]) -> None:
         """Store the lines of the next game stream."""
         self.lines = lines
-        self.streams_opened = 0
+        self.streams: list[FakeGameStream] = []
+
+    @property
+    def streams_opened(self) -> int:
+        """The number of game streams opened."""
+        return len(self.streams)
 
     def get_game_stream(self, game_id: str) -> FakeGameStream:
         """Open a game stream."""
-        self.streams_opened += 1
-        return FakeGameStream(self.lines)
+        self.streams.append(FakeGameStream(self.lines))
+        return self.streams[-1]
 
 
 def test_reconnected_game_stream_starts_with_current_state() -> None:
@@ -92,16 +98,29 @@ def test_reconnected_game_stream_starts_with_current_state() -> None:
     next_state = b'{"type": "gameState", "moves": "e2e4 e7e5 g1f3", "status": "started"}'
     li = FakeLichess([json.dumps({"type": "gameFull", "state": state}).encode("utf-8"), next_state])
 
-    with contextlib.ExitStack() as game_streams:
-        stream = lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh", game_streams)
-        assert li.streams_opened == 0
-        assert [json.loads(line) for line in stream] == [state, json.loads(next_state)]
-        assert li.streams_opened == 1
+    stream = lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh")
+    assert li.streams_opened == 0
+    assert [json.loads(line) for line in stream] == [state, json.loads(next_state)]
+    assert li.streams_opened == 1
+    assert li.streams[0].closed
 
 
 def test_reconnected_game_stream_that_ends_at_once() -> None:
     """A reopened stream that ends before sending the full game info ends without an error."""
     li = FakeLichess([])
 
-    with contextlib.ExitStack() as game_streams:
-        assert list(lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh", game_streams)) == []
+    assert list(lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh")) == []
+    assert li.streams[0].closed
+
+
+def test_closing_a_game_stream_closes_the_connection() -> None:
+    """Closing a game stream before it ends, as `play_game` does before reopening it, closes the connection."""
+    state = {"type": "gameState", "moves": "e2e4", "status": "started"}
+    li = FakeLichess([json.dumps({"type": "gameFull", "state": state}).encode("utf-8"), b"", b""])
+
+    for stream in (lichess_bot.game_stream_lines(cast(lichess.Lichess, li), "abcdefgh"),
+                   lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh")):
+        next(stream)
+        stream.close()
+    assert li.streams_opened == 2
+    assert all(opened.closed for opened in li.streams)

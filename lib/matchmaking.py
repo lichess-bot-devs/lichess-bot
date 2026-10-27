@@ -162,16 +162,17 @@ class Matchmaking:
             perf: PerfType = perfs.get(game_type, {})
             return perf.get("rating", 0)
 
-        if rating_preference == "high":
-            # A bot with max_rating rating will be twice as likely to get picked than a bot with min_rating rating.
-            reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
-            weights = [rating(bot) - reduce_ratings_by for bot in online_bots]
-        elif rating_preference == "low":
-            # A bot with min_rating rating will be twice as likely to get picked than a bot with max_rating rating.
-            reduce_ratings_by = max(max_rating - (min_rating - max_rating), max_rating + 1)
-            weights = [reduce_ratings_by - rating(bot) for bot in online_bots]
-        else:
-            weights = [1] * len(online_bots)
+        match rating_preference:
+            case "high":
+                # A bot with max_rating rating will be twice as likely to get picked than a bot with min_rating rating.
+                reduce_ratings_by = min(min_rating - (max_rating - min_rating), min_rating - 1)
+                weights = [rating(bot) - reduce_ratings_by for bot in online_bots]
+            case "low":
+                # A bot with min_rating rating will be twice as likely to get picked than a bot with max_rating rating.
+                reduce_ratings_by = max(max_rating - (min_rating - max_rating), max_rating + 1)
+                weights = [reduce_ratings_by - rating(bot) for bot in online_bots]
+            case _:
+                weights = [1] * len(online_bots)
         return weights
 
     def choose_opponent(self) -> tuple[str | None, int, int, int, str, str]:

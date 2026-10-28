@@ -38,7 +38,8 @@ def _reset_counter() -> None:
 
 
 def test_correspondence_ping_with_queued_game_does_not_crash() -> None:
-    """``correspondence_ping`` (no ``game`` key) must not crash when games are queued.
+    """
+    ``correspondence_ping`` (no ``game`` key) must not crash when games are queued.
 
     Regression: prior to the fix, ``event["game"]`` raised ``KeyError: 'game'``
     because the synthetic ping event has no ``game`` field at all.

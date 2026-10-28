@@ -55,7 +55,7 @@ class UserProfileType(TypedDict):
     """Type hint for `user_profile`."""
 
     id: NotRequired[str]
-    username: NotRequired[str]
+    username: str
     perfs: NotRequired[dict[str, PerfType]]
     createdAt: NotRequired[int]
     profile: NotRequired[ProfileType]
@@ -304,9 +304,9 @@ class FilterType(str, Enum):
 class ChessDBMoveType(TypedDict):
     """Type hint for a move returned by chessdb (opening & egtb)."""
 
-    uci: NotRequired[str]
+    uci: str
     san: NotRequired[str]
-    score: NotRequired[int]
+    score: int
     rank: NotRequired[int]
     note: NotRequired[str]
     winrate: NotRequired[str]
@@ -315,8 +315,8 @@ class ChessDBMoveType(TypedDict):
 class LichessPvType(TypedDict):
     """Type hint for a move returned by lichess cloud analysis."""
 
-    moves: NotRequired[str]
-    cp: NotRequired[int]
+    moves: str
+    cp: int
 
 
 class LichessExplorerGameType(TypedDict):

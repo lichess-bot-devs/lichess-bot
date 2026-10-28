@@ -40,24 +40,24 @@ from http.client import RemoteDisconnected
 from queue import Empty
 from multiprocessing.pool import Pool
 from collections import Counter
-from typing import TypedDict, cast, TypeAlias
+from typing import TypedDict, cast, TypeAlias, NotRequired
 from types import FrameType
 MULTIPROCESSING_LIST_TYPE: TypeAlias = MutableSequence[model.Challenge]
 POOL_TYPE: TypeAlias = Pool
 
 
-class PlayGameArgsType(TypedDict, total=False):
+class PlayGameArgsType(TypedDict):
     """Type hint for `play_game_args`."""
 
-    li: lichess.Lichess
-    control_queue: CONTROL_QUEUE_TYPE
-    user_profile: UserProfileType
-    config: Configuration
-    challenge_queue: MULTIPROCESSING_LIST_TYPE
-    correspondence_queue: CORRESPONDENCE_QUEUE_TYPE
-    logging_queue: LOGGING_QUEUE_TYPE
-    pgn_queue: PGN_QUEUE_TYPE
-    game_id: str
+    li: NotRequired[lichess.Lichess]
+    control_queue: NotRequired[CONTROL_QUEUE_TYPE]
+    user_profile: NotRequired[UserProfileType]
+    config: NotRequired[Configuration]
+    challenge_queue: NotRequired[MULTIPROCESSING_LIST_TYPE]
+    correspondence_queue: NotRequired[CORRESPONDENCE_QUEUE_TYPE]
+    logging_queue: NotRequired[LOGGING_QUEUE_TYPE]
+    pgn_queue: NotRequired[PGN_QUEUE_TYPE]
+    game_id: NotRequired[str]
 
 
 class VersioningType(TypedDict):
@@ -399,12 +399,12 @@ def lichess_bot_main(li: lichess.Lichess,
                                  recent_bot_challenges,
                                  online_block_list)
             elif event["type"] == "challengeDeclined":
-                matchmaker.declined_challenge(event)
+                matchmaker.declined_challenge(event, active_games)
             elif event["type"] == "challengeCanceled":
                 active_games.pop(event["challenge"]["id"], None)
                 log_proc_count("Freed", active_games)
             elif event["type"] == "gameStart":
-                matchmaker.accepted_challenge(event)
+                matchmaker.accepted_challenge(event, active_games)
                 start_game(event,
                            pool,
                            play_game_args,
@@ -774,6 +774,9 @@ def play_game(li: lichess.Lichess,
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         StopIteration) as e:
                     stopped = isinstance(e, StopIteration)
+                    if stopped and game_is_active(li, game.id):
+                        logger.warning(f"Game stream ended for {game.url()} but the game is still active")
+                        raise
                     stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
 
             pgn_record = try_get_pgn_game_record(li, config, game, board, engine)

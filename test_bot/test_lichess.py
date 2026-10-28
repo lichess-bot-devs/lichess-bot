@@ -2,7 +2,9 @@
 
 from lib import lichess
 from lib.timer import Timer, seconds
+from lib.lichess_types import UserProfileType, PublicDataType
 from collections import defaultdict
+from requests.exceptions import HTTPError
 from requests.models import Response
 import logging
 import os
@@ -31,6 +33,13 @@ def lichess_without_init() -> lichess.Lichess:
     return li
 
 
+def add_default_profile_values(profile: UserProfileType | PublicDataType) -> None:
+    """Add default False values for profiles downloaded from Lichess."""
+    profile.setdefault("blocking", False)
+    profile.setdefault("followable", False)
+    profile.setdefault("following", False)
+
+
 def test_challenge_429_without_ratelimit_body_sets_bot_rate_limit() -> None:
     """Generic challenge 429s should still block new challenge attempts."""
     li = lichess_without_init()
@@ -57,6 +66,33 @@ def test_challenge_429_without_retry_after_uses_exponential_backoff() -> None:
     assert li.challenge_rate_limit_backoff == seconds(240)
 
 
+def test_over_long_chat_message_is_not_sent() -> None:
+    """A message longer than the limit is rejected by lichess, so it must not be sent at all."""
+    li = lichess_without_init()
+    posted: list[str] = []
+
+    def record_api_post(path: str, *_args: object, **_kwargs: object) -> None:
+        posted.append(path)
+
+    li.api_post = record_api_post  # type: ignore[assignment]
+
+    li.chat("game_id", "player", "x" * (lichess.MAX_CHAT_MESSAGE_LEN + 1))
+
+    assert posted == []
+
+
+def test_failed_chat_message_does_not_raise() -> None:
+    """Chat is cosmetic: a failed chat message must never interrupt the game it was sent from."""
+    li = lichess_without_init()
+
+    def failing_api_post(*_args: object, **_kwargs: object) -> None:
+        raise HTTPError("400 Client Error")
+
+    li.api_post = failing_api_post  # type: ignore[method-assign]
+
+    li.chat("game_id", "player", "Good luck!")
+
+
 def test_lichess() -> None:
     """Test the lichess communication."""
     token = os.environ.get("LICHESS_BOT_TEST_TOKEN")
@@ -66,10 +102,11 @@ def test_lichess() -> None:
     assert len(li.get_online_bots()) > 20
     profile = li.get_profile()
     profile["seenAt"] = 1700000000000
+    add_default_profile_values(profile)
     assert profile == {"blocking": False,
                        "count": {"all": 12, "bookmark": 0, "draw": 1, "import": 0,
                                  "loss": 8, "me": 0, "playing": 0, "rated": 0, "win": 3},
-                       "createdAt": 1627834995597, "followable": True, "following": False, "id": "badsunfish",
+                       "createdAt": 1627834995597, "followable": False, "following": False, "id": "badsunfish",
                        "perfs": {"blitz": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 500},
                                  "bullet": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 500},
                                  "classical": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 500},
@@ -82,10 +119,11 @@ def test_lichess() -> None:
     public_data = li.get_public_data("lichapibot")
     for key in public_data["perfs"]:
         public_data["perfs"][key]["rd"] = 0
+    add_default_profile_values(public_data)
     assert public_data == {"blocking": False, "count": {"all": 15774, "bookmark": 0, "draw": 3009,
                                                         "import": 0, "loss": 6423,
                                                         "me": 0, "playing": 0, "rated": 15121, "win": 6342},
-                           "createdAt": 1524037267522, "followable": True, "following": False, "id": "lichapibot",
+                           "createdAt": 1524037267522, "followable": False, "following": False, "id": "lichapibot",
                            "perfs": {"blitz": {"games": 2430, "prog": 3, "prov": True, "rating": 2388, "rd": 0},
                                      "bullet": {"games": 7293, "prog": 9, "prov": True, "rating": 2298, "rd": 0},
                                      "classical": {"games": 0, "prog": 0, "prov": True, "rating": 1500, "rd": 0},

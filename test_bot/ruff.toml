@@ -20,6 +20,7 @@ ignore = [
     "FBT", # Boolean argument in function definition
     "G", # Logging
     "I001", # Import block is un-sorted or un-formatted
+    "ICN001", # Common import renamings
     "N803", # Argument name should be lowercase
     "N806", # Variable in function should be lowercase
     "PERF203", # try-except within a loop incurs performance overhead

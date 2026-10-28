@@ -57,15 +57,16 @@ def create_engine(engine_config: Configuration, game: model.Game | None = None) 
     stderr = subprocess.DEVNULL if cfg.silence_stderr else None
 
     Engine: type[UCIEngine | XBoardEngine | MinimalEngine]
-    if engine_type == "xboard":
-        Engine = XBoardEngine
-    elif engine_type == "uci":
-        Engine = UCIEngine
-    elif engine_type == "homemade":
-        Engine = get_homemade_engine(cfg.name)
-    else:
-        raise ValueError(
-            f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
+    match engine_type:
+        case "xboard":
+            Engine = XBoardEngine
+        case "uci":
+            Engine = UCIEngine
+        case "homemade":
+            Engine = get_homemade_engine(cfg.name)
+        case _:
+            raise ValueError(
+                f"    Invalid engine type: {engine_type}. Expected xboard, uci, or homemade.")
     options = remove_managed_options(cfg.lookup(f"{engine_type}_options") or Configuration({}))
     logger.debug(f"Starting engine: {commands}")
     return Engine(commands, options, stderr, cfg.draw_or_resign, game, cfg.debug,
@@ -453,23 +454,24 @@ class EngineWrapper:
         winner = game.state.get("winner")
         winning_color = chess.WHITE if winner == "white" else chess.BLACK
 
-        if termination == model.Termination.MATE:
-            self.engine.send_game_result(board)
-        elif termination == model.Termination.RESIGN:
-            resigner = "White" if winner == "black" else "Black"
-            self.engine.send_game_result(board, winning_color, f"{resigner} resigned")
-        elif termination == model.Termination.ABORT:
-            self.engine.send_game_result(board, None, "Game aborted", False)
-        elif termination == model.Termination.DRAW:
-            draw_reason = None if board.is_game_over(claim_draw=True) else "Draw by agreement"
-            self.engine.send_game_result(board, None, draw_reason)
-        elif termination == model.Termination.TIMEOUT:
-            if winner:
-                self.engine.send_game_result(board, winning_color, "Time forfeiture")
-            else:
-                self.engine.send_game_result(board, None, "Time out with insufficient material")
-        else:
-            self.engine.send_game_result(board, None, termination)
+        match termination:
+            case model.Termination.MATE:
+                self.engine.send_game_result(board)
+            case model.Termination.RESIGN:
+                resigner = "White" if winner == "black" else "Black"
+                self.engine.send_game_result(board, winning_color, f"{resigner} resigned")
+            case model.Termination.ABORT:
+                self.engine.send_game_result(board, None, "Game aborted", False)
+            case model.Termination.DRAW:
+                draw_reason = None if board.is_game_over(claim_draw=True) else "Draw by agreement"
+                self.engine.send_game_result(board, None, draw_reason)
+            case model.Termination.TIMEOUT:
+                if winner:
+                    self.engine.send_game_result(board, winning_color, "Time forfeiture")
+                else:
+                    self.engine.send_game_result(board, None, "Time out with insufficient material")
+            case _:
+                self.engine.send_game_result(board, None, termination)
 
     def quit(self) -> None:
         """Tell the engine to shut down."""
@@ -764,12 +766,13 @@ def get_book_move(board: chess.Board, game: model.Game,
                           max(weights) if normalization == "max" and weights else 100)
                 min_weight = min_weight * scalar / 100
 
-                if selection == "weighted_random":
-                    move = reader.weighted_choice(board).move
-                elif selection == "uniform_random":
-                    move = reader.choice(board, minimum_weight=min_weight).move
-                elif selection == "best_move":
-                    move = reader.find(board, minimum_weight=min_weight).move
+                match selection:
+                    case "weighted_random":
+                        move = reader.weighted_choice(board).move
+                    case "uniform_random":
+                        move = reader.choice(board, minimum_weight=min_weight).move
+                    case "best_move":
+                        move = reader.find(board, minimum_weight=min_weight).move
             except IndexError:
                 # python-chess raises "IndexError" if no entries found.
                 move = None
@@ -941,22 +944,24 @@ def get_opening_explorer_move(li: lichess.Lichess, board: chess.Board, game: mod
     variant = "standard" if board.uci_variant == "chess" else str(board.uci_variant)  # `str` is there only for mypy
     with contextlib.suppress(Exception):
         params: dict[str, str | int]
-        if source == "masters":
-            params = {"fen": board.fen(), "moves": 100}
-            response = li.online_book_get("https://explorer.lichess.ovh/masters", params, authenticated=True)
-            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Masters)"}
-        elif source == "player":
-            player = opening_explorer_cfg.player_name
-            if not player:
-                player = game.username
-            params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
-                      "recentGames": 0, "color": "white" if side == "wtime" else "black"}
-            response = li.online_book_get("https://explorer.lichess.ovh/player", params, stream=True, authenticated=True)
-            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
-        else:
-            params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
-            response = li.online_book_get("https://explorer.lichess.ovh/lichess", params, authenticated=True)
-            comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
+        match source:
+            case "masters":
+                params = {"fen": board.fen(), "moves": 100}
+                response = li.online_book_get("https://explorer.lichess.ovh/masters", params, authenticated=True)
+                comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Masters)"}
+            case "player":
+                player = opening_explorer_cfg.player_name
+                if not player:
+                    player = game.username
+                params = {"player": player, "fen": board.fen(), "moves": 100, "variant": variant,
+                          "recentGames": 0, "color": "white" if side == "wtime" else "black"}
+                response = li.online_book_get("https://explorer.lichess.ovh/player", params, stream=True,
+                                              authenticated=True)
+                comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Player)"}
+            case _:
+                params = {"fen": board.fen(), "moves": 100, "variant": variant, "topGames": 0, "recentGames": 0}
+                response = li.online_book_get("https://explorer.lichess.ovh/lichess", params, authenticated=True)
+                comment = {"string": "lichess-bot-source:Lichess Opening Explorer (Lichess)"}
         moves = []
         for possible_move in response["moves"]:
             games_played = possible_move["white"] + possible_move["black"] + possible_move["draws"]

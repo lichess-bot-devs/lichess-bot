@@ -483,10 +483,9 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
         return
 
     while len(active_games) < max_games and correspondence_games_to_start > 0:
-        game_id = correspondence_queue.get_nowait()
+        game_id, opponent_name = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
-        opponent_name = event["game"].get("opponent", {}).get("username", "")
         start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
 
 
@@ -605,16 +604,16 @@ def start_game(event: EventType,
     :param low_time_games: A list of games, in which we don't have much time remaining.
     """
     game_id = event["game"]["id"]
+    opponent_name = event["game"].get("opponent", {}).get("username", "")
     if game_id in startup_correspondence_games:
         if enough_time_to_queue(event, config):
             logger.info(f"--- Enqueue {config.url + game_id}")
-            correspondence_queue.put_nowait(game_id)
+            correspondence_queue.put_nowait((game_id, opponent_name))
         else:
             logger.info(f"--- Will start {config.url + game_id} as soon as possible")
             low_time_games.append(event["game"])
         startup_correspondence_games.remove(game_id)
     else:
-        opponent_name = event["game"].get("opponent", {}).get("username", "")
         start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
 
 
@@ -936,7 +935,7 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
     """
     if is_correspondence and not is_game_over(game):
         logger.info(f"--- Disconnecting from {game.url()}")
-        correspondence_queue.put_nowait(game.id)
+        correspondence_queue.put_nowait((game.id, game.opponent.name))
     else:
         logger.info(f"--- {game.url()} Game over")
 

@@ -184,7 +184,7 @@ def test_get_random_config_value__returns_specific_value() -> None:
             "challenge_timeout": 30
         }
     })
-    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {}}
+    mock_user_profile: UserProfileType = {"id": "testbot", "username": "testbot", "perfs": {}}
 
     # Create matchmaking instance
     matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
@@ -211,7 +211,7 @@ def test_should_create_challenge_respects_rate_limit_when_previous_challenge_exp
             "challenge_timeout": 0
         }
     })
-    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {}}
+    mock_user_profile: UserProfileType = {"id": "testbot", "username": "testbot", "perfs": {}}
     matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)
     matchmaking.challenge_id = "challenge-id"
     matchmaking.last_challenge_created_delay.starting_time -= 100
@@ -233,7 +233,7 @@ def test_get_random_config_value__returns_from_choices_when_random() -> None:
             "challenge_timeout": 30
         }
     })
-    mock_user_profile: UserProfileType = {"username": "testbot", "perfs": {}}
+    mock_user_profile: UserProfileType = {"id": "testbot", "username": "testbot", "perfs": {}}
 
     # Create matchmaking instance
     matchmaking = Matchmaking(mock_li, mock_config, mock_user_profile)

@@ -54,8 +54,8 @@ class ProfileType(TypedDict):
 class UserProfileType(TypedDict):
     """Type hint for `user_profile`."""
 
-    id: NotRequired[str]
-    username: NotRequired[str]
+    id: str
+    username: str
     perfs: NotRequired[dict[str, PerfType]]
     createdAt: NotRequired[int]
     profile: NotRequired[ProfileType]
@@ -153,7 +153,7 @@ class GameType(TypedDict):
     speed: NotRequired[str]
     variant: NotRequired[dict[str, str]]
     compat: NotRequired[dict[str, bool]]
-    id: NotRequired[str]
+    id: str
     winner: NotRequired[str]
     ratingDiff: NotRequired[int]
     pgn: NotRequired[str]
@@ -174,18 +174,18 @@ class TimeControlType(TypedDict):
 class ChallengeType(TypedDict):
     """Type hint for challenge."""
 
-    id: NotRequired[str]
+    id: str
     url: NotRequired[str]
-    color: NotRequired[str]
+    color: str
     direction: NotRequired[str]
-    rated: NotRequired[bool]
-    speed: NotRequired[str]
+    rated: bool
+    speed: str
     status: NotRequired[str]
-    timeControl: NotRequired[TimeControlType]
-    variant: NotRequired[dict[str, str]]
+    timeControl: TimeControlType
+    variant: dict[str, str]
     challenger: NotRequired[PlayerType]
     destUser: NotRequired[PlayerType]
-    perf: NotRequired[dict[str, str]]
+    perf: dict[str, str]
     compat: NotRequired[dict[str, bool]]
     finalColor: NotRequired[str]
     declineReason: NotRequired[str]
@@ -201,7 +201,7 @@ class ChallengeType(TypedDict):
 class EventType(TypedDict):
     """Type hint for event."""
 
-    type: NotRequired[str]
+    type: str
     game: NotRequired[GameType]
     challenge: NotRequired[ChallengeType]
     error: NotRequired[str | None]
@@ -304,9 +304,9 @@ class FilterType(str, Enum):
 class ChessDBMoveType(TypedDict):
     """Type hint for a move returned by chessdb (opening & egtb)."""
 
-    uci: NotRequired[str]
+    uci: str
     san: NotRequired[str]
-    score: NotRequired[int]
+    score: int
     rank: NotRequired[int]
     note: NotRequired[str]
     winrate: NotRequired[str]
@@ -315,8 +315,8 @@ class ChessDBMoveType(TypedDict):
 class LichessPvType(TypedDict):
     """Type hint for a move returned by lichess cloud analysis."""
 
-    moves: NotRequired[str]
-    cp: NotRequired[int]
+    moves: str
+    cp: int
 
 
 class LichessExplorerGameType(TypedDict):

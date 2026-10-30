@@ -440,20 +440,20 @@ def close_pool(pool: POOL_TYPE, active_games: dict[str, str], config: Configurat
         pool.join()
 
 
-def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
+def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType | None:
     """Get the next event from the control queue."""
     try:
         event = control_queue.get()
         if event is None:
-            return {}
+            return None
     except InterruptedError:
-        return {}
+        return None
 
     if "type" not in event:
         logger.warning("Unable to handle response from lichess.org:")
         logger.warning(event)
         control_queue.task_done()
-        return {}
+        return None
 
     if event.get("type") != "ping":
         logger.debug(f"Event: {event}")
@@ -574,7 +574,8 @@ def start_game_thread(active_games: dict[str, str], game_id: str, opponent_name:
         pgn_queue = play_game_args["pgn_queue"]
         li = play_game_args["li"]
         control_queue.put_nowait({"type": "local_game_done", "game": {"id": game_id}})
-        pgn_queue.put_nowait({"game": {"id": game_id,
+        pgn_queue.put_nowait({"type": "local_game_done",
+                              "game": {"id": game_id,
                                        "pgn": li.get_game_pgn(game_id),
                                        "complete": not game_is_active(li, game_id)}})
 
@@ -940,7 +941,8 @@ def final_queue_entries(control_queue: CONTROL_QUEUE_TYPE, correspondence_queue:
         logger.info(f"--- {game.url()} Game over")
 
     control_queue.put_nowait({"type": "local_game_done", "game": {"id": game.id}})
-    pgn_queue.put_nowait({"game": {"id": game.id,
+    pgn_queue.put_nowait({"type": "local_game_done",
+                          "game": {"id": game.id,
                                    "pgn": pgn_record,
                                    "complete": is_game_over(game)}})
 

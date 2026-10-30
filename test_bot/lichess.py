@@ -9,6 +9,7 @@ import datetime
 from queue import Queue
 from requests.models import Response
 from collections.abc import Generator
+from typing import Self
 from lib.lichess import Lichess as OriginalLichess
 from lib.timer import to_msec
 from lib.lichess_types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
@@ -104,7 +105,7 @@ class GameStream(Response):
                 new_game_state["status"] = "started"
                 yield json.dumps(new_game_state).encode("utf-8")
 
-    def __enter__(self) -> GameStream:  # noqa: PYI034
+    def __enter__(self) -> Self:
         """Enter game stream context."""
         return self
 
@@ -137,7 +138,7 @@ class EventStream(Response):
                           "compat": {"bot": True,
                                      "board": True}}}).encode("utf-8")
 
-    def __enter__(self) -> EventStream:  # noqa: PYI034
+    def __enter__(self) -> Self:
         """Enter context block."""
         return self
 

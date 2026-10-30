@@ -6,7 +6,7 @@ from chess import Move, Board
 from queue import Queue
 import logging
 import datetime
-from enum import Enum
+from enum import StrEnum
 from types import TracebackType
 
 COMMANDS_TYPE: TypeAlias = list[str]
@@ -287,7 +287,7 @@ class PublicDataType(TypedDict):
     followsYou: NotRequired[bool]
 
 
-class FilterType(str, Enum):
+class FilterType(StrEnum):
     """What to do if the opponent declines our challenge."""
 
     NONE = "none"

@@ -184,14 +184,12 @@ def test_game_stream_reconnect() -> None:
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
 
-    with tempfile.TemporaryDirectory() as temp:
-        CONFIG["token"] = ""
-        CONFIG["engine"]["name"] = f"ScholarsMate{test_suffix}"
-        CONFIG["engine"]["protocol"] = "homemade"
-        CONFIG["pgn_directory"] = os.path.join(temp, "reconnect_game_record")
-        win = run_bot(CONFIG, logging_level, test_bot.lichess.LichessWithDroppedGameStream)
-        logger.info("Finished Testing Game Stream Reconnect")
-        assert win
+    CONFIG["token"] = ""
+    CONFIG["engine"]["name"] = f"ScholarsMate{test_suffix}"
+    CONFIG["engine"]["protocol"] = "homemade"
+    win = run_bot(CONFIG, logging_level, test_bot.lichess.LichessWithDroppedGameStream)
+    logger.info("Finished Testing Game Stream Reconnect")
+    assert win
 
 
 def test_buggy_engine() -> None:

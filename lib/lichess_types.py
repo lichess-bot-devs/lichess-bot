@@ -1,5 +1,5 @@
 """Some type hints that can be accessed by all other python files."""
-from typing import Any, TypedDict, Literal, TypeAlias
+from typing import Any, TypedDict, Literal, TypeAlias, NotRequired
 from collections.abc import Callable
 from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
@@ -11,7 +11,7 @@ from types import TracebackType
 
 COMMANDS_TYPE: TypeAlias = list[str]
 MOVE: TypeAlias = PlayResult | list[Move]
-CORRESPONDENCE_QUEUE_TYPE: TypeAlias = Queue[str]
+CORRESPONDENCE_QUEUE_TYPE: TypeAlias = Queue[tuple[str, str]]
 LOGGING_QUEUE_TYPE: TypeAlias = Queue[logging.LogRecord]
 REQUESTS_PAYLOAD_TYPE: TypeAlias = dict[str, str | int | bool]
 GO_COMMANDS_TYPE: TypeAlias = dict[str, str]
@@ -24,53 +24,53 @@ HOMEMADE_ARGS_TYPE: TypeAlias = Limit | bool | MOVE
 CONFIG_DICT_TYPE: TypeAlias = dict[str, Any]
 
 
-class PerfType(TypedDict, total=False):
+class PerfType(TypedDict):
     """Type hint for `perf`."""
 
-    games: int
-    rating: int
-    rd: int
-    sd: int
-    prov: bool
-    prog: int
+    games: NotRequired[int]
+    rating: NotRequired[int]
+    rd: NotRequired[int]
+    sd: NotRequired[int]
+    prov: NotRequired[bool]
+    prog: NotRequired[int]
 
 
-class ProfileType(TypedDict, total=False):
+class ProfileType(TypedDict):
     """Type hint for `profile`."""
 
-    country: str
-    location: str
-    bio: str
-    firstName: str
-    lastName: str
-    fideRating: int
-    uscfRating: int
-    ecfRating: int
-    cfcRating: int
-    dsbRating: int
-    links: str
+    country: NotRequired[str]
+    location: NotRequired[str]
+    bio: NotRequired[str]
+    firstName: NotRequired[str]
+    lastName: NotRequired[str]
+    fideRating: NotRequired[int]
+    uscfRating: NotRequired[int]
+    ecfRating: NotRequired[int]
+    cfcRating: NotRequired[int]
+    dsbRating: NotRequired[int]
+    links: NotRequired[str]
 
 
-class UserProfileType(TypedDict, total=False):
+class UserProfileType(TypedDict):
     """Type hint for `user_profile`."""
 
-    id: str
-    username: str
-    perfs: dict[str, PerfType]
-    createdAt: int
-    profile: ProfileType
-    seenAt: int
-    patron: int
-    verified: int
-    playTime: dict[str, int]
-    title: str
-    online: bool
-    url: str
-    followable: bool
-    following: bool
-    blocking: bool
-    followsYou: bool
-    count: dict[str, int]
+    id: NotRequired[str]
+    username: NotRequired[str]
+    perfs: NotRequired[dict[str, PerfType]]
+    createdAt: NotRequired[int]
+    profile: NotRequired[ProfileType]
+    seenAt: NotRequired[int]
+    patron: NotRequired[int]
+    verified: NotRequired[int]
+    playTime: NotRequired[dict[str, int]]
+    title: NotRequired[str]
+    online: NotRequired[bool]
+    url: NotRequired[str]
+    followable: NotRequired[bool]
+    following: NotRequired[bool]
+    blocking: NotRequired[bool]
+    followsYou: NotRequired[bool]
+    count: NotRequired[dict[str, int]]
 
 
 class ReadableType(TypedDict):
@@ -86,30 +86,30 @@ class ReadableType(TypedDict):
     Movetime: Callable[[int], str]
 
 
-class InfoStrDict(TypedDict, total=False):
+class InfoStrDict(TypedDict):
     """Type hints for the readable version of the information returned by chess engines."""
 
-    score: PovScore
-    pv: list[Move]
-    depth: int
-    seldepth: int
-    time: float
-    nodes: int
-    nps: int
-    tbhits: int
-    multipv: int
-    currmove: str | Move
-    currmovenumber: int
-    hashfull: int
-    cpuload: int
-    refutation: str | dict[Move, list[Move]]
-    currline: dict[int, list[Move]]
-    ebf: float
-    wdl: PovWdl
-    string: str
-    ponderpv: str
-    Source: str
-    Pv: str
+    score: NotRequired[PovScore]
+    pv: NotRequired[list[Move]]
+    depth: NotRequired[int]
+    seldepth: NotRequired[int]
+    time: NotRequired[float]
+    nodes: NotRequired[int]
+    nps: NotRequired[int]
+    tbhits: NotRequired[int]
+    multipv: NotRequired[int]
+    currmove: NotRequired[str | Move]
+    currmovenumber: NotRequired[int]
+    hashfull: NotRequired[int]
+    cpuload: NotRequired[int]
+    refutation: NotRequired[str | dict[Move, list[Move]]]
+    currline: NotRequired[dict[int, list[Move]]]
+    ebf: NotRequired[float]
+    wdl: NotRequired[PovWdl]
+    string: NotRequired[str]
+    ponderpv: NotRequired[str]
+    Source: NotRequired[str]
+    Pv: NotRequired[str]
 
 
 InfoDictKeys: TypeAlias = Literal["score", "pv", "depth", "seldepth", "time", "nodes", "nps", "tbhits", "multipv", "currmove",
@@ -121,170 +121,170 @@ InfoDictValue: TypeAlias = (PovScore | list[Move] | int | float | str | Move | d
                             dict[int, list[Move]] | PovWdl)
 
 
-class PlayerType(TypedDict, total=False):
+class PlayerType(TypedDict):
     """Type hint for information on a player."""
 
-    title: str | None
-    rating: int
-    provisional: bool
-    aiLevel: int
-    id: str
-    username: str
-    name: str
-    online: bool
+    title: NotRequired[str | None]
+    rating: NotRequired[int]
+    provisional: NotRequired[bool]
+    aiLevel: NotRequired[int]
+    id: NotRequired[str]
+    username: NotRequired[str]
+    name: NotRequired[str]
+    online: NotRequired[bool]
 
 
-class GameType(TypedDict, total=False):
+class GameType(TypedDict):
     """Type hint for game."""
 
-    gameId: str
-    fullId: str
-    color: str
-    fen: str
-    hasMoved: bool
-    isMyTurn: bool
-    lastMove: str
-    opponent: PlayerType
-    perf: str
-    rated: bool
-    secondsLeft: int
-    source: str
-    status: dict[str, str | int]
-    speed: str
-    variant: dict[str, str]
-    compat: dict[str, bool]
-    id: str
-    winner: str
-    ratingDiff: int
-    pgn: str
-    complete: bool
+    gameId: NotRequired[str]
+    fullId: NotRequired[str]
+    color: NotRequired[str]
+    fen: NotRequired[str]
+    hasMoved: NotRequired[bool]
+    isMyTurn: NotRequired[bool]
+    lastMove: NotRequired[str]
+    opponent: NotRequired[PlayerType]
+    perf: NotRequired[str]
+    rated: NotRequired[bool]
+    secondsLeft: NotRequired[int]
+    source: NotRequired[str]
+    status: NotRequired[dict[str, str | int]]
+    speed: NotRequired[str]
+    variant: NotRequired[dict[str, str]]
+    compat: NotRequired[dict[str, bool]]
+    id: NotRequired[str]
+    winner: NotRequired[str]
+    ratingDiff: NotRequired[int]
+    pgn: NotRequired[str]
+    complete: NotRequired[bool]
 
 
-class TimeControlType(TypedDict, total=False):
+class TimeControlType(TypedDict):
     """Type hint for time control."""
 
-    increment: int
-    limit: int
-    show: str
-    type: str
-    daysPerTurn: int
-    initial: int
+    increment: NotRequired[int]
+    limit: NotRequired[int]
+    show: NotRequired[str]
+    type: NotRequired[str]
+    daysPerTurn: NotRequired[int]
+    initial: NotRequired[int]
 
 
-class ChallengeType(TypedDict, total=False):
+class ChallengeType(TypedDict):
     """Type hint for challenge."""
 
-    id: str
-    url: str
-    color: str
-    direction: str
-    rated: bool
-    speed: str
-    status: str
-    timeControl: TimeControlType
-    variant: dict[str, str]
-    challenger: PlayerType
-    destUser: PlayerType
-    perf: dict[str, str]
-    compat: dict[str, bool]
-    finalColor: str
-    declineReason: str
-    declineReasonKey: str
-    initialFen: str
-    error: str
-    ratelimit: dict[str, str | int]
-    bot_is_rate_limited: bool
-    opponent_is_rate_limited: bool
-    rate_limit_timeout: datetime.timedelta
+    id: NotRequired[str]
+    url: NotRequired[str]
+    color: NotRequired[str]
+    direction: NotRequired[str]
+    rated: NotRequired[bool]
+    speed: NotRequired[str]
+    status: NotRequired[str]
+    timeControl: NotRequired[TimeControlType]
+    variant: NotRequired[dict[str, str]]
+    challenger: NotRequired[PlayerType]
+    destUser: NotRequired[PlayerType]
+    perf: NotRequired[dict[str, str]]
+    compat: NotRequired[dict[str, bool]]
+    finalColor: NotRequired[str]
+    declineReason: NotRequired[str]
+    declineReasonKey: NotRequired[str]
+    initialFen: NotRequired[str]
+    error: NotRequired[str]
+    ratelimit: NotRequired[dict[str, str | int]]
+    bot_is_rate_limited: NotRequired[bool]
+    opponent_is_rate_limited: NotRequired[bool]
+    rate_limit_timeout: NotRequired[datetime.timedelta]
 
 
-class EventType(TypedDict, total=False):
+class EventType(TypedDict):
     """Type hint for event."""
 
-    type: str
-    game: GameType
-    challenge: ChallengeType
-    error: str | None
+    type: NotRequired[str]
+    game: NotRequired[GameType]
+    challenge: NotRequired[ChallengeType]
+    error: NotRequired[str | None]
 
 
-class GameStateType(TypedDict, total=False):
+class GameStateType(TypedDict):
     """Type hint for game state."""
 
-    type: str
-    moves: str
-    wtime: int
-    btime: int
-    winc: int
-    binc: int
-    wdraw: bool
-    bdraw: bool
-    status: str
-    winner: str
+    type: NotRequired[str]
+    moves: NotRequired[str]
+    wtime: NotRequired[int]
+    btime: NotRequired[int]
+    winc: NotRequired[int]
+    binc: NotRequired[int]
+    wdraw: NotRequired[bool]
+    bdraw: NotRequired[bool]
+    status: NotRequired[str]
+    winner: NotRequired[str]
 
 
-class GameEventType(TypedDict, total=False):
+class GameEventType(TypedDict):
     """Type hint for game event."""
 
-    type: str
-    id: str
-    rated: bool
-    variant: dict[str, str]
-    cloak: dict[str, int]
-    speed: str
-    perf: dict[str, str]
-    createdAt: int
-    white: PlayerType
-    black: PlayerType
-    initialFen: str
-    state: GameStateType
-    username: str
-    text: str
-    room: str
-    gone: bool
-    claimWinInSeconds: int
-    moves: str
-    wtime: int
-    btime: int
-    winc: int
-    binc: int
-    wdraw: bool
-    bdraw: bool
-    status: str
-    winner: str
-    clock: TimeControlType
-    wtakeback: bool
-    btakeback: bool
+    type: NotRequired[str]
+    id: NotRequired[str]
+    rated: NotRequired[bool]
+    variant: NotRequired[dict[str, str]]
+    cloak: NotRequired[dict[str, int]]
+    speed: NotRequired[str]
+    perf: NotRequired[dict[str, str]]
+    createdAt: NotRequired[int]
+    white: NotRequired[PlayerType]
+    black: NotRequired[PlayerType]
+    initialFen: NotRequired[str]
+    state: NotRequired[GameStateType]
+    username: NotRequired[str]
+    text: NotRequired[str]
+    room: NotRequired[str]
+    gone: NotRequired[bool]
+    claimWinInSeconds: NotRequired[int]
+    moves: NotRequired[str]
+    wtime: NotRequired[int]
+    btime: NotRequired[int]
+    winc: NotRequired[int]
+    binc: NotRequired[int]
+    wdraw: NotRequired[bool]
+    bdraw: NotRequired[bool]
+    status: NotRequired[str]
+    winner: NotRequired[str]
+    clock: NotRequired[TimeControlType]
+    wtakeback: NotRequired[bool]
+    btakeback: NotRequired[bool]
 
 
 CONTROL_QUEUE_TYPE: TypeAlias = Queue[EventType]
 PGN_QUEUE_TYPE: TypeAlias = Queue[EventType | None]
 
 
-class PublicDataType(TypedDict, total=False):
+class PublicDataType(TypedDict):
     """Type hint for public data."""
 
-    id: str
-    username: str
-    perfs: dict[str, PerfType]
-    flair: str
-    createdAt: int
-    disabled: bool
-    tosViolation: bool
-    profile: ProfileType
-    seenAt: int
-    patron: bool
-    verified: bool
-    playTime: dict[str, int]
-    title: str
-    url: str
-    playing: str
-    count: dict[str, int]
-    streaming: bool
-    streamer: dict[str, dict[str, str]]
-    followable: bool
-    following: bool
-    blocking: bool
-    followsYou: bool
+    id: NotRequired[str]
+    username: NotRequired[str]
+    perfs: NotRequired[dict[str, PerfType]]
+    flair: NotRequired[str]
+    createdAt: NotRequired[int]
+    disabled: NotRequired[bool]
+    tosViolation: NotRequired[bool]
+    profile: NotRequired[ProfileType]
+    seenAt: NotRequired[int]
+    patron: NotRequired[bool]
+    verified: NotRequired[bool]
+    playTime: NotRequired[dict[str, int]]
+    title: NotRequired[str]
+    url: NotRequired[str]
+    playing: NotRequired[str]
+    count: NotRequired[dict[str, int]]
+    streaming: NotRequired[bool]
+    streamer: NotRequired[dict[str, dict[str, str]]]
+    followable: NotRequired[bool]
+    following: NotRequired[bool]
+    blocking: NotRequired[bool]
+    followsYou: NotRequired[bool]
 
 
 class FilterType(str, Enum):
@@ -301,35 +301,35 @@ class FilterType(str, Enum):
     """
 
 
-class ChessDBMoveType(TypedDict, total=False):
+class ChessDBMoveType(TypedDict):
     """Type hint for a move returned by chessdb (opening & egtb)."""
 
-    uci: str
-    san: str
-    score: int
-    rank: int
-    note: str
-    winrate: str
+    uci: NotRequired[str]
+    san: NotRequired[str]
+    score: NotRequired[int]
+    rank: NotRequired[int]
+    note: NotRequired[str]
+    winrate: NotRequired[str]
 
 
-class LichessPvType(TypedDict, total=False):
+class LichessPvType(TypedDict):
     """Type hint for a move returned by lichess cloud analysis."""
 
-    moves: str
-    cp: int
+    moves: NotRequired[str]
+    cp: NotRequired[int]
 
 
-class LichessExplorerGameType(TypedDict, total=False):
+class LichessExplorerGameType(TypedDict):
     """Type hint for a game returned by lichess explorer."""
 
-    id: str
-    winner: str | None
-    speed: str
-    mode: str
-    black: dict[str, str | int]
-    white: dict[str, str | int]
-    year: int
-    month: str
+    id: NotRequired[str]
+    winner: NotRequired[str | None]
+    speed: NotRequired[str]
+    mode: NotRequired[str]
+    black: NotRequired[dict[str, str | int]]
+    white: NotRequired[dict[str, str | int]]
+    year: NotRequired[int]
+    month: NotRequired[str]
 
 
 class LichessEGTBMoveType(TypedDict):
@@ -386,61 +386,61 @@ class OnlineMoveType(TypedDict):
     category: str
 
 
-class OnlineType(TypedDict, total=False):
+class OnlineType(TypedDict):
     """Type hint for moves returned by an online source."""
 
     # lichess egtb
-    checkmate: bool
-    stalemate: bool
-    variant_win: bool
-    variant_loss: bool
-    insufficient_material: bool
-    dtz: int
-    precise_dtz: int | None
-    dtm: int | None
-    dtc: int
-    category: str
+    checkmate: NotRequired[bool]
+    stalemate: NotRequired[bool]
+    variant_win: NotRequired[bool]
+    variant_loss: NotRequired[bool]
+    insufficient_material: NotRequired[bool]
+    dtz: NotRequired[int]
+    precise_dtz: NotRequired[int | None]
+    dtm: NotRequired[int | None]
+    dtc: NotRequired[int]
+    category: NotRequired[str]
     # moves: list[LichessEGTBMoveType]
 
     # lichess explorer
-    white: int
-    black: int
-    draws: int
+    white: NotRequired[int]
+    black: NotRequired[int]
+    draws: NotRequired[int]
     # moves: list[LichessExplorerMoveType]
-    topGames: list[LichessExplorerGameType]
-    recentGames: list[LichessExplorerGameType]
-    opening: dict[str, str] | None
-    queuePosition: int
+    topGames: NotRequired[list[LichessExplorerGameType]]
+    recentGames: NotRequired[list[LichessExplorerGameType]]
+    opening: NotRequired[dict[str, str] | None]
+    queuePosition: NotRequired[int]
 
     # lichess cloud
-    fen: str
-    knodes: int
-    ply: str
-    depth: int
-    pvs: list[LichessPvType]
-    error: str
+    fen: NotRequired[str]
+    knodes: NotRequired[int]
+    ply: NotRequired[str]
+    depth: NotRequired[int]
+    pvs: NotRequired[list[LichessPvType]]
+    error: NotRequired[str]
 
     # chessdb (opening & egtb)
-    status: str
+    status: NotRequired[str]
     # moves: list[ChessDBMoveType]
     # ply: str  (duplicate)
-    score: int
+    score: NotRequired[int]
     # depth: int  (duplicate)
-    pv: list[str]
-    pvSAN: list[str]
-    move: str
-    egtb: str
+    pv: NotRequired[list[str]]
+    pvSAN: NotRequired[list[str]]
+    move: NotRequired[str]
+    egtb: NotRequired[str]
 
     # all
-    moves: list[OnlineMoveType]
+    moves: NotRequired[list[OnlineMoveType]]
 
 
-class TokenTestType(TypedDict, total=False):
+class TokenTestType(TypedDict):
     """Type hint for token test."""
 
-    scopes: str
-    userId: str
-    expires: int
+    scopes: NotRequired[str]
+    userId: NotRequired[str]
+    expires: NotRequired[int]
 
 
 TOKEN_TESTS_TYPE: TypeAlias = dict[str, TokenTestType]
@@ -456,11 +456,11 @@ class _BackoffDetails(TypedDict):
     elapsed: float
 
 
-class BackoffDetails(_BackoffDetails, total=False):
+class BackoffDetails(_BackoffDetails):
     """`Details` from `backoff._typing`."""
 
-    wait: float  # present in the on_backoff handler case for either decorator
-    value: Any  # present in the on_predicate decorator case
+    wait: NotRequired[float]  # present in the on_backoff handler case for either decorator
+    value: NotRequired[Any]  # present in the on_predicate decorator case
 
 
 ENGINE_INPUT_ARGS_TYPE: TypeAlias = (OPTIONS_TYPE | type[BaseException] | BaseException | TracebackType | Board | Limit |

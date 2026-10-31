@@ -7,10 +7,11 @@ import logging
 import traceback
 import datetime
 from queue import Queue
+from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.models import Response
 from collections.abc import Generator
-from lib.lichess import Lichess as OriginalLichess
-from lib.timer import to_msec
+from lib.lichess import Lichess as OriginalLichess, RateLimitedError
+from lib.timer import seconds, to_msec
 from lib.lichess_types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
                        BackoffDetails)
 
@@ -260,3 +261,88 @@ class Lichess(OriginalLichess):
     def get_public_data(self, user_name: str) -> PublicDataType:
         """Isn't used in tests."""
         return {}
+
+
+class DroppedGameStream(GameStream):
+    """A game stream that ends after the first move, while the game is still being played."""
+
+    def iter_lines(self, chunk_size: int | None = 512, decode_unicode: bool = False,
+                   delimiter: str | bytes | None = None) -> Generator[bytes, None, None]:
+        """Send the full game info and the first move, then end."""
+        lines = super().iter_lines()
+        yield next(lines)
+        yield next(lines)
+
+
+class LichessWithDroppedGameStream(Lichess):
+    """Imitate lichess.org ending the first game stream mid-game, as it does during a server disruption."""
+
+    def __init__(self,
+                 move_queue: Queue[chess.Move | None],
+                 board_queue: Queue[chess.Board],
+                 clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]]) -> None:
+        """Count the game streams that lichess-bot opens."""
+        super().__init__(move_queue, board_queue, clock_queue)
+        self.game_streams_opened = 0
+
+    def get_game_stream(self, game_id: str) -> GameStream:
+        """End the first game stream after the first move."""
+        self.game_streams_opened += 1
+        stream = super().get_game_stream(game_id)
+        if self.game_streams_opened == 1:
+            return DroppedGameStream(self.board_queue, self.clock_queue)
+        return stream
+
+    def get_ongoing_games(self) -> list[GameType]:
+        """Report the game as ongoing until its second game stream has been opened."""
+        if self.game_streams_opened == 1:
+            return [{"gameId": "zzzzzzzz"}]
+        return []
+
+
+class LichessWithRateLimitedReconnect(LichessWithDroppedGameStream):
+    """Imitate lichess.org rate-limiting the first attempt to reopen a dropped game stream."""
+
+    def get_game_stream(self, game_id: str) -> GameStream:
+        """Raise `RateLimitedError` on the second game stream, as `get_path_template` does after a 429."""
+        if self.game_streams_opened == 1:
+            self.game_streams_opened += 1
+            raise RateLimitedError("/api/bot/game/stream/{} is rate-limited. Will retry in 0.5 seconds.", seconds(0.5))
+        return super().get_game_stream(game_id)
+
+    def get_ongoing_games(self) -> list[GameType]:
+        """Report the game as ongoing from the dropped game stream until it has been reopened."""
+        if 1 <= self.game_streams_opened < 3:
+            return [{"gameId": "zzzzzzzz"}]
+        return []
+
+
+class LichessWithFailedMove(Lichess):
+    """Imitate lichess.org not receiving the bot's first move during a server disruption."""
+
+    def __init__(self,
+                 move_queue: Queue[chess.Move | None],
+                 board_queue: Queue[chess.Board],
+                 clock_queue: Queue[tuple[datetime.timedelta, datetime.timedelta, datetime.timedelta]]) -> None:
+        """Count the game streams that lichess-bot opens."""
+        super().__init__(move_queue, board_queue, clock_queue)
+        self.game_streams_opened = 0
+        self.failed_move = False
+
+    def make_move(self, game_id: str, move: chess.engine.PlayResult) -> None:
+        """Fail to send the first move, as `make_move` does when its retries give up."""
+        if not self.failed_move:
+            self.failed_move = True
+            raise RequestsConnectionError("Read timed out.")
+        super().make_move(game_id, move)
+
+    def get_game_stream(self, game_id: str) -> GameStream:
+        """Count the game streams."""
+        self.game_streams_opened += 1
+        return super().get_game_stream(game_id)
+
+    def get_ongoing_games(self) -> list[GameType]:
+        """Report the game as ongoing until the game stream has been reopened after the failed move."""
+        if self.game_streams_opened == 1:
+            return [{"gameId": "zzzzzzzz"}]
+        return []

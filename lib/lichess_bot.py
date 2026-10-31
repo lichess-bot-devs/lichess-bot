@@ -440,12 +440,20 @@ def close_pool(pool: POOL_TYPE, active_games: dict[str, str], config: Configurat
         pool.join()
 
 
+EVENT_STREAM_SILENCE_LIMIT = seconds(60)
+
+
 def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
     """Get the next event from the control queue."""
     try:
-        event = control_queue.get()
+        event = control_queue.get(timeout=to_seconds(EVENT_STREAM_SILENCE_LIMIT))
         if event is None:
             return {}
+    except Empty:
+        logger.error("No events or pings from the lichess event stream in the last "
+                     f"{to_seconds(EVENT_STREAM_SILENCE_LIMIT):.0f} seconds. Restarting lichess-bot.")
+        stop.restart = True
+        return {}
     except InterruptedError:
         return {}
 

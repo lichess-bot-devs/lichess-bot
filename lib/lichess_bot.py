@@ -450,9 +450,8 @@ def next_event(control_queue: CONTROL_QUEUE_TYPE) -> EventType:
         if event is None:
             return {}
     except Empty:
-        logger.error(f"No events or pings from the lichess event stream in the last "
-                     f"{to_seconds(EVENT_STREAM_SILENCE_LIMIT):.0f} seconds even though the stream "
-                     "pings every few seconds. The event stream is assumed dead. Restarting lichess-bot.")
+        logger.error("No events or pings from the lichess event stream in the last "
+                     f"{to_seconds(EVENT_STREAM_SILENCE_LIMIT):.0f} seconds. Restarting lichess-bot.")
         stop.restart = True
         return {}
     except InterruptedError:

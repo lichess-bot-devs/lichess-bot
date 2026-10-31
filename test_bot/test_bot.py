@@ -1,4 +1,5 @@
 """Test lichess-bot."""
+import pytest
 import yaml
 import chess
 import chess.engine
@@ -179,15 +180,18 @@ def test_homemade() -> None:
                                            "bo vs b - zzzzzzzz.pgn"))
 
 
-def test_game_stream_reconnect() -> None:
-    """Test that lichess-bot finishes a game whose game stream ends while the game is still being played."""
+@pytest.mark.parametrize("lichess_class", [test_bot.lichess.LichessWithDroppedGameStream,
+                                           test_bot.lichess.LichessWithRateLimitedReconnect,
+                                           test_bot.lichess.LichessWithFailedMove])
+def test_game_stream_reconnect(lichess_class: type[test_bot.lichess.Lichess]) -> None:
+    """Test that lichess-bot finishes a game after its game stream ends, the reconnect is rate-limited, or a move fails."""
     with open("./config.yml.default") as file:
         CONFIG = yaml.safe_load(file)
 
     CONFIG["token"] = ""
     CONFIG["engine"]["name"] = f"ScholarsMate{test_suffix}"
     CONFIG["engine"]["protocol"] = "homemade"
-    win = run_bot(CONFIG, logging_level, test_bot.lichess.LichessWithDroppedGameStream)
+    win = run_bot(CONFIG, logging_level, lichess_class)
     logger.info("Finished Testing Game Stream Reconnect")
     assert win
 

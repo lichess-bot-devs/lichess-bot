@@ -783,20 +783,35 @@ def play_game(li: lichess.Lichess,
                     elif u_type == "ping" and should_exit_game(board, game, prior_game, li, is_correspondence):
                         stay_in_game = False
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
-                        StopIteration) as e:
-                    stopped = isinstance(e, StopIteration)
-                    if stopped and game_is_active(li, game.id):
-                        logger.warning(f"Game stream ended for {game.url()} but the game is still active. Reconnecting.")
+                        lichess.RateLimitedError, StopIteration) as e:
+                    if should_reopen_game_stream(li, game, e):
                         lines.close()
                         lines = game_streams.enter_context(contextlib.closing(reconnect_game_stream(li, game.id)))
                         game_stream = lines
                         prior_game = None
                     else:
-                        stay_in_game = not stopped and (move_attempted or game_is_active(li, game.id))
+                        stay_in_game = not isinstance(e, StopIteration) and move_attempted
 
             pgn_record = try_get_pgn_game_record(li, config, game, board, engine)
         final_queue_entries(control_queue, correspondence_queue, game, is_correspondence, pgn_record, pgn_queue)
         delete_takeback_record(game)
+
+
+def should_reopen_game_stream(li: lichess.Lichess, game: model.Game, error: Exception) -> bool:
+    """
+    Decide whether to reopen the stream of a game after an error, waiting out a rate limit first.
+
+    The stream is reopened whenever the game is still active. The new stream starts with the current game state,
+    so play resumes after a dropped stream, and a move that failed to send is played again.
+    """
+    if isinstance(error, lichess.RateLimitedError):
+        logger.warning(f"{error} Waiting before reconnecting to {game.url()}.")
+        time.sleep(to_seconds(error.timeout))
+    if not game_is_active(li, game.id):
+        return False
+    reason = "Game stream ended" if isinstance(error, StopIteration) else type(error).__name__
+    logger.warning(f"{reason} for {game.url()} but the game is still active. Reconnecting.")
+    return True
 
 
 def game_stream_lines(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:

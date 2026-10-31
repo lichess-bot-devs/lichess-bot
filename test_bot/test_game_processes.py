@@ -92,24 +92,24 @@ class FakeLichess:
         return self.streams[-1]
 
 
-def test_reconnected_game_stream_starts_with_current_state() -> None:
+def test_reconnect_game_stream_starts_with_current_state() -> None:
     """The reopened stream is opened lazily and starts with the game state from the new full game info."""
     state = {"type": "gameState", "moves": "e2e4 e7e5", "status": "started"}
     next_state = b'{"type": "gameState", "moves": "e2e4 e7e5 g1f3", "status": "started"}'
     li = FakeLichess([json.dumps({"type": "gameFull", "state": state}).encode("utf-8"), next_state])
 
-    stream = lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh")
+    stream = lichess_bot.reconnect_game_stream(cast(lichess.Lichess, li), "abcdefgh")
     assert li.streams_opened == 0
     assert [json.loads(line) for line in stream] == [state, json.loads(next_state)]
     assert li.streams_opened == 1
     assert li.streams[0].closed
 
 
-def test_reconnected_game_stream_that_ends_at_once() -> None:
+def test_reconnect_game_stream_that_ends_at_once() -> None:
     """A reopened stream that ends before sending the full game info ends without an error."""
     li = FakeLichess([])
 
-    assert list(lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh")) == []
+    assert list(lichess_bot.reconnect_game_stream(cast(lichess.Lichess, li), "abcdefgh")) == []
     assert li.streams[0].closed
 
 
@@ -119,7 +119,7 @@ def test_closing_a_game_stream_closes_the_connection() -> None:
     li = FakeLichess([json.dumps({"type": "gameFull", "state": state}).encode("utf-8"), b"", b""])
 
     for stream in (lichess_bot.game_stream_lines(cast(lichess.Lichess, li), "abcdefgh"),
-                   lichess_bot.reconnected_game_stream(cast(lichess.Lichess, li), "abcdefgh")):
+                   lichess_bot.reconnect_game_stream(cast(lichess.Lichess, li), "abcdefgh")):
         next(stream)
         stream.close()
     assert li.streams_opened == 2

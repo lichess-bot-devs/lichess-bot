@@ -788,7 +788,7 @@ def play_game(li: lichess.Lichess,
                     if stopped and game_is_active(li, game.id):
                         logger.warning(f"Game stream ended for {game.url()} but the game is still active. Reconnecting.")
                         lines.close()
-                        lines = game_streams.enter_context(contextlib.closing(reconnected_game_stream(li, game.id)))
+                        lines = game_streams.enter_context(contextlib.closing(reconnect_game_stream(li, game.id)))
                         game_stream = lines
                         prior_game = None
                     else:
@@ -809,7 +809,7 @@ def game_stream_lines(li: lichess.Lichess, game_id: str) -> Generator[bytes, Non
         yield from response.iter_lines()
 
 
-def reconnected_game_stream(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:
+def reconnect_game_stream(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:
     """
     Open a new stream for a game that is still being played, starting with the current game state.
 

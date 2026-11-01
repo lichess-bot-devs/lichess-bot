@@ -119,6 +119,20 @@ def run_bot(raw_config: CONFIG_DICT_TYPE, logging_level: int) -> bool:
     return result
 
 
+def engine_search_commands(command_log: str) -> list[str]:
+    """
+    Read back the search commands that a ponder test engine recorded while it played.
+
+    Each entry is written by the engine branch that handled the command, so the list shows which
+    branches actually ran: "go" for a normal search, "go ponder" for a ponder search, and
+    "ponderhit" or "stop" for how that ponder search ended.
+
+    :param command_log: The path that was given to the engine with the --command-log option.
+    """
+    with open(command_log) as log:
+        return log.read().splitlines()
+
+
 def test_uci() -> None:
     """Test lichess-bot with Stockfish (UCI)."""
     with open("./config.yml.default") as file:
@@ -134,6 +148,32 @@ def test_uci() -> None:
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing UCI")
         assert win
+        time.sleep(0.1)  # Wait for file to be written.
+        assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                           "bo vs b - zzzzzzzz.pgn"))
+
+
+def test_uci_ponder() -> None:
+    """Test lichess-bot with a UCI engine that supports pondering."""
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+
+    with tempfile.TemporaryDirectory() as temp:
+        CONFIG["token"] = ""
+        CONFIG["engine"]["dir"] = "test_bot"
+        CONFIG["engine"]["name"] = "ponder_engine.py"
+        CONFIG["engine"]["ponder"] = True
+        CONFIG["engine"]["interpreter"] = sys.executable
+        CONFIG["pgn_directory"] = os.path.join(temp, "ponder_game_record")
+        CONFIG["engine"]["uci_options"] = {}
+        command_log = os.path.join(temp, "ponder_commands.txt")
+        CONFIG["engine"]["engine_options"] = {"command-log": command_log}
+        win = run_bot(CONFIG, logging_level)
+        logger.info("Finished Testing UCI with pondering")
+        assert win
+        # The bot never ponders after its first move and the engine offers no ponder move along with
+        # its mating move, so the two middle moves are the ones that ponder, and both guesses are right.
+        assert engine_search_commands(command_log) == ["go", "go", "go ponder", "ponderhit", "go ponder", "ponderhit"]
         time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))
@@ -192,6 +232,31 @@ def test_buggy_engine() -> None:
         win = run_bot(CONFIG, logging_level)
         logger.info("Finished Testing Buggy Engine")
         assert win
+        time.sleep(0.1)  # Wait for file to be written.
+        assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
+                                           "bo vs b - zzzzzzzz.pgn"))
+
+
+def test_slow_ponder_engine() -> None:
+    """Test lichess-bot with an engine whose ponder searches always miss and are slow to stop."""
+    with open("./config.yml.default") as file:
+        CONFIG = yaml.safe_load(file)
+
+    with tempfile.TemporaryDirectory() as temp:
+        CONFIG["token"] = ""
+        CONFIG["engine"]["dir"] = "test_bot"
+        CONFIG["engine"]["name"] = "slow_ponder_engine.py"
+        CONFIG["engine"]["ponder"] = True
+        CONFIG["engine"]["interpreter"] = sys.executable
+        CONFIG["pgn_directory"] = os.path.join(temp, "slow_ponder_game_record")
+        CONFIG["engine"]["uci_options"] = {}
+        command_log = os.path.join(temp, "slow_ponder_commands.txt")
+        CONFIG["engine"]["engine_options"] = {"command-log": command_log}
+        win = run_bot(CONFIG, logging_level)
+        logger.info("Finished Testing Slow Ponder Engine")
+        assert win
+        # Every ponder guess is wrong, so each ponder search is stopped and replaced by a real search.
+        assert engine_search_commands(command_log) == ["go", "go", "go ponder", "stop", "go", "go ponder", "stop", "go"]
         time.sleep(0.1)  # Wait for file to be written.
         assert os.path.isfile(os.path.join(CONFIG["pgn_directory"],
                                            "bo vs b - zzzzzzzz.pgn"))

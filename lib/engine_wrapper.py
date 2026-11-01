@@ -23,7 +23,7 @@ from lib.lichess_types import (ReadableType, ChessDBMoveType, LichessEGTBMoveTyp
                        ENGINE_INPUT_ARGS_TYPE, ENGINE_INPUT_KWARGS_TYPE)
 from extra_game_handlers import game_specific_options
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, Self, cast
 from types import TracebackType
 
 
@@ -116,7 +116,7 @@ class EngineWrapper:
             self.engine.close()
             raise
 
-    def __enter__(self) -> EngineWrapper:  # noqa: PYI034 (return Self not available until 3.11)
+    def __enter__(self) -> Self:
         """Enter context so engine communication will be properly shutdown."""
         self.engine.__enter__()
         return self

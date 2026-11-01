@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 import logging
 import datetime
 import chess
-from enum import Enum
+from enum import StrEnum
 from typing import ClassVar
 from lib.blocklist import OnlineBlocklist
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
@@ -178,7 +178,7 @@ class Challenge:
         return self.__str__()
 
 
-class Termination(str, Enum):
+class Termination(StrEnum):
     """The possible game terminations."""
 
     MATE = "mate"
@@ -214,7 +214,7 @@ class Game:
         self.opponent = self.black if self.is_white else self.white
         self.base_url = base_url
         self.game_start = datetime.datetime.fromtimestamp(to_seconds(msec(game_info["createdAt"])),
-                                                          tz=datetime.timezone.utc)
+                                                          tz=datetime.UTC)
         self.abort_time = Timer(abort_time)
         self.terminate_time = Timer(self.clock_initial + self.clock_increment + abort_time + seconds(60))
         self.disconnect_time = Timer(seconds(0))
@@ -277,7 +277,7 @@ class Game:
 
     def result(self) -> str:
         """Get the result of the game."""
-        class GameEnding(str, Enum):
+        class GameEnding(StrEnum):
             WHITE_WINS = "1-0"
             BLACK_WINS = "0-1"
             DRAW = "1/2-1/2"

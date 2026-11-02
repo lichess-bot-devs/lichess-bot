@@ -2,7 +2,9 @@
 import json
 from collections.abc import Callable, Generator
 from typing import cast
-from lib import lichess, lichess_bot
+from requests.exceptions import HTTPError
+from lib import lichess, lichess_bot, model
+from lib.timer import seconds
 from lib.lichess_bot import POOL_TYPE, PlayGameArgsType
 
 # ruff: noqa: ARG002
@@ -124,3 +126,51 @@ def test_closing_a_game_stream_closes_the_connection() -> None:
         stream.close()
     assert li.streams_opened == 2
     assert all(opened.closed for opened in li.streams)
+
+
+class StaleOngoingGamesLichess:
+    """Still lists a game as ongoing after it has ended, as lichess.org sometimes does after a game ends on time."""
+
+    def __init__(self) -> None:
+        """Count the requests for the ongoing games."""
+        self.ongoing_games_requests = 0
+
+    def get_ongoing_games(self) -> list[dict[str, str]]:
+        """List the game as ongoing."""
+        self.ongoing_games_requests += 1
+        return [{"gameId": "abcdefgh"}]
+
+
+def make_game(status: str) -> model.Game:
+    """Make a game whose last game state has the given status."""
+    return model.Game({"id": "abcdefgh",
+                       "variant": {"key": "standard", "name": "Standard", "short": "Std"},
+                       "clock": {"initial": 60000, "increment": 2000},
+                       "speed": "bullet",
+                       "perf": {"name": "Bullet"},
+                       "rated": True,
+                       "createdAt": 1600000000000,
+                       "white": {"id": "bo", "name": "bo", "title": "BOT", "rating": 3000},
+                       "black": {"id": "b", "name": "b", "title": "BOT", "rating": 3000},
+                       "initialFen": "startpos",
+                       "type": "gameFull",
+                       "state": {"type": "gameState", "moves": "e2e4", "wtime": 60000, "btime": 0,
+                                 "winc": 2000, "binc": 2000, "status": status}},
+                      "bo", "https://lichess.org", seconds(20))
+
+
+def test_finished_game_stream_is_not_reopened() -> None:
+    """A game stream that sent the final game state is not reopened, even while lichess still lists the game."""
+    li = StaleOngoingGamesLichess()
+
+    for error in (StopIteration(), HTTPError("400 Client Error")):
+        assert not lichess_bot.should_reopen_game_stream(cast(lichess.Lichess, li), make_game("outoftime"), error)
+    assert li.ongoing_games_requests == 0
+
+
+def test_dropped_game_stream_is_reopened_while_game_is_listed() -> None:
+    """A game stream that ends before the game does is reopened while lichess lists the game as ongoing."""
+    li = StaleOngoingGamesLichess()
+
+    assert lichess_bot.should_reopen_game_stream(cast(lichess.Lichess, li), make_game("started"), StopIteration())
+    assert li.ongoing_games_requests == 1

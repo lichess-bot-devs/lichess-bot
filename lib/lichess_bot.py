@@ -811,7 +811,12 @@ def should_reopen_game_stream(li: lichess.Lichess, game: model.Game, error: Exce
 
     The stream is reopened whenever the game is still active. The new stream starts with the current game state,
     so play resumes after a dropped stream, and a move that failed to send is played again.
+
+    A game whose stream has already sent the final game state is never reopened, even if lichess still lists it
+    as ongoing: that list can lag behind the end of a game, e.g., after an opponent ran out of time.
     """
+    if is_game_over(game):
+        return False
     if isinstance(error, lichess.RateLimitedError):
         logger.warning(f"{error} Waiting before reconnecting to {game.url()}.")
         time.sleep(to_seconds(error.timeout))

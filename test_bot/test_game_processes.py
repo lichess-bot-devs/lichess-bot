@@ -184,8 +184,8 @@ def reopened(seconds_ago: float) -> Timer:
 
 
 def test_game_stream_reopen_delay() -> None:
-    """Reopen at once the first time and after a stable stream; wait longer each time a reopened stream fails fast."""
-    assert lichess_bot.game_stream_reopen_delay(seconds(0), None) == seconds(0)
+    """Reopen a stream that stayed open for a while at once; wait longer each time a stream fails fast."""
+    assert lichess_bot.game_stream_reopen_delay(seconds(0), reopened(61)) == seconds(0)
 
     delays = [seconds(0)]
     for _ in range(7):

@@ -822,7 +822,7 @@ def should_reopen_game_stream(li: lichess.Lichess, game: model.Game, error: Exce
         time.sleep(to_seconds(error.timeout))
     if not game_is_active(li, game.id):
         return False
-    reason = "Game stream ended" if isinstance(error, StopIteration) else type(error).__name__
+    reason = "Game stream ended" if isinstance(error, StopIteration) else f"{type(error).__name__} ({error})"
     logger.warning(f"{reason} for {game.url()} but the game is still active. Reconnecting.")
     return True
 

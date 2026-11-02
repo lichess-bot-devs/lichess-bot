@@ -4,7 +4,7 @@ from collections.abc import Callable, Generator
 from typing import cast
 from requests.exceptions import HTTPError
 from lib import lichess, lichess_bot, model
-from lib.timer import seconds
+from lib.timer import Timer, seconds
 from lib.lichess_bot import POOL_TYPE, PlayGameArgsType
 
 # ruff: noqa: ARG002
@@ -174,3 +174,22 @@ def test_dropped_game_stream_is_reopened_while_game_is_listed() -> None:
 
     assert lichess_bot.should_reopen_game_stream(cast(lichess.Lichess, li), make_game("started"), StopIteration())
     assert li.ongoing_games_requests == 1
+
+
+def reopened(seconds_ago: float) -> Timer:
+    """Make a timer that was started a number of seconds ago."""
+    timer = Timer()
+    timer.starting_time -= seconds_ago
+    return timer
+
+
+def test_game_stream_reopen_delay() -> None:
+    """Reopen at once the first time and after a stable stream; wait longer each time a reopened stream fails fast."""
+    assert lichess_bot.game_stream_reopen_delay(seconds(0), None) == seconds(0)
+
+    delays = [seconds(0)]
+    for _ in range(7):
+        delays.append(lichess_bot.game_stream_reopen_delay(delays[-1], reopened(0.5)))
+    assert delays == [seconds(d) for d in (0, 1, 2, 4, 8, 16, 30, 30)]
+
+    assert lichess_bot.game_stream_reopen_delay(seconds(30), reopened(61)) == seconds(0)

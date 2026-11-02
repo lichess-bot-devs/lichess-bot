@@ -742,6 +742,8 @@ def play_game(li: lichess.Lichess,
             game_stream: Iterator[bytes] = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
             quit_after_all_games_finish = config.quit_after_all_games_finish
             stay_in_game = True
+            reopen_delay = seconds(0)
+            last_reopen: Timer | None = None
             while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
                 move_attempted = False
                 try:
@@ -793,6 +795,9 @@ def play_game(li: lichess.Lichess,
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         lichess.RateLimitedError, StopIteration) as e:
                     if should_reopen_game_stream(li, game, e):
+                        reopen_delay = game_stream_reopen_delay(reopen_delay, last_reopen)
+                        time.sleep(to_seconds(reopen_delay))
+                        last_reopen = Timer()
                         lines.close()
                         lines = game_streams.enter_context(contextlib.closing(reconnect_game_stream(li, game.id)))
                         game_stream = lines
@@ -825,6 +830,22 @@ def should_reopen_game_stream(li: lichess.Lichess, game: model.Game, error: Exce
     reason = "Game stream ended" if isinstance(error, StopIteration) else f"{type(error).__name__} ({error})"
     logger.warning(f"{reason} for {game.url()} but the game is still active. Reconnecting.")
     return True
+
+
+GAME_STREAM_STABLE_TIME = seconds(60)
+MAX_GAME_STREAM_REOPEN_DELAY = seconds(30)
+
+
+def game_stream_reopen_delay(previous_delay: datetime.timedelta, last_reopen: Timer | None) -> datetime.timedelta:
+    """
+    Get how long to wait before reopening a game stream.
+
+    The first reopen, and one after the stream has stayed open for a while, happen at once. A stream that fails
+    again soon after it was reopened waits twice as long as before, up to a limit, so lichess.org is not flooded.
+    """
+    if last_reopen is None or last_reopen.time_since_reset() >= GAME_STREAM_STABLE_TIME:
+        return seconds(0)
+    return min(max(previous_delay * 2, seconds(1)), MAX_GAME_STREAM_REOPEN_DELAY)
 
 
 def game_stream_lines(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:

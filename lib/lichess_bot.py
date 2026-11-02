@@ -840,12 +840,14 @@ def game_stream_reopen_delay(previous_delay: datetime.timedelta, last_reopen: Ti
     """
     Get how long to wait before reopening a game stream.
 
-    A stream that has stayed open for a while is reopened at once. One that fails soon after it was opened waits
-    twice as long as before (at least a second), up to a limit, so lichess.org is not flooded.
+    The first reopen, and one after the stream has stayed open for a while, happen at once. A stream that fails
+    again soon after it was reopened waits twice as long as before, up to a limit, so lichess.org is not flooded.
 
-    :param last_reopen: Started when the game stream was first opened and reset at every reopen.
+    :param last_reopen: Reset at every reopen. A new `Timer()` is already expired, so the first reopen happens at once
+        and gives the timer the duration a reopened stream must stay open to count as stable.
     """
-    if last_reopen.time_since_reset() >= GAME_STREAM_STABLE_TIME:
+    if last_reopen.is_expired():
+        last_reopen.duration = GAME_STREAM_STABLE_TIME
         return seconds(0)
     return min(max(previous_delay * 2, seconds(1)), MAX_GAME_STREAM_REOPEN_DELAY)
 

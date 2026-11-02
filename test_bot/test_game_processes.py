@@ -176,20 +176,15 @@ def test_dropped_game_stream_is_reopened_while_game_is_listed() -> None:
     assert li.ongoing_games_requests == 1
 
 
-def reopened(seconds_ago: float) -> Timer:
-    """Make a timer that was started a number of seconds ago."""
-    timer = Timer()
-    timer.starting_time -= seconds_ago
-    return timer
-
-
 def test_game_stream_reopen_delay() -> None:
-    """Reopen a stream that stayed open for a while at once; wait longer each time a stream fails fast."""
-    assert lichess_bot.game_stream_reopen_delay(seconds(0), reopened(61)) == seconds(0)
-
-    delays = [seconds(0)]
+    """Reopen at once the first time and after a stable stream; wait longer each time a reopened stream fails fast."""
+    last_reopen = Timer()
+    delays = [lichess_bot.game_stream_reopen_delay(seconds(0), last_reopen)]
     for _ in range(7):
-        delays.append(lichess_bot.game_stream_reopen_delay(delays[-1], reopened(0.5)))
+        last_reopen.reset()
+        delays.append(lichess_bot.game_stream_reopen_delay(delays[-1], last_reopen))
     assert delays == [seconds(d) for d in (0, 1, 2, 4, 8, 16, 30, 30)]
 
-    assert lichess_bot.game_stream_reopen_delay(seconds(30), reopened(61)) == seconds(0)
+    last_reopen.reset()
+    last_reopen.starting_time -= 61
+    assert lichess_bot.game_stream_reopen_delay(seconds(30), last_reopen) == seconds(0)

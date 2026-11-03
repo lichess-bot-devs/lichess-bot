@@ -10,7 +10,7 @@ from queue import Queue
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.models import Response
 from collections.abc import Generator
-from typing import Self
+from typing import Self, cast
 from lib.lichess import Lichess as OriginalLichess, RateLimitedError
 from lib.timer import seconds, to_msec
 from lib.lichess_types import (UserProfileType, ChallengeType, REQUESTS_PAYLOAD_TYPE, GameType, OnlineType, PublicDataType,
@@ -241,11 +241,11 @@ class Lichess(OriginalLichess):
 
     def get_online_bots(self) -> list[UserProfileType]:
         """Return that the only bot online is us."""
-        return [{"username": "b", "online": True}]
+        return [{"id": "b", "username": "b", "online": True}]
 
     def challenge(self, username: str, payload: REQUESTS_PAYLOAD_TYPE) -> ChallengeType:
         """Isn't used in tests."""
-        return {}
+        return cast(ChallengeType, {})
 
     def cancel(self, challenge_id: str) -> None:
         """Isn't used in tests."""

@@ -49,14 +49,14 @@ POOL_TYPE: TypeAlias = Pool
 class PlayGameArgsType(TypedDict):
     """Type hint for `play_game_args`."""
 
-    li: NotRequired[lichess.Lichess]
-    control_queue: NotRequired[CONTROL_QUEUE_TYPE]
-    user_profile: NotRequired[UserProfileType]
-    config: NotRequired[Configuration]
-    challenge_queue: NotRequired[MULTIPROCESSING_LIST_TYPE]
-    correspondence_queue: NotRequired[CORRESPONDENCE_QUEUE_TYPE]
-    logging_queue: NotRequired[LOGGING_QUEUE_TYPE]
-    pgn_queue: NotRequired[PGN_QUEUE_TYPE]
+    li: lichess.Lichess
+    control_queue: CONTROL_QUEUE_TYPE
+    user_profile: UserProfileType
+    config: Configuration
+    challenge_queue: MULTIPROCESSING_LIST_TYPE
+    correspondence_queue: CORRESPONDENCE_QUEUE_TYPE
+    logging_queue: LOGGING_QUEUE_TYPE
+    pgn_queue: PGN_QUEUE_TYPE
     game_id: NotRequired[str]
 
 

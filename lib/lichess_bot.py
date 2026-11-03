@@ -742,6 +742,8 @@ def play_game(li: lichess.Lichess,
             game_stream: Iterator[bytes] = itertools.chain([json.dumps(game.state).encode("utf-8")], lines)
             quit_after_all_games_finish = config.quit_after_all_games_finish
             stay_in_game = True
+            reopen_delay = seconds(0)
+            last_reopen = Timer()
             while stay_in_game and (not stop.terminated or quit_after_all_games_finish) and not stop.force_quit:
                 move_attempted = False
                 try:
@@ -793,6 +795,9 @@ def play_game(li: lichess.Lichess,
                 except (HTTPError, ReadTimeout, RemoteDisconnected, ChunkedEncodingError, RequestsConnectionError,
                         lichess.RateLimitedError, StopIteration) as e:
                     if should_reopen_game_stream(li, game, e):
+                        reopen_delay = game_stream_reopen_delay(reopen_delay, last_reopen)
+                        time.sleep(to_seconds(reopen_delay))
+                        last_reopen.reset()
                         lines.close()
                         lines = game_streams.enter_context(contextlib.closing(reconnect_game_stream(li, game.id)))
                         game_stream = lines
@@ -811,15 +816,40 @@ def should_reopen_game_stream(li: lichess.Lichess, game: model.Game, error: Exce
 
     The stream is reopened whenever the game is still active. The new stream starts with the current game state,
     so play resumes after a dropped stream, and a move that failed to send is played again.
+
+    A game whose stream has already sent the final game state is never reopened, even if lichess still lists it
+    as ongoing: that list can lag behind the end of a game, e.g., after an opponent ran out of time.
     """
+    if is_game_over(game):
+        return False
     if isinstance(error, lichess.RateLimitedError):
         logger.warning(f"{error} Waiting before reconnecting to {game.url()}.")
         time.sleep(to_seconds(error.timeout))
     if not game_is_active(li, game.id):
         return False
-    reason = "Game stream ended" if isinstance(error, StopIteration) else type(error).__name__
+    reason = "Game stream ended" if isinstance(error, StopIteration) else f"{type(error).__name__} ({error})"
     logger.warning(f"{reason} for {game.url()} but the game is still active. Reconnecting.")
     return True
+
+
+GAME_STREAM_STABLE_TIME = seconds(60)
+MAX_GAME_STREAM_REOPEN_DELAY = seconds(30)
+
+
+def game_stream_reopen_delay(previous_delay: datetime.timedelta, last_reopen: Timer) -> datetime.timedelta:
+    """
+    Get how long to wait before reopening a game stream.
+
+    The first reopen, and one after the stream has stayed open for a while, happen at once. A stream that fails
+    again soon after it was reopened waits twice as long as before, up to a limit, so lichess.org is not flooded.
+
+    :param last_reopen: Reset at every reopen. A new `Timer()` is already expired, so the first reopen happens at once
+        and gives the timer the duration a reopened stream must stay open to count as stable.
+    """
+    if last_reopen.is_expired():
+        last_reopen.duration = GAME_STREAM_STABLE_TIME
+        return seconds(0)
+    return min(max(previous_delay * 2, seconds(1)), MAX_GAME_STREAM_REOPEN_DELAY)
 
 
 def game_stream_lines(li: lichess.Lichess, game_id: str) -> Generator[bytes, None, None]:

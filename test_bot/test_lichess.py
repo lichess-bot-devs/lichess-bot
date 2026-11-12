@@ -77,7 +77,7 @@ def test_init_rejects_token_without_bot_play_scope() -> None:
 def test_get_profile_returns_profile_and_sets_user_agent() -> None:
     """Profile data should be returned and used for the user agent."""
     li = lichess_without_init()
-    profile: UserProfileType = {"username": "testbot", "perfs": {}}
+    profile: UserProfileType = {"id": "testbot", "username": "testbot", "perfs": {}}
 
     with (
         patch.object(li, "api_get_json", return_value=profile) as api_get_json,
@@ -135,8 +135,8 @@ def test_get_online_bots_returns_empty_list_on_error() -> None:
 @pytest.mark.parametrize(
     ("users", "expected"),
     [
-        ([{"username": "testbot", "online": True}], True),
-        ([{"username": "testbot", "online": False}], False),
+        ([{"id": "testbot", "username": "testbot", "online": True}], True),
+        ([{"id": "testbot", "username": "testbot", "online": False}], False),
         ([], False),
     ],
 )

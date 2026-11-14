@@ -1,7 +1,10 @@
 """Test that each game is played by one `play_game` process and that a dropped game stream is reopened."""
 import json
+import logging
 from collections.abc import Callable, Generator
 from typing import cast
+import chess
+import pytest
 from requests.exceptions import HTTPError
 from lib import lichess, lichess_bot, model
 from lib.timer import Timer, seconds
@@ -188,3 +191,14 @@ def test_game_stream_reopen_delay() -> None:
     last_reopen.reset()
     last_reopen.starting_time -= 61
     assert lichess_bot.game_stream_reopen_delay(seconds(30), last_reopen) == seconds(0)
+
+
+def test_stalemate_is_reported_as_a_draw(caplog: pytest.LogCaptureFixture) -> None:
+    """A game that ends in stalemate is logged as a draw, not as an adjourned game."""
+    board = chess.Board("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1")
+    assert board.is_stalemate()
+
+    with caplog.at_level(logging.INFO, logger=lichess_bot.logger.name):
+        lichess_bot.tell_user_game_result(make_game("stalemate"), board)
+
+    assert caplog.messages == ["Game ended in a draw.", "Game ended by stalemate"]

@@ -184,6 +184,7 @@ class Termination(StrEnum):
     MATE = "mate"
     TIMEOUT = "outoftime"
     RESIGN = "resign"
+    STALEMATE = "stalemate"
     ABORT = "aborted"
     DRAW = "draw"
 
@@ -290,7 +291,7 @@ class Game:
             result = GameEnding.WHITE_WINS
         elif winner == "black":
             result = GameEnding.BLACK_WINS
-        elif termination in [Termination.DRAW, Termination.TIMEOUT]:
+        elif termination in [Termination.DRAW, Termination.STALEMATE, Termination.TIMEOUT]:
             result = GameEnding.DRAW
         else:
             result = GameEnding.INCOMPLETE

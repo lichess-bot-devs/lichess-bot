@@ -163,6 +163,33 @@ def test_game() -> None:
     assert game_model.is_abortable() is True
 
 
+def test_game_result() -> None:
+    """Test the PGN result of a finished game for each way the game can end."""
+    game: GameEventType = {"id": "zzzzzzzz", "variant": {"key": "standard", "name": "Standard", "short": "Std"},
+                           "speed": "bullet", "perf": {"name": "Bullet"}, "rated": False, "createdAt": 1700000000000,
+                           "white": {"id": "c", "name": "c", "title": None, "rating": 2000},
+                           "black": {"id": "b", "name": "b", "title": "BOT", "rating": 3000},
+                           "initialFen": "startpos", "clock": {"initial": 90000, "increment": 1000}, "type": "gameFull",
+                           "state": {"type": "gameState", "moves": "", "wtime": 90000, "btime": 90000, "winc": 1000,
+                                     "binc": 1000, "status": "started"}}
+    game_model = model.Game(game, "b", "https://lichess.org/", datetime.timedelta(seconds=30))
+
+    expected_results = [("mate", "white", "1-0"),
+                        ("resign", "black", "0-1"),
+                        ("draw", None, "1/2-1/2"),
+                        ("stalemate", None, "1/2-1/2"),
+                        ("outoftime", None, "1/2-1/2"),
+                        ("outoftime", "black", "0-1"),
+                        ("aborted", None, "*"),
+                        ("started", None, "*")]
+    for status, winner, expected_result in expected_results:
+        game_model.state["status"] = status
+        game_model.state.pop("winner", None)
+        if winner:
+            game_model.state["winner"] = winner
+        assert game_model.result() == expected_result, status
+
+
 def test_player() -> None:
     """Test the player model."""
     player: PlayerType = {"id": "b", "name": "b", "rating": 3000, "title": "BOT", "online": True}

@@ -567,11 +567,13 @@ def sort_challenges(challenge_queue: MULTIPROCESSING_LIST_TYPE, challenge_config
 
 
 def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
-    """Determine if a game is still being played."""
-    active_games = li.get_ongoing_games()
-    if active_games is None:
-        return True
-    return game_id in (ongoing_game["gameId"] for ongoing_game in active_games)
+    """Determine if a game is still being played, allowing the playing list to catch up."""
+    for _ in range(3):
+        active_games = li.get_ongoing_games()
+        if active_games is None or game_id in (ongoing_game["gameId"] for ongoing_game in active_games):
+            return True
+        time.sleep(1)
+    return False
 
 
 def start_game_thread(active_games: dict[str, str], game_id: str, opponent_name: str,

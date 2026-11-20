@@ -114,7 +114,7 @@ def test_correspondence_queue_does_not_crash_with_no_queue() -> None:
         max_games=5,
     )
 
-    assert active_games.game_ids() == []
+    assert not active_games
 
 
 def test_challenges_block_correspondence_start() -> None:
@@ -136,7 +136,7 @@ def test_challenges_block_correspondence_start() -> None:
         max_games=5,
     )
 
-    assert active_games.game_ids() == []
+    assert not active_games
     # The entry should still be in the queue so it gets started once challenges drain.
     assert correspondence_queue.qsize() == 1
 

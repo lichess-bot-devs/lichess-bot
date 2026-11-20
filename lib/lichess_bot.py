@@ -432,7 +432,7 @@ def lichess_bot_main(li: lichess.Lichess,
 def close_pool(pool: POOL_TYPE, active_games: ActiveGames, config: Configuration) -> None:
     """Shut down pool after possibly waiting on games to finish depending on the configuration."""
     if config.quit_after_all_games_finish:
-        if active_games.game_ids():
+        if active_games:
             logger.info("Waiting for games to finish before quitting.")
         pool.close()
         pool.join()
@@ -488,7 +488,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
     if challenge_queue:
         return
 
-    while len(active_games.game_ids()) < max_games and correspondence_games_to_start > 0:
+    while len(active_games) < max_games and correspondence_games_to_start > 0:
         game_id, opponent_name = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
@@ -499,7 +499,7 @@ def start_low_time_games(low_time_games: list[GameType], active_games: ActiveGam
                          pool: POOL_TYPE, play_game_args: PlayGameArgsType) -> None:
     """Start the games based on how much time we have left."""
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
-    while low_time_games and len(active_games.game_ids()) < max_games:
+    while low_time_games and len(active_games) < max_games:
         low_time_game = low_time_games.pop(0)
         game_id = low_time_game["id"]
         opponent_name = low_time_game.get("opponent", {}).get("username", "")
@@ -509,7 +509,7 @@ def start_low_time_games(low_time_games: list[GameType], active_games: ActiveGam
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE,
                       active_games: ActiveGames, max_games: int, max_bot_games: int) -> None:
     """Accept a challenge."""
-    while len(active_games.game_ids()) < max_games and challenge_queue:
+    while len(active_games) < max_games and challenge_queue:
         chlng = challenge_queue[0]
         if chlng.from_self:
             challenge_queue.pop(0)

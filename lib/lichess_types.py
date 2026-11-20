@@ -208,6 +208,14 @@ class ActiveGames:
         """Remove game from games list."""
         self._games.pop(game_id, None)
 
+    def __bool__(self) -> bool:
+        """Return True if not empty."""
+        return len(self) > 0
+
+    def __len__(self) -> int:
+        """Return number of games being tracked."""
+        return len(self._games)
+
 
 class TimeControlType(TypedDict):
     """Type hint for time control."""

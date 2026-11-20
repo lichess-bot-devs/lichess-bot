@@ -202,7 +202,7 @@ class ActiveGames:
 
     def opponent_names(self) -> list[str]:
         """Return list of opponents in games."""
-        return [self.opponent_name(game_id) for game_id in self._games]
+        return list(map(self.opponent_name, self._games))
 
     def remove_game(self, game_id:str) -> None:
         """Remove game from games list."""

@@ -9,7 +9,7 @@ from requests.exceptions import HTTPError
 from lib import lichess, lichess_bot, model
 from lib.timer import Timer, seconds
 from lib.lichess_bot import POOL_TYPE, PlayGameArgsType
-from lib.lichess_types import ActiveGames, ActiveGameRecord
+from lib.lichess_types import ActiveGames
 
 # ruff: noqa: ARG002
 
@@ -42,7 +42,9 @@ def test_repeated_game_start_is_ignored() -> None:
     start("abcdefgh", active_games, pool)
 
     assert pool.started == ["abcdefgh"]
-    assert active_games._games == {"abcdefgh": ActiveGameRecord(opponent_name="opponent", has_active_process=True)}
+    assert active_games.game_ids() == ["abcdefgh"]
+    assert active_games.opponent_names() == ["opponent"]
+    assert active_games.has_active_process("abcdefgh")
 
 
 def test_accepted_challenge_is_started() -> None:

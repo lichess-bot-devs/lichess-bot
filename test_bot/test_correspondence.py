@@ -13,8 +13,7 @@ from lib.lichess_types import (
     CORRESPONDENCE_QUEUE_TYPE,
     LOGGING_QUEUE_TYPE,
     PGN_QUEUE_TYPE,
-    ActiveGames,
-    ActiveGameRecord
+    ActiveGames
 )
 
 
@@ -63,7 +62,9 @@ def test_correspondence_ping_with_queued_game_does_not_crash() -> None:
         max_games=5,
     )
 
-    assert active_games._games == {"d5qiLiZH": ActiveGameRecord(opponent_name="SomeOpponent", has_active_process=True)}
+    assert active_games.game_ids() == ["d5qiLiZH"]
+    assert active_games.opponent_names() == ["SomeOpponent"]
+    assert active_games.has_active_process("d5qiLiZH")
     assert correspondence_queue.qsize() == 0
 
 
@@ -89,7 +90,9 @@ def test_local_game_done_does_not_crash() -> None:
         max_games=5,
     )
 
-    assert active_games._games == {"abcdefgh": ActiveGameRecord(opponent_name="BotOpponent", has_active_process=True)}
+    assert active_games.game_ids() == ["abcdefgh"]
+    assert active_games.opponent_names() == ["BotOpponent"]
+    assert active_games.has_active_process("abcdefgh")
     assert correspondence_queue.qsize() == 0
 
 
@@ -111,7 +114,7 @@ def test_correspondence_queue_does_not_crash_with_no_queue() -> None:
         max_games=5,
     )
 
-    assert active_games._games == {}
+    assert active_games.game_ids() == []
 
 
 def test_challenges_block_correspondence_start() -> None:
@@ -133,7 +136,7 @@ def test_challenges_block_correspondence_start() -> None:
         max_games=5,
     )
 
-    assert active_games._games == {}
+    assert active_games.game_ids() == []
     # The entry should still be in the queue so it gets started once challenges drain.
     assert correspondence_queue.qsize() == 1
 
@@ -159,5 +162,8 @@ def test_opponent_name_preserved_across_queue_roundtrip() -> None:
         max_games=5,
     )
 
-    assert active_games._games == {"gameA": ActiveGameRecord(opponent_name="Alice", has_active_process=True),
-                                   "gameB": ActiveGameRecord(opponent_name="Bob", has_active_process=True)}
+    assert active_games.game_ids() == ["gameA", "gameB"]
+    assert active_games.opponent_names() == ["Alice", "Bob"]
+    assert active_games.opponent_name("gameA") == "Alice"
+    assert active_games.opponent_name("gameB") == "Bob"
+    assert all(active_games.has_active_process(game_id) for game_id in active_games.game_ids())

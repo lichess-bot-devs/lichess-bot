@@ -196,9 +196,13 @@ class ActiveGames:
         """Add a game to the record."""
         self._games[game_id] = ActiveGameRecord(opponent_name=opponent_name, has_active_process=is_active)
 
+    def opponent_name(self, game_id: str) -> str:
+        """Get opponent name in game."""
+        return self._games[game_id]["opponent_name"]
+
     def opponent_names(self) -> list[str]:
         """Return list of opponents in games."""
-        return [info["opponent_name"] or "" for info in self._games.values()]
+        return [self.opponent_name(game_id) for game_id in self._games]
 
     def remove_game(self, game_id:str) -> None:
         """Remove game from games list."""

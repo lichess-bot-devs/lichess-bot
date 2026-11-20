@@ -432,7 +432,7 @@ def lichess_bot_main(li: lichess.Lichess,
 def close_pool(pool: POOL_TYPE, active_games: ActiveGames, config: Configuration) -> None:
     """Shut down pool after possibly waiting on games to finish depending on the configuration."""
     if config.quit_after_all_games_finish:
-        if active_games.active_game_ids():
+        if active_games.game_ids():
             logger.info("Waiting for games to finish before quitting.")
         pool.close()
         pool.join()

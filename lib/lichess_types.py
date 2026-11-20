@@ -184,10 +184,6 @@ class ActiveGames:
         """Return list of all games including queued."""
         return list(self._games)
 
-    def active_game_ids(self) -> list[str]:
-        """Return list of games that have an active game process."""
-        return [game_id for game_id in self.game_ids() if self.has_active_process(game_id)]
-
     def add_queued_game(self, game_id: str, opponent_name: str) -> None:
         """Add a game that does not have a process yet."""
         self._add_game(game_id, opponent_name, False)

@@ -73,6 +73,13 @@ class UserProfileType(TypedDict):
     count: NotRequired[dict[str, int]]
 
 
+class ActiveGamesType(TypedDict):
+    """Tracks which games are active on lichess and which the computer is actively playing."""
+
+    opponent_name: str
+    has_active_process: bool
+
+
 class ReadableType(TypedDict):
     """Type hint for `readable`."""
 

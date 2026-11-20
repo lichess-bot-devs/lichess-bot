@@ -9,6 +9,7 @@ from requests.exceptions import HTTPError
 from lib import lichess, lichess_bot, model
 from lib.timer import Timer, seconds
 from lib.lichess_bot import POOL_TYPE, PlayGameArgsType
+from lib.lichess_types import ActiveGamesType
 
 # ruff: noqa: ARG002
 
@@ -26,33 +27,30 @@ class FakePool:
         self.started.append(kwds["game_id"])
 
 
-def start(game_id: str, active_games: dict[str, str], games_in_progress: set[str], pool: FakePool) -> None:
+def start(game_id: str, active_games: dict[str, ActiveGamesType], pool: FakePool) -> None:
     """Start a game the way the main loop does."""
     lichess_bot.start_game_thread(active_games, game_id, "opponent", cast(PlayGameArgsType, {}),
-                                  cast(POOL_TYPE, pool), games_in_progress)
+                                  cast(POOL_TYPE, pool))
 
 
 def test_repeated_game_start_is_ignored() -> None:
     """A second `gameStart` for a game that is already being played must not start another process."""
-    active_games: dict[str, str] = {}
-    games_in_progress: set[str] = set()
+    active_games: dict[str, ActiveGamesType] = {}
     pool = FakePool()
 
-    start("abcdefgh", active_games, games_in_progress, pool)
-    start("abcdefgh", active_games, games_in_progress, pool)
+    start("abcdefgh", active_games, pool)
+    start("abcdefgh", active_games, pool)
 
     assert pool.started == ["abcdefgh"]
-    assert active_games == {"abcdefgh": "opponent"}
-    assert games_in_progress == {"abcdefgh"}
+    assert active_games == {"abcdefgh": ActiveGamesType(opponent_name="opponent", has_active_process=True)}
 
 
 def test_accepted_challenge_is_started() -> None:
     """An accepted challenge is in `active_games` before its `gameStart`, and must still be started."""
-    active_games = {"abcdefgh": "opponent"}
-    games_in_progress: set[str] = set()
+    active_games = {"abcdefgh": ActiveGamesType(opponent_name="opponent", has_active_process=False)}
     pool = FakePool()
 
-    start("abcdefgh", active_games, games_in_progress, pool)
+    start("abcdefgh", active_games, pool)
 
     assert pool.started == ["abcdefgh"]
 

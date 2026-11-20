@@ -13,7 +13,8 @@ from lib.lichess_types import (
     CORRESPONDENCE_QUEUE_TYPE,
     LOGGING_QUEUE_TYPE,
     PGN_QUEUE_TYPE,
-    ActiveGamesType
+    ActiveGames,
+    ActiveGameRecord
 )
 
 
@@ -49,7 +50,7 @@ def test_correspondence_ping_with_queued_game_does_not_crash() -> None:
     manager = Manager()
     correspondence_queue = cast(CORRESPONDENCE_QUEUE_TYPE, manager.Queue())
     challenge_queue = cast(MULTIPROCESSING_LIST_TYPE, manager.list())
-    active_games: dict[str, ActiveGamesType] = {}
+    active_games = ActiveGames([], [])
     correspondence_queue.put_nowait(("d5qiLiZH", "SomeOpponent"))
 
     lichess_bot.check_in_on_correspondence_games(
@@ -62,7 +63,7 @@ def test_correspondence_ping_with_queued_game_does_not_crash() -> None:
         max_games=5,
     )
 
-    assert active_games == {"d5qiLiZH": ActiveGamesType(opponent_name="SomeOpponent", has_active_process=True)}
+    assert active_games._games == {"d5qiLiZH": ActiveGameRecord(opponent_name="SomeOpponent", has_active_process=True)}
     assert correspondence_queue.qsize() == 0
 
 
@@ -72,7 +73,7 @@ def test_local_game_done_does_not_crash() -> None:
     manager = Manager()
     correspondence_queue = cast(CORRESPONDENCE_QUEUE_TYPE, manager.Queue())
     challenge_queue = cast(MULTIPROCESSING_LIST_TYPE, manager.list())
-    active_games: dict[str, ActiveGamesType] = {}
+    active_games = ActiveGames([], [])
     correspondence_queue.put_nowait(("abcdefgh", "BotOpponent"))
     # ``local_game_done`` does not refresh the counter; simulate that a prior
     # ping already set it to the queue size.
@@ -88,7 +89,7 @@ def test_local_game_done_does_not_crash() -> None:
         max_games=5,
     )
 
-    assert active_games == {"abcdefgh": ActiveGamesType(opponent_name="BotOpponent", has_active_process=True)}
+    assert active_games._games == {"abcdefgh": ActiveGameRecord(opponent_name="BotOpponent", has_active_process=True)}
     assert correspondence_queue.qsize() == 0
 
 
@@ -98,7 +99,7 @@ def test_correspondence_queue_does_not_crash_with_no_queue() -> None:
     manager = Manager()
     correspondence_queue = cast(CORRESPONDENCE_QUEUE_TYPE, manager.Queue())
     challenge_queue = cast(MULTIPROCESSING_LIST_TYPE, manager.list())
-    active_games: dict[str, ActiveGamesType] = {}
+    active_games = ActiveGames([], [])
 
     lichess_bot.check_in_on_correspondence_games(
         pool=MagicMock(),
@@ -110,7 +111,7 @@ def test_correspondence_queue_does_not_crash_with_no_queue() -> None:
         max_games=5,
     )
 
-    assert active_games == {}
+    assert active_games._games == {}
 
 
 def test_challenges_block_correspondence_start() -> None:
@@ -119,7 +120,7 @@ def test_challenges_block_correspondence_start() -> None:
     manager = Manager()
     correspondence_queue = cast(CORRESPONDENCE_QUEUE_TYPE, manager.Queue())
     challenge_queue = cast(MULTIPROCESSING_LIST_TYPE, manager.list(["pending"]))
-    active_games: dict[str, ActiveGamesType] = {}
+    active_games = ActiveGames([], [])
     correspondence_queue.put_nowait(("d5qiLiZH", "SomeOpponent"))
 
     lichess_bot.check_in_on_correspondence_games(
@@ -132,7 +133,7 @@ def test_challenges_block_correspondence_start() -> None:
         max_games=5,
     )
 
-    assert active_games == {}
+    assert active_games._games == {}
     # The entry should still be in the queue so it gets started once challenges drain.
     assert correspondence_queue.qsize() == 1
 
@@ -143,7 +144,7 @@ def test_opponent_name_preserved_across_queue_roundtrip() -> None:
     manager = Manager()
     correspondence_queue = cast(CORRESPONDENCE_QUEUE_TYPE, manager.Queue())
     challenge_queue = cast(MULTIPROCESSING_LIST_TYPE, manager.list())
-    active_games: dict[str, ActiveGamesType] = {}
+    active_games = ActiveGames([], [])
     correspondence_queue.put_nowait(("gameA", "Alice"))
     correspondence_queue.put_nowait(("gameB", "Bob"))
     lichess_bot.correspondence_games_to_start = correspondence_queue.qsize()
@@ -158,5 +159,5 @@ def test_opponent_name_preserved_across_queue_roundtrip() -> None:
         max_games=5,
     )
 
-    assert active_games == {"gameA": ActiveGamesType(opponent_name="Alice", has_active_process=True),
-                            "gameB": ActiveGamesType(opponent_name="Bob", has_active_process=True)}
+    assert active_games._games == {"gameA": ActiveGameRecord(opponent_name="Alice", has_active_process=True),
+                                   "gameB": ActiveGameRecord(opponent_name="Bob", has_active_process=True)}

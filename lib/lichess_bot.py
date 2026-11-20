@@ -30,7 +30,7 @@ from lib.conversation import Conversation, ChatLine
 from lib.timer import Timer, seconds, msec, hours, to_seconds
 from lib.lichess import stop
 from lib.lichess_types import (UserProfileType, EventType, GameType, GameEventType, CONTROL_QUEUE_TYPE,
-                               CORRESPONDENCE_QUEUE_TYPE, LOGGING_QUEUE_TYPE, PGN_QUEUE_TYPE, ActiveGamesType)
+                               CORRESPONDENCE_QUEUE_TYPE, LOGGING_QUEUE_TYPE, PGN_QUEUE_TYPE, ActiveGames)
 from requests.exceptions import (ChunkedEncodingError, ConnectionError as RequestsConnectionError, HTTPError, ReadTimeout,
                                  RequestException)
 from rich.logging import RichHandler
@@ -307,12 +307,7 @@ def start(li: lichess.Lichess, user_profile: UserProfileType, config: Configurat
         pgn_listener.join()
 
 
-def currently_playing_games(active_games: dict[str, ActiveGamesType]) -> list[str]:
-    """Return list of game IDs that have an active game process."""
-    return [game_id for game_id in active_games if active_games[game_id]["has_active_process"]]
-
-
-def log_proc_count(change: str, active_games: dict[str, ActiveGamesType]) -> None:
+def log_proc_count(change: str, active_games: ActiveGames) -> None:
     """
     Log the number of active games and their IDs.
 
@@ -320,8 +315,8 @@ def log_proc_count(change: str, active_games: dict[str, ActiveGamesType]) -> Non
     :param active_games: A dict mapping active game IDs to opponent names.
     """
     symbol = "+++" if change == "Freed" else "---"
-    game_ids = set(active_games) or None
-    logger.info(f"{symbol} Process {change}. Count: {len(active_games)}. IDs: {game_ids}")
+    game_ids = active_games.game_ids()
+    logger.info(f"{symbol} Process {change}. Count: {len(game_ids)}. IDs: {game_ids or None}")
 
 
 def lichess_bot_main(li: lichess.Lichess,
@@ -357,9 +352,7 @@ def lichess_bot_main(li: lichess.Lichess,
     startup_correspondence_games = [game["gameId"]
                                     for game in all_games
                                     if game["speed"] == "correspondence"]
-    active_games = {game["gameId"]: ActiveGamesType(opponent_name=game["opponent"]["username"], has_active_process=False)
-                    for game in all_games
-                    if game["gameId"] not in startup_correspondence_games}
+    active_games = ActiveGames(all_games, startup_correspondence_games)
     low_time_games: list[GameType] = []
 
     last_check_online_time = Timer(hours(1))
@@ -391,7 +384,7 @@ def lichess_bot_main(li: lichess.Lichess,
                 break
 
             if event["type"] == "local_game_done":
-                active_games.pop(event["game"]["id"], None)
+                active_games.remove_game(event["game"]["id"])
                 matchmaker.game_done()
                 log_proc_count("Freed", active_games)
                 one_game_completed = True
@@ -406,7 +399,7 @@ def lichess_bot_main(li: lichess.Lichess,
             elif event["type"] == "challengeDeclined":
                 matchmaker.declined_challenge(event, active_games)
             elif event["type"] == "challengeCanceled":
-                active_games.pop(event["challenge"]["id"], None)
+                active_games.remove_game(event["challenge"]["id"])
                 log_proc_count("Freed", active_games)
             elif event["type"] == "gameStart":
                 matchmaker.accepted_challenge(event, active_games)
@@ -436,10 +429,10 @@ def lichess_bot_main(li: lichess.Lichess,
         close_pool(pool, active_games, config)
 
 
-def close_pool(pool: POOL_TYPE, active_games: dict[str, ActiveGamesType], config: Configuration) -> None:
+def close_pool(pool: POOL_TYPE, active_games: ActiveGames, config: Configuration) -> None:
     """Shut down pool after possibly waiting on games to finish depending on the configuration."""
     if config.quit_after_all_games_finish:
-        if currently_playing_games(active_games):
+        if active_games.active_game_ids():
             logger.info("Waiting for games to finish before quitting.")
         pool.close()
         pool.join()
@@ -482,7 +475,7 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
                                      correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
                                      challenge_queue: MULTIPROCESSING_LIST_TYPE,
                                      play_game_args: PlayGameArgsType,
-                                     active_games: dict[str, ActiveGamesType],
+                                     active_games: ActiveGames,
                                      max_games: int) -> None:
     """Start correspondence games."""
     global correspondence_games_to_start
@@ -495,18 +488,18 @@ def check_in_on_correspondence_games(pool: POOL_TYPE,
     if challenge_queue:
         return
 
-    while len(active_games) < max_games and correspondence_games_to_start > 0:
+    while len(active_games.game_ids()) < max_games and correspondence_games_to_start > 0:
         game_id, opponent_name = correspondence_queue.get_nowait()
         correspondence_games_to_start -= 1
         correspondence_queue.task_done()
         start_game_thread(active_games, game_id, opponent_name, play_game_args, pool)
 
 
-def start_low_time_games(low_time_games: list[GameType], active_games: dict[str, ActiveGamesType], max_games: int,
+def start_low_time_games(low_time_games: list[GameType], active_games: ActiveGames, max_games: int,
                          pool: POOL_TYPE, play_game_args: PlayGameArgsType) -> None:
     """Start the games based on how much time we have left."""
     low_time_games.sort(key=lambda g: g.get("secondsLeft", math.inf))
-    while low_time_games and len(active_games) < max_games:
+    while low_time_games and len(active_games.game_ids()) < max_games:
         low_time_game = low_time_games.pop(0)
         game_id = low_time_game["id"]
         opponent_name = low_time_game.get("opponent", {}).get("username", "")
@@ -514,9 +507,9 @@ def start_low_time_games(low_time_games: list[GameType], active_games: dict[str,
 
 
 def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST_TYPE,
-                      active_games: dict[str, ActiveGamesType], max_games: int, max_bot_games: int) -> None:
+                      active_games: ActiveGames, max_games: int, max_bot_games: int) -> None:
     """Accept a challenge."""
-    while len(active_games) < max_games and challenge_queue:
+    while len(active_games.game_ids()) < max_games and challenge_queue:
         chlng = challenge_queue[0]
         if chlng.from_self:
             challenge_queue.pop(0)
@@ -531,7 +524,7 @@ def accept_challenges(li: lichess.Lichess, challenge_queue: MULTIPROCESSING_LIST
         try:
             logger.info(f"Accept {chlng}")
             li.accept_challenge(chlng.id)
-            active_games[chlng.id] = ActiveGamesType(opponent_name=chlng.challenger.name, has_active_process=False)
+            active_games.add_queued_game(chlng.id, chlng.challenger.name)
             log_proc_count("Queued", active_games)
         except (HTTPError, ReadTimeout) as exception:
             if isinstance(exception, HTTPError) and exception.response is not None and exception.response.status_code == 404:
@@ -574,13 +567,13 @@ def game_is_active(li: lichess.Lichess, game_id: str) -> bool:
     return game_id in (ongoing_game["gameId"] for ongoing_game in active_games)
 
 
-def start_game_thread(active_games: dict[str, ActiveGamesType], game_id: str, opponent_name: str,
+def start_game_thread(active_games: ActiveGames, game_id: str, opponent_name: str,
                       play_game_args: PlayGameArgsType, pool: POOL_TYPE) -> None:
     """Start a game thread, unless the game already has one (e.g., a repeated `gameStart` after a reconnect)."""
-    if game_id in active_games and active_games[game_id]["has_active_process"]:
+    if active_games.has_active_process(game_id):
         logger.info(f"Game {game_id} is already being played. Not starting it again.")
         return
-    active_games[game_id] = ActiveGamesType(opponent_name=opponent_name, has_active_process=True)
+    active_games.add_active_game(game_id, opponent_name)
     log_proc_count("Used", active_games)
     play_game_args["game_id"] = game_id
 
@@ -605,7 +598,7 @@ def start_game(event: EventType,
                config: Configuration,
                startup_correspondence_games: list[str],
                correspondence_queue: CORRESPONDENCE_QUEUE_TYPE,
-               active_games: dict[str, ActiveGamesType],
+               active_games: ActiveGames,
                low_time_games: list[GameType]) -> None:
     """
     Start a game.

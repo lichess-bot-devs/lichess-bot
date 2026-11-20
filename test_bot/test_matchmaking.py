@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from lib.matchmaking import game_category, Matchmaking
 from lib.config import Configuration
 from lib.timer import Timer, seconds
-from lib.lichess_types import UserProfileType
+from lib.lichess_types import UserProfileType, ActiveGames
 
 
 def test_game_category_standard_bullet() -> None:
@@ -217,7 +217,7 @@ def test_should_create_challenge_respects_rate_limit_when_previous_challenge_exp
     matchmaking.last_challenge_created_delay.starting_time -= 100
     matchmaking.rate_limit_timer = Timer(seconds(60))
 
-    assert matchmaking.should_create_challenge({}) is False
+    assert matchmaking.should_create_challenge(ActiveGames([], [])) is False
 
 
 def test_get_random_config_value__returns_from_choices_when_random() -> None:

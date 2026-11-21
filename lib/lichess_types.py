@@ -160,6 +160,63 @@ class GameType(TypedDict):
     complete: NotRequired[bool]
 
 
+class ActiveGameRecord(TypedDict):
+    """Tracks a game's status on lichess and the user's computer."""
+
+    opponent_name: str
+    has_active_process: bool
+
+
+class ActiveGames:
+    """Tracks which games are active on lichess and which the computer is actively playing."""
+
+    def __init__(self, all_games: list[GameType], startup_correspondence_games: list[str]) -> None:
+        """Initialize the active game records with the list of games from lichess."""
+        self._games = {game["gameId"]: ActiveGameRecord(opponent_name=game["opponent"]["username"], has_active_process=False)
+                       for game in all_games
+                       if game["gameId"] not in startup_correspondence_games}
+
+    def has_active_process(self, game_id: str) -> bool:
+        """Return whether a game ID has an active game-playing process."""
+        return game_id in self._games and self._games[game_id]["has_active_process"]
+
+    def game_ids(self) -> list[str]:
+        """Return list of all games including queued."""
+        return list(self._games)
+
+    def add_queued_game(self, game_id: str, opponent_name: str) -> None:
+        """Add a game that does not have a process yet."""
+        self._add_game(game_id, opponent_name, False)
+
+    def add_active_game(self, game_id: str, opponent_name: str) -> None:
+        """Add a game that will start an active process."""
+        self._add_game(game_id, opponent_name, True)
+
+    def _add_game(self, game_id: str, opponent_name: str, is_active: bool) -> None:
+        """Add a game to the record."""
+        self._games[game_id] = ActiveGameRecord(opponent_name=opponent_name, has_active_process=is_active)
+
+    def opponent_name(self, game_id: str) -> str:
+        """Get opponent name in game."""
+        return self._games[game_id]["opponent_name"]
+
+    def opponent_names(self) -> list[str]:
+        """Return list of opponents in games."""
+        return list(map(self.opponent_name, self._games))
+
+    def remove_game(self, game_id:str) -> None:
+        """Remove game from games list."""
+        self._games.pop(game_id, None)
+
+    def __bool__(self) -> bool:
+        """Return True if not empty."""
+        return len(self) > 0
+
+    def __len__(self) -> int:
+        """Return number of games being tracked."""
+        return len(self._games)
+
+
 class TimeControlType(TypedDict):
     """Type hint for time control."""
 

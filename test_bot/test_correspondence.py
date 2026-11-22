@@ -63,7 +63,7 @@ def test_correspondence_ping_with_queued_game_does_not_crash() -> None:
     )
 
     assert active_games.game_ids() == ["d5qiLiZH"]
-    assert active_games.opponent_names() == ["SomeOpponent"]
+    assert list(active_games.opponent_names()) == ["SomeOpponent"]
     assert active_games.has_active_process("d5qiLiZH")
     assert correspondence_queue.qsize() == 0
 
@@ -91,7 +91,7 @@ def test_local_game_done_does_not_crash() -> None:
     )
 
     assert active_games.game_ids() == ["abcdefgh"]
-    assert active_games.opponent_names() == ["BotOpponent"]
+    assert list(active_games.opponent_names()) == ["BotOpponent"]
     assert active_games.has_active_process("abcdefgh")
     assert correspondence_queue.qsize() == 0
 
@@ -163,7 +163,7 @@ def test_opponent_name_preserved_across_queue_roundtrip() -> None:
     )
 
     assert active_games.game_ids() == ["gameA", "gameB"]
-    assert active_games.opponent_names() == ["Alice", "Bob"]
+    assert list(active_games.opponent_names()) == ["Alice", "Bob"]
     assert active_games.opponent_name("gameA") == "Alice"
     assert active_games.opponent_name("gameB") == "Bob"
     assert all(active_games.has_active_process(game_id) for game_id in active_games.game_ids())

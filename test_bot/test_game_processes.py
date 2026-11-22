@@ -43,7 +43,7 @@ def test_repeated_game_start_is_ignored() -> None:
 
     assert pool.started == ["abcdefgh"]
     assert active_games.game_ids() == ["abcdefgh"]
-    assert active_games.opponent_names() == ["opponent"]
+    assert list(active_games.opponent_names()) == ["opponent"]
     assert active_games.has_active_process("abcdefgh")
 
 

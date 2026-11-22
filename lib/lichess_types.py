@@ -1,6 +1,6 @@
 """Some type hints that can be accessed by all other python files."""
 from typing import Any, TypedDict, Literal, TypeAlias, NotRequired
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from chess.engine import PovWdl, PovScore, PlayResult, Limit, Opponent
 from chess import Move, Board
 from queue import Queue
@@ -200,9 +200,9 @@ class ActiveGames:
         """Get opponent name in game."""
         return self._games[game_id]["opponent_name"] or "?"
 
-    def opponent_names(self) -> list[str]:
+    def opponent_names(self) -> Iterator[str]:
         """Return list of opponents in games."""
-        return list(map(self.opponent_name, self._games))
+        return map(self.opponent_name, self._games)
 
     def remove_game(self, game_id: str) -> None:
         """Remove game from games list."""

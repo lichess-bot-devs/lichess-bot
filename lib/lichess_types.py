@@ -198,7 +198,7 @@ class ActiveGames:
 
     def opponent_name(self, game_id: str) -> str:
         """Get opponent name in game."""
-        return self._games[game_id]["opponent_name"]
+        return self._games[game_id]["opponent_name"] or "?"
 
     def opponent_names(self) -> list[str]:
         """Return list of opponents in games."""

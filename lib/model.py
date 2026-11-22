@@ -10,7 +10,7 @@ from lib.blocklist import OnlineBlocklist
 from lib.timer import Timer, msec, seconds, sec_str, to_msec, to_seconds, years
 from lib.config import Configuration
 from collections import defaultdict, Counter
-from lib.lichess_types import UserProfileType, ChallengeType, GameEventType, PlayerType
+from lib.lichess_types import UserProfileType, ChallengeType, GameEventType, PlayerType, ActiveGames
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +322,7 @@ class Player:
         return name in cls.bot_names
 
     @classmethod
-    def count_bot_games(cls, active_games: dict[str, str]) -> int:
+    def count_bot_games(cls, active_games: ActiveGames) -> int:
         """
         Count active games whose opponent is known to be a bot.
 
@@ -330,8 +330,7 @@ class Player:
         "BOT sseh-c"), while `bot_names` holds bare usernames. Compare the bare
         username (the last whitespace-separated token) so the two match.
         """
-        return sum(1 for name in active_games.values()
-                   if cls.is_bot_name(name.split()[-1] if name else name))
+        return len(list(filter(cls.is_bot_name, (name.split()[-1] for name in active_games.opponent_names()))))
 
     def __init__(self, player_info: PlayerType) -> None:
         """:param player_info: Contains information about a player."""

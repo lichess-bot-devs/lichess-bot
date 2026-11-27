@@ -71,7 +71,7 @@ def test_init_rejects_token_without_bot_play_scope() -> None:
         patch.object(lichess.Lichess, "api_post", return_value=token_response),
         pytest.raises(RuntimeError, match="bot:play"),
     ):
-        lichess.Lichess(test_value, "lichess", "0.0.0", logging.DEBUG, 3)
+        lichess.Lichess("test-token", "lichess", "0.0.0", logging.DEBUG, 3)
 
 
 def test_get_profile_returns_profile_and_sets_user_agent() -> None:
@@ -212,6 +212,72 @@ def test_failed_chat_message_does_not_raise() -> None:
     li.api_post = failing_api_post  # type: ignore[method-assign]
 
     li.chat("game_id", "player", "Good luck!")
+
+
+def test_set_user_agent_updates_header_and_session() -> None:
+    """Setting the user agent should update both the header dict and session headers."""
+    li = lichess_without_init()
+    li.version = "1.2.3"
+    li.header = {"Authorization": "Bearer token"}
+
+    class DummySession:
+        def __init__(self) -> None:
+            self.headers: dict[str, str] = {}
+
+    li.session = DummySession()  # type: ignore[assignment]
+    li.set_user_agent("MyBot")
+
+    assert li.header["User-Agent"] == "lichess-bot/1.2.3 user:MyBot"
+    assert li.session.headers["User-Agent"] == "lichess-bot/1.2.3 user:MyBot"
+
+
+def test_get_game_pgn_returns_raw_pgn_and_empty_on_error() -> None:
+    """Game PGN should be returned on success and fall back to empty string on error."""
+    li = lichess_without_init()
+
+    with patch.object(li, "api_get_raw", return_value="1. e4 e5 *") as api_get_raw:
+        assert li.get_game_pgn("game123") == "1. e4 e5 *"
+    api_get_raw.assert_called_once_with("export", "game123")
+
+    with patch.object(li, "api_get_raw", side_effect=RuntimeError("boom")):
+        assert li.get_game_pgn("game123") == ""
+
+
+def test_accept_and_decline_challenge_and_resign_abort_cancel() -> None:
+    """Challenge and game lifecycle actions should POST to the expected endpoints."""
+    li = lichess_without_init()
+
+    with patch.object(li, "api_post") as api_post:
+        li.accept_challenge("ch1")
+        li.decline_challenge("ch2", reason="later")
+        li.resign("g1")
+        li.abort("g2")
+        li.cancel("ch3")
+
+    assert api_post.call_args_list[0].args == ("accept", "ch1")
+    assert api_post.call_args_list[1].args == ("decline", "ch2")
+    assert api_post.call_args_list[1].kwargs["data"] == "reason=later"
+    assert api_post.call_args_list[1].kwargs["raise_for_status"] is False
+    assert api_post.call_args_list[2].args == ("resign", "g1")
+    assert api_post.call_args_list[3].args == ("abort", "g2")
+    assert api_post.call_args_list[4].args == ("cancel", "ch3")
+    assert api_post.call_args_list[4].kwargs["raise_for_status"] is False
+
+
+def test_rate_limit_helpers_and_challenge_timeout() -> None:
+    """Daily game rate-limit helpers should distinguish bot vs opponent limits and extract timeout."""
+    opp_resp = mock_response(400, {"error": "limit", "ratelimit": {"key": "bot.vsBot.day", "seconds": 3600}})
+    bot_resp = mock_response(429, {"error": "limit", "ratelimit": {"key": "bot.vsBot.day", "seconds": 1800}})
+    other_resp = mock_response(400, {"error": "other"})
+
+    assert lichess.is_opponent_rate_limit(opp_resp) is True
+    assert lichess.is_bot_rate_limit(opp_resp) is False
+    assert lichess.is_bot_rate_limit(bot_resp) is True
+    assert lichess.is_opponent_rate_limit(bot_resp) is False
+    assert lichess.is_opponent_rate_limit(other_resp) is False
+
+    assert lichess.get_challenge_timeout({"ratelimit": {"key": "bot.vsBot.day", "seconds": 90}}) == seconds(90)
+    assert lichess.get_challenge_timeout({"ratelimit": {"key": "other", "seconds": 90}}) is None
 
 
 def test_lichess() -> None:
